@@ -1,0 +1,5 @@
+python-dateutil>=2.2
+pystmark>=0.4.4
+psycopg2>=2.6.1
+SQLAlchemy>=1.0.9
+celery>=3.1.18

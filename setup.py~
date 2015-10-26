@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+from setuptools import setup
+
+setup(
+    name='Meerkat Abacus',
+    version='0.0.1',
+    long_description=__doc__,
+    packages=['meerkat_abacus'],
+    include_package_data=True,
+    zip_safe=False,
+    install_requires=[
+        'python-dateutil>=2.2',
+        'pystmark>=0.4.4',
+        'psycopg2>=2.6.1',
+        'SQLAlchemy>=1.0.9',
+        'celery>=3.1.18'
+    ],
+    test_suite='meerkat_abacus.test'
+)
