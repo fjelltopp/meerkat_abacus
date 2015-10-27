@@ -1,0 +1,7 @@
+who_code,deviceid,sim_id,clinic,clinic_type,case_report,district,region,longitude,latitude,realdata_startdate,moh_code
+1,1,1,Clinic 1,Primary,Yes,District 1,Region 1,0.1,0.1,,
+2,2,2,Clinic 2,Primary,Yes,District 1,Region 1,0.2,0.2,,
+3,3,3,Clinic 3,Primary,Yes,District 1,Region 1,0.3,0.2,,
+4,4,4,Clinic 4,Primary,Yes,District 2,Region 1,0.2,0.3,,
+5,5,5,Clinic 5,Hospital,No,District 3,Region 2,0.4,-0.1,,
+6,6,6,Clinic 1,Primary,Yes,District 1,Region 1,0.1,0.1,,
