@@ -1,5 +1,5 @@
 """
-Model
+Database model definition
 """
 
 from sqlalchemy import Column, Integer, String, DateTime, Float

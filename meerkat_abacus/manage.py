@@ -8,8 +8,10 @@ from sqlalchemy_utils import database_exists, create_database, drop_database
 from database_util.import_locations import import_regions
 from database_util.import_locations import import_clinics
 from database_util.import_locations import import_districts
+from database_util import create_fake_data, get_deviceids, write_csv
+
 import model
-from config import DATABASE_URL, country_config
+from config import DATABASE_URL, country_config,form_directory
 
 data_directory = "../data/"
 
@@ -52,6 +54,39 @@ def create_db(url, base,country_config, drop=False):
     return True
 
 
+def fake_data(country_config, form_directory):
+    """
+    Creates csv files with fake data
+
+    Args:
+    country_config: A country configuration object
+    from_directory: the directory to store the from data
+    """
+    session = Session()
+    deviceids = get_deviceids(session, case_report=True)
+    case = create_fake_data.create_form(country_config["fake_data"]["case"],
+                                        data={"deviceids": deviceids}, N=500)
+    register = create_fake_data.create_form(
+        country_config["fake_data"]["register"],
+        data={"deviceids": deviceids}, N=500)
+
+    alert_ids = []
+    for c in case:
+        alert_ids.append(
+            c["meta/instanceID"][-country_config["alert_id_length"]:])
+    alert = create_fake_data.create_form(country_config["fake_data"]["alert"],
+                                         data={"deviceids": deviceids, "uuids": alert_ids}, N=500)
+    case_file_name = form_directory + country_config["tables"]["case"] + ".csv"
+    register_file_name = (form_directory +
+                          country_config["tables"]["register"] + ".csv")
+    alert_file_name = (form_directory +
+                       country_config["tables"]["alert"] + ".csv")
+
+    write_csv(case, case_file_name)
+    write_csv(register, register_file_name)
+    write_csv(alert, alert_file_name)
+
+    
 def import_locations(country_config, engine):
     """
     Imports all locations from csv-files
@@ -80,6 +115,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["create-db",
                                            "import-locations",
+                                           "fake-data",
                                            "all"])
     parser.add_argument("--drop-db", action="store_true")
     args = parser.parse_args()
@@ -90,8 +126,13 @@ if __name__ == "__main__":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
         import_locations(country_config, engine)
+    if args.action == "fake-data":
+        engine = create_engine(DATABASE_URL)
+        Session = sessionmaker(bind=engine)
+        fake_data(country_config, form_directory)
     if args.action == "all":
         create_db(DATABASE_URL, model.Base, country_config, drop=args.drop_db)
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
         import_locations(country_config, engine)
+        fake_data(country_config, form_directory)
