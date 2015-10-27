@@ -4,16 +4,17 @@ from sqlalchemy import create_engine, Column, Integer
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
+import os
 
-from database_util.import_locations import import_regions
-from database_util.import_locations import import_clinics
-from database_util.import_locations import import_districts
-from database_util import create_fake_data, get_deviceids, write_csv
+from meerkat_abacus.database_util.import_locations import import_regions
+from meerkat_abacus.database_util.import_locations import import_clinics
+from meerkat_abacus.database_util.import_locations import import_districts
+from meerkat_abacus.database_util import create_fake_data, get_deviceids, write_csv
 
-import model
-from config import DATABASE_URL, country_config,form_directory
+import meerkat_abacus.model as model
+from meerkat_abacus.config import DATABASE_URL, country_config,form_directory
 
-data_directory = "../data/"
+data_directory = os.path.dirname(os.path.realpath(__file__)) + "/../data/"
 
 
 def create_db(url, base,country_config, drop=False):
@@ -29,7 +30,7 @@ def create_db(url, base,country_config, drop=False):
     Returns:
     True
     """
-    if drop:
+    if drop and database_exists(url):
         drop_database(url)
     if not database_exists(url):
         create_database(url)
@@ -60,7 +61,7 @@ def fake_data(country_config, form_directory):
 
     Args:
     country_config: A country configuration object
-    from_directory: the directory to store the from data
+    form_directory: the directory to store the from data
     """
     session = Session()
     deviceids = get_deviceids(session, case_report=True)
@@ -95,7 +96,11 @@ def import_locations(country_config, engine):
     country_config: A country configuration object
     engine: SQLAlchemy connection engine
     """
-    session = Session()
+    try:
+        session = Session()
+    except NameError:
+        Session = sessionmaker(bind=engine)
+        session = Session()
     session.query(model.Locations).delete()
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
     session.add(model.Locations(name=country_config["country_name"]))
