@@ -1,12 +1,33 @@
 """
 Database model definition
 """
-
 from sqlalchemy import Column, Integer, String, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import validates
+
+from meerkat_abacus.config import country_config
 
 Base = declarative_base()
 
+form_tables = {"case": None, "register": None, "alert": None, "other": {}}
+
+for table in country_config["tables"]:
+    table_name = country_config["tables"][table]
+    if table != "other":
+        form_tables[table] = type(table_name, (Base, ),
+                                  {"__tablename__": table_name,
+                                   "id": Column(Integer, primary_key=True),
+                                   "data": Column(JSONB)})
+    else:
+        table_names = country_config["tables"][table]
+    
+        for table in table_names:
+            form_tables["other"][table] = (
+                type(table, (Base, ),
+                     {"__tablename__": table,
+                      "id": Column(Integer, primary_key=True),
+                      "data": Column(JSONB)}))
 
 class Locations(Base):
     __tablename__ = 'locations'
@@ -29,11 +50,11 @@ class AggregationVariables(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    dbtable = Column(String)
-    dbcolumn = Column(String)
+    form = Column(String)
+    db_column = Column(String)
     method = Column(String)
     location = Column(String)
-    condtion = Column(String)
+    condition = Column(String)
     category = Column(String)
     daily = Column(Integer)
     classification = Column(String)
@@ -47,6 +68,20 @@ class AggregationVariables(Base):
     risk_factors = Column(String)
     symptoms = Column(String)
     labs_diagnostics = Column(String)
+
+    @validates("alert")
+    def alert_setter(self, key, alert):
+        if alert == "":
+            return 0
+        else:
+            return alert
+
+    @validates("daily")
+    def daily_setter(self, key, daily):
+        if daily == "":
+            return 0
+        else:
+            return daily
 
 class Aggregation(Base):
     __tablename__ = 'aggregation'

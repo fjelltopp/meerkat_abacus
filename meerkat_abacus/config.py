@@ -13,6 +13,7 @@ country_config = {
         "register": "demo_register",
         "other": []
     },
+    "codes_file": "demo_codes",
     "locations": {
         "clinics": "demo_clinics.csv",
         "districts": "demo_districts.csv",

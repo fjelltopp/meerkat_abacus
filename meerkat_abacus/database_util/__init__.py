@@ -33,6 +33,7 @@ def get_deviceids(session, case_report=False):
                 deviceids.append(r.deviceid)
     return deviceids
 
+
 def write_csv(rows, file_path):
     """
     Writes rows to csvfile
@@ -48,3 +49,22 @@ def write_csv(rows, file_path):
     for row in rows:
         out.writerow(row)
     f.close()
+
+
+def read_csv(file_path):
+    """
+    Reads csvfile and returns list of rows
+    
+    Args:
+    file_path: path of file to read
+
+    Returns:
+    rows: list of rows
+    """
+    f = open(file_path, "r", encoding='utf-8')
+    reader = csv.DictReader(f)
+    rows = []
+    for row in reader:
+        rows.append(row)
+    f.close()
+    return rows
