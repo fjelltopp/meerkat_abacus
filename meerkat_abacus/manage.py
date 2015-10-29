@@ -18,6 +18,16 @@ from meerkat_abacus.config import DATABASE_URL, country_config, form_directory
 
 data_directory = os.path.dirname(os.path.realpath(__file__)) + "/../data/"
 
+parser = argparse.ArgumentParser()
+parser.add_argument("action", choices=["create-db",
+                                       "import-locations",
+                                       "fake-data",
+                                       "import-data",
+                                       "import-variables",
+                                       "all"],
+                    help="Choose action" )
+parser.add_argument("--drop-db", action="store_true",
+                    help="Use flag to drop DB for create-db or all")
 
 
 def create_db(url, base, country_config, drop=False):
@@ -105,9 +115,11 @@ def table_data_from_csv(filename, table, directory, session,
         if form:
             if deviceids:
                 if row["deviceid"] in deviceids:
-                    session.add(table(**{"data": row}))
+                    session.add(table(**{"data": row,
+                                         "uuid": row["meta/instanceID"]}))
             else:
-                session.add(table(**{"data": row}))
+                session.add(table(**{"data": row,
+                                     "uuid": row["meta/instanceID"]}))
         else:
             row.pop("")
             session.add(table(**row))
@@ -203,14 +215,6 @@ def import_locations(country_config, engine):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["create-db",
-                                           "import-locations",
-                                           "fake-data",
-                                           "import-data",
-                                           "import-variables",
-                                           "all"])
-    parser.add_argument("--drop-db", action="store_true")
     args = parser.parse_args()
 
     if args.action == "create-db":

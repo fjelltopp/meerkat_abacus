@@ -18,6 +18,7 @@ for table in country_config["tables"]:
         form_tables[table] = type(table_name, (Base, ),
                                   {"__tablename__": table_name,
                                    "id": Column(Integer, primary_key=True),
+                                   "uuid": Column(String),
                                    "data": Column(JSONB)})
     else:
         table_names = country_config["tables"][table]
@@ -27,6 +28,7 @@ for table in country_config["tables"]:
                 type(table, (Base, ),
                      {"__tablename__": table,
                       "id": Column(Integer, primary_key=True),
+                      "uuid": Column(String),
                       "data": Column(JSONB)}))
 
 class Locations(Base):
