@@ -47,6 +47,19 @@ class Locations(Base):
         return "<Location(name='%s', id='%s', parent_location='%s')>" % (
             self.name, self.id, self.parent_location)
 
+class Data(Base):
+    __tablename__ = 'data'
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String)
+    date = Column(DateTime, index=True)
+    country = Column(Integer, index=True)
+    region = Column(Integer, index=True)
+    clinic = Column(Integer, index=True)
+    clinic_type = Column(String)
+    variables = Column(JSONB, index=True)
+    geolocation = Column(String)
+
 class AggregationVariables(Base):
     __tablename__ = 'aggregation_variables'
 

@@ -6,6 +6,85 @@ import csv
 from meerkat_abacus.model import Locations
 
 
+def all_location_data(session):
+    """
+    get all location data
+
+    Args:
+    session: db session
+
+    Returns:
+    (loction_dict,loc_by_deviceid, regions, districts)
+    """
+    locations = get_locations(session)
+    locations_by_deviceid = get_locations_by_deviceid(session)
+    regions, districts = get_regions_districts(session)
+
+    return (locations, locations_by_deviceid, regions, districts)
+
+
+def get_regions_districts(session):
+    """
+    get list of ids for regions and districts
+
+    Args:
+    session: db session
+
+    Returns:
+    (regions,districts)
+    """
+    locations = get_locations(session)
+    regions = []
+    districts = []
+    for l in locations.keys():
+        if locations[l].parent_location == 1:
+            regions.append(l)
+    for l in locations.keys():
+        if locations[l].parent_location in regions:
+            districts.append(l)
+    return (regions, districts)
+
+
+def get_locations_by_deviceid(session):
+    """
+    get a dict with deviceid: locatino:id
+
+    Args:
+    session: db session
+
+    Returns:
+    locations : deviceid:location_id
+    """
+    locations = get_locations(session)
+    locations_by_deviceid = {}
+    for l in locations.keys():
+        if locations[l].deviceid:
+            if "," in locations[l].deviceid:
+                dev_ids = locations[l].deviceid.split(",")
+                for did in dev_ids:
+                    locations_by_deviceid[did] = l
+            else:
+                locations_by_deviceid[locations[l].deviceid] = l
+    return locations_by_deviceid
+
+
+def get_locations(session):
+    """
+    get a location dict
+
+    Args:
+    session: db session
+
+    Returns:
+    locations : id:location dict
+    """
+    result = session.query(Locations)
+    locations = {}
+    for row in result:
+        locations[row.id]=row
+    return locations
+
+
 def get_deviceids(session, case_report=False):
     """
     Returns a list of deviceids

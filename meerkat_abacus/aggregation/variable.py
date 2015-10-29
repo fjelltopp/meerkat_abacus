@@ -137,18 +137,18 @@ class Variable():
         return add
 
     def test_count_occurence_in_int_between(self, row):
-        column1 = self.column1
+        column2 = self.column2
         add = 0
-        if (row[column1] and row[column1] != 0 or
-            (self.condition_low == 0 and row[column1] == 0)):
-            n = int(row[column1])
+        if (row[column2] and row[column2] != 0 or
+            (self.condition_low == 0 and row[column2] == 0)):
+            n = int(row[column2])
             if n >= int(self.condition_low) and n < int(self.condition_high):
-                column2 = self.column2
-                if row[column2] in self.cond_list:
+                column1 = self.column1
+                if row[column1] in self.cond_list:
                     add = 1
                 else:
                     for c in self.cond_list:
-                        if row[column2] and c in row[column2]:
+                        if row[column1] and c in row[column1]:
                             add = 1
                             break
         return add

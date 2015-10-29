@@ -127,7 +127,7 @@ class VariableTest(unittest.TestCase):
             id=4,
             secondary_condition="",
             method="count_occurence_in,int_between",
-            db_column="column1,column2",
+            db_column="column2,column1",
             condition="A:0,5")
         variable = Variable(agg_variable)
         row = {"column1": "3", "column2": "A"}

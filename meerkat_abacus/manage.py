@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import argparse
-import json
-from sqlalchemy import create_engine, Column, Integer
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import os
@@ -10,11 +9,13 @@ from meerkat_abacus.database_util.import_locations import import_regions
 from meerkat_abacus.database_util.import_locations import import_clinics
 from meerkat_abacus.database_util.import_locations import import_districts
 from meerkat_abacus.database_util import create_fake_data, get_deviceids
-from meerkat_abacus.database_util import write_csv, read_csv
+from meerkat_abacus.database_util import write_csv, read_csv, all_location_data
 
 import meerkat_abacus.model as model
 from meerkat_abacus.model import form_tables
 from meerkat_abacus.config import DATABASE_URL, country_config, form_directory
+from meerkat_abacus.aggregation.variable import Variable
+import meerkat_abacus.aggregation.to_codes as to_codes
 
 data_directory = os.path.dirname(os.path.realpath(__file__)) + "/../data/"
 
@@ -24,6 +25,7 @@ parser.add_argument("action", choices=["create-db",
                                        "fake-data",
                                        "import-data",
                                        "import-variables",
+                                       "to-codes",
                                        "all"],
                     help="Choose action" )
 parser.add_argument("--drop-db", action="store_true",
@@ -67,13 +69,15 @@ def fake_data(country_config, form_directory):
     register = create_fake_data.create_form(
         country_config["fake_data"]["register"],
         data={"deviceids": deviceids}, N=500)
-
+    form_directory = (os.path.dirname(os.path.realpath(__file__))
+                      + "/" + form_directory)
     alert_ids = []
     for c in case:
         alert_ids.append(
             c["meta/instanceID"][-country_config["alert_id_length"]:])
-    alert = create_fake_data.create_form(country_config["fake_data"]["alert"],
-                                         data={"deviceids": deviceids, "uuids": alert_ids}, N=500)
+    alert = create_fake_data.create_form(
+        country_config["fake_data"]["alert"],
+        data={"deviceids": deviceids, "uuids": alert_ids}, N=500)
     case_file_name = form_directory + country_config["tables"]["case"] + ".csv"
     register_file_name = (form_directory +
                           country_config["tables"]["register"] + ".csv")
@@ -214,6 +218,28 @@ def import_locations(country_config, engine):
     import_clinics(clinics_file, session, 1)
 
 
+def raw_data_to_variables(country_config,engine):
+    """
+    Turn raw data in forms into structured data with codes
+
+    Args:
+    country_config
+    engine: db engine
+    """
+    try:
+        session = Session()
+    except NameError:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+    variables = to_codes.get_variables(session)
+    locations = all_location_data(session)
+    case = session.query(form_tables["case"])
+    
+    for c in case:
+        data = to_codes.to_code(c.data, variables,
+                                locations, country_config["form_dates"]["case"],
+                                country_config["tables"]["case"])
+        print(data)
 if __name__ == "__main__":
     args = parser.parse_args()
 
@@ -235,6 +261,10 @@ if __name__ == "__main__":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
         import_variables(country_config, engine)
+    if args.action == "to-codes":
+        engine = create_engine(DATABASE_URL)
+        Session = sessionmaker(bind=engine)
+        raw_data_to_variables(country_config, engine)
     if args.action == "all":
         create_db(DATABASE_URL, model.Base, country_config, drop=args.drop_db)
         engine = create_engine(DATABASE_URL)

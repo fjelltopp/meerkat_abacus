@@ -81,7 +81,7 @@ def create_form(fields, data=None, N=500,odk=True):
                 row["deviceid"] = random.sample(data["deviceids"], 1)[0]
             else:
                 print("No deviceids given for an odk form")
-            row["_index"] = i
+            row["index"] = i
             row["meta/instanceID"] = "uuid:" + str(uuid.uuid4())
             now = datetime.datetime.now()
             start = datetime.datetime(now.year, 1, 1)
