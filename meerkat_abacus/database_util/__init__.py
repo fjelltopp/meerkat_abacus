@@ -6,6 +6,30 @@ import csv
 from meerkat_abacus.model import Locations
 
 
+def add_new_data(form, data, session):
+    """
+    adds rows in data that has a uuid not already in the form
+
+    Args:
+    form: form to add to
+    data: data to potentially be added
+    session: db session
+
+    Returns:
+    new_rows: a list of rows added
+    """
+    result = session.query(form.uuid)
+    uuids = []
+    for r in result:
+        uuids.append(r.uuid)
+    new_rows = []
+    for row in data:
+        if row["meta/instanceID"] not in uuids:
+            session.add(form(uuid=row["meta/instanceID"], data=row))
+            new_rows.append(row)
+    session.commit()
+    return new_rows
+
 def all_location_data(session):
     """
     get all location data

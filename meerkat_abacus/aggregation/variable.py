@@ -47,6 +47,8 @@ class Variable():
         elif variable.method == "int_between":
             self.test_type = self.test_int_between
             self.condition = variable.condition.split(",")
+        elif variable.method == "sum":
+            self.test_type = self.test_sum
         elif variable.method == "count_occurence,int_between":
             self.test_type = self.test_count_occurence_int_between
             self.column1, self.column2 = variable.db_column.split(",")
@@ -74,7 +76,9 @@ class Variable():
                 if self.condition == "1":
                     self.cond_list = [1, "1"]
             self.cond_list = [cond.strip() for cond in self.cond_list]
-
+        else:
+            raise NameError("Variable does not have test type {}"
+                            .format(variable.method))
 
     def test(self, row):
         """
@@ -89,12 +93,10 @@ class Variable():
         variable = self.variable
         if variable.secondary_condition:
             sec_column, sec_condition = variable.secondary_condition.split(":")
-            if row[sec_column] != sec_condition:
+            if (sec_column not in row.keys() or
+                row[sec_column] != sec_condition):
                 return 0
-        if self.test_type(row):
-            return self.variable.id
-        else:
-            return 0
+        return int(self.test_type(row))
 
     def test_count_occurence(self, row):
         return row[self.column] in self.cond_list
@@ -152,3 +154,10 @@ class Variable():
                             add = 1
                             break
         return add
+
+    def test_sum(self, row):
+        column = self.column
+        if row[column]:
+            return int(row[column])
+        else:
+            return 0

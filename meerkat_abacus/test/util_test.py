@@ -44,7 +44,7 @@ class DbUtilTest(unittest.TestCase):
                                                odk=True)
         assert "deviceid" in records[0].keys()
         assert "start" in records[0].keys()
-        assert records[-1]["_index"] == 49
+        assert records[-1]["index"] == 49
         
 if __name__ == "__main__":
     unittest.main()

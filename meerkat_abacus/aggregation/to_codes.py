@@ -48,10 +48,11 @@ def to_code(row, variables, locations, date_column, table_name):
     elif locations[clinic_id].parent_location in regions:
         new_record.district = None
         new_record.region = locations[clinic_id].parent_location
-    variable_json = []
+    variable_json = {}
     for v in variables.keys():
         if table_name == variables[v].variable.form:
-            if variables[v].test(row):
-                variable_json.append(v)
+            test_outcome = variables[v].test(row)
+            if test_outcome:
+                variable_json[int(v)] = test_outcome
         new_record.variables = variable_json
     return new_record

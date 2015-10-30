@@ -1,7 +1,8 @@
 import unittest
-from sqlalchemy_utils import database_exists, create_database, drop_database
+from sqlalchemy_utils import database_exists, drop_database
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import JSONB
 
 from meerkat_abacus import manage
 from meerkat_abacus import model
@@ -51,5 +52,27 @@ class DbTest(unittest.TestCase):
         assert len(results.all()) == 500
 
         manage.import_variables(config.country_config, engine)
-        results = session.query(model.AggregationVariables).first()
-        assert results.name == "Total"
+        agg_var = session.query(model.AggregationVariables)
+        assert agg_var.first().name == "Total"
+        manage.raw_data_to_variables()
+
+        agg_var_female = session.query(model.AggregationVariables).filter(
+            model.AggregationVariables.name == "Female").first()
+        results = session.query(model.Data)
+        assert len(results.all()) == 1000
+        number_of_totals = 0
+        number_of_female = 0
+        for row in results:
+            if "1" in row.variables.keys():
+                number_of_totals += 1
+            if str(agg_var_female.id) in row.variables.keys():
+                number_of_female += 1
+        total = session.query(model.form_tables["case"]).filter(
+            model.form_tables["case"].data.contains(
+                {"intro./visit_type": 'new'}))
+        female = session.query(model.form_tables["case"]).filter(
+            model.form_tables["case"].data.contains(
+                {"intro./visit_type": 'new', "pt1./gender": 'female'}))
+        print(len(female.all()), number_of_female)
+        assert number_of_totals == len(total.all())
+        assert number_of_female == len(female.all())

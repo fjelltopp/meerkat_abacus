@@ -12,6 +12,7 @@ from meerkat_abacus.database_util import create_fake_data, get_deviceids
 from meerkat_abacus.database_util import write_csv, read_csv, all_location_data
 
 import meerkat_abacus.model as model
+import meerkat_abacus.task_queue as task_queue
 from meerkat_abacus.model import form_tables
 from meerkat_abacus.config import DATABASE_URL, country_config, form_directory
 from meerkat_abacus.aggregation.variable import Variable
@@ -168,27 +169,17 @@ def import_data(country_config, form_directory, engine):
         session = Session()
     deviceids_case = get_deviceids(session, case_report=True)
     deviceids = get_deviceids(session, case_report=True)
-    table_data_from_csv(country_config["tables"]["case"],
-                        form_tables["case"],
-                        form_directory,
-                        session, engine,
-                        deviceids=deviceids_case)
-    table_data_from_csv(country_config["tables"]["register"],
-                        form_tables["register"],
-                        form_directory,
-                        session, engine,
-                        deviceids=deviceids)
-    table_data_from_csv(country_config["tables"]["alert"],
-                        form_tables["alert"],
-                        form_directory,
-                        session, engine,
-                        deviceids=deviceids)
-    for table in country_config["tables"]["other"]:
-        table_data_from_csv(table,
-                            form_tables["other"][table],
+    for form in form_tables.keys():
+        if form == "case":
+            form_deviceids = deviceids_case
+        else:
+            form_deviceids = deviceids
+        table_data_from_csv(country_config["tables"][form],
+                            form_tables[form],
                             form_directory,
                             session, engine,
-                            deviceids=deviceids )
+                            deviceids=form_deviceids)
+
 
 def import_locations(country_config, engine):
     """
@@ -218,28 +209,14 @@ def import_locations(country_config, engine):
     import_clinics(clinics_file, session, 1)
 
 
-def raw_data_to_variables(country_config,engine):
+def raw_data_to_variables():
     """
-    Turn raw data in forms into structured data with codes
+    Turn raw data in forms into structured data with codes using
+    the code from the celery app.
+    """
+    task_queue.new_data_to_codes()
 
-    Args:
-    country_config
-    engine: db engine
-    """
-    try:
-        session = Session()
-    except NameError:
-        Session = sessionmaker(bind=engine)
-        session = Session()
-    variables = to_codes.get_variables(session)
-    locations = all_location_data(session)
-    case = session.query(form_tables["case"])
-    
-    for c in case:
-        data = to_codes.to_code(c.data, variables,
-                                locations, country_config["form_dates"]["case"],
-                                country_config["tables"]["case"])
-        print(data)
+
 if __name__ == "__main__":
     args = parser.parse_args()
 
@@ -262,9 +239,7 @@ if __name__ == "__main__":
         Session = sessionmaker(bind=engine)
         import_variables(country_config, engine)
     if args.action == "to-codes":
-        engine = create_engine(DATABASE_URL)
-        Session = sessionmaker(bind=engine)
-        raw_data_to_variables(country_config, engine)
+        raw_data_to_variables()
     if args.action == "all":
         create_db(DATABASE_URL, model.Base, country_config, drop=args.drop_db)
         engine = create_engine(DATABASE_URL)
@@ -273,3 +248,4 @@ if __name__ == "__main__":
         fake_data(country_config, form_directory)
         import_data(country_config, form_directory, engine)
         import_variables(country_config, engine)
+        raw_data_to_variables()

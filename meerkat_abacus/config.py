@@ -11,7 +11,6 @@ country_config = {
         "case": "demo_case",
         "alert": "demo_alert",
         "register": "demo_register",
-        "other": []
     },
     "codes_file": "demo_codes",
     "locations": {
@@ -23,8 +22,7 @@ country_config = {
         "case": "pt./visit_date",
         "alert": "end",
         "register": "end",
-        "other": []
-        },
+    },
     "fake_data": {
         "case": {"pt1./age": {"integer": [0, 120]},
                  "pt1./gender": {"one": ["male", "female"]},

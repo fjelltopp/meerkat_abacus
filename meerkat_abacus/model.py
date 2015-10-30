@@ -10,26 +10,16 @@ from meerkat_abacus.config import country_config
 
 Base = declarative_base()
 
-form_tables = {"case": None, "register": None, "alert": None, "other": {}}
+form_tables = {"case": None, "register": None, "alert": None}
 
 for table in country_config["tables"]:
     table_name = country_config["tables"][table]
-    if table != "other":
-        form_tables[table] = type(table_name, (Base, ),
-                                  {"__tablename__": table_name,
-                                   "id": Column(Integer, primary_key=True),
-                                   "uuid": Column(String),
-                                   "data": Column(JSONB)})
-    else:
-        table_names = country_config["tables"][table]
-    
-        for table in table_names:
-            form_tables["other"][table] = (
-                type(table, (Base, ),
-                     {"__tablename__": table,
-                      "id": Column(Integer, primary_key=True),
-                      "uuid": Column(String),
-                      "data": Column(JSONB)}))
+    form_tables[table] = type(table_name, (Base, ),
+                            {"__tablename__": table_name,
+                             "id": Column(Integer, primary_key=True),
+                             "uuid": Column(String),
+                             "data": Column(JSONB)})
+
 
 class Locations(Base):
     __tablename__ = 'locations'
