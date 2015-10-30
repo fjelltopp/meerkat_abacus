@@ -11,12 +11,12 @@ def add_new_data(form, data, session):
     adds rows in data that has a uuid not already in the form
 
     Args:
-    form: form to add to
-    data: data to potentially be added
-    session: db session
+        form: form to add to
+        data: data to potentially be added
+        session: db session
 
     Returns:
-    new_rows: a list of rows added
+        new_rows(list): a list of rows added
     """
     result = session.query(form.uuid)
     uuids = []
@@ -35,10 +35,10 @@ def all_location_data(session):
     get all location data
 
     Args:
-    session: db session
+        session: db session
 
     Returns:
-    (loction_dict,loc_by_deviceid, regions, districts)
+        locations(tuple): (loction_dict,loc_by_deviceid, regions, districts)
     """
     locations = get_locations(session)
     locations_by_deviceid = get_locations_by_deviceid(session)
@@ -52,10 +52,10 @@ def get_regions_districts(session):
     get list of ids for regions and districts
 
     Args:
-    session: db session
+        session: db session
 
     Returns:
-    (regions,districts)
+        regions_district(tuple): (regions,districts)
     """
     locations = get_locations(session)
     regions = []
@@ -74,10 +74,10 @@ def get_locations_by_deviceid(session):
     get a dict with deviceid: locatino:id
 
     Args:
-    session: db session
+        session: db session
 
     Returns:
-    locations : deviceid:location_id
+        locations(dict) : deviceid:location_id
     """
     locations = get_locations(session)
     locations_by_deviceid = {}
@@ -97,10 +97,10 @@ def get_locations(session):
     get a location dict
 
     Args:
-    session: db session
+        session: db session
 
     Returns:
-    locations : id:location dict
+        locations(dict) : id:location dict
     """
     result = session.query(Locations)
     locations = {}
@@ -114,12 +114,12 @@ def get_deviceids(session, case_report=False):
     Returns a list of deviceids
 
     Args:
-    session: SQLAlchemy session
-    case_report: flag to only get deviceids from case 
+        session: SQLAlchemy session
+        case_report: flag to only get deviceids from case 
                  reporing clinics
 
     Returns:
-    list_of_deviceids
+        list_of_deviceids(list): list of deviceids
     """
     if case_report:
         result = session.query(Locations).filter(
@@ -142,8 +142,8 @@ def write_csv(rows, file_path):
     Writes rows to csvfile
 
     Args:
-    rows: list of dicts with data
-    file_path: path to write file to
+        rows: list of dicts with data
+        file_path: path to write file to
     """
     f = open(file_path, "w")
     columns = list(rows[0])
@@ -159,10 +159,10 @@ def read_csv(file_path):
     Reads csvfile and returns list of rows
     
     Args:
-    file_path: path of file to read
+        file_path: path of file to read
 
     Returns:
-    rows: list of rows
+        rows(list): list of rows
     """
     f = open(file_path, "r", encoding='utf-8')
     reader = csv.DictReader(f)

@@ -18,6 +18,9 @@ app.config_from_object(meerkat_abacus.celeryconfig)
 
 @app.task
 def import_new_data():
+    """
+    task to check csv files and insert any new data
+    """
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -32,6 +35,9 @@ def import_new_data():
 
 @app.task
 def new_data_to_codes():
+    """
+    add any new data in form tables to data table
+    """
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()

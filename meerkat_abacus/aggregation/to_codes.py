@@ -11,10 +11,10 @@ def get_variables(session):
     get variables out of db turn them into Variable classes
 
     Args:
-    session: db-session
+        session: db-session
 
     Returns:
-    variables: dict of id:Variable
+        variables(dict): dict of id:Variable
     """
     result = session.query(model.AggregationVariables)
     variables ={}
@@ -28,9 +28,11 @@ def to_code(row, variables, locations, date_column, table_name):
     Takes a row and transforms it into a data row
 
     Args;
-    row: row of raw data
-    variables: dict of variables to check
-    locations: list of locations
+        row: row of raw data
+        variables: dict of variables to check
+        locations: list of locations
+    return:
+        new_record(model.Data): Data record
     """
     locations, locations_by_deviceid, regions, districts = locations
     clinic_id = locations_by_deviceid[row["deviceid"]]

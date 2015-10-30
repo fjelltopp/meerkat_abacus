@@ -1,3 +1,6 @@
+"""
+Celery configuration file
+"""
 BROKER_URL = 'amqp://guest@rabbit//'
 CELERY_RESULT_BACKEND = 'rpc://guest@rabbit//'
 

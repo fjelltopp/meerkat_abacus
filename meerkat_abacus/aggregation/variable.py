@@ -20,7 +20,7 @@ class Variable():
         Store variable dictionary
         
         Args: 
-        variable: model.AggregationVariable object
+            variable: model.AggregationVariable object
         """
         self.variable = variable
         self.column = variable.db_column
@@ -85,10 +85,10 @@ class Variable():
         Tests if current variable is true for row
 
         Args:
-        row: a row from a form
+            row: a row from a form
 
         Returns:
-        id: 0 if false and id if true
+            id(int): 0 if false and 1 (or sum) if true
         """
         variable = self.variable
         if variable.secondary_condition:

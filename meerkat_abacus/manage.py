@@ -31,6 +31,9 @@ parser.add_argument("action", choices=["create-db",
                     help="Choose action" )
 parser.add_argument("--drop-db", action="store_true",
                     help="Use flag to drop DB for create-db or all")
+parser.add_argument("--leave-if-data", "-l", action="store_true",
+                    help="A flag for all action, if there is data "
+                    "in data table do nothing")
 
 
 def create_db(url, base, country_config, drop=False):
@@ -38,13 +41,13 @@ def create_db(url, base, country_config, drop=False):
     The function creates and sets up the datbase.
 
     Args:
-    base: An SQLAlchmey declarative base with the db schema
-    url : the database_url
-    country_config: A contry config dictionary
-    drop: Flag to drop the database before setting it up
+        base: An SQLAlchmey declarative base with the db schema
+        url : the database_url
+        country_config: A contry config dictionary
+        drop: Flag to drop the database before setting it up
 
     Returns:
-    True
+        Boolean: True
     """
     if drop and database_exists(url):
         drop_database(url)
@@ -60,8 +63,8 @@ def fake_data(country_config, form_directory):
     Creates csv files with fake data
 
     Args:
-    country_config: A country configuration object
-    form_directory: the directory to store the from data
+        country_config: A country configuration object
+        form_directory: the directory to store the from data
     """
     session = Session()
     deviceids = get_deviceids(session, case_report=True)
@@ -96,14 +99,14 @@ def table_data_from_csv(filename, table, directory, session,
     Adds data to table with name
 
     Args:
-    filename: name of table
-    table: table class
-    directory: directory where the csv file is
-    engine: SqlAlchemy engine
-    session: SqlAlchemy session
-    deviceids: if we should only add rows with a one of the deviceids
-    table_name: name of table if different from filename
-    form: if this is a form table
+        filename: name of table
+        table: table class
+        directory: directory where the csv file is
+        engine: SqlAlchemy engine
+        session: SqlAlchemy session
+        deviceids: if we should only add rows with a one of the deviceids
+        table_name: name of table if different from filename
+        form: if this is a form table
     """
     session.query(table).delete()
     if not table_name:
@@ -137,8 +140,8 @@ def import_variables(country_config, engine):
     from csv files into the database.
 
     Args:
-    country_config: configuration
-    form_directory: directory to find the forms
+        country_config: configuration
+        form_directory: directory to find the forms
     """
     try:
         session = Session()
@@ -159,8 +162,8 @@ def import_data(country_config, form_directory, engine):
     from csv files into the database.
 
     Args:
-    country_config: configuration
-    form_directory: directory to find the forms
+        country_config: configuration
+        form_directory: directory to find the forms
     """
     try:
         session = Session()
@@ -186,8 +189,8 @@ def import_locations(country_config, engine):
     Imports all locations from csv-files
 
     Args:
-    country_config: A country configuration object
-    engine: SQLAlchemy connection engine
+        country_config: A country configuration object
+        engine: SQLAlchemy connection engine
     """
     try:
         session = Session()
@@ -241,11 +244,20 @@ if __name__ == "__main__":
     if args.action == "to-codes":
         raw_data_to_variables()
     if args.action == "all":
-        create_db(DATABASE_URL, model.Base, country_config, drop=args.drop_db)
-        engine = create_engine(DATABASE_URL)
-        Session = sessionmaker(bind=engine)
-        import_locations(country_config, engine)
-        fake_data(country_config, form_directory)
-        import_data(country_config, form_directory, engine)
-        import_variables(country_config, engine)
-        raw_data_to_variables()
+        set_up = True
+        if args.leave_if_data:
+            if database_exists(DATABASE_URL):
+                engine = create_engine(DATABASE_URL)
+                Session = sessionmaker(bind=engine)
+                session = Session()
+                if len(session.query(model.Data).all()) > 0:
+                    set_up = False
+        if set_up:
+            create_db(DATABASE_URL, model.Base, country_config, drop=args.drop_db)
+            engine = create_engine(DATABASE_URL)
+            Session = sessionmaker(bind=engine)
+            import_locations(country_config, engine)
+            fake_data(country_config, form_directory)
+            import_data(country_config, form_directory, engine)
+            import_variables(country_config, engine)
+            raw_data_to_variables()

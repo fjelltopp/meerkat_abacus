@@ -9,9 +9,9 @@ def import_clinics(csv_file, session, country_id):
     import fistricts from csv
 
     Args:
-    csv_file: path to csv file with regions
-    session: SQLAlchemy session
-    country_id: id of the country
+        csv_file: path to csv file with regions
+        session: SQLAlchemy session
+        country_id: id of the country
     """
 
     result = session.query(Locations)\
@@ -66,9 +66,9 @@ def import_regions(csv_file, session, parent_id):
     import regions from csv
 
     Args:
-    csv_file: path to csv file with regions
-    session: SQLAlchemy session
-    parent_id: The id of the country
+        csv_file: path to csv file with regions
+        session: SQLAlchemy session
+        parent_id: The id of the country
     """
     f = open(csv_file)
     csv_regions = csv.DictReader(f)
@@ -84,8 +84,8 @@ def import_districts(csv_file, session):
     import fistricts from csv
 
     Args:
-    csv_file: path to csv file with regions
-    session: SQLAlchemy session
+        csv_file: path to csv file with regions
+        session: SQLAlchemy session
     """
     regions = {}
     for instance in session.query(Locations):
