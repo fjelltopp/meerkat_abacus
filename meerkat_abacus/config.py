@@ -3,7 +3,7 @@ Configuration for meerkat_abacus
 """
 DATABASE_URL = 'postgresql+psycopg2://postgres:postgres@db/meerkat_db'
 
-form_directory = "../data/forms/"
+form_directory = "data/forms/"
 
 country_config = {
     "country_name": "Demo",

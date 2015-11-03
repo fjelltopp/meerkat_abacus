@@ -1,10 +1,11 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, DDL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
+from sqlalchemy.event import listen
 
 from meerkat_abacus.config import country_config
 
@@ -50,6 +51,9 @@ class Data(Base):
     clinic_type = Column(String)
     variables = Column(JSONB, index=True)
     geolocation = Column(String)
+create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
+listen(Data.__table__, 'after_create', create_index)
+
 
 class AggregationVariables(Base):
     __tablename__ = 'aggregation_variables'

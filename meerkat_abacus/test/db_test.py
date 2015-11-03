@@ -44,6 +44,8 @@ class DbTest(unittest.TestCase):
         manage.import_data(config.country_config,
                            config.form_directory,
                            engine)
+        manage.fake_data(config.country_config,
+                         config.form_directory, engine, N=500)
         results = session.query(manage.form_tables["case"])
         assert len(results.all()) == 500
         results = session.query(manage.form_tables["alert"])

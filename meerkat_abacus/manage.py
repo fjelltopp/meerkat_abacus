@@ -18,7 +18,7 @@ from meerkat_abacus.config import DATABASE_URL, country_config, form_directory
 from meerkat_abacus.aggregation.variable import Variable
 import meerkat_abacus.aggregation.to_codes as to_codes
 
-data_directory = os.path.dirname(os.path.realpath(__file__)) + "/../data/"
+data_directory = os.path.dirname(os.path.realpath(__file__)) + "/data/"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("action", choices=["create-db",
@@ -32,6 +32,9 @@ parser.add_argument("action", choices=["create-db",
 parser.add_argument("--drop-db", action="store_true",
                     help="Use flag to drop DB for create-db or all")
 parser.add_argument("--leave-if-data", "-l", action="store_true",
+                    help="A flag for all action, if there is data "
+                    "in data table do nothing")
+parser.add_argument("-N", type=int, default=500,
                     help="A flag for all action, if there is data "
                     "in data table do nothing")
 
@@ -58,7 +61,7 @@ def create_db(url, base, country_config, drop=False):
     return True
 
 
-def fake_data(country_config, form_directory):
+def fake_data(country_config, form_directory, engine, N=500):
     """
     Creates csv files with fake data
 
@@ -66,13 +69,17 @@ def fake_data(country_config, form_directory):
         country_config: A country configuration object
         form_directory: the directory to store the from data
     """
-    session = Session()
+    try:
+        session = Session()
+    except NameError:
+        Session = sessionmaker(bind=engine)
+        session = Session()
     deviceids = get_deviceids(session, case_report=True)
     case = create_fake_data.create_form(country_config["fake_data"]["case"],
-                                        data={"deviceids": deviceids}, N=500)
+                                        data={"deviceids": deviceids}, N=N)
     register = create_fake_data.create_form(
         country_config["fake_data"]["register"],
-        data={"deviceids": deviceids}, N=500)
+        data={"deviceids": deviceids}, N=N)
     form_directory = (os.path.dirname(os.path.realpath(__file__))
                       + "/" + form_directory)
     alert_ids = []
@@ -81,7 +88,7 @@ def fake_data(country_config, form_directory):
             c["meta/instanceID"][-country_config["alert_id_length"]:])
     alert = create_fake_data.create_form(
         country_config["fake_data"]["alert"],
-        data={"deviceids": deviceids, "uuids": alert_ids}, N=500)
+        data={"deviceids": deviceids, "uuids": alert_ids}, N=N)
     case_file_name = form_directory + country_config["tables"]["case"] + ".csv"
     register_file_name = (form_directory +
                           country_config["tables"]["register"] + ".csv")
@@ -173,7 +180,7 @@ def import_variables(country_config, engine):
         
     table_data_from_csv(country_config["codes_file"],
                         model.AggregationVariables,
-                        "../data/",
+                        "data/",
                         session, engine,
                         table_name="aggregation_variables",
                         form=False,
@@ -254,7 +261,37 @@ def raw_data_to_variables(engine):
     engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
     task_queue.new_data_to_codes()
 
+def set_up_everything(url, leave_if_data, drop_db, N):
+    """
+    Set up everything by calling all the other functions
 
+    Args:
+        url: db url
+        leave_if_data: do nothing if data is there
+        drop_db: shall db be dropped before created
+        N: number of data points to create
+    """
+    set_up = True
+    if leave_if_data:
+        if database_exists(url):
+            engine = create_engine(url)
+            Session = sessionmaker(bind=engine)
+            session = Session()
+            if len(session.query(model.Data).all()) > 0:
+                set_up = False
+    if set_up:
+        create_db(url, model.Base, country_config, drop=drop_db)
+        engine = create_engine(url)
+        Session = sessionmaker(bind=engine)
+
+        import_locations(country_config, engine)
+        fake_data(country_config, form_directory, engine, N=N)
+        import_data(country_config, form_directory, engine)
+        import_variables(country_config, engine)
+        raw_data_to_variables(engine)
+    
+
+    
 if __name__ == "__main__":
     args = parser.parse_args()
 
@@ -267,7 +304,7 @@ if __name__ == "__main__":
     if args.action == "fake-data":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        fake_data(country_config, form_directory)
+        fake_data(country_config, form_directory, engine, N=args.N)
     if args.action == "import-data":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
@@ -281,20 +318,5 @@ if __name__ == "__main__":
         Session = sessionmaker(bind=engine)
         raw_data_to_variables(engine)
     if args.action == "all":
-        set_up = True
-        if args.leave_if_data:
-            if database_exists(DATABASE_URL):
-                engine = create_engine(DATABASE_URL)
-                Session = sessionmaker(bind=engine)
-                session = Session()
-                if len(session.query(model.Data).all()) > 0:
-                    set_up = False
-        if set_up:
-            create_db(DATABASE_URL, model.Base, country_config, drop=args.drop_db)
-            engine = create_engine(DATABASE_URL)
-            Session = sessionmaker(bind=engine)
-            import_locations(country_config, engine)
-            fake_data(country_config, form_directory)
-            import_data(country_config, form_directory, engine)
-            import_variables(country_config, engine)
-            raw_data_to_variables(engine)
+        set_up_everything(DATABASE_URL,args.leave_if_data,
+                          args.drop_db, args.N)
