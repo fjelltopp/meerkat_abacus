@@ -94,7 +94,8 @@ def fake_data(country_config, form_directory):
 
 
 def table_data_from_csv(filename, table, directory, session,
-                        engine, deviceids=None, table_name=None, form=True):
+                        engine, deviceids=None, table_name=None, form=True,
+                        row_function=None):
     """
     Adds data to table with name
 
@@ -107,6 +108,7 @@ def table_data_from_csv(filename, table, directory, session,
         deviceids: if we should only add rows with a one of the deviceids
         table_name: name of table if different from filename
         form: if this is a form table
+        row_function: function to appy to the rows before inserting
     """
     session.query(table).delete()
     if not table_name:
@@ -120,20 +122,39 @@ def table_data_from_csv(filename, table, directory, session,
     rows = read_csv(os.path.dirname(os.path.realpath(__file__)) + "/" +
                     directory + filename + ".csv")
     for row in rows:
+
+        if row_function:
+            insert_row = row_function(row)
+        else:
+            insert_row = row
         if form:
             if deviceids:
-                if row["deviceid"] in deviceids:
-                    session.add(table(**{"data": row,
-                                         "uuid": row["meta/instanceID"]}))
+                if insert_row["deviceid"] in deviceids:
+                    session.add(table(**{"data": insert_row,
+                                         "uuid": insert_row["meta/instanceID"]
+                                     }))
             else:
-                session.add(table(**{"data": row,
-                                     "uuid": row["meta/instanceID"]}))
+                session.add(table(**{"data": insert_row,
+                                     "uuid": insert_row["meta/instanceID"]}))
         else:
-            row.pop("")
-            session.add(table(**row))
+            insert_row.pop("")
+            session.add(table(**insert_row))
         session.commit()
 
-
+def category_to_list(row):
+    """
+    Transforms category to list in row
+    
+    Args:
+        row: row of data
+    Reutrns:
+        row: modified row
+    """
+    if "," in row["category"]:
+        row["category"] = row["category"].split(",")
+    else:
+        row["category"] = [row["category"]]
+    return row
 def import_variables(country_config, engine):
     """
     Delete current data and then import form data
@@ -148,12 +169,15 @@ def import_variables(country_config, engine):
     except NameError:
         Session = sessionmaker(bind=engine)
         session = Session()
+
+        
     table_data_from_csv(country_config["codes_file"],
                         model.AggregationVariables,
                         "../data/",
                         session, engine,
                         table_name="aggregation_variables",
-                        form=False)
+                        form=False,
+                        row_function=category_to_list)
 
 
 def import_data(country_config, form_directory, engine):

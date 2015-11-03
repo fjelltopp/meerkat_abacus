@@ -60,7 +60,7 @@ class AggregationVariables(Base):
     method = Column(String)
     location = Column(String)
     condition = Column(String)
-    category = Column(String)
+    category = Column(JSONB)#String)
     daily = Column(Integer)
     classification = Column(String)
     alert = Column(Integer)
