@@ -45,6 +45,7 @@ class Data(Base):
     date = Column(DateTime, index=True)
     country = Column(Integer, index=True)
     region = Column(Integer, index=True)
+    district = Column(Integer, index=True)
     clinic = Column(Integer, index=True)
     clinic_type = Column(String)
     variables = Column(JSONB, index=True)

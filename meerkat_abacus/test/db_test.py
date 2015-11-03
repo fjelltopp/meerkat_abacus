@@ -54,7 +54,7 @@ class DbTest(unittest.TestCase):
         manage.import_variables(config.country_config, engine)
         agg_var = session.query(model.AggregationVariables)
         assert agg_var.first().name == "Total"
-        manage.raw_data_to_variables()
+        manage.raw_data_to_variables(engine)
 
         agg_var_female = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.name == "Female").first()

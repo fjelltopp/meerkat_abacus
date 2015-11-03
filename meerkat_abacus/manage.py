@@ -236,11 +236,22 @@ def import_locations(country_config, engine):
     import_clinics(clinics_file, session, 1)
 
 
-def raw_data_to_variables():
+def raw_data_to_variables(engine):
     """
     Turn raw data in forms into structured data with codes using
     the code from the celery app.
+
+    Args:
+        engine: db engine
     """
+    try:
+        session = Session()
+    except NameError:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+    session.query(model.Data).delete()
+    engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
     task_queue.new_data_to_codes()
 
 
@@ -266,7 +277,9 @@ if __name__ == "__main__":
         Session = sessionmaker(bind=engine)
         import_variables(country_config, engine)
     if args.action == "to-codes":
-        raw_data_to_variables()
+        engine = create_engine(DATABASE_URL)
+        Session = sessionmaker(bind=engine)
+        raw_data_to_variables(engine)
     if args.action == "all":
         set_up = True
         if args.leave_if_data:
@@ -284,4 +297,4 @@ if __name__ == "__main__":
             fake_data(country_config, form_directory)
             import_data(country_config, form_directory, engine)
             import_variables(country_config, engine)
-            raw_data_to_variables()
+            raw_data_to_variables(engine)
