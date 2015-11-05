@@ -108,10 +108,10 @@ class Aggregation(Base):
 class Alerts(Base):
     __tablename__ = 'alerts'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
     date = Column(DateTime)
-    reason = Column(String)
-    location = Column(Integer)
+    reason = Column(Integer)
+    clinic = Column(Integer)
     uuids = Column(String)
 
 class AlertNotifications(Base):
@@ -121,4 +121,3 @@ class AlertNotifications(Base):
     alert_id = Column(String)
     date = Column(DateTime)
     receivers = Column(String)
-

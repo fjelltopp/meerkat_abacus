@@ -46,6 +46,7 @@ class TocodeTest(unittest.TestCase):
                 secondary_condition="",
                 method="count_occurence",
                 db_column="column1",
+                alert=1,
                 condition="A",
                 form="form1"),
             model.AggregationVariables(
@@ -77,19 +78,33 @@ class TocodeTest(unittest.TestCase):
                 "date": "2015-10-25", "deviceid": 2, "meta/instanceID": "a"}
         row3 = {"index": 1, "column1": "A", "column2": "C", "column3": "7",
                 "date": "2015-10-25", "deviceid": 2, "meta/instanceID": "a"}
-        result = to_code(row1, variables, all_locations, "date", "form1")
+        result, alert = to_code(row1, variables, all_locations,
+                                "date", "form1")
         assert result.variables == {1: 1, 2: 1, 3: 1, 4: 1}
         assert result.country == 1
         assert result.region == 2
         assert result.district == 4
+        assert result.clinic == 6
         assert result.date == datetime.datetime(2015, 10, 25)
-        result = to_code(row2, variables, all_locations, "date", "form1")
+        assert alert.uuids == "a"
+        assert alert.clinic == 6
+        assert alert.reason == 2
+        assert alert.date == datetime.datetime(2015, 10, 25)
+        result, alert = to_code(row2, variables, all_locations,
+                                "date", "form1")
         assert result.variables == {1: 1}
         assert result.country == 1
         assert result.region == 3
         assert result.district == 5
-        result = to_code(row3, variables, all_locations, "date", "form1")
+        assert alert is None
+        result, alert = to_code(row3, variables, all_locations,
+                                "date", "form1")
         assert result.variables == {1: 1, 2: 1, 4: 1}
+        assert alert.uuids == "a"
+        assert alert.clinic == 7
+        assert alert.reason == 2
+        assert alert.date == datetime.datetime(2015, 10, 25)
+
 
 if __name__ == "__main__":
     unittest.main()
