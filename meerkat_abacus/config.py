@@ -13,6 +13,7 @@ country_config = {
         "register": "demo_register",
     },
     "codes_file": "demo_codes",
+    "links_file": "demo_links",
     "locations": {
         "clinics": "demo_clinics.csv",
         "districts": "demo_districts.csv",
@@ -46,8 +47,13 @@ country_config = {
         "register": {"consult./consultations": {"integer": [10, 20]},
                      "consult./consultations_refugee": {"integer": [5, 15]}},
         "alert": {"pt./alert_id": {"data": "uuids"},
-                  "alert_labs./return_lab": {"one": ["yes", "no", "unsure"]}},
+                  "alert_labs./return_lab": {"one": ["yes", "no", "unsure"]},
+                  "pt./checklist": {"multiple": ["referral",
+                                                 "case_management",
+                                                 "contact_tracing",
+                                                 "return_lab"]}},
         "other": []
     },
+    
     "alert_id_length": 6,
 }

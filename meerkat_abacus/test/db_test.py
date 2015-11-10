@@ -3,6 +3,8 @@ from sqlalchemy_utils import database_exists, drop_database
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import JSONB
+from dateutil.parser import parse
+from datetime import datetime
 
 from meerkat_abacus import manage
 from meerkat_abacus import model
@@ -56,8 +58,13 @@ class DbTest(unittest.TestCase):
         manage.import_variables(config.country_config, engine)
         agg_var = session.query(model.AggregationVariables)
         assert agg_var.first().name == "Total"
-        manage.raw_data_to_variables(engine)
 
+        manage.import_links(config.country_config, engine)
+        link_defs = session.query(model.LinkDefinitions)
+        assert link_defs.first().name == "Alert Investigation"
+
+
+        manage.raw_data_to_variables(engine)
         agg_var_female = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.name == "Female").first()
         results = session.query(model.Data)
@@ -75,6 +82,56 @@ class DbTest(unittest.TestCase):
         female = session.query(model.form_tables["case"]).filter(
             model.form_tables["case"].data.contains(
                 {"intro./visit_type": 'new', "pt1./gender": 'female'}))
-        print(len(female.all()), number_of_female)
         assert number_of_totals == len(total.all())
         assert number_of_female == len(female.all())
+        
+        manage.add_links(engine)
+        link_query = session.query(model.Links)
+        links = {}
+        for link in link_query:
+            links[link.link_value] = link
+        
+        alert_query = session.query(model.Alerts)
+        alerts = {}
+        for a in alert_query:
+            alerts[a.id] = a
+        alert_inv_query = session.query(model.form_tables["alert"])
+        alert_invs = {}
+        for a in alert_inv_query:
+            alert_invs.setdefault(a.data["pt./alert_id"], [])
+            alert_invs[a.data["pt./alert_id"]].append(a)
+
+        for alert_id in alerts.keys():
+            if alert_id in alert_invs.keys():
+                assert alert_id in links.keys()
+                if len(alert_invs[alert_id]) == 1:
+                    assert(links[alert_id].to_date
+                           == parse(alert_invs[alert_id][0].data["end"]))
+                    labs = (alert_invs[alert_id][0]
+                            .data["alert_labs./return_lab"])
+                    if labs == "unsure":
+                        assert ["Ongoing"] == links[alert_id].data["Status"]
+                    elif labs == "yes":
+                        assert ["Confirmed"] == links[alert_id].data["Status"]
+                    elif labs == "no":
+                        assert ["Discarded"] == links[alert_id].data["Status"]
+                else:
+                    investigations = alert_invs[alert_id]
+                    largest_date = datetime(2015, 1, 1)
+                    latest_inv = None
+                    for inv in investigations:
+                        if parse(inv.data["end"]) > largest_date:
+                            largest_date = parse(inv.data["end"])
+                            largest_inv = inv
+                    assert links[alert_id].to_date == largest_date
+                    labs = (largest_inv
+                            .data["alert_labs./return_lab"])
+                    if labs == "unsure":
+                        assert ["Ongoing"] == links[alert_id].data["Status"]
+                    elif labs == "yes":
+                        assert ["Confirmed"] == links[alert_id].data["Status"]
+                    elif labs == "no":
+                        assert ["Discarded"] == links[alert_id].data["Status"]
+
+            else:
+                assert alert_id not in links.keys()

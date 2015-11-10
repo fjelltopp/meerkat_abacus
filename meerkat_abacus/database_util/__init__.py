@@ -3,7 +3,24 @@ Various utility functions
 """
 import csv
 
-from meerkat_abacus.model import Locations
+from meerkat_abacus.model import Locations, LinkDefinitions
+
+def get_link_definitions(session):
+    """
+    get a links dict
+
+    Args:
+        session: db session
+
+    Returns:
+        links(dict) : id:link
+    """
+    result = session.query(LinkDefinitions)
+    links = {}
+    for row in result:
+        links[row.id] = row
+    return links
+    
 
 
 def add_new_data(form, data, session):

@@ -93,17 +93,46 @@ class AggregationVariables(Base):
         else:
             return daily
 
-class Aggregation(Base):
-    __tablename__ = 'aggregation'
+class LinkDefinitions(Base):
+    __tablename__ = 'link_definitions'
 
     id = Column(Integer, primary_key=True)
-    start_time = Column(DateTime)
-    interval = Column(Integer)
-    variable = Column(Integer)
-    location = Column(Integer)
-    value = Column(Float)
-    classification = Column(String)
-    geo_location = Column(String)
+    name = Column(String)
+    from_table = Column(String, index=True)
+    from_column = Column(String)
+    from_date = Column(String)
+    to_table = Column(String, index=True)
+    to_column = Column(String)
+    to_date = Column(String)
+    to_id = Column(String)
+    which = Column(String)
+    data = Column(JSONB)
+
+    
+class Links(Base):
+    __tablename__ = 'links'
+    
+    id = Column(Integer, primary_key=True)
+    link_value = Column(String)
+    from_date = Column(DateTime, index=True)
+    to_date = Column(DateTime, index=True)
+    to_id = Column(String)
+    link_def = Column(Integer)
+    data = Column(JSONB)
+create_index = DDL("CREATE INDEX links_gin ON links USING gin(data);")
+listen(Links.__table__, 'after_create', create_index)
+
+# class Aggregation(Base):
+#     __tablename__ = 'aggregation'
+
+#     id = Column(Integer, primary_key=True)
+#     start_time = Column(DateTime)
+#     interval = Column(Integer)
+#     variable = Column(Integer)
+#     location = Column(Integer)
+#     value = Column(Float)
+#     classification = Column(String)
+#     geo_location = Column(String)
 
 class Alerts(Base):
     __tablename__ = 'alerts'
@@ -114,6 +143,7 @@ class Alerts(Base):
     clinic = Column(Integer)
     uuids = Column(String)
 
+    
 class AlertNotifications(Base):
     __tablename__ = 'alert_notifications'
 

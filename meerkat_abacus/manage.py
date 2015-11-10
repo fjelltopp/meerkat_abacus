@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import os
+import importlib
 
 from meerkat_abacus.database_util.import_locations import import_regions
 from meerkat_abacus.database_util.import_locations import import_clinics
@@ -26,7 +27,9 @@ parser.add_argument("action", choices=["create-db",
                                        "fake-data",
                                        "import-data",
                                        "import-variables",
+                                       "import-links",
                                        "to-codes",
+                                       "add-links",
                                        "all"],
                     help="Choose action" )
 parser.add_argument("--drop-db", action="store_true",
@@ -148,6 +151,7 @@ def table_data_from_csv(filename, table, directory, session,
             session.add(table(**insert_row))
         session.commit()
 
+        
 def category_to_list(row):
     """
     Transforms category to list in row
@@ -162,6 +166,8 @@ def category_to_list(row):
     else:
         row["category"] = [row["category"]]
     return row
+
+
 def import_variables(country_config, engine):
     """
     Delete current data and then import form data
@@ -214,7 +220,27 @@ def import_data(country_config, form_directory, engine):
                             session, engine,
                             deviceids=form_deviceids)
 
+        
+def import_links(country_config, engine):
+    """
+    Imports all links from links-file
 
+    Args:
+        country_config: A country configuration object
+        engine: SQLAlchemy connection engine
+    """
+    try:
+        session = Session()
+    except NameError:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+    session.query(model.LinkDefinitions).delete()
+    engine.execute("ALTER SEQUENCE link_definitions_id_seq RESTART WITH 1;")
+    link_config = importlib.import_module("meerkat_abacus."+
+                             country_config["links_file"] )
+    for link in link_config.links:
+        session.add(model.LinkDefinitions(**link))
+    session.commit()
 def import_locations(country_config, engine):
     """
     Imports all locations from csv-files
@@ -259,8 +285,28 @@ def raw_data_to_variables(engine):
 
     session.query(model.Data).delete()
     engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
+    session.commit()
     task_queue.new_data_to_codes()
+def add_links(engine):
+    """
+    Turn raw data in forms into structured data with codes using
+    the code from the celery app.
 
+    Args:
+        engine: db engine
+    """
+    try:
+        session = Session()
+    except NameError:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+    session.query(model.Links).delete()
+    engine.execute("ALTER SEQUENCE links_id_seq RESTART WITH 1;")
+    session.commit()
+    task_queue.add_new_links()
+
+    
 def set_up_everything(url, leave_if_data, drop_db, N):
     """
     Set up everything by calling all the other functions
@@ -288,8 +334,9 @@ def set_up_everything(url, leave_if_data, drop_db, N):
         fake_data(country_config, form_directory, engine, N=N)
         import_data(country_config, form_directory, engine)
         import_variables(country_config, engine)
+        import_links(country_config, engine)
         raw_data_to_variables(engine)
-    
+        add_links(engine)
 
     
 if __name__ == "__main__":
@@ -313,10 +360,18 @@ if __name__ == "__main__":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
         import_variables(country_config, engine)
+    if args.action == "import-links":
+        engine = create_engine(DATABASE_URL)
+        Session = sessionmaker(bind=engine)
+        import_links(country_config, engine)
     if args.action == "to-codes":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
         raw_data_to_variables(engine)
+    if args.action == "add-links":
+        engine = create_engine(DATABASE_URL)
+        Session = sessionmaker(bind=engine)
+        add_links(engine)
     if args.action == "all":
         set_up_everything(DATABASE_URL,args.leave_if_data,
                           args.drop_db, args.N)
