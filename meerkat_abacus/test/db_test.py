@@ -43,11 +43,12 @@ class DbTest(unittest.TestCase):
                 assert r.parent_location == 2
             if r.id == 7:
                 assert r.deviceid == "1,6"
+
+        manage.fake_data(config.country_config,
+                         config.form_directory, engine, N=500)
         manage.import_data(config.country_config,
                            config.form_directory,
                            engine)
-        manage.fake_data(config.country_config,
-                         config.form_directory, engine, N=500)
         results = session.query(manage.form_tables["case"])
         assert len(results.all()) == 500
         results = session.query(manage.form_tables["alert"])
