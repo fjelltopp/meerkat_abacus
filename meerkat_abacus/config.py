@@ -4,7 +4,7 @@ Configuration for meerkat_abacus
 import os
 
 DATABASE_URL = 'postgresql+psycopg2://postgres:postgres@db/meerkat_db'
-new_db_config = os.environ.get("MEERKAT_ABACUS_DB:URL")
+new_db_config = os.environ.get("MEERKAT_ABACUS_DB_URL")
 if new_db_config:
     DATABASE_URL = new_db_config
 
