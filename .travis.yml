@@ -1,0 +1,18 @@
+language: python
+python:
+- '3.5'
+env:
+  - MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
+addons:
+  postgresql: "9.4"
+
+services:
+  - postgresql
+
+install:
+- pip install .
+- pip install -r requirements.txt
+
+script: nosetests
+
+

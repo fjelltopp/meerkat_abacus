@@ -1,7 +1,12 @@
 """
 Configuration for meerkat_abacus
 """
+import os
+
 DATABASE_URL = 'postgresql+psycopg2://postgres:postgres@db/meerkat_db'
+new_db_config = os.environ.get("MEERKAT_ABACUS_DB")
+if new_db_config:
+    DATABASE_URL = new_db_config
 
 form_directory = "data/forms/"
 
