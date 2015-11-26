@@ -162,7 +162,7 @@ def category_to_list(row):
         row: modified row
     """
     if "," in row["category"]:
-        row["category"] = row["category"].split(",")
+        row["category"] = [c.strip() for c in row["category"].split(",")]
     else:
         row["category"] = [row["category"]]
     return row
