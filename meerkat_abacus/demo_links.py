@@ -9,7 +9,7 @@ links = [
      "to_date": "end",
      "which": "last",
      "data": {
-         "Status": {
+         "status": {
              "Ongoing": {"column": "alert_labs./return_lab",
                          "condition": ["", "unsure"]},
              "Confirmed": {"column": "alert_labs./return_lab",

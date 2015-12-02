@@ -39,17 +39,17 @@ class LinkTest(unittest.TestCase):
         new_data = sort_data(data_def, row1)
         assert("Status" in new_data.keys())
         assert("checklist" in new_data.keys())
-        assert(new_data["Status"] == ["Confirmed"])
+        assert(new_data["Status"] == "Confirmed")
         assert("Referral" in new_data["checklist"])
         assert("Case Managment" in new_data["checklist"])
         row2 = {"alert_labs./return_lab": "unsure",
                 "pt./checklist": "referral,case_management"}
         new_data = sort_data(data_def, row2)
-        assert(new_data["Status"] == ["Ongoing"])
+        assert(new_data["Status"] == "Ongoing")
         row2 = {"alert_labs./return_lab": "",
                 "pt./checklist": "referral,case_management"}
         new_data = sort_data(data_def, row2)
-        assert(new_data["Status"] == ["Ongoing"])
+        assert(new_data["Status"] == "Ongoing")
         
 if __name__ == "__main__":
     unittest.main()

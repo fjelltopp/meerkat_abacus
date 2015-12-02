@@ -141,6 +141,8 @@ def sort_data(data_def, row):
             else:
                 if value_dict["condition"] in row[value_dict["column"]].split(","):
                     data[key].append(value)
+        if len(data[key]) == 1:
+            data[key] = data[key][0]
     return data
 
                     

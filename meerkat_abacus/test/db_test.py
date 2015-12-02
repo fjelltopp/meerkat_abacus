@@ -111,11 +111,11 @@ class DbTest(unittest.TestCase):
                     labs = (alert_invs[alert_id][0]
                             .data["alert_labs./return_lab"])
                     if labs == "unsure":
-                        assert ["Ongoing"] == links[alert_id].data["Status"]
+                        assert "Ongoing" == links[alert_id].data["status"]
                     elif labs == "yes":
-                        assert ["Confirmed"] == links[alert_id].data["Status"]
+                        assert "Confirmed" == links[alert_id].data["status"]
                     elif labs == "no":
-                        assert ["Discarded"] == links[alert_id].data["Status"]
+                        assert "Discarded" == links[alert_id].data["status"]
                 else:
                     investigations = alert_invs[alert_id]
                     largest_date = datetime(2015, 1, 1)
@@ -128,11 +128,11 @@ class DbTest(unittest.TestCase):
                     labs = (largest_inv
                             .data["alert_labs./return_lab"])
                     if labs == "unsure":
-                        assert ["Ongoing"] == links[alert_id].data["Status"]
+                        assert "Ongoing" == links[alert_id].data["status"]
                     elif labs == "yes":
-                        assert ["Confirmed"] == links[alert_id].data["Status"]
+                        assert "Confirmed" == links[alert_id].data["status"]
                     elif labs == "no":
-                        assert ["Discarded"] == links[alert_id].data["Status"]
+                        assert "Discarded" == links[alert_id].data["status"]
 
             else:
                 assert alert_id not in links.keys()
