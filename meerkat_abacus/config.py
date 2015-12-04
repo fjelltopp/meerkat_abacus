@@ -19,6 +19,7 @@ country_config = {
     },
     "codes_file": "demo_codes",
     "links_file": "demo_links",
+    "epi_week": "international",
     "locations": {
         "clinics": "demo_clinics.csv",
         "districts": "demo_districts.csv",

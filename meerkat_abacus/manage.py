@@ -6,11 +6,12 @@ from sqlalchemy_utils import database_exists, create_database, drop_database
 import os
 import importlib
 
-from meerkat_abacus.database_util.import_locations import import_regions
-from meerkat_abacus.database_util.import_locations import import_clinics
-from meerkat_abacus.database_util.import_locations import import_districts
-from meerkat_abacus.database_util import create_fake_data, get_deviceids
-from meerkat_abacus.database_util import write_csv, read_csv, all_location_data
+from meerkat_abacus.util.import_locations import import_regions
+from meerkat_abacus.util.import_locations import import_clinics
+from meerkat_abacus.util.import_locations import import_districts
+from meerkat_abacus.util import create_fake_data, get_deviceids
+from meerkat_abacus.util import write_csv, read_csv, all_location_data
+
 
 import meerkat_abacus.model as model
 import meerkat_abacus.task_queue as task_queue

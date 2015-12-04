@@ -12,7 +12,7 @@ from meerkat_abacus.config import country_config, form_directory, DATABASE_URL
 import meerkat_abacus.celeryconfig
 from meerkat_abacus import model
 import meerkat_abacus.aggregation.to_codes as to_codes
-from meerkat_abacus import database_util
+from meerkat_abacus import util
 app = Celery()
 app.config_from_object(meerkat_abacus.celeryconfig)
 
@@ -28,8 +28,8 @@ def import_new_data():
     for form in model.form_tables.keys():
         file_path = (os.path.dirname(os.path.realpath(__file__)) + "/" +
                      form_directory + country_config["tables"][form] + ".csv")
-        data = database_util.read_csv(file_path)
-        new = database_util.add_new_data(model.form_tables[form],
+        data = util.read_csv(file_path)
+        new = util.add_new_data(model.form_tables[form],
                                          data, session)
     return True
 
@@ -43,7 +43,7 @@ def new_data_to_codes():
     Session = sessionmaker(bind=engine)
     session = Session()
     variables = to_codes.get_variables(session)
-    locations = database_util.all_location_data(session)
+    locations = util.all_location_data(session)
     results = session.query(model.Data.uuid)
     uuids = []
     alerts = []
@@ -77,7 +77,7 @@ def add_new_links():
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
-    link_defs = database_util.get_link_definitions(session)
+    link_defs = util.get_link_definitions(session)
     results = session.query(model.Links)
 
     to_ids = []

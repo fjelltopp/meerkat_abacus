@@ -2,8 +2,32 @@
 Various utility functions
 """
 import csv
+from datetime import datetime, timedelta
 
 from meerkat_abacus.model import Locations, LinkDefinitions
+from meerkat_abacus.config import country_config
+
+
+def epi_week_start_date(year, epi_config=country_config["epi_week"]):
+    """
+    Get the first day of epi week 1
+    
+    Args: 
+        year: year
+        epi_config: how epi-weeks are calculated
+    Returns:
+        start_date: date of start of epi week 1
+    """
+    if epi_config == "international":
+        return datetime(year, 1, 1)
+    else:
+        day_of_week = int(epi_config.split(":")[1])
+        first_of_year = datetime(year, 1, 1)
+        f_day_of_week = first_of_year.weekday()
+        adjustment = day_of_week - f_day_of_week
+        if adjustment < 0:
+            adjustment = 7 + adjustment
+        return first_of_year + timedelta(days=adjustment)
 
 def get_link_definitions(session):
     """
