@@ -23,7 +23,7 @@ def get_variables(session):
     return variables
 
 
-def to_code(row, variables, locations, date_column, table_name):
+def to_code(row, variables, locations, date_column, table_name, alert_data):
     """
     Takes a row and transforms it into a data row
 
@@ -60,10 +60,14 @@ def to_code(row, variables, locations, date_column, table_name):
             if test_outcome:
                 variable_json[int(v)] = test_outcome
                 if variables[v].variable.alert:
+                    data_alert = {}
+                    for data_var in alert_data.keys():
+                        data_alert[data_var] = row[alert_data[data_var]]
                     alert = model.Alerts(
                         uuids=row["meta/instanceID"],
                         clinic=clinic_id,
                         reason=v,
+                        data=data_alert,
                         date=date)
         new_record.variables = variable_json
     return (new_record, alert)

@@ -60,6 +60,6 @@ country_config = {
                                                  "return_lab"]}},
         "other": []
     },
-    
+    "alert_data": {"age": "pt1./age", "gender": "pt1./gender"},
     "alert_id_length": 6,
 }
