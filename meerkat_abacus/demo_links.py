@@ -14,7 +14,7 @@ links = [
                          "condition": ["", "unsure"]},
              "Confirmed": {"column": "alert_labs./return_lab",
                            "condition": "yes"},
-             "Discarded": {"column": "alert_labs./return_lab",
+             "Disregarded": {"column": "alert_labs./return_lab",
                            "condition": "no"}
          },
          "checklist": {
