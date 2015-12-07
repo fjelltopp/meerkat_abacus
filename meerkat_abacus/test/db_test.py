@@ -115,7 +115,7 @@ class DbTest(unittest.TestCase):
                     elif labs == "yes":
                         assert "Confirmed" == links[alert_id].data["status"]
                     elif labs == "no":
-                        assert "Discarded" == links[alert_id].data["status"]
+                        assert "Disregarded" == links[alert_id].data["status"]
                 else:
                     investigations = alert_invs[alert_id]
                     largest_date = datetime(2015, 1, 1)
@@ -132,7 +132,7 @@ class DbTest(unittest.TestCase):
                     elif labs == "yes":
                         assert "Confirmed" == links[alert_id].data["status"]
                     elif labs == "no":
-                        assert "Discarded" == links[alert_id].data["status"]
+                        assert "Disregarded" == links[alert_id].data["status"]
 
             else:
                 assert alert_id not in links.keys()
