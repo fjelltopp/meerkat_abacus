@@ -1,10 +1,11 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, DDL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
+from sqlalchemy.event import listen
 
 from meerkat_abacus.config import country_config
 
@@ -45,10 +46,14 @@ class Data(Base):
     date = Column(DateTime, index=True)
     country = Column(Integer, index=True)
     region = Column(Integer, index=True)
+    district = Column(Integer, index=True)
     clinic = Column(Integer, index=True)
     clinic_type = Column(String)
     variables = Column(JSONB, index=True)
     geolocation = Column(String)
+create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
+listen(Data.__table__, 'after_create', create_index)
+
 
 class AggregationVariables(Base):
     __tablename__ = 'aggregation_variables'
@@ -60,7 +65,7 @@ class AggregationVariables(Base):
     method = Column(String)
     location = Column(String)
     condition = Column(String)
-    category = Column(String)
+    category = Column(JSONB)#String)
     daily = Column(Integer)
     classification = Column(String)
     alert = Column(Integer)
@@ -88,27 +93,58 @@ class AggregationVariables(Base):
         else:
             return daily
 
-class Aggregation(Base):
-    __tablename__ = 'aggregation'
+class LinkDefinitions(Base):
+    __tablename__ = 'link_definitions'
 
     id = Column(Integer, primary_key=True)
-    start_time = Column(DateTime)
-    interval = Column(Integer)
-    variable = Column(Integer)
-    location = Column(Integer)
-    value = Column(Float)
-    classification = Column(String)
-    geo_location = Column(String)
+    name = Column(String)
+    from_table = Column(String, index=True)
+    from_column = Column(String)
+    from_date = Column(String)
+    to_table = Column(String, index=True)
+    to_column = Column(String)
+    to_date = Column(String)
+    to_id = Column(String)
+    which = Column(String)
+    data = Column(JSONB)
+
+    
+class Links(Base):
+    __tablename__ = 'links'
+    
+    id = Column(Integer, primary_key=True)
+    link_value = Column(String)
+    from_date = Column(DateTime, index=True)
+    to_date = Column(DateTime, index=True)
+    to_id = Column(String)
+    link_def = Column(Integer)
+    data = Column(JSONB)
+create_index = DDL("CREATE INDEX links_gin ON links USING gin(data);")
+listen(Links.__table__, 'after_create', create_index)
+
+# class Aggregation(Base):
+#     __tablename__ = 'aggregation'
+
+#     id = Column(Integer, primary_key=True)
+#     start_time = Column(DateTime)
+#     interval = Column(Integer)
+#     variable = Column(Integer)
+#     location = Column(Integer)
+#     value = Column(Float)
+#     classification = Column(String)
+#     geo_location = Column(String)
 
 class Alerts(Base):
     __tablename__ = 'alerts'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
     date = Column(DateTime)
-    reason = Column(String)
-    location = Column(Integer)
+    reason = Column(Integer)
+    clinic = Column(Integer)
+    data = Column(JSONB)
     uuids = Column(String)
 
+    
 class AlertNotifications(Base):
     __tablename__ = 'alert_notifications'
 
@@ -116,4 +152,3 @@ class AlertNotifications(Base):
     alert_id = Column(String)
     date = Column(DateTime)
     receivers = Column(String)
-

@@ -12,10 +12,10 @@ def get_value(field, data):
     Takes a field and returns the value
 
     Args:
-    field: a field
-    data: data to be used for certain field types
+        field: a field
+        data: data to be used for certain field types
     Returns:
-    value: A random value for the field
+        value: A random value for the field
     """
     field_type = list(field)[0]
     argument = field[field_type]
@@ -50,6 +50,7 @@ def create_form(fields, data=None, N=500,odk=True):
     Creates a csv file with data form the given fields
 
     The types for fields are:
+
     {"integer": [lower, upper]}
         random int between upper and lower
     {"one": ["choice1",choice2",....]}
@@ -60,14 +61,14 @@ def create_form(fields, data=None, N=500,odk=True):
        a random choice from key in data
 
     Args:
-    from_name: name of the form
-    fields: list of fields to include
-    previous_data: data from other forms
-    N: number of rows to generate
-    odk: Does the form come from odk
+        from_name: name of the form
+        fields: list of fields to include
+        previous_data: data from other forms
+        N: number of rows to generate
+        odk: Does the form come from odk
 
     Returns:
-    list_of_records: list of dicts with data
+        list_of_records(list): list of dicts with data
 
     """
     list_of_records = []

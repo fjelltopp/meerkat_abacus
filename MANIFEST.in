@@ -1,2 +1,4 @@
-include *.txt
+include *.csv
+
+recursive-include meerkat_abacus/data *
 

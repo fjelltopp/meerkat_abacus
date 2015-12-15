@@ -3,9 +3,10 @@ Testing for DB utilities
 """
 
 import unittest
-from meerkat_abacus.database_util import create_fake_data
+from datetime import datetime
+from meerkat_abacus.util import create_fake_data, epi_week_start_date
 
-class DbUtilTest(unittest.TestCase):
+class UtilTest(unittest.TestCase):
 
     def setUp(self):
         pass
@@ -13,6 +14,19 @@ class DbUtilTest(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_epi_week_start_date(self):
+        first = datetime(2015, 1, 1)
+        assert first == epi_week_start_date(2015, "international")
+
+        first_saturday = datetime(2016,1,2)
+        assert first_saturday == epi_week_start_date(2016, "day:5")
+
+        first_tuesday = datetime(2016,1,5)
+        assert first_tuesday == epi_week_start_date(2016, "day:1")
+
+        first_wednesday = datetime(2016,1,6)
+        assert first_wednesday == epi_week_start_date(2016, "day:2")
+    
     def test_create_fake_data_get_value(self):
         """Test get value"""
         value = create_fake_data.get_value(
