@@ -8,7 +8,12 @@ new_db_config = os.environ.get("MEERKAT_ABACUS_DB_URL")
 if new_db_config:
     DATABASE_URL = new_db_config
 
-data_directory = "/var/www/meerkat_abacus/meerkat_abacus/data/"
+data_directory = "~/meerkat_abacus/data/"
+env_data_directory = os.environ.get("DATA_DIRECTORY")
+if env_data_directory:
+    data_directory = env_data_directory
+
+
 fake_data = True
 add_fake_data = os.environ.get("NEW_FAKE_DATA")
 if add_fake_data:
