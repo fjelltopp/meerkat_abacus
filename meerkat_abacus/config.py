@@ -8,7 +8,17 @@ new_db_config = os.environ.get("MEERKAT_ABACUS_DB_URL")
 if new_db_config:
     DATABASE_URL = new_db_config
 
-form_directory = "data/forms/"
+data_directory = "/var/www/meerkat_abacus/meerkat_abacus/data/"
+fake_data = True
+add_fake_data = os.environ.get("NEW_FAKE_DATA")
+if add_fake_data:
+    fake_data = add_fake_data
+
+start_celery = False
+env_start_celery = os.environ.get("START_CELERY")
+if env_start_celery:
+    start_celery = env_start_celery
+interval = 3600  # Seconds
 
 country_config = {
     "country_name": "Demo",
@@ -35,7 +45,7 @@ country_config = {
                  "pt1./gender": {"one": ["male", "female"]},
                  "pt./visit_date": {"date": "year"},
                  "intro./visit_type": {"one": ["new", "return", "referral"]},
-                 "nationality": {"one": ["demo", "null-island"]},
+                 "nationality": {"one": ["demo", "null_island"]},
                  "pt1./status": {"one": ["refugee", "national"]},
                  "intro_module": {"multiple": ["mh",
                                                "imci", "rh", "labs", "px"]},

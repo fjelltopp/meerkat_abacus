@@ -3,7 +3,7 @@ Testing for DB utilities
 """
 
 import unittest
-from meerkat_abacus.task_queue import sort_data
+from meerkat_abacus.data_management import sort_data
 
 class LinkTest(unittest.TestCase):
 

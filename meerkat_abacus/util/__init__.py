@@ -186,7 +186,7 @@ def write_csv(rows, file_path):
         rows: list of dicts with data
         file_path: path to write file to
     """
-    f = open(file_path, "w")
+    f = open(file_path, "w", encoding='utf-8')
     columns = list(rows[0])
     out = csv.DictWriter(f, columns)
     out.writeheader()
