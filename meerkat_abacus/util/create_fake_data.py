@@ -29,7 +29,7 @@ def get_value(field, data):
         value = ",".join(random.sample(argument, number_of_options))
     if field_type == "date":
         now = datetime.datetime.now()
-        start = datetime.datetime(now.year, 1, 1)
+        start = now - datetime.timedelta(days=21)
         total_days = (now - start).days
         date = start + datetime.timedelta(
             days=random.uniform(0, total_days))
@@ -85,7 +85,8 @@ def create_form(fields, data=None, N=500,odk=True):
             row["index"] = i
             row["meta/instanceID"] = "uuid:" + str(uuid.uuid4())
             now = datetime.datetime.now()
-            start = datetime.datetime(now.year, 1, 1)
+            
+            start = now - datetime.timedelta(days=21)
             total_days = (now - start).days
             start = start + datetime.timedelta(
                 days=random.uniform(0, total_days))

@@ -318,7 +318,7 @@ def set_up_everything(url, leave_if_data, drop_db, N):
         create_db(url, model.Base, country_config, drop=drop_db)
         engine = create_engine(url)
         Session = sessionmaker(bind=engine)
-
+        print("hei")
         import_locations(country_config, engine)
         if config.fake_data:
             fake_data(country_config, form_directory, engine, N=N)
