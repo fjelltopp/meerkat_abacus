@@ -667,31 +667,6 @@ imc_22,HIV Exposed,demo_case,icd_code,,,count_occurence,O98.7,jor,imci,intro./vi
  •  Assess the child's feeding and provide appropriate counselling to the mother
  •  Advise the mother on home care
  •  Follow-up regularly as per national guidelines",
-<<<<<<< c764f5ec231388ed0d12578f01afd98c27de1550
-BCG,demo_case,vaccination_type,,,count_occurence_in,bcg,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Hepatitis B,demo_case,vaccination_type,,,count_occurence_in,hepb,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Diptheria,demo_case,vaccination_type,,,count_occurence_in,diptheria,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Tetanus,demo_case,vaccination_type,,,count_occurence_in,tetanus,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Pertussis,demo_case,vaccination_type,,,count_occurence_in,pertussis,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Polio,demo_case,vaccination_type,,,count_occurence_in,polio,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Haemophilus influenzae type B (HiB),demo_case,vaccination_type,,,count_occurence_in,hib,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Measles,demo_case,vaccination_type,,,count_occurence_in,measles,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Mumps,demo_case,vaccination_type,,,count_occurence_in,mumps,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Rubella,demo_case,vaccination_type,,,count_occurence_in,rubella,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
-Mental Health (mhGAP),demo_case,intro_module,,1,count_occurence_in,mh,jor,"public,front",intro./visit_type:new,,,,,,,,,
-Child Health (IMCI),demo_case,intro_module,,1,count_occurence_in,imci,jor,"public,front",intro./visit_type:new,,,,,,,,,
-Reproductive Health,demo_case,intro_module,,1,count_occurence_in,rh,jor,"public,front",intro./visit_type:new,,,,,,,,,
-Laboratory Results,demo_case,intro_module,,1,count_occurence_in,labs,jor,"public,front",intro./visit_type:new,,,,,,,,,
-Prescribing,demo_case,intro_module,,1,count_occurence_in,px,jor,"public,front",intro./visit_type:new,,,,,,,,,
-Pregnant women,demo_case,pregnant,,1,count_occurence,yes,jor,"women,front",intro./visit_type:new,,,,,,,,,
-Complications in pregnancy,demo_case,pregnancy_complications,,1,count_occurence,yes,jor,"women,front",intro./visit_type:new,,,,,,,,,
-New Visit,demo_case,intro./visit_type,,1,count_occurence,new,jor,"front,visit",,,,,,,,,,
-Return Visit,demo_case,intro./visit_type,,1,count_occurence,return,jor,"front,visit",,,,,,,,,,
-Referral,demo_case,intro./visit_type,,1,count_occurence,referral,jor,front,,,,,,,,,,
-Daily Forms,demo_register,index,,1,count,,jor,front,,,,,,,,,,
-Total Consultations,demo_register,consult./consultations,,1,sum,,jor,"front,key_indicators, use",,,,,,,,,,
-Refugee Consultations,demo_register,consult./consultations,,1,sum,,jor,"front,use",,,,,,,,,,
-=======
 vac_1,BCG,demo_case,vaccination_type,,,count_occurence_in,bcg,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
 vac_2,Hepatitis B,demo_case,vaccination_type,,,count_occurence_in,hepb,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
 vac_3,Diptheria,demo_case,vaccination_type,,,count_occurence_in,diptheria,jor,"epi,front",intro./visit_type:new,,MOH Guidelines,,None,,,,,
@@ -715,4 +690,3 @@ vis_3,Referral,demo_case,intro./visit_type,,1,count_occurence,referral,jor,front
 reg_1,Daily Forms,demo_register,index,,1,count,,jor,front,,,,,,,,,,
 reg_2,Total Consultations,demo_register,consult./consultations,,1,sum,,jor,"front,key_indicators",,,,,,,,,,
 reg_3,Refugee Consultations,demo_register,consult./consultations,,1,sum,,jor,front,,,,,,,,,,
->>>>>>> changed codes ids to strings
