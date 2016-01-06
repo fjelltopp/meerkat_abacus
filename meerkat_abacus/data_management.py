@@ -111,12 +111,13 @@ def table_data_from_csv(filename, table, directory, session,
         row_function: function to appy to the rows before inserting
     """
     session.query(table).delete()
-    if not table_name:
-        engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;"
-                       .format(filename))
-    else:
-        engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;"
-                       .format(table_name))
+    if table_name != "aggregation_variables":
+        if not table_name:
+            engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;"
+                           .format(filename))
+        else:
+            engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;"
+                           .format(table_name))
 
     session.commit()
     rows = read_csv(form_directory + ".." + directory+ filename + ".csv")

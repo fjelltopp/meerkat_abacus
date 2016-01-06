@@ -58,7 +58,7 @@ listen(Data.__table__, 'after_create', create_index)
 class AggregationVariables(Base):
     __tablename__ = 'aggregation_variables'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
     name = Column(String)
     form = Column(String)
     db_column = Column(String)
@@ -139,7 +139,7 @@ class Alerts(Base):
 
     id = Column(String, primary_key=True)
     date = Column(DateTime)
-    reason = Column(Integer)
+    reason = Column(String)
     clinic = Column(Integer)
     data = Column(JSONB)
     uuids = Column(String)

@@ -58,7 +58,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
         if table_name == variables[v].variable.form:
             test_outcome = variables[v].test(row)
             if test_outcome:
-                variable_json[int(v)] = test_outcome
+                variable_json[v] = test_outcome
                 if variables[v].variable.alert:
                     data_alert = {}
                     for data_var in alert_data.keys():
