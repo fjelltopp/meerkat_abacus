@@ -57,7 +57,7 @@ class DbTest(unittest.TestCase):
         assert len(results.all()) == 500
 
         manage.import_variables(config.country_config, engine)
-        agg_var = session.query(model.AggregationVariables)
+        agg_var = session.query(model.AggregationVariables).filter(model.AggregationVariables.id == "tot_1")
         assert agg_var.first().name == "Total"
 
         manage.import_links(config.country_config, engine)
@@ -73,7 +73,7 @@ class DbTest(unittest.TestCase):
         number_of_totals = 0
         number_of_female = 0
         for row in results:
-            if "1" in row.variables.keys():
+            if "tot_1" in row.variables.keys():
                 number_of_totals += 1
             if str(agg_var_female.id) in row.variables.keys():
                 number_of_female += 1
