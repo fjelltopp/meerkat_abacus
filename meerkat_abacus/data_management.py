@@ -72,7 +72,6 @@ def fake_data(country_config, form_directory, engine, N=500, new=True):
         csv_case = []
         csv_register = []
         csv_alert = []
-        
     case = create_fake_data.create_form(country_config["fake_data"]["case"],
                                     data={"deviceids": deviceids}, N=N)
     register = create_fake_data.create_form(
@@ -319,7 +318,6 @@ def set_up_everything(url, leave_if_data, drop_db, N):
         create_db(url, model.Base, country_config, drop=drop_db)
         engine = create_engine(url)
         Session = sessionmaker(bind=engine)
-        print("hei")
         import_locations(country_config, engine)
         if config.fake_data:
             fake_data(country_config, form_directory, engine, N=N)
