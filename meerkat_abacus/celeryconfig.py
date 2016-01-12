@@ -3,8 +3,8 @@ Celery configuration file
 """
 import meerkat_abacus.config as config
 
-BROKER_URL = 'amqp://guest@rabbit//'
-CELERY_RESULT_BACKEND = 'rpc://guest@rabbit//'
+BROKER_URL = 'amqp://guest@dev_rabbit_1//'
+CELERY_RESULT_BACKEND = 'rpc://guest@dev_rabbit_1//'
 
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
