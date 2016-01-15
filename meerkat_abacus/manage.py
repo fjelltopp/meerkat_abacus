@@ -30,7 +30,7 @@ if __name__ == "__main__":
     if args.action == "import-locations":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        import_locations(country_config, engine)
+        import_locations(country_config,config.config_directory, engine)
     if args.action == "fake-data":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)

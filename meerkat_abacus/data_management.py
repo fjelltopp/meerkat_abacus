@@ -15,12 +15,12 @@ from meerkat_abacus.util import write_csv, read_csv, all_location_data
 
 import meerkat_abacus.model as model
 from meerkat_abacus.model import form_tables
-from meerkat_abacus.config import DATABASE_URL, country_config, data_directory
+from meerkat_abacus.config import DATABASE_URL, country_config, data_directory, config_directory
 import meerkat_abacus.config as config
 import meerkat_abacus.aggregation.to_codes as to_codes
 from meerkat_abacus import util
 
-form_directory = data_directory +"forms/"
+
 
 def create_db(url, base, country_config, drop=False):
     """
@@ -44,13 +44,13 @@ def create_db(url, base, country_config, drop=False):
     return True
 
 
-def fake_data(country_config, form_directory, engine, N=500, new=True):
+def fake_data(country_config, data_directory, engine, N=500, new=True):
     """
     Creates csv files with fake data
 
     Args:
         country_config: A country configuration object
-        form_directory: the directory to store the from data
+        data_directory: the directory to store the from data
     """
     try:
         session = Session()
@@ -58,10 +58,10 @@ def fake_data(country_config, form_directory, engine, N=500, new=True):
         Session = sessionmaker(bind=engine)
         session = Session()
     deviceids = get_deviceids(session, case_report=True)
-    case_file_name = form_directory + country_config["tables"]["case"] + ".csv"
-    register_file_name = (form_directory +
+    case_file_name = data_directory + country_config["tables"]["case"] + ".csv"
+    register_file_name = (data_directory +
                           country_config["tables"]["register"] + ".csv")
-    alert_file_name = (form_directory +
+    alert_file_name = (data_directory +
                        country_config["tables"]["alert"] + ".csv")
 
     if not new:
@@ -119,7 +119,7 @@ def table_data_from_csv(filename, table, directory, session,
                            .format(table_name))
 
     session.commit()
-    rows = read_csv(form_directory + ".." + directory+ filename + ".csv")
+    rows = read_csv(directory + filename + ".csv")
     for row in rows:
 
         if row_function:
@@ -164,7 +164,7 @@ def import_variables(country_config, engine):
 
     Args:
         country_config: configuration
-        form_directory: directory to find the forms
+        data_directory: directory to find the forms
     """
     try:
         session = Session()
@@ -175,21 +175,21 @@ def import_variables(country_config, engine):
         
     table_data_from_csv(country_config["codes_file"],
                         model.AggregationVariables,
-                        "/",
+                        config_directory,
                         session, engine,
                         table_name="aggregation_variables",
                         form=False,
                         row_function=category_to_list)
 
 
-def import_data(country_config, form_directory, engine):
+def import_data(country_config, data_directory, engine):
     """
     Delete current data and then import form data
     from csv files into the database.
 
     Args:
         country_config: configuration
-        form_directory: directory to find the forms
+        data_directory: directory to find the forms
     """
     try:
         session = Session()
@@ -205,7 +205,7 @@ def import_data(country_config, form_directory, engine):
             form_deviceids = deviceids
         table_data_from_csv(country_config["tables"][form],
                             form_tables[form],
-                            "/forms/",
+                            data_directory,
                             session, engine,
                             deviceids=form_deviceids)
 
@@ -225,12 +225,10 @@ def import_links(country_config, engine):
         session = Session()
     session.query(model.LinkDefinitions).delete()
     engine.execute("ALTER SEQUENCE link_definitions_id_seq RESTART WITH 1;")
-    link_config = importlib.import_module("meerkat_abacus."+
-                             country_config["links_file"] )
-    for link in link_config.links:
+    for link in config.links.links:
         session.add(model.LinkDefinitions(**link))
     session.commit()
-def import_locations(country_config, engine):
+def import_locations(country_config, config_directory, engine):
     """
     Imports all locations from csv-files
 
@@ -247,11 +245,11 @@ def import_locations(country_config, engine):
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
     session.add(model.Locations(name=country_config["country_name"]))
     session.commit()
-    regions_file = (data_directory + "locations/" +
+    regions_file = (config_directory + "locations/" +
                     country_config["locations"]["regions"])
-    districts_file = (data_directory + "locations/" +
+    districts_file = (config_directory + "locations/" +
                       country_config["locations"]["districts"])
-    clinics_file = (data_directory + "locations/" +
+    clinics_file = (config_directory + "locations/" +
                     country_config["locations"]["clinics"])
     import_regions(regions_file, session, 1)
     import_districts(districts_file, session)
@@ -276,6 +274,7 @@ def raw_data_to_variables(engine):
     engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
     session.commit()
     new_data_to_codes()
+    
 def add_links(engine):
     """
     Turn raw data in forms into structured data with codes using
@@ -318,10 +317,10 @@ def set_up_everything(url, leave_if_data, drop_db, N):
         create_db(url, model.Base, country_config, drop=drop_db)
         engine = create_engine(url)
         Session = sessionmaker(bind=engine)
-        import_locations(country_config, engine)
+        import_locations(country_config, config_directory, engine)
         if config.fake_data:
-            fake_data(country_config, form_directory, engine, N=N)
-        import_data(country_config, form_directory, engine)
+            fake_data(country_config, data_directory, engine, N=N)
+        import_data(country_config, data_directory, engine)
         import_variables(country_config, engine)
         import_links(country_config, engine)
         raw_data_to_variables(engine)
@@ -335,7 +334,7 @@ def import_new_data():
     Session = sessionmaker(bind=engine)
     session = Session()
     for form in model.form_tables.keys():
-        file_path = form_directory + country_config["tables"][form] + ".csv"
+        file_path = data_directory + country_config["tables"][form] + ".csv"
         data = util.read_csv(file_path)
         new = util.add_new_data(model.form_tables[form],
                                          data, session)
@@ -343,7 +342,7 @@ def import_new_data():
 
 def add_new_fake_data(to_add):
     engine = create_engine(DATABASE_URL)
-    fake_data(country_config, form_directory, engine, to_add, new=False)
+    fake_data(country_config, data_directory, engine, to_add, new=False)
 
 
 def new_data_to_codes():

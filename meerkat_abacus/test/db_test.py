@@ -29,7 +29,7 @@ class DbTest(unittest.TestCase):
                          drop=True)
         assert database_exists(config.DATABASE_URL)
         engine = create_engine(config.DATABASE_URL)
-        manage.import_locations(config.country_config, engine)
+        manage.import_locations(config.country_config, config.config_directory, engine)
         Session = sessionmaker(bind=engine)
 
         session = Session()
@@ -43,11 +43,11 @@ class DbTest(unittest.TestCase):
                 assert r.parent_location == 2
             if r.id == 7:
                 assert r.deviceid == "1,6"
-        form_directory = config.data_directory + "forms/"
+
         manage.fake_data(config.country_config,
-                         form_directory, engine, N=500)
+                         config.data_directory, engine, N=500)
         manage.import_data(config.country_config,
-                           form_directory,
+                           config.data_directory,
                            engine)
         results = session.query(manage.form_tables["case"])
         assert len(results.all()) == 500
