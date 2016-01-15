@@ -1,0 +1,9 @@
+name,form,column,condition,type
+Pending,demo_alerts,pt./alert_id,missing,status
+Ongoing,demo_alerts,pt./return_labs,"missing,unsure",status
+Discarded,demo_alerts,pt./return_labs,no,status
+Confirmed,demo_alerts,pt./return_labs,yes,status
+Referral,demo_alerts,pt./checklist,referral,checklist
+Case Management,demo_alerts,pt./checklist,case_management,checklist
+Contact Tracing,demo_alerts,pt./checklist,contact_tracing,checklist
+Laboratory Diagnostics,demo_alerts,pt./checklist,return_lab,checklist
