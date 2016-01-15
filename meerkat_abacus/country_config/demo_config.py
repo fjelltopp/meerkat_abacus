@@ -9,6 +9,7 @@ country_config = {
     },
     "codes_file": "demo_codes",
     "links_file": "demo_links.py",
+    "country_tests": "demo_test.py",
     "epi_week": "international",
     "locations": {
         "clinics": "demo_clinics.csv",
