@@ -5,10 +5,15 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import JSONB
 from dateutil.parser import parse
 from datetime import datetime
+import importlib.util
 
 from meerkat_abacus import data_management as manage
 from meerkat_abacus import model
 from meerkat_abacus import config
+spec = importlib.util.spec_from_file_location("country_test",
+                                              config.config_directory + config.country_config["country_tests"])
+country_test = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(country_test)
 
 
 class DbTest(unittest.TestCase):
@@ -17,7 +22,6 @@ class DbTest(unittest.TestCase):
     """
     def setUp(self):
         pass
-
     def tearDown(self):
         if database_exists(config.DATABASE_URL):
             drop_database(config.DATABASE_URL)
@@ -29,25 +33,17 @@ class DbTest(unittest.TestCase):
                          drop=True)
         assert database_exists(config.DATABASE_URL)
         engine = create_engine(config.DATABASE_URL)
-        manage.import_locations(config.country_config, engine)
+        manage.import_locations(config.country_config, config.config_directory, engine)
         Session = sessionmaker(bind=engine)
 
         session = Session()
         results = session.query(model.Locations)
-        assert len(results.all()) == 11
-        for r in results:
-            if r.id == 1:
-                assert r.name == "Demo"
-            if r.id == 5:
-                assert r.name == "District 2"
-                assert r.parent_location == 2
-            if r.id == 7:
-                assert r.deviceid == "1,6"
-        form_directory = config.data_directory + "forms/"
+        country_test.test_locations(results)
+
         manage.fake_data(config.country_config,
-                         form_directory, engine, N=500)
+                         config.data_directory, engine, N=500)
         manage.import_data(config.country_config,
-                           form_directory,
+                           config.data_directory,
                            engine)
         results = session.query(manage.form_tables["case"])
         assert len(results.all()) == 500
