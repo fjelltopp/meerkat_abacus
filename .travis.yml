@@ -1,6 +1,6 @@
 language: python
 python:
-- '3.4'
+  - '3.5'
 env:
 - MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
   DATA_DIRECTORY='/home/travis/build/who-emro/meerkat_abacus/meerkat_abacus/data/'
