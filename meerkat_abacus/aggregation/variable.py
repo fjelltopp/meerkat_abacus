@@ -134,7 +134,7 @@ class Variable():
             (self.condition_low == 0 and row[column2] == 0)):
             n = int(row[column2])
             if n >= int(self.condition_low) and n < int(self.condition_high):
-                if row[self.column1] in self.condition:
+                if row[self.column1] in self.cond_list:
                     add = 1
         return add
 
