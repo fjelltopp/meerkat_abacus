@@ -103,22 +103,24 @@ class VariableTest(unittest.TestCase):
             secondary_condition="",
             method="count_occurence,int_between",
             db_column="column2,column1",
-            condition="A:0,5")
+            condition="AB:0,5")
         variable = Variable(agg_variable)
-        row = {"column1": "3", "column2": "A"}
+        row = {"column1": "3", "column2": "AB"}
         assert variable.test(row) == 1
-        row = {"column1": "7", "column2": "A"}
+        row = {"column1": "7", "column2": "AB"}
         assert variable.test(row) == 0
         row = {"column1": "3", "column2": "B"}
         assert variable.test(row) == 0
-        row = {"column1": "0", "column2": "A"}
+        row = {"column1": "0", "column2": "AB"}
         assert variable.test(row) == 1
-        agg_variable.condition = "A,C:0,5"
+        agg_variable.condition = "AB,C:0,5"
         variable = Variable(agg_variable)
-        row = {"column1": "3", "column2": "A"}
+        row = {"column1": "3", "column2": "AB"}
         assert variable.test(row) == 1
         row = {"column1": "3", "column2": "C"}
         assert variable.test(row) == 1
+        row = {"column1": "3", "column2": "B"}
+        assert variable.test(row) == 0
         row = {"column1": "3", "column2": "B"}
         assert variable.test(row) == 0
 
