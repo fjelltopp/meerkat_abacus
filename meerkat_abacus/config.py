@@ -20,6 +20,7 @@ config_directory = from_env("COUNTRY_CONFIG_DIR",
                             "/var/www/meerkat_abacus/meerkat_abacus/country_config/")
 fake_data = from_env("NEW_FAKE_DATA", True)
 start_celery = from_env("START_CELERY", False)
+get_data_from_s3 = from_env("DATA_FROM_S3", False)
 interval = 3600  # Seconds
 
 # Country config

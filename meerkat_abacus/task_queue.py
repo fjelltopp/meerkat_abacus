@@ -13,7 +13,8 @@ from celery.signals import worker_ready
 
 @worker_ready.connect
 def set_up_db(**kwargs):
-    print("Setting up DB")
+    print("Setting up DB for {}".format(
+        config.country_config["country_name"]))
     data_management.set_up_everything(config.DATABASE_URL,
                                       False,
                                       True,

@@ -91,6 +91,14 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
     write_csv(register, register_file_name)
     write_csv(alert, alert_file_name)
 
+# def get_data_from_s3(bucket, data_directory):
+#     case_file_name = data_directory + country_config["tables"]["case"] + ".csv"
+#     register_file_name = (data_directory +
+#                           country_config["tables"]["register"] + ".csv")
+#     alert_file_name = (data_directory +
+#                        country_config["tables"]["alert"] + ".csv")
+
+    
 
 def table_data_from_csv(filename, table, directory, session,
                         engine, deviceids=None, table_name=None, form=True,

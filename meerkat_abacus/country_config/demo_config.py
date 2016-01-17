@@ -1,5 +1,6 @@
 """ Config for Demo Location """
 
+
 country_config = {
     "country_name": "Demo",
     "tables": {
