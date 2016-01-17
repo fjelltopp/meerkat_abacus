@@ -69,5 +69,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
                         reason=v,
                         data=data_alert,
                         date=date)
-        new_record.variables = variable_json
+                # if "icd" in variables[v].variable.id:
+                #     break
+    new_record.variables = variable_json
     return (new_record, alert)
