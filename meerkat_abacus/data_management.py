@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import os
+import boto3
 import importlib
 from dateutil.parser import parse
 
@@ -79,12 +80,16 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
                     c["meta/instanceID"][-country_config["alert_id_length"]:])
         write_csv(current_form + new_data, file_name)
 
-# def get_data_from_s3(bucket, data_directory):
-#     case_file_name = data_directory + country_config["tables"]["case"] + ".csv"
-#     register_file_name = (data_directory +
-#                           country_config["tables"]["register"] + ".csv")
-#     alert_file_name = (data_directory +
-#                        country_config["tables"]["alert"] + ".csv")
+        
+def get_data_from_s3(bucket, data_directory, country_config):
+    """Get form data from s3"""
+    
+    s3 = boto3.resource('s3')
+    for form in country_config["tables"].values():
+        file_name = form + ".csv"
+        repsonse = s3.meta.client.download_file(bucket,
+                                                file_name,
+                                                data_directory + file_name)
 
     
 
@@ -117,7 +122,8 @@ def table_data_from_csv(filename, table, directory, session,
     session.commit()
     rows = read_csv(directory + filename + ".csv")
     for row in rows:
-
+        if "_index" in row:
+            row["index"] = row.pop("_index")
         if row_function:
             insert_row = row_function(row)
         else:
@@ -193,7 +199,7 @@ def import_data(country_config, data_directory, engine):
         Session = sessionmaker(bind=engine)
         session = Session()
     deviceids_case = get_deviceids(session, case_report=True)
-    deviceids = get_deviceids(session, case_report=True)
+    deviceids = get_deviceids(session)
     for form in form_tables.keys():
         if form == "case":
             form_deviceids = deviceids_case
@@ -315,6 +321,8 @@ def set_up_everything(url, leave_if_data, drop_db, N):
         import_locations(country_config, config_directory, engine)
         if config.fake_data:
             fake_data(country_config, data_directory, engine, N=N)
+        if config.get_data_from_s3:
+            get_data_from_s3(config.s3_bucket, data_directory, country_config)
         import_data(country_config, data_directory, engine)
         import_variables(country_config, engine)
         import_links(country_config, engine)
@@ -357,6 +365,7 @@ def new_data_to_codes():
     for form in model.form_tables.keys():
         result = session.query(model.form_tables[form].uuid,
                                model.form_tables[form].data)
+        i = 0
         for row in result:
             if row.uuid not in uuids:
                 new_data, alert = to_codes.to_code(
@@ -370,6 +379,9 @@ def new_data_to_codes():
                     session.add(new_data)
                 if alert:
                     alerts.append(alert)
+            i += 1
+            if i % 100 == 0:
+                print(i)
     add_alerts(alerts, session)
     session.commit()
     return True

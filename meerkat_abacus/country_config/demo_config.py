@@ -1,5 +1,6 @@
 """ Config for Demo Location """
 
+s3_bucket = False
 
 country_config = {
     "country_name": "Demo",
