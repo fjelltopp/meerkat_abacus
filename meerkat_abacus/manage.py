@@ -10,7 +10,7 @@ parser.add_argument("action", choices=["create-db",
                                        "import-links",
                                        "to-codes",
                                        "add-links",
-                                       "get-data-s3"
+                                       "get-data-s3",
                                        "all"],
                     help="Choose action" )
 parser.add_argument("--drop-db", action="store_true",
