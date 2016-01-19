@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import os
+import boto3
 import importlib
 from dateutil.parser import parse
 
@@ -58,39 +59,39 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
         Session = sessionmaker(bind=engine)
         session = Session()
     deviceids = get_deviceids(session, case_report=True)
-    case_file_name = data_directory + country_config["tables"]["case"] + ".csv"
-    register_file_name = (data_directory +
-                          country_config["tables"]["register"] + ".csv")
-    alert_file_name = (data_directory +
-                       country_config["tables"]["alert"] + ".csv")
-
-    if not new:
-        csv_case = read_csv(case_file_name)
-        csv_register = read_csv(register_file_name)
-        csv_alert = read_csv(alert_file_name)
-    else:
-        csv_case = []
-        csv_register = []
-        csv_alert = []
-    case = create_fake_data.create_form(country_config["fake_data"]["case"],
-                                    data={"deviceids": deviceids}, N=N)
-    register = create_fake_data.create_form(
-        country_config["fake_data"]["register"],
-        data={"deviceids": deviceids}, N=N)
     alert_ids = []
-    for c in case:
-        alert_ids.append(
-            c["meta/instanceID"][-country_config["alert_id_length"]:])
-    alert = create_fake_data.create_form(
-        country_config["fake_data"]["alert"],
-        data={"deviceids": deviceids, "uuids": alert_ids}, N=N)
-    case = csv_case + case
-    register = csv_register + register
-    alert = csv_alert + alert
-    write_csv(case, case_file_name)
-    write_csv(register, register_file_name)
-    write_csv(alert, alert_file_name)
+    forms = ["case", "register", "alert"]
+    for form in country_config["tables"]:
+        if form not in forms:
+            forms.append(form)
+    for form in forms:
+        form_name = country_config["tables"][form]
+        file_name = data_directory + form_name + ".csv"
+        current_form = []
+        if not new:
+            current_form = read_csv(file_name)
+        new_data = create_fake_data.create_form(
+            country_config["fake_data"][form],
+            data={"deviceids": deviceids, "uuids": alert_ids}, N=N)
+        if form == "case":
+            alert_ids = []
+            for c in new_data:
+                alert_ids.append(
+                    c["meta/instanceID"][-country_config["alert_id_length"]:])
+        write_csv(current_form + new_data, file_name)
 
+        
+def get_data_from_s3(bucket, data_directory, country_config):
+    """Get form data from s3"""
+    
+    s3 = boto3.resource('s3')
+    for form in country_config["tables"].values():
+        file_name = form + ".csv"
+        repsonse = s3.meta.client.download_file(bucket,
+                                                file_name,
+                                                data_directory + file_name)
+
+    
 
 def table_data_from_csv(filename, table, directory, session,
                         engine, deviceids=None, table_name=None, form=True,
@@ -121,7 +122,8 @@ def table_data_from_csv(filename, table, directory, session,
     session.commit()
     rows = read_csv(directory + filename + ".csv")
     for row in rows:
-
+        if "_index" in row:
+            row["index"] = row.pop("_index")
         if row_function:
             insert_row = row_function(row)
         else:
@@ -197,7 +199,7 @@ def import_data(country_config, data_directory, engine):
         Session = sessionmaker(bind=engine)
         session = Session()
     deviceids_case = get_deviceids(session, case_report=True)
-    deviceids = get_deviceids(session, case_report=True)
+    deviceids = get_deviceids(session)
     for form in form_tables.keys():
         if form == "case":
             form_deviceids = deviceids_case
@@ -223,11 +225,10 @@ def import_links(country_config, engine):
     except NameError:
         Session = sessionmaker(bind=engine)
         session = Session()
-    session.query(model.LinkDefinitions).delete()
-    engine.execute("ALTER SEQUENCE link_definitions_id_seq RESTART WITH 1;")
     for link in config.links.links:
         session.add(model.LinkDefinitions(**link))
     session.commit()
+
 def import_locations(country_config, config_directory, engine):
     """
     Imports all locations from csv-files
@@ -320,6 +321,8 @@ def set_up_everything(url, leave_if_data, drop_db, N):
         import_locations(country_config, config_directory, engine)
         if config.fake_data:
             fake_data(country_config, data_directory, engine, N=N)
+        if config.get_data_from_s3:
+            get_data_from_s3(config.s3_bucket, data_directory, country_config)
         import_data(country_config, data_directory, engine)
         import_variables(country_config, engine)
         import_links(country_config, engine)
@@ -362,6 +365,7 @@ def new_data_to_codes():
     for form in model.form_tables.keys():
         result = session.query(model.form_tables[form].uuid,
                                model.form_tables[form].data)
+        i = 0
         for row in result:
             if row.uuid not in uuids:
                 new_data, alert = to_codes.to_code(
@@ -375,6 +379,9 @@ def new_data_to_codes():
                     session.add(new_data)
                 if alert:
                     alerts.append(alert)
+            i += 1
+            if i % 100 == 0:
+                print(i)
     add_alerts(alerts, session)
     session.commit()
     return True
@@ -391,25 +398,27 @@ def add_new_links():
 
     to_ids = []
     links_by_link_value = {}
+    for links_def_id in link_defs:
+        links_by_link_value[links_def_id] = {}
     for row in results:
         to_ids.append(row.to_id)
-        links_by_link_value[row.link_value] = row
+        links_by_link_value[row.link_def][row.link_value] = row
     for link_def_id in link_defs.keys():
         link_def = link_defs[link_def_id]
         link_from = session.query(getattr(model, link_def.from_table))
         link_from_values = {}
         for row in link_from:
             link_from_values[getattr(row, link_def.from_column)] = row
-        result = session.query(model.form_tables[link_def.to_table])
-        for row in result:
+        result_to_table = session.query(model.form_tables[link_def.to_table])
+        for row in result_to_table:
             if row.uuid not in to_ids:
                 link_to_value = row.data[link_def.to_column]
                 if link_to_value in link_from_values.keys():
                     data = sort_data(link_def.data, row.data)
                     linked_record = link_from_values[link_to_value]
                     to_date = parse(row.data[link_def.to_date])
-                    if link_to_value in links_by_link_value.keys():
-                        old_link = links_by_link_value[link_to_value]
+                    if link_to_value in links_by_link_value[link_def_id].keys():
+                        old_link = links_by_link_value[link_def_id][link_to_value]
                         if link_def.which == "last" and old_link.to_date <= to_date:
                             old_link.data = data
                             old_link.to_date = to_date
@@ -423,7 +432,7 @@ def add_new_links():
                                                  link_def.from_date),
                             "link_def": link_def_id,
                             "data": data})
-                        links_by_link_value[link_to_value] = new_link
+                        links_by_link_value[link_def_id][link_to_value] = new_link
                         session.add(new_link)
     session.commit()
     return True

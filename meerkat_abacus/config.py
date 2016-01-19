@@ -20,6 +20,7 @@ config_directory = from_env("COUNTRY_CONFIG_DIR",
                             "/var/www/meerkat_abacus/meerkat_abacus/country_config/")
 fake_data = from_env("NEW_FAKE_DATA", True)
 start_celery = from_env("START_CELERY", False)
+get_data_from_s3 = from_env("GET_DATA_FROM_S3", False)
 interval = 3600  # Seconds
 
 # Country config
@@ -30,6 +31,7 @@ spec = importlib.util.spec_from_file_location("country_config_module",
 country_config_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(country_config_module)
 country_config = country_config_module.country_config
+s3_bucket = country_config_module.s3_bucket
 
 # import links
 

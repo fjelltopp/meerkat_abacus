@@ -24,26 +24,9 @@ from datetime import timedelta
 
 CELERYBEAT_SCHEDULE = {}
 if config.start_celery: 
-    if config.fake_data:
-        CELERYBEAT_SCHEDULE['generate-fake-data'] = {
-                'task': 'task_queue.add_new_fake_data',
-                'schedule': timedelta(seconds=config.interval),
-                'args': (5,)
-            }
-
-    CELERYBEAT_SCHEDULE['add_new_data']= {
-            'task': 'task_queue.import_new_data',
-            'schedule': timedelta(seconds=config.interval)
-        }
-
-    CELERYBEAT_SCHEDULE['new_data_to_codes'] = {
-            'task': 'task_queue.new_data_to_codes',
-            'schedule': timedelta(seconds=config.interval)
-        }
-    
-    CELERYBEAT_SCHEDULE['new_links'] = {
-            'task': 'task_queue.add_new_links',
-            'schedule': timedelta(seconds=config.interval)
-        }
+    CELERYBEAT_SCHEDULE['get_and_proccess_data']= {
+        'task': 'task_queue.get_proccess_data',
+        'schedule': timedelta(seconds=config.interval)
+    }
 
     

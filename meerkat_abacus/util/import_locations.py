@@ -29,35 +29,36 @@ def import_clinics(csv_file, session, country_id):
     f = open(csv_file)
     clinics_csv = csv.DictReader(f)
     for row in clinics_csv:
-        result = session.query(Locations)\
-                        .filter(Locations.name == row["clinic"])
-        if "case_report" in row.keys():
-            if row["case_report"] == "Yes":
-                case_report = 1
+        if row["deviceid"]:
+            result = session.query(Locations)\
+                            .filter(Locations.name == row["clinic"], Locations.clinic_type != None)
+            if "case_report" in row.keys():
+                if row["case_report"] == "Yes":
+                    case_report = 1
+                else:
+                    case_report = 0
             else:
                 case_report = 0
-        else:
-            case_report = 0
 
-        if len(result.all()) == 0:
-            if row["longitude"] and row["latitude"]:
-                geolocation = row["latitude"] + "," + row["longitude"]
+            if len(result.all()) == 0:
+                if row["longitude"] and row["latitude"]:
+                    geolocation = row["latitude"] + "," + row["longitude"]
+                else:
+                    geolocation = None
+
+                if row["district"]:
+                    parent_location = districts[row["district"]]
+                elif row["region"]:
+                    parent_location = regions[row["region"]]
+                session.add(Locations(name=row["clinic"],
+                                      parent_location=parent_location,
+                                      geolocation=geolocation,
+                                      deviceid=row["deviceid"],
+                                      clinic_type=row["clinic_type"],
+                                      case_report=case_report))
             else:
-                geolocation = None
-
-            if row["district"]:
-                parent_location = districts[row["district"]]
-            elif row["region"]:
-                parent_location = regions[row["region"]]
-            session.add(Locations(name=row["clinic"],
-                                  parent_location=parent_location,
-                                  geolocation=geolocation,
-                                  deviceid=row["deviceid"],
-                                  clinic_type=row["clinic_type"],
-                                  case_report=case_report))
-        else:
-            location = result.first()
-            location.deviceid = location.deviceid + "," + row["deviceid"]
+                location = result.first()
+                location.deviceid = location.deviceid + "," + row["deviceid"]
     session.commit()
 
 

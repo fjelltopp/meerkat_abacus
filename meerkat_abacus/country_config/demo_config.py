@@ -1,5 +1,7 @@
 """ Config for Demo Location """
 
+s3_bucket = False
+
 country_config = {
     "country_name": "Demo",
     "tables": {
@@ -32,7 +34,9 @@ country_config = {
                                                "imci", "rh", "labs", "px"]},
                  "pregnant": {"one": ["yes", "no"]},
                  "pregnancy_complications": {"one": ["yes", "no"]},
-                 "icd_code": {"one": ["A80.9", "B05.3", "A00.1", "A39", "A87",
+                 "smoke_ever": {"one": ["yes", "no"]},
+                 "smoke_now": {"one": ["yes", "no"]},
+                 "icd_code": {"one": ["A80.9", "B05.3", "A00.1", "A00", "A39", "A87",
                                       "A03", "A36.8", "A33.3", "A34.4",
                                       "A35.4", "A37", "E15", "E16", "E20.4",
                                       "E40", "E41", "E50", "E65", "F40", "O60",
@@ -43,7 +47,10 @@ country_config = {
                                                    "mumps", "rubella"] },
                  "vaccination": {"one": ["yes", "no"]}},
         "register": {"consult./consultations": {"integer": [10, 20]},
-                     "consult./consultations_refugee": {"integer": [5, 15]}},
+                     "consult./consultations_refugee": {"integer": [5, 15]},
+                     "surveillance./afp": {"integer": [1, 5]},
+                     "surveillance./measles": {"integer": [1, 5]}
+                     },
         "alert": {"pt./alert_id": {"data": "uuids"},
                   "alert_labs./return_lab": {"one": ["yes", "no", "unsure"]},
                   "pt./checklist": {"multiple": ["referral",
