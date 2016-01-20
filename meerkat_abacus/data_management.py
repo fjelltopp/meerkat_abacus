@@ -315,18 +315,27 @@ def set_up_everything(url, leave_if_data, drop_db, N):
             if len(session.query(model.Data).all()) > 0:
                 set_up = False
     if set_up:
+        print("Create DB")
         create_db(url, model.Base, country_config, drop=drop_db)
         engine = create_engine(url)
         Session = sessionmaker(bind=engine)
+        print("Import Locations")
         import_locations(country_config, config_directory, engine)
         if config.fake_data:
+            print("Generate fake data")
             fake_data(country_config, data_directory, engine, N=N)
         if config.get_data_from_s3:
+            print("Get data from s3")
             get_data_from_s3(config.s3_bucket, data_directory, country_config)
+        print("Import Data")
         import_data(country_config, data_directory, engine)
+        print("Import Variables")
         import_variables(country_config, engine)
+        print("Import Links")
         import_links(country_config, engine)
+        print("To codes")
         raw_data_to_variables(engine)
+        print("Add Links")
         add_links(engine)
 
 def import_new_data():
@@ -364,7 +373,7 @@ def new_data_to_codes():
         uuids.append(row.uuid)
     for form in model.form_tables.keys():
         result = session.query(model.form_tables[form].uuid,
-                               model.form_tables[form].data)
+                               model.form_tables[form].data).yield_per(100)
         i = 0
         for row in result:
             if row.uuid not in uuids:
