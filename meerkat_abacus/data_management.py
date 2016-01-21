@@ -120,8 +120,7 @@ def table_data_from_csv(filename, table, directory, session,
                            .format(table_name))
 
     session.commit()
-    rows = read_csv(directory + filename + ".csv")
-    for row in rows:
+    for row in read_csv(directory + filename + ".csv"):
         if "_index" in row:
             row["index"] = row.pop("_index")
         if row_function:
@@ -373,7 +372,7 @@ def new_data_to_codes():
         uuids.append(row.uuid)
     for form in model.form_tables.keys():
         result = session.query(model.form_tables[form].uuid,
-                               model.form_tables[form].data).yield_per(100)
+                               model.form_tables[form].data)#.yield_per(500)
         i = 0
         for row in result:
             if row.uuid not in uuids:

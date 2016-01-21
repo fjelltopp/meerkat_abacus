@@ -25,14 +25,14 @@ class Variable():
         self.variable = variable
         self.column = variable.db_column
         if variable.method == "count_occurence":
-            self.test_type = self.test_count_occurence
+
             if "," in variable.condition:
                 self.cond_list = variable.condition.split(",")
+                self.cond_list = [cond.strip() for cond in self.cond_list]
+                self.test_type = self.test_count_occurence_list
             else:
-                self.cond_list = [variable.condition]
-                if variable.condition == "1":
-                    self.cond_list = [1, "1"]
-            self.cond_list = [cond.strip() for cond in self.cond_list]
+                self.cond = variable.condition
+                self.test_type = self.test_count_occurence
         elif variable.method == "count":
             self.test_type = self.test_count
         elif variable.method == "count_occurence_in":
@@ -76,11 +76,26 @@ class Variable():
                 if self.condition == "1":
                     self.cond_list = [1, "1"]
             self.cond_list = [cond.strip() for cond in self.cond_list]
+            
         else:
             raise NameError("Variable does not have test type {}"
                             .format(variable.method))
+        if variable.secondary_condition:
+            self.secondary_condition = self.secondary_condition_test
+            self.sec_column, self.sec_condition = variable.secondary_condition.split(":")
+        else:
+            self.secondary_condition = self.secondary_condition_no
+            
+    def secondary_condition_test(self, row):
+        if row.get(self.sec_column, "neppe") == self.sec_condition:
+            return 1
+        else:
+            return 0
+        
+    def secondary_condition_no(self,row):
+        return 1
 
-    def test(self, row):
+    def test(self, row, value):
         """
         Tests if current variable is true for row
 
@@ -90,21 +105,21 @@ class Variable():
         Returns:
             id(int): 0 if false and 1 (or sum) if true
         """
-        variable = self.variable
-        if variable.secondary_condition:
-            sec_column, sec_condition = variable.secondary_condition.split(":")
-            if (sec_column not in row.keys() or
-                row[sec_column] != sec_condition):
-                return 0
-        return int(self.test_type(row))
+        #if self.secondary_condition(row):
+        return self.test_type(row, value)
+        #else:
+        #    return 0
 
-    def test_count_occurence(self, row):
-        return row[self.column] in self.cond_list
+    def test_count_occurence_list(self, row, value):
+        return value in self.cond_list
 
-    def test_count(self, row):
-        return row[self.column] != None
+    def test_count_occurence(self, row, value):
+        return value == self.cond
 
-    def test_count_occurence_in(self, row):
+    def test_count(self, row, value):
+        return value != None
+
+    def test_count_occurence_in(self, row, value):
         column = self.column
         add = 0
         if row[column] in self.cond_list:
@@ -116,7 +131,7 @@ class Variable():
                     break
         return add
 
-    def test_int_between(self, row):
+    def test_int_between(self, row, value):
         column = self.column
         add = 0
         condition_low, condition_high = self.condition
@@ -127,7 +142,7 @@ class Variable():
                 add = 1
         return add
 
-    def test_count_occurence_int_between(self, row):
+    def test_count_occurence_int_between(self, row, value):
         column2 = self.column2
         add = 0
         if (row[column2] and row[column2] != 0 or
@@ -138,7 +153,7 @@ class Variable():
                     add = 1
         return add
 
-    def test_count_occurence_in_int_between(self, row):
+    def test_count_occurence_in_int_between(self, row, value):
         column2 = self.column2
         add = 0
         if (row[column2] and row[column2] != 0 or
@@ -155,7 +170,7 @@ class Variable():
                             break
         return add
 
-    def test_sum(self, row):
+    def test_sum(self, row, value):
         column = self.column
         if row[column]:
             return int(row[column])
