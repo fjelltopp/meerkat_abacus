@@ -372,7 +372,7 @@ def new_data_to_codes():
         uuids.append(row.uuid)
     for form in model.form_tables.keys():
         result = session.query(model.form_tables[form].uuid,
-                               model.form_tables[form].data)#.yield_per(500)
+                               model.form_tables[form].data).yield_per(500)
         i = 0
         for row in result:
             if row.uuid not in uuids:
