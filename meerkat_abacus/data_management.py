@@ -88,7 +88,7 @@ def get_data_from_s3(bucket, data_directory, country_config):
     for form in country_config["tables"].values():
         file_name = form + ".csv"
         repsonse = s3.meta.client.download_file(bucket,
-                                                file_name,
+                                                "data/"+file_name,
                                                 data_directory + file_name)
 
     

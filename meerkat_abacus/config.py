@@ -18,7 +18,7 @@ DATABASE_URL = from_env("MEERKAT_ABACUS_DB_URL",
 data_directory = from_env("DATA_DIRECTORY", "~/meerkat_abacus/data/")
 config_directory = from_env("COUNTRY_CONFIG_DIR",
                             "/var/www/meerkat_abacus/meerkat_abacus/country_config/")
-fake_data = from_env("NEW_FAKE_DATA", True)
+fake_data = int(from_env("NEW_FAKE_DATA", True))
 start_celery = from_env("START_CELERY", False)
 get_data_from_s3 = from_env("GET_DATA_FROM_S3", False)
 interval = 3600  # Seconds
