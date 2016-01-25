@@ -12,3 +12,11 @@ def test_locations(results):
             assert r.parent_location == 2
         if r.id == 7:
             assert r.deviceid == "1,6"
+
+def test_alert_status(labs, link):
+    if labs == "unsure":
+        assert "Ongoing" == link.data["status"]
+    elif labs == "yes":
+        assert "Confirmed" == link.data["status"]
+    elif labs == "no":
+        assert "Disregarded" == link.data["status"]

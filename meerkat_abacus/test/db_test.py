@@ -83,7 +83,8 @@ class DbTest(unittest.TestCase):
         assert number_of_female == len(female.all())
         
         manage.add_links(engine)
-        link_query = session.query(model.Links)
+        link_query = session.query(model.Links).filter(
+            model.Links.link_def == "alert_investigation")
         links = {}
         for link in link_query:
             links[link.link_value] = link
@@ -106,12 +107,8 @@ class DbTest(unittest.TestCase):
                            == parse(alert_invs[alert_id][0].data["end"]))
                     labs = (alert_invs[alert_id][0]
                             .data["alert_labs./return_lab"])
-                    if labs == "unsure":
-                        assert "Ongoing" == links[alert_id].data["status"]
-                    elif labs == "yes":
-                        assert "Confirmed" == links[alert_id].data["status"]
-                    elif labs == "no":
-                        assert "Disregarded" == links[alert_id].data["status"]
+                    country_test.test_alert_status(labs, links[alert_id])
+      
                 else:
                     investigations = alert_invs[alert_id]
                     largest_date = datetime(2015, 1, 1)
@@ -123,12 +120,6 @@ class DbTest(unittest.TestCase):
                     assert links[alert_id].to_date == largest_date
                     labs = (largest_inv
                             .data["alert_labs./return_lab"])
-                    if labs == "unsure":
-                        assert "Ongoing" == links[alert_id].data["status"]
-                    elif labs == "yes":
-                        assert "Confirmed" == links[alert_id].data["status"]
-                    elif labs == "no":
-                        assert "Disregarded" == links[alert_id].data["status"]
-
+                    country_test.test_alert_status(labs, links[alert_id])
             else:
                 assert alert_id not in links.keys()
