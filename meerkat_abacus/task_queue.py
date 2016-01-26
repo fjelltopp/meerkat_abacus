@@ -37,7 +37,9 @@ def get_proccess_data():
 @app.task
 def get_new_data_from_s3():
     """ get new data from s3"""
-    data_management.get_data_from_s3()
+    data_management.get_data_from_s3(config.s3_bucket,
+                                     config.data_directory,
+                                     config.country_config)
 
 @app.task
 def import_new_data():
