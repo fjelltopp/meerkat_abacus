@@ -69,9 +69,9 @@ class TocodeTest(unittest.TestCase):
                          locations_by_deviceid,
                          regions,
                          districts)
-        variables = {}
+        variables = {"form1": {1: {}, 2: {}, 3: {}, 4: {}}}
         for av in agg_variables:
-            variables[av.id] = Variable(av)
+            variables["form1"][av.id][av.id] = Variable(av)
 
         row1 = {"index": 1, "column1": "A", "column2": "B34", "column3": "7",
                 "date": "2015-10-25", "deviceid": 1, "meta/instanceID": "a"}
@@ -81,6 +81,7 @@ class TocodeTest(unittest.TestCase):
                 "date": "2015-10-25", "deviceid": 2, "meta/instanceID": "a"}
         result, alert = to_code(row1, variables, all_locations,
                                 "date", "form1", alert_data)
+        print(result.variables)
         assert result.variables == {1: 1, 2: 1, 3: 1, 4: 1}
         assert result.country == 1
         assert result.region == 2

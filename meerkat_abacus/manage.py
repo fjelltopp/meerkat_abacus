@@ -10,6 +10,7 @@ parser.add_argument("action", choices=["create-db",
                                        "import-links",
                                        "to-codes",
                                        "add-links",
+                                       "get-data-s3",
                                        "all"],
                     help="Choose action" )
 parser.add_argument("--drop-db", action="store_true",
@@ -30,15 +31,22 @@ if __name__ == "__main__":
     if args.action == "import-locations":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        import_locations(country_config, engine)
+        import_locations(country_config,config.config_directory, engine)
     if args.action == "fake-data":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        fake_data(country_config, form_directory, engine, N=args.N)
+        fake_data(country_config, data_directory, engine, N=args.N)
+    if args.action == "get-data-s3":
+        if config.get_data_from_s3:
+            get_data_from_s3(config.s3_bucket,
+                             data_directory,
+                             country_config)
+        else:
+            print("Not configured for S3")
     if args.action == "import-data":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        import_data(country_config, form_directory, engine)
+        import_data(country_config, data_directory, engine)
     if args.action == "import-variables":
         engine = create_engine(DATABASE_URL)
         Session = sessionmaker(bind=engine)

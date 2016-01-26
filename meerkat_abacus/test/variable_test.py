@@ -22,9 +22,9 @@ class VariableTest(unittest.TestCase):
             db_column="index")
         variable = Variable(agg_variable)
         row = {"index": 1}
-        assert variable.test(row) == 1
+        assert variable.test(row, 1) == 1
         row = {"index": None}
-        assert variable.test(row) == 0
+        assert variable.test(row, None) == 0
 
     def test_count_occurence(self):
         agg_variable = model.AggregationVariables(
@@ -35,17 +35,17 @@ class VariableTest(unittest.TestCase):
             condition="A")
         variable = Variable(agg_variable)
         row = {"column1": "A"}
-        assert variable.test(row) == 1
+        assert variable.test(row, "A") == 1
         row = {"column1": "B"}
-        assert variable.test(row) == 0
+        assert variable.test(row, "B") == 0
         agg_variable.condition = "A,C"
         variable = Variable(agg_variable)
         row = {"column1": "A"}
-        assert variable.test(row) == 1
+        assert variable.test(row, "A") == 1
         row = {"column1": "C"}
-        assert variable.test(row) == 1
+        assert variable.test(row, "C") == 1
         row = {"column1": "B"}
-        assert variable.test(row) == 0
+        assert variable.test(row, "B") == 0
         
     def test_int_between(self):
         agg_variable = model.AggregationVariables(
@@ -56,18 +56,18 @@ class VariableTest(unittest.TestCase):
             condition="3,6")
         variable = Variable(agg_variable)
         row = {"column1": "3"}
-        assert variable.test(row) == 1
+        assert variable.test(row, 3) == 1
 
         row = {"column1": "5"}
-        assert variable.test(row) == 1
+        assert variable.test(row, 5) == 1
         row = {"column1": "9"}
-        assert variable.test(row) == 0
+        assert variable.test(row, 9) == 0
         row = {"column1": "6"}
-        assert variable.test(row) == 0
+        assert variable.test(row, 6) == 0
         agg_variable.condition = "0,5"
         variable = Variable(agg_variable)
         row = {"column1": "0"}
-        assert variable.test(row) == 1
+        assert variable.test(row, 0) == 1
 
     def test_count_occerence_in(self):
         agg_variable = model.AggregationVariables(
@@ -78,24 +78,24 @@ class VariableTest(unittest.TestCase):
             condition="A")
         variable = Variable(agg_variable)
         row = {"column1": "A"}
-        assert variable.test(row) == 1
+        assert variable.test(row, "A") == 1
         row = {"column1": "A3"}
-        assert variable.test(row) == 1
+        assert variable.test(row, "A3") == 1
         row = {"column1": "B"}
-        assert variable.test(row) == 0
+        assert variable.test(row, "B") == 0
 
         agg_variable.condition = "A,C"
         variable = Variable(agg_variable)
         row = {"column1": "A"}
-        assert variable.test(row) == 1
+        assert variable.test(row, "A") == 1
         row = {"column1": "C"}
-        assert variable.test(row) == 1
+        assert variable.test(row, "C") == 1
         row = {"column1": "A1"}
-        assert variable.test(row) == 1
+        assert variable.test(row, "A1") == 1
         row = {"column1": "C3"}
-        assert variable.test(row) == 1
+        assert variable.test(row, "C3") == 1
         row = {"column1": "B"}
-        assert variable.test(row) == 0
+        assert variable.test(row, "B") == 0
 
     def test_count_occurence_int_between(self):
         agg_variable = model.AggregationVariables(
@@ -103,24 +103,26 @@ class VariableTest(unittest.TestCase):
             secondary_condition="",
             method="count_occurence,int_between",
             db_column="column2,column1",
-            condition="A:0,5")
+            condition="AB:0,5")
         variable = Variable(agg_variable)
-        row = {"column1": "3", "column2": "A"}
-        assert variable.test(row) == 1
-        row = {"column1": "7", "column2": "A"}
-        assert variable.test(row) == 0
+        row = {"column1": "3", "column2": "AB"}
+        assert variable.test(row, None) == 1
+        row = {"column1": "7", "column2": "AB"}
+        assert variable.test(row, None) == 0
         row = {"column1": "3", "column2": "B"}
-        assert variable.test(row) == 0
-        row = {"column1": "0", "column2": "A"}
-        assert variable.test(row) == 1
-        agg_variable.condition = "A,C:0,5"
+        assert variable.test(row, None) == 0
+        row = {"column1": "0", "column2": "AB"}
+        assert variable.test(row, None) == 1
+        agg_variable.condition = "AB,C:0,5"
         variable = Variable(agg_variable)
-        row = {"column1": "3", "column2": "A"}
-        assert variable.test(row) == 1
+        row = {"column1": "3", "column2": "AB"}
+        assert variable.test(row, None) == 1
         row = {"column1": "3", "column2": "C"}
-        assert variable.test(row) == 1
+        assert variable.test(row, None) == 1
         row = {"column1": "3", "column2": "B"}
-        assert variable.test(row) == 0
+        assert variable.test(row, None) == 0
+        row = {"column1": "3", "column2": "B"}
+        assert variable.test(row, None) == 0
 
     def test_count_occurence_in_int_between(self):
         agg_variable = model.AggregationVariables(
@@ -131,21 +133,21 @@ class VariableTest(unittest.TestCase):
             condition="A:0,5")
         variable = Variable(agg_variable)
         row = {"column1": "3", "column2": "A"}
-        assert variable.test(row) == 1
+        assert variable.test(row, None) == 1
         row = {"column1": "7", "column2": "A"}
-        assert variable.test(row) == 0
+        assert variable.test(row, None) == 0
         row = {"column1": "3", "column2": "B"}
-        assert variable.test(row) == 0
+        assert variable.test(row, None) == 0
         row = {"column1": "0", "column2": "A"}
-        assert variable.test(row) == 1
+        assert variable.test(row, None) == 1
         agg_variable.condition = "A,C:0,5"
         variable = Variable(agg_variable)
         row = {"column1": "3", "column2": "A"}
-        assert variable.test(row) == 1
+        assert variable.test(row, None) == 1
         row = {"column1": "3", "column2": "C"}
-        assert variable.test(row) == 1
+        assert variable.test(row, None) == 1
         row = {"column1": "3", "column2": "B"}
-        assert variable.test(row) == 0
+        assert variable.test(row, None) == 0
 
     def test_secondary_condition(self):
         agg_variable = model.AggregationVariables(
@@ -155,9 +157,9 @@ class VariableTest(unittest.TestCase):
             db_column="index")
         variable = Variable(agg_variable)
         row = {"index": 1, "column2": "A"}
-        assert variable.test(row) == 1
+        assert variable.secondary_condition(row) == 1
         row = {"index": 1, "column2": "B"}
-        assert variable.test(row) == 0
+        assert variable.secondary_condition(row) == 0
     def test_sum(self):
         agg_variable = model.AggregationVariables(
             id=4,
@@ -165,9 +167,9 @@ class VariableTest(unittest.TestCase):
             db_column="column1")
         variable = Variable(agg_variable)
         row = {"column1": ""}
-        assert variable.test(row) == 0
+        assert variable.test(row, None) == 0
         row = {"column1": "4"}
-        assert variable.test(row) == 4
+        assert variable.test(row, 4) == 4
 
 
 if __name__ == "__main__":

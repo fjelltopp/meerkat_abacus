@@ -65,10 +65,11 @@ class AggregationVariables(Base):
     method = Column(String)
     location = Column(String)
     condition = Column(String)
-    category = Column(JSONB)#String)
+    category = Column(JSONB)
     daily = Column(Integer)
     classification = Column(String)
     alert = Column(Integer)
+    calculation_group = Column(String)
     secondary_condition = Column(String)
     classification_casedef = Column(String)
     source = Column(String)
@@ -96,7 +97,7 @@ class AggregationVariables(Base):
 class LinkDefinitions(Base):
     __tablename__ = 'link_definitions'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
     name = Column(String)
     from_table = Column(String, index=True)
     from_column = Column(String)
@@ -117,7 +118,7 @@ class Links(Base):
     from_date = Column(DateTime, index=True)
     to_date = Column(DateTime, index=True)
     to_id = Column(String)
-    link_def = Column(Integer)
+    link_def = Column(String)
     data = Column(JSONB)
 create_index = DDL("CREATE INDEX links_gin ON links USING gin(data);")
 listen(Links.__table__, 'after_create', create_index)

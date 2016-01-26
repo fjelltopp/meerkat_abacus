@@ -17,9 +17,14 @@ def get_variables(session):
         variables(dict): dict of id:Variable
     """
     result = session.query(model.AggregationVariables)
-    variables ={}
+    variables = {}
     for row in result:
-        variables[row.id] = Variable(row)
+        group = row.calculation_group
+        if not group:
+            group = row.id
+        variables.setdefault(row.form, {})
+        variables[row.form].setdefault(group, {})
+        variables[row.form][group][row.id] = Variable(row)
     return variables
 
 
@@ -54,20 +59,29 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
         new_record.region = locations[clinic_id].parent_location
     variable_json = {}
     alert = None
-    for v in variables.keys():
-        if table_name == variables[v].variable.form:
-            test_outcome = variables[v].test(row)
-            if test_outcome:
-                variable_json[v] = test_outcome
-                if variables[v].variable.alert:
-                    data_alert = {}
-                    for data_var in alert_data.keys():
-                        data_alert[data_var] = row[alert_data[data_var]]
-                    alert = model.Alerts(
-                        uuids=row["meta/instanceID"],
-                        clinic=clinic_id,
-                        reason=v,
-                        data=data_alert,
-                        date=date)
-        new_record.variables = variable_json
+    if table_name in variables.keys():
+        for group in variables[table_name].keys():
+            #All variables in group have same secondary conndition, so only check once
+            first_variable = next(iter(variables[table_name][group].values()))
+            if first_variable.secondary_condition(row):
+                value = row.get(first_variable.column, "neppe")
+                for v in variables[table_name][group]:
+                    test_outcome = variables[table_name][group][v].test_type(row, value)
+                    if test_outcome:
+                        variable_json[v] = int(test_outcome)
+                        if variables[table_name][group][v].variable.alert:
+                            data_alert = {}
+                            for data_var in alert_data.keys():
+                                data_alert[data_var] = row[alert_data[data_var]]
+                            alert = model.Alerts(
+                                uuids=row["meta/instanceID"],
+                                clinic=clinic_id,
+                                reason=v,
+                                data=data_alert,
+                                date=date)
+                        break
+    new_record.variables = variable_json
     return (new_record, alert)
+
+
+    
