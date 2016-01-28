@@ -383,7 +383,7 @@ def new_data_to_codes():
                     country_config["form_dates"][form],
                     country_config["tables"][form],
                     country_config["alert_data"])
-                if new_data.variables != {}:
+                if not new_data and new_data.variables != {}:
                     session.add(new_data)
                 if alert:
                     alerts.append(alert)
