@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import argparse
 from meerkat_abacus.data_management import *
 
 parser = argparse.ArgumentParser()
