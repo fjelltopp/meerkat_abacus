@@ -29,9 +29,13 @@ def get_proccess_data():
         add_new_fake_data(5)
     if config.get_data_from_s3:
         get_new_data_from_s3()
+    print("Import new data")
     import_new_data()
+    print("To Code")
     new_data_to_codes()
+    print("Add Links")
     add_new_links()
+    print("Finished")
 
 
 @app.task

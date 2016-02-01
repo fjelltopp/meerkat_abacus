@@ -28,7 +28,12 @@ links = [
                                     "condition": "contact_tracing"},
                 "Laboratory Diagnosis": {"column": "pt./checklist",
                                          "condition": "return_lab"},
-            }
+            },
+            "investigator": {
+                "investigator": {"column": "deviceid",
+                                 "condition": "get_value"
+                                 }
+                }
         }
 
     }

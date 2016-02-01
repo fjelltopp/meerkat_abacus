@@ -1,4 +1,3 @@
-import argparse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
@@ -465,7 +464,9 @@ def sort_data(data_def, row):
                 if row[value_dict["column"]] in value_dict["condition"]:
                     data[key].append(value)
             else:
-                if value_dict["condition"] in row[value_dict["column"]].split(","):
+                if value_dict["condition"] == "get_value":
+                    data[key].append(row[value_dict["column"]])
+                elif value_dict["condition"] in row[value_dict["column"]].split(","):
                     data[key].append(value)
         if len(data[key]) == 1:
             data[key] = data[key][0]
@@ -478,28 +479,26 @@ def add_alerts(alerts, session):
     day, disease and clinic already exists we create one big record.
 
     Args:
-        uuid: uuid of case_record
-        clinic: clinic id
-        disease: variable id
-        date: date
+        alerts: list of alerts
+        session: db session
     """
-    to_insert = {}
+    # to_insert = {}
+    # for alert in alerts:
+    #     check = str(alert.clinic) + str(alert.reason) + str(alert.date)
+    #     if check in to_insert.keys():
+    #         to_insert[check].uuids = ",".join(
+    #             sorted(to_insert[check].uuids.split() + [alert.uuids]))
+    #     else:
+    #         to_insert[check] = alert
+    # results = session.query(model.Alerts)
+    # for alert in results:
+    #     check = str(alert.clinic) + str(alert.reason) + str(alert.date)
+    #     if check in to_insert.keys():
+    #         alert.uuids = ",".join(
+    #             sorted(to_insert[check].uuids.split() + [alert.uuids]))
+    #         alert.id = alert.uuids[-country_config["alert_id_length"]:]
+    #         to_insert.pop(check, None)
     for alert in alerts:
-        check = str(alert.clinic) + str(alert.reason) + str(alert.date)
-        if check in to_insert.keys():
-            to_insert[check].uuids = ",".join(
-                sorted(to_insert[check].uuids.split() + [alert.uuids]))
-        else:
-            to_insert[check] = alert
-    results = session.query(model.Alerts)
-    for alert in results:
-        check = str(alert.clinic) + str(alert.reason) + str(alert.date)
-        if check in to_insert.keys():
-            alert.uuids = ",".join(
-                sorted(to_insert[check].uuids.split() + [alert.uuids]))
-            alert.id = alert.uuids[-country_config["alert_id_length"]:]
-            to_insert.pop(check, None)
-    for alert in to_insert.values():
         alert.id = alert.uuids[-country_config["alert_id_length"]:]
         session.add(alert)
     
