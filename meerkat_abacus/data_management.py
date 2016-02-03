@@ -119,6 +119,7 @@ def table_data_from_csv(filename, table, directory, session,
                            .format(table_name))
 
     session.commit()
+
     for row in read_csv(directory + filename + ".csv"):
         if "_index" in row:
             row["index"] = row.pop("_index")
@@ -138,6 +139,7 @@ def table_data_from_csv(filename, table, directory, session,
         else:
             insert_row.pop("")
             session.add(table(**insert_row))
+
     session.commit()
 
         
@@ -367,6 +369,7 @@ def new_data_to_codes():
     results = session.query(model.Data.uuid)
     uuids = []
     alerts = []
+    
     for row in results:
         uuids.append(row.uuid)
     for form in model.form_tables.keys():

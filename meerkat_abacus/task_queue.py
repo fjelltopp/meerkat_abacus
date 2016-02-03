@@ -10,9 +10,12 @@ import meerkat_abacus.config as config
 import meerkat_abacus.data_management as data_management
 from celery.signals import worker_ready
 
-
 @worker_ready.connect
-def set_up_db(**kwargs):
+def set_up_task(**kwargs):
+    set_up_db.delay()
+
+@app.task
+def set_up_db():
     print("Setting up DB for {}".format(
         config.country_config["country_name"]))
     data_management.set_up_everything(config.DATABASE_URL,
@@ -36,6 +39,7 @@ def get_proccess_data():
     print("Add Links")
     add_new_links()
     print("Finished")
+
 
 
 @app.task
