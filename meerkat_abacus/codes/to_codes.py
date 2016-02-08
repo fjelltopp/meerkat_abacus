@@ -4,7 +4,7 @@ Functionality to turn raw data into codes
 from dateutil import parser
 
 import meerkat_abacus.model as model
-from meerkat_abacus.aggregation.variable import Variable
+from meerkat_abacus.codes.variable import Variable
 
 def get_variables(session):
     """

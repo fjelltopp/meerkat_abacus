@@ -1,3 +1,8 @@
+"""
+Functions to create the database, populate the db tables and proccess data.
+
+"""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
@@ -11,13 +16,11 @@ from meerkat_abacus.util.import_locations import import_clinics
 from meerkat_abacus.util.import_locations import import_districts
 from meerkat_abacus.util import create_fake_data, get_deviceids
 from meerkat_abacus.util import write_csv, read_csv, all_location_data
-
-
 import meerkat_abacus.model as model
 from meerkat_abacus.model import form_tables
 from meerkat_abacus.config import DATABASE_URL, country_config, data_directory, config_directory
 import meerkat_abacus.config as config
-import meerkat_abacus.aggregation.to_codes as to_codes
+import meerkat_abacus.codes.to_codes as to_codes
 from meerkat_abacus import util
 
 
@@ -58,6 +61,7 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
         Session = sessionmaker(bind=engine)
         session = Session()
     deviceids = get_deviceids(session, case_report=True)
+    print(deviceids)
     alert_ids = []
     forms = ["case", "register", "alert"]
     for form in country_config["tables"]:
@@ -81,7 +85,16 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
 
         
 def get_data_from_s3(bucket, data_directory, country_config):
-    """Get form data from s3"""
+    """
+    Get form data from s3 bucket
+    
+    To run, needs to be authenticated with AWS.
+    
+    Args: 
+       bucket: bucket_name
+       data_directory: directory to store the downloaded files
+       country_config: country configs to find the form files
+    """
     
     s3 = boto3.resource('s3')
     for form in country_config["tables"].values():
@@ -338,6 +351,7 @@ def set_up_everything(url, leave_if_data, drop_db, N):
         print("Add Links")
         add_links(engine)
 
+
 def import_new_data():
     """
     task to check csv files and insert any new data
@@ -352,7 +366,14 @@ def import_new_data():
                                          data, session)
     return True
 
+
 def add_new_fake_data(to_add):
+    """
+    Adds a new fake data
+
+    Args:
+       to_add: number of new records to add
+    """
     engine = create_engine(DATABASE_URL)
     fake_data(country_config, data_directory, engine, to_add, new=False)
 

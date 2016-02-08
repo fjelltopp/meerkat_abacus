@@ -1,7 +1,7 @@
 import unittest
 
 from meerkat_abacus import model
-from meerkat_abacus.aggregation.variable import Variable
+from meerkat_abacus.codes.variable import Variable
 
 
 class VariableTest(unittest.TestCase):

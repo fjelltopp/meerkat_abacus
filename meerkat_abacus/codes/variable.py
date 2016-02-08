@@ -87,12 +87,21 @@ class Variable():
             self.secondary_condition = self.secondary_condition_no
             
     def secondary_condition_test(self, row):
+        """
+        Tests if secondary condition is fullfilled
+        
+        Args:
+           row: db-row
+        """
         if row.get(self.sec_column, "neppe") == self.sec_condition:
             return 1
         else:
             return 0
         
-    def secondary_condition_no(self,row):
+    def secondary_condition_no(self, row):
+        """
+        Returns 1 sicne the variable does not have a secondary condition
+        """
         return 1
 
     def test(self, row, value):
@@ -105,10 +114,7 @@ class Variable():
         Returns:
             id(int): 0 if false and 1 (or sum) if true
         """
-        #if self.secondary_condition(row):
         return self.test_type(row, value)
-        #else:
-        #    return 0
 
     def test_count_occurence_list(self, row, value):
         return value in self.cond_list

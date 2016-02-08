@@ -30,8 +30,6 @@ def import_clinics(csv_file, session, country_id):
     clinics_csv = csv.DictReader(f)
     for row in clinics_csv:
         if row["deviceid"]:
-            result = session.query(Locations)\
-                            .filter(Locations.name == row["clinic"], Locations.clinic_type != None)
             if "case_report" in row.keys():
                 if row["case_report"] == "Yes":
                     case_report = 1
@@ -40,16 +38,21 @@ def import_clinics(csv_file, session, country_id):
             else:
                 case_report = 0
 
+            if row["district"]:
+                parent_location = districts[row["district"]]
+            elif row["region"]:
+                parent_location = regions[row["region"]]
+            result = session.query(Locations)\
+                            .filter(Locations.name == row["clinic"],
+                                    Locations.parent_location == parent_location,
+                                    Locations.clinic_type != None)
+       
             if len(result.all()) == 0:
                 if row["longitude"] and row["latitude"]:
                     geolocation = row["latitude"] + "," + row["longitude"]
                 else:
                     geolocation = None
 
-                if row["district"]:
-                    parent_location = districts[row["district"]]
-                elif row["region"]:
-                    parent_location = regions[row["region"]]
                 session.add(Locations(name=row["clinic"],
                                       parent_location=parent_location,
                                       geolocation=geolocation,
