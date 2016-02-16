@@ -1,11 +1,10 @@
 """
 Various utility functions
 """
-import csv
+import csv, requests, json
 from datetime import datetime, timedelta
-
 from meerkat_abacus.model import Locations, LinkDefinitions
-from meerkat_abacus.config import country_config
+from meerkat_abacus.config import country_config, hermes_api_root, hermes_api_key
 
 
 def epi_week_start_date(year, epi_config=country_config["epi_week"]):
@@ -212,3 +211,19 @@ def read_csv(file_path):
         rows.append(row)
     f.close()
     return rows
+
+def hermes(url, method, data={}):
+    """Makes a Hermes API request"""
+
+    #Add the API key and turn into JSON.
+    data["api_key"] = hermes_api_key
+
+    #Assemble the other request params.
+    url = hermes_api_root + url 
+    headers = {'content-type' : 'application/json'}
+    
+    #Make the request and handle the response.
+    r = requests.request( method, url, json=data, headers=headers)
+    return r.json()   
+
+     

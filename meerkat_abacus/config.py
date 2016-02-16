@@ -51,6 +51,8 @@ fake_data = int(from_env("NEW_FAKE_DATA", True))
 start_celery = from_env("START_CELERY", False)
 get_data_from_s3 = from_env("GET_DATA_FROM_S3", False)
 interval = 3600  # Seconds
+hermes_api_key = from_env("HERMES_API_KEY")
+hermes_api_root = from_env("HERMES_API_ROOT")
 
 # Country config
 country_config_file = from_env("COUNTRY_CONFIG", "demo_config.py")
