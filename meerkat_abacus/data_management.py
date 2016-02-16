@@ -1,4 +1,8 @@
-import argparse
+"""
+Functions to create the database, populate the db tables and proccess data.
+
+"""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
@@ -12,13 +16,11 @@ from meerkat_abacus.util.import_locations import import_clinics
 from meerkat_abacus.util.import_locations import import_districts
 from meerkat_abacus.util import create_fake_data, get_deviceids
 from meerkat_abacus.util import write_csv, read_csv, all_location_data
-
-
 import meerkat_abacus.model as model
 from meerkat_abacus.model import form_tables
 from meerkat_abacus.config import DATABASE_URL, country_config, data_directory, config_directory
 import meerkat_abacus.config as config
-import meerkat_abacus.aggregation.to_codes as to_codes
+import meerkat_abacus.codes.to_codes as to_codes
 from meerkat_abacus import util
 
 
@@ -59,6 +61,7 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
         Session = sessionmaker(bind=engine)
         session = Session()
     deviceids = get_deviceids(session, case_report=True)
+    print(deviceids)
     alert_ids = []
     forms = ["case", "register", "alert"]
     for form in country_config["tables"]:
@@ -82,7 +85,16 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
 
         
 def get_data_from_s3(bucket, data_directory, country_config):
-    """Get form data from s3"""
+    """
+    Get form data from s3 bucket
+    
+    To run, needs to be authenticated with AWS.
+    
+    Args: 
+       bucket: bucket_name
+       data_directory: directory to store the downloaded files
+       country_config: country configs to find the form files
+    """
     
     s3 = boto3.resource('s3')
     for form in country_config["tables"].values():
@@ -120,6 +132,7 @@ def table_data_from_csv(filename, table, directory, session,
                            .format(table_name))
 
     session.commit()
+
     for row in read_csv(directory + filename + ".csv"):
         if "_index" in row:
             row["index"] = row.pop("_index")
@@ -139,6 +152,7 @@ def table_data_from_csv(filename, table, directory, session,
         else:
             insert_row.pop("")
             session.add(table(**insert_row))
+
     session.commit()
 
         
@@ -337,6 +351,7 @@ def set_up_everything(url, leave_if_data, drop_db, N):
         print("Add Links")
         add_links(engine)
 
+
 def import_new_data():
     """
     task to check csv files and insert any new data
@@ -351,7 +366,14 @@ def import_new_data():
                                          data, session)
     return True
 
+
 def add_new_fake_data(to_add):
+    """
+    Adds a new fake data
+
+    Args:
+       to_add: number of new records to add
+    """
     engine = create_engine(DATABASE_URL)
     fake_data(country_config, data_directory, engine, to_add, new=False)
 
@@ -368,6 +390,7 @@ def new_data_to_codes():
     results = session.query(model.Data.uuid)
     uuids = []
     alerts = []
+    
     for row in results:
         uuids.append(row.uuid)
     for form in model.form_tables.keys():
@@ -383,7 +406,7 @@ def new_data_to_codes():
                     country_config["form_dates"][form],
                     country_config["tables"][form],
                     country_config["alert_data"])
-                if new_data.variables != {}:
+                if new_data and new_data.variables != {}:
                     session.add(new_data)
                 if alert:
                     alerts.append(alert)
@@ -465,7 +488,9 @@ def sort_data(data_def, row):
                 if row[value_dict["column"]] in value_dict["condition"]:
                     data[key].append(value)
             else:
-                if value_dict["condition"] in row[value_dict["column"]].split(","):
+                if value_dict["condition"] == "get_value":
+                    data[key].append(row[value_dict["column"]])
+                elif value_dict["condition"] in row[value_dict["column"]].split(","):
                     data[key].append(value)
         if len(data[key]) == 1:
             data[key] = data[key][0]
@@ -478,28 +503,26 @@ def add_alerts(alerts, session):
     day, disease and clinic already exists we create one big record.
 
     Args:
-        uuid: uuid of case_record
-        clinic: clinic id
-        disease: variable id
-        date: date
+        alerts: list of alerts
+        session: db session
     """
-    to_insert = {}
+    # to_insert = {}
+    # for alert in alerts:
+    #     check = str(alert.clinic) + str(alert.reason) + str(alert.date)
+    #     if check in to_insert.keys():
+    #         to_insert[check].uuids = ",".join(
+    #             sorted(to_insert[check].uuids.split() + [alert.uuids]))
+    #     else:
+    #         to_insert[check] = alert
+    # results = session.query(model.Alerts)
+    # for alert in results:
+    #     check = str(alert.clinic) + str(alert.reason) + str(alert.date)
+    #     if check in to_insert.keys():
+    #         alert.uuids = ",".join(
+    #             sorted(to_insert[check].uuids.split() + [alert.uuids]))
+    #         alert.id = alert.uuids[-country_config["alert_id_length"]:]
+    #         to_insert.pop(check, None)
     for alert in alerts:
-        check = str(alert.clinic) + str(alert.reason) + str(alert.date)
-        if check in to_insert.keys():
-            to_insert[check].uuids = ",".join(
-                sorted(to_insert[check].uuids.split() + [alert.uuids]))
-        else:
-            to_insert[check] = alert
-    results = session.query(model.Alerts)
-    for alert in results:
-        check = str(alert.clinic) + str(alert.reason) + str(alert.date)
-        if check in to_insert.keys():
-            alert.uuids = ",".join(
-                sorted(to_insert[check].uuids.split() + [alert.uuids]))
-            alert.id = alert.uuids[-country_config["alert_id_length"]:]
-            to_insert.pop(check, None)
-    for alert in to_insert.values():
         alert.id = alert.uuids[-country_config["alert_id_length"]:]
         session.add(alert)
     

@@ -1,10 +1,37 @@
 """
-Configuration for meerkat_abacus
+Configuration file for meerkat_abacus
+
+This configuration file sets up application level configurations
+and imports the country specific configurations.
+
+Many of the application level configurations can be overwritten by
+environemental variables:
+
+MEERKAT_ABACUS_DB_URL: db_url
+
+DATA_DIRECTORY: path to directory where we store data csv files
+
+COUNTRY_CONFIG_DIR: path to directory with country config
+
+COUNTRY_CONFIG: name of country config file
+
+NEW_FAKE_DATA: if we should generate fake data
+
+GET_DATA_FROM_S3: if we should download data from an S3 bucket
+
+START_CELERY: if we want to star the celery hourly tasks
+
 """
 import os
 import sys
 import importlib.util
 def from_env(env_var, default):
+    """ Gets value from envrionment variable or uses default
+
+    Args: 
+        env_var: name of envrionment variable
+        default: the default value
+    """
     new = os.environ.get(env_var)
     if new:
         return new
@@ -13,11 +40,13 @@ def from_env(env_var, default):
 
 
 # Application config
+current_directory = os.path.dirname(os.path.realpath(__file__))
 DATABASE_URL = from_env("MEERKAT_ABACUS_DB_URL",
                         'postgresql+psycopg2://postgres:postgres@db/meerkat_db')
-data_directory = from_env("DATA_DIRECTORY", "~/meerkat_abacus/data/")
+data_directory = from_env("DATA_DIRECTORY",
+                          current_directory + "/data/")
 config_directory = from_env("COUNTRY_CONFIG_DIR",
-                            "/var/www/meerkat_abacus/meerkat_abacus/country_config/")
+                            current_directory + "/country_config/")
 fake_data = int(from_env("NEW_FAKE_DATA", True))
 start_celery = from_env("START_CELERY", False)
 get_data_from_s3 = from_env("GET_DATA_FROM_S3", False)

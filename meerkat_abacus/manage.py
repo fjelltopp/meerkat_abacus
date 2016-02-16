@@ -1,4 +1,9 @@
 #!/usr/bin/python3
+"""
+command line tool to run all database tasks
+"""
+
+import argparse
 from meerkat_abacus.data_management import *
 
 parser = argparse.ArgumentParser()

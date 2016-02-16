@@ -2,8 +2,8 @@ import unittest
 import datetime
 
 from meerkat_abacus import model
-from meerkat_abacus.aggregation.to_codes import to_code
-from meerkat_abacus.aggregation.variable import Variable
+from meerkat_abacus.codes.to_codes import to_code
+from meerkat_abacus.codes.variable import Variable
 
 class TocodeTest(unittest.TestCase):
     """
