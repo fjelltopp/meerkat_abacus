@@ -61,7 +61,6 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
         Session = sessionmaker(bind=engine)
         session = Session()
     deviceids = get_deviceids(session, case_report=True)
-    print(deviceids)
     alert_ids = []
     forms = ["case", "register", "alert"]
     for form in country_config["tables"]:
@@ -165,7 +164,9 @@ def category_to_list(row):
     Reutrns:
         row: modified row
     """
-    if "," in row["category"]:
+    if ";" in row["category"]:
+        row["category"] = [c.strip() for c in row["category"].split(";")]
+    elif "," in row["category"]:
         row["category"] = [c.strip() for c in row["category"].split(",")]
     else:
         row["category"] = [row["category"]]

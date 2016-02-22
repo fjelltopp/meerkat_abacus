@@ -48,8 +48,8 @@ data_directory = from_env("DATA_DIRECTORY",
 config_directory = from_env("COUNTRY_CONFIG_DIR",
                             current_directory + "/country_config/")
 fake_data = int(from_env("NEW_FAKE_DATA", True))
-start_celery = from_env("START_CELERY", False)
-get_data_from_s3 = from_env("GET_DATA_FROM_S3", False)
+start_celery = int(from_env("START_CELERY", False))
+get_data_from_s3 = int(from_env("GET_DATA_FROM_S3", False))
 interval = 3600  # Seconds
 
 # Country config
