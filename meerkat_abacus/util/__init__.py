@@ -3,7 +3,7 @@ Various utility functions
 """
 import csv, requests, json
 from datetime import datetime, timedelta
-from meerkat_abacus.model import Locations, LinkDefinitions
+from meerkat_abacus.model import Locations, LinkDefinitions, AggregationVariables
 from meerkat_abacus.config import country_config, hermes_api_root, hermes_api_key
 
 
@@ -85,6 +85,23 @@ def all_location_data(session):
     regions, districts = get_regions_districts(session)
 
     return (locations, locations_by_deviceid, regions, districts)
+
+
+def get_variables(session):
+    """
+    get variables out of db turn them into Variable classes
+
+    Args:
+        session: db-session
+
+    Returns:
+        variables(dict): dict of id:Variable
+    """
+    result = session.query(AggregationVariables)
+    variables = {}
+    for row in result:
+        variables[row.id] = row
+    return variables
 
 
 def get_regions_districts(session):
@@ -226,4 +243,64 @@ def hermes(url, method, data={}):
     r = requests.request( method, url, json=data, headers=headers)
     return r.json()   
 
+def send_alert( alert, variables, locations ):
+
+    if alert.date > country_config['messaging_start_date']:
+
+        topics=[
+            country_config["messaging_topic_prefix"] + "-1-allDis",
+            country_config["messaging_topic_prefix"] + "-1-" + alert.reason,
+            country_config["messaging_topic_prefix"] + "-" + str(alert.region) + "-allDis",
+            country_config["messaging_topic_prefix"] + "-" + str(alert.region) + "-" + alert.reason      
+        ]
+
+        alert_info = ( "Alert: " + variables[alert.reason].name + "\n"
+                       "Date: " + alert.date.strftime("%d %b %Y") + "\n"
+                       "Clinic: " + locations[alert.clinic].name + "\n"
+                       "Region: " + locations[alert.region].name + "\n\n"
+                       "Patient ID: " + alert.uuids + "\n" 
+                       "Gender: " + alert.data["gender"].title() + "\n"
+                       "Age: " + alert.data["age"] + "\n\n"
+                       "Alert ID: " + alert.id + "\n\n" )
+
+        message = ( "Dear <<first_name>> <<last_name>>,\n\n"
+                    "There has been an alert that we think you'll be interested in. "
+                    "Here are the details:\n\n" + alert_info +
+                    "If you would like to unsubscribe from Meerkat Health Surveillance notifications "
+                    "please copy and post the following url into your browser's address bar:\n"
+                    "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n"
+                    "Best wishes,\nThe Meerkat Health Surveillance team" )
+
+        sms_message = ( "An alert from Meerkat Health Surveillance:\n\n" + alert_info )
+
+        html_message = ( "<p>Dear <<first_name>> <<last_name>>,</p>"
+                         "<p>There has been an alert that we think you'll be interested in. "
+                         "Here are the details:</p><table style='border:none; margin-left: 20px;'>"
+                         "<tr><td><b>Alert:</b></td><td>" + variables[alert.reason].name + "</td></tr>"
+                         "<tr><td><b>Date:</b></td><td>" + alert.date.strftime("%d %b %Y") + "</td></tr>"
+                         "<tr><td><b>Clinic:</b></td><td>" + locations[alert.clinic].name + "</td></tr>"
+                         "<tr><td><b>Region:</b></td><td>" + locations[alert.region].name + "</td></tr>"
+                         "<tr style='height:10px'></tr>"
+                         "<tr><td><b>Patient ID:</b></td><td>" + alert.uuids + "</td></tr>" 
+                         "<tr><td><b>Gender:</b></td><td>" + alert.data["gender"].title() + "</td></tr>"
+                         "<tr><td><b>Age:</b></td><td>" + alert.data["age"] + "</td></tr>"
+                         "<tr style='height:10px'></tr>"
+                         "<tr><td><b>Alert ID:</b></td><td>" + alert.id + "</td></tr></table>"
+                         "<p>If you would like to unsubscribe from Meerkat Health Surveillance notifications "
+                         "please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>"
+                         "click here</a>.</p>"
+                         "<p>Best wishes,<br>The Meerkat Health Surveillance team</p>" )        
+
+        data={
+            "from": country_config['messaging_sender'],
+            "topics": topics,
+            "id": alert.id,
+            "message": message,
+            "sms-message": sms_message,
+            "html-message": html_message,
+            "subject": "Meerkat Health Surveillance Alerts: #" + alert.id,
+            "medium": ['email','sms']
+        }
+
+        hermes('/publish', 'PUT', data)
      

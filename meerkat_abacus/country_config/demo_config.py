@@ -1,5 +1,5 @@
 """ Config for Demo Location """
-
+import datetime
 s3_bucket = False
 
 country_config = {
@@ -61,4 +61,7 @@ country_config = {
     },
     "alert_data": {"age": "pt1./age", "gender": "pt1./gender"},
     "alert_id_length": 6,
+    "messaging_start_date": datetime.datetime(2016, 2, 10),
+    "messaging_topic_prefix": "null",
+    "messaging_sender": ""
 }

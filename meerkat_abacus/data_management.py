@@ -522,8 +522,13 @@ def add_alerts(alerts, session):
     #             sorted(to_insert[check].uuids.split() + [alert.uuids]))
     #         alert.id = alert.uuids[-country_config["alert_id_length"]:]
     #         to_insert.pop(check, None)
+
+    locations = util.get_locations(session)
+    variables = util.get_variables(session)
+
     for alert in alerts:
         alert.id = alert.uuids[-country_config["alert_id_length"]:]
+        util.send_alert( alert, variables, locations  )
         session.add(alert)
     
 if __name__ == '__main__':

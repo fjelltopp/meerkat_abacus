@@ -142,6 +142,7 @@ class Alerts(Base):
     date = Column(DateTime)
     reason = Column(String)
     clinic = Column(Integer)
+    region = Column(Integer)
     data = Column(JSONB)
     uuids = Column(String)
 

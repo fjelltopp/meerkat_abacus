@@ -78,6 +78,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
                             alert = model.Alerts(
                                 uuids=row["meta/instanceID"],
                                 clinic=clinic_id,
+                                region=new_record.region, 
                                 reason=v,
                                 data=data_alert,
                                 date=date)
