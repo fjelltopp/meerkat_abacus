@@ -38,7 +38,7 @@ country_config = {
                  "smoke_now": {"one": ["yes", "no"]},
                  "icd_code": {"one": ["A80.9", "B05.3", "A00.1", "A00", "A39", "A87",
                                       "A03", "A36.8", "A33.3", "A34.4",
-                                      "A35.4", "A37", "E15", "E16", "E20.4",
+                                      "A35.4", "A37", "E15", "G00", "I10", "J40",  "E20.4",
                                       "E40", "E41", "E50", "E65", "F40", "O60",
                                       "P70", "S10"]},
                  "vaccination_type": {"multiple": ["bcg", "hepb", "diptheria",
