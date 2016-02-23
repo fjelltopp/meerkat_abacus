@@ -232,6 +232,10 @@ def read_csv(file_path):
 def hermes(url, method, data={}):
     """Makes a Hermes API request"""
 
+    #If we're in silent mode, don't send any hermes requests. 
+    if country_config["messaging_silent"]:
+        return {"message":"Abacus is in silent mode"}
+
     #Add the API key and turn into JSON.
     data["api_key"] = hermes_api_key
 

@@ -63,5 +63,6 @@ country_config = {
     "alert_id_length": 6,
     "messaging_start_date": datetime.datetime(2016, 2, 10),
     "messaging_topic_prefix": "null",
-    "messaging_sender": ""
+    "messaging_sender": "",
+    "messaging_silent": True
 }
