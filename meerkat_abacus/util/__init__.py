@@ -270,12 +270,12 @@ def send_alert( alert, variables, locations ):
         message = ( "Dear <<first_name>> <<last_name>>,\n\n"
                     "There has been an alert that we think you'll be interested in. "
                     "Here are the details:\n\n" + alert_info +
-                    "If you would like to unsubscribe from Meerkat Health Surveillance notifications "
+                    "If you would like to unsubscribe from <<country>> public health surveillance notifications "
                     "please copy and post the following url into your browser's address bar:\n"
                     "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n"
-                    "Best wishes,\nThe Meerkat Health Surveillance team" )
+                    "Best wishes,\nThe <<country>> Public Health Surveillance team" )
 
-        sms_message = ( "An alert from Meerkat Health Surveillance:\n\n" + alert_info )
+        sms_message = ( "A public health surveillance alert:\n\n" + alert_info )
 
         html_message = ( "<p>Dear <<first_name>> <<last_name>>,</p>"
                          "<p>There has been an alert that we think you'll be interested in. "
@@ -290,10 +290,11 @@ def send_alert( alert, variables, locations ):
                          "<tr><td><b>Age:</b></td><td>" + alert.data["age"] + "</td></tr>"
                          "<tr style='height:10px'></tr>"
                          "<tr><td><b>Alert ID:</b></td><td>" + alert.id + "</td></tr></table>"
-                         "<p>If you would like to unsubscribe from Meerkat Health Surveillance notifications "
+                         "<p>If you would like to unsubscribe from <<country>> public "
+                         "health surveillance notifications "
                          "please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>"
                          "click here</a>.</p>"
-                         "<p>Best wishes,<br>The Meerkat Health Surveillance team</p>" )        
+                         "<p>Best wishes,<br>The <<country>> Public Health Surveillance team</p>" )        
 
         data={
             "from": country_config['messaging_sender'],
@@ -302,7 +303,7 @@ def send_alert( alert, variables, locations ):
             "message": message,
             "sms-message": sms_message,
             "html-message": html_message,
-            "subject": "Meerkat Health Surveillance Alerts: #" + alert.id,
+            "subject": "Public Health Surveillance Alerts: #" + alert.id,
             "medium": ['email','sms']
         }
 
