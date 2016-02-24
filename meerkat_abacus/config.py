@@ -53,6 +53,7 @@ get_data_from_s3 = from_env("GET_DATA_FROM_S3", False)
 interval = 3600  # Seconds
 hermes_api_key = from_env("HERMES_API_KEY", "")
 hermes_api_root = from_env("HERMES_API_ROOT", "")
+hermes_silent = int(from_env("HERMES_SILENT", False))
 
 # Country config
 country_config_file = from_env("COUNTRY_CONFIG", "demo_config.py")
@@ -62,6 +63,10 @@ spec = importlib.util.spec_from_file_location("country_config_module",
 country_config_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(country_config_module)
 country_config = country_config_module.country_config
+
+if hermes_silent:
+    country_config["messaging_silent"] = True
+
 s3_bucket = country_config_module.s3_bucket
 
 # import links
