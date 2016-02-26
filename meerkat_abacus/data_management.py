@@ -61,21 +61,25 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
         Session = sessionmaker(bind=engine)
         session = Session()
     deviceids = get_deviceids(session, case_report=True)
-    print(deviceids)
     alert_ids = []
     forms = ["case", "register", "alert"]
     for form in country_config["tables"]:
         if form not in forms:
             forms.append(form)
     for form in forms:
+        print(form)
         form_name = country_config["tables"][form]
         file_name = data_directory + form_name + ".csv"
         current_form = []
         if not new:
             current_form = read_csv(file_name)
+        if "deviceids" in country_config["fake_data"][form]:
+            form_deviceids = country_config["fake_data"][form]["deviceids"]
+        else:
+            form_deviceids = deviceids
         new_data = create_fake_data.create_form(
             country_config["fake_data"][form],
-            data={"deviceids": deviceids, "uuids": alert_ids}, N=N)
+            data={"deviceids": form_deviceids, "uuids": alert_ids}, N=N)
         if form == "case":
             alert_ids = []
             for c in new_data:

@@ -75,8 +75,9 @@ def create_form(fields, data=None, N=500,odk=True):
     for i in range(N):
         row = {}
         for field_name in fields.keys():
-            value = get_value(fields[field_name], data)
-            row[field_name] = value
+            if field_name != "deviceids": #deal with this below
+                value = get_value(fields[field_name], data)
+                row[field_name] = value
         if odk:
             if "deviceids" in data.keys():
                 row["deviceid"] = random.sample(data["deviceids"], 1)[0]
