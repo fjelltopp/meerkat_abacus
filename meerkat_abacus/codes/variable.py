@@ -177,5 +177,8 @@ class Variable():
         return add
 
     def test_sum(self, row, value):
-        return int(row.get(self.column, 0))
+        if value:
+            return int(value)
+        else:
+            return 0
 
