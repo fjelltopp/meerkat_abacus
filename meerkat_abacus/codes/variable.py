@@ -128,11 +128,11 @@ class Variable():
     def test_count_occurence_in(self, row, value):
         column = self.column
         add = 0
-        if row[column] in self.cond_list:
+        if row.get(column, "neppe") in self.cond_list:
             add = 1
         else:
             for c in self.cond_list:
-                if row[column] and c in row[column]:
+                if row.get(column, "neppe") and c in row.get(column, "neppe"):
                     add = 1
                     break
         return add
@@ -141,9 +141,9 @@ class Variable():
         column = self.column
         add = 0
         condition_low, condition_high = self.condition
-        if ((row[column] and row[column] != 0) or
-            (condition_low == "0" and int(row[column]) == 0)):
-            n = int(row[column])
+        if ((row.get(column, "neppe") and row.get(column, "neppe") != 0) or
+            (condition_low == "0" and int(row.get(column, "neppe")) == 0)):
+            n = int(row.get(column, "neppe"))
             if n >= int(condition_low) and n < int(condition_high):
                 add = 1
         return add
@@ -151,9 +151,9 @@ class Variable():
     def test_count_occurence_int_between(self, row, value):
         column2 = self.column2
         add = 0
-        if (row[column2] and row[column2] != 0 or
-            (self.condition_low == 0 and row[column2] == 0)):
-            n = int(row[column2])
+        if (row.get(column2, "neppe") and row.get(column2, "neppe") != 0 or
+            (self.condition_low == 0 and row.get(column2, "neppe") == 0)):
+            n = int(row.get(column2, "neppe"))
             if n >= int(self.condition_low) and n < int(self.condition_high):
                 if row[self.column1] in self.cond_list:
                     add = 1
@@ -162,9 +162,9 @@ class Variable():
     def test_count_occurence_in_int_between(self, row, value):
         column2 = self.column2
         add = 0
-        if (row[column2] and row[column2] != 0 or
-            (self.condition_low == 0 and row[column2] == 0)):
-            n = int(row[column2])
+        if (row.get(column2, "neppe") and row.get(column2, "neppe") != 0 or
+            (self.condition_low == 0 and row.get(column2, "neppe") == 0)):
+            n = int(row.get(column2, "neppe"))
             if n >= int(self.condition_low) and n < int(self.condition_high):
                 column1 = self.column1
                 if row[column1] in self.cond_list:
@@ -177,8 +177,8 @@ class Variable():
         return add
 
     def test_sum(self, row, value):
-        column = self.column
-        if row[column]:
-            return int(row[column])
+        if value:
+            return int(value)
         else:
             return 0
+
