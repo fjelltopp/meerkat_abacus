@@ -267,19 +267,15 @@ def send_alert( alert, variables, locations ):
                        "Age: " + alert.data["age"] + "\n\n"
                        "Alert ID: " + alert.id + "\n\n" )
 
-        message = ( "Dear <<first_name>> <<last_name>>,\n\n"
-                    "There has been an alert that we think you'll be interested in. "
-                    "Here are the details:\n\n" + alert_info +
-                    "If you would like to unsubscribe from <<country>> public health surveillance notifications "
+        message = (  alert_info +
+                    "To unsubscribe from <<country>> public health surveillance notifications "
                     "please copy and post the following url into your browser's address bar:\n"
                     "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n"
                     "Best wishes,\nThe <<country>> Public Health Surveillance team" )
 
-        sms_message = ( "A public health surveillance alert:\n\n" + alert_info )
+        sms_message = ( "A public health surveillance alert from <<country>>:\n\n" + alert_info )
 
-        html_message = ( "<p>Dear <<first_name>> <<last_name>>,</p>"
-                         "<p>There has been an alert that we think you'll be interested in. "
-                         "Here are the details:</p><table style='border:none; margin-left: 20px;'>"
+        html_message = ( "<table style='border:none; margin-left: 20px;'>"
                          "<tr><td><b>Alert:</b></td><td>" + variables[alert.reason].name + "</td></tr>"
                          "<tr><td><b>Date:</b></td><td>" + alert.date.strftime("%d %b %Y") + "</td></tr>"
                          "<tr><td><b>Clinic:</b></td><td>" + locations[alert.clinic].name + "</td></tr>"
@@ -290,8 +286,8 @@ def send_alert( alert, variables, locations ):
                          "<tr><td><b>Age:</b></td><td>" + alert.data["age"] + "</td></tr>"
                          "<tr style='height:10px'></tr>"
                          "<tr><td><b>Alert ID:</b></td><td>" + alert.id + "</td></tr></table>"
-                         "<p>If you would like to unsubscribe from <<country>> public "
-                         "health surveillance notifications "
+                         "<p>To unsubscribe from <<country>> public "
+                         "public health surveillance notifications "
                          "please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>"
                          "click here</a>.</p>"
                          "<p>Best wishes,<br>The <<country>> Public Health Surveillance team</p>" )        
