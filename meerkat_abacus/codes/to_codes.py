@@ -44,6 +44,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
     clinic_id = locations_by_deviceid.get(row["deviceid"], None)
     if not clinic_id:
         return (None, None)
+    print(row[date_column])
     date = parser.parse(row[date_column])
     new_record = model.Data(
         date=date,
