@@ -269,9 +269,8 @@ def send_alert( alert, variables, locations ):
 
         message = (  alert_info +
                     "To unsubscribe from <<country>> public health surveillance notifications "
-                    "please copy and post the following url into your browser's address bar:\n"
-                    "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n"
-                    "Best wishes,\nThe <<country>> Public Health Surveillance team" )
+                    "please copy and paste the following url into your browser's address bar:\n"
+                    "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n"" )
 
         sms_message = ( "A public health surveillance alert from <<country>>:\n\n" + alert_info )
 
@@ -286,11 +285,9 @@ def send_alert( alert, variables, locations ):
                          "<tr><td><b>Age:</b></td><td>" + alert.data["age"] + "</td></tr>"
                          "<tr style='height:10px'></tr>"
                          "<tr><td><b>Alert ID:</b></td><td>" + alert.id + "</td></tr></table>"
-                         "<p>To unsubscribe from <<country>> public "
-                         "public health surveillance notifications "
+                         "<p>To unsubscribe from <<country>> public health surveillance notifications "
                          "please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>"
-                         "click here</a>.</p>"
-                         "<p>Best wishes,<br>The <<country>> Public Health Surveillance team</p>" )        
+                         "click here</a>.</p>")        
 
         data={
             "from": country_config['messaging_sender'],
