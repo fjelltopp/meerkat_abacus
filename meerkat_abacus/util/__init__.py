@@ -270,7 +270,7 @@ def send_alert( alert, variables, locations ):
         message = (  alert_info +
                     "To unsubscribe from <<country>> public health surveillance notifications "
                     "please copy and paste the following url into your browser's address bar:\n"
-                    "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n"" )
+                    "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n" )
 
         sms_message = ( "A public health surveillance alert from <<country>>:\n\n" + alert_info )
 
