@@ -218,7 +218,7 @@ def import_data(country_config, data_directory, engine):
     deviceids_case = get_deviceids(session, case_report=True)
     deviceids = get_deviceids(session)
     for form in form_tables.keys():
-        if form == "case":
+        if form in ["case", "register"]:
             form_deviceids = deviceids_case
         else:
             form_deviceids = deviceids
@@ -366,8 +366,8 @@ def import_new_data():
     for form in model.form_tables.keys():
         file_path = data_directory + country_config["tables"][form] + ".csv"
         data = util.read_csv(file_path)
-        new = util.add_new_data(model.form_tables[form],
-                                         data, session)
+        new = util.add_new_data(form, model.form_tables[form],
+                                data, session)
     return True
 
 

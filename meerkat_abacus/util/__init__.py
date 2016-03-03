@@ -46,7 +46,7 @@ def get_link_definitions(session):
     
 
 
-def add_new_data(form, data, session):
+def add_new_data(form_name, form, data, session):
     """
     adds rows in data that has a uuid not already in the form
 
@@ -60,13 +60,24 @@ def add_new_data(form, data, session):
     """
     result = session.query(form.uuid)
     uuids = []
+    deviceids_case = get_deviceids(session, case_report=True)
+    deviceids = get_deviceids(session)
+    
     for r in result:
         uuids.append(r.uuid)
     new_rows = []
     for row in data:
         if row["meta/instanceID"] not in uuids:
-            session.add(form(uuid=row["meta/instanceID"], data=row))
-            new_rows.append(row)
+            add = False
+            if form_name in ["case", "register"]:
+                if row["deviceid"] in deviceids_case:
+                    add = True
+            else:
+                if row["deviceid"] in deviceids:
+                    add = True
+            if add:
+                session.add(form(uuid=row["meta/instanceID"], data=row))
+                new_rows.append(row)
     session.commit()
     return new_rows
 
