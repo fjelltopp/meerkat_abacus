@@ -25,6 +25,24 @@ class VariableTest(unittest.TestCase):
         assert variable.test(row, 1) == 1
         row = {"index": None}
         assert variable.test(row, None) == 0
+    def test_not_null(self):
+        agg_variable = model.AggregationVariables(
+            id=4,
+            secondary_condition="",
+            method="not_null",
+            db_column="index")
+        variable = Variable(agg_variable)
+        row = {"index": "hei"}
+        assert variable.test(row, "hei") == 1
+        row = {"index": ""}
+        assert variable.test(row, "") == 0
+        row = {"index": 0}
+        assert variable.test(row, 0) == 1
+        row = {"index": None}
+        assert variable.test(row, None) == 0
+
+
+        
 
     def test_count_occurence(self):
         agg_variable = model.AggregationVariables(

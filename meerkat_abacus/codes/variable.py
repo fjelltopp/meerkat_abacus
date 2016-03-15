@@ -76,7 +76,8 @@ class Variable():
                 if self.condition == "1":
                     self.cond_list = [1, "1"]
             self.cond_list = [cond.strip() for cond in self.cond_list]
-            
+        elif variable.method == "not_null":
+            self.test_type = self.test_not_null
         else:
             raise NameError("Variable does not have test type {}"
                             .format(variable.method))
@@ -147,6 +148,10 @@ class Variable():
                 add = 1
         return add
 
+
+    def test_not_null(self, row, value):
+        return  value is not "" and value is not None
+        
     def test_count_occurence_int_between(self, row, value):
         column2 = self.column2
         add = 0
