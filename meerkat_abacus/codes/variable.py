@@ -141,9 +141,8 @@ class Variable():
         column = self.column
         add = 0
         condition_low, condition_high = self.condition
-        if ((row.get(column, "neppe") and row.get(column, "neppe") != 0) or
-            (condition_low == "0" and int(row.get(column, "neppe")) == 0)):
-            n = int(row.get(column, "neppe"))
+        if value or (condition_low == "0" and value != "" and int(value) == 0):
+            n = int(row.get(column, -99999))
             if n >= int(condition_low) and n < int(condition_high):
                 add = 1
         return add
