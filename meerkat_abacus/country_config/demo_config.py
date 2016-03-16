@@ -25,6 +25,7 @@ country_config = {
     },
     "fake_data": {
         "case": {"pt1./age": {"integer": [0, 120]},
+                 "child_age": {"integer": [0, 60]},
                  "pt1./gender": {"one": ["male", "female"]},
                  "pt./visit_date": {"date": "year"},
                  "intro./visit_type": {"one": ["new", "return", "referral"]},
