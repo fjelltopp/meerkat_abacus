@@ -169,7 +169,9 @@ def category_to_list(row):
     Reutrns:
         row: modified row
     """
-    if "," in row["category"]:
+    if ";" in row["category"]:
+        row["category"] = [c.strip() for c in row["category"].split(";")]
+    elif "," in row["category"]:
         row["category"] = [c.strip() for c in row["category"].split(",")]
     else:
         row["category"] = [row["category"]]
