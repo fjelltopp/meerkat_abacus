@@ -33,6 +33,7 @@ class Locations(Base):
     deviceid = Column(String)
     clinic_type = Column(String)
     case_report = Column(Integer)
+    level = Column(String)
 
     def __repr__(self):
         return "<Location(name='%s', id='%s', parent_location='%s')>" % (

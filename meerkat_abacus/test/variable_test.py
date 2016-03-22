@@ -41,6 +41,22 @@ class VariableTest(unittest.TestCase):
         row = {"index": None}
         assert variable.test(row, None) == 0
 
+    def test_calc_between(self):
+        agg_variable = model.AggregationVariables(
+            id=4,
+            secondary_condition="",
+            method="calc_between",
+            condition="0,1",
+            db_column="A,B;A**2/(B-4)")
+        variable = Variable(agg_variable)
+        row = {"A": "1", "B": "6"}
+        assert variable.test(row, None) == 1
+        row = {"A": "2", "B": "6"}
+        assert variable.test(row, None) == 0
+        row = {"A": "2", "B": "400"}
+        assert variable.test(row, None) == 1
+        row = {"A": "2", "B": "1"}
+        assert variable.test(row, None) == 0
 
         
 

@@ -58,7 +58,8 @@ def import_clinics(csv_file, session, country_id):
                                       geolocation=geolocation,
                                       deviceid=row["deviceid"],
                                       clinic_type=row["clinic_type"],
-                                      case_report=case_report))
+                                      case_report=case_report,
+                                      level="clinic"))
             else:
                 location = result.first()
                 location.deviceid = location.deviceid + "," + row["deviceid"]
@@ -79,7 +80,8 @@ def import_regions(csv_file, session, parent_id):
     for row in csv_regions:
         session.add(Locations(name=row["region"],
                               parent_location=parent_id,
-                              geolocation=row["geo"]))
+                              geolocation=row["geo"],
+                              level="region"))
     session.commit()
 
 
@@ -98,6 +100,7 @@ def import_districts(csv_file, session):
     districts_csv = csv.DictReader(f)
     for row in districts_csv:
         session.add(Locations(name=row["district"],
-                              parent_location=regions[row["region"]]))
+                              parent_location=regions[row["region"]],
+                              level="district"))
     session.commit()
 

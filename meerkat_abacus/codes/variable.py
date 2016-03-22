@@ -25,7 +25,6 @@ class Variable():
         self.variable = variable
         self.column = variable.db_column
         if variable.method == "count_occurence":
-
             if "," in variable.condition:
                 self.cond_list = variable.condition.split(",")
                 self.cond_list = [cond.strip() for cond in self.cond_list]
@@ -76,8 +75,18 @@ class Variable():
                 if self.condition == "1":
                     self.cond_list = [1, "1"]
             self.cond_list = [cond.strip() for cond in self.cond_list]
+            
         elif variable.method == "not_null":
             self.test_type = self.test_not_null
+            
+        elif variable.method == "calc_between":
+            columns, self.calc = self.column.split(";")
+            self.columns = [c.strip() for c in columns.split(",")]
+            self.condition_low, self.condition_high = (
+                variable.condition.split(","))
+            self.condition_low = float(self.condition_low)
+            self.condition_high = float(self.condition_high)
+            self.test_type = self.test_calc_between
         else:
             raise NameError("Variable does not have test type {}"
                             .format(variable.method))
@@ -143,14 +152,13 @@ class Variable():
         add = 0
         condition_low, condition_high = self.condition
         if value or (condition_low == "0" and value != "" and int(value) == 0):
-            n = int(row.get(column, -99999))
+            n = int(float(row.get(column, -99999)))
             if n >= int(condition_low) and n < int(condition_high):
                 add = 1
         return add
 
-
     def test_not_null(self, row, value):
-        return  value is not "" and value is not None
+        return value is not "" and value is not None
         
     def test_count_occurence_int_between(self, row, value):
         column2 = self.column2
@@ -187,3 +195,19 @@ class Variable():
         else:
             return 0
 
+    def test_calc_between(self, row, value):
+        calc = self.calc
+        for c in self.columns:
+            if c in row:
+                try:
+                    calc = calc.replace(c, str(float(row[c])))
+                except ValueError:
+                    return 0
+        try:
+            result = eval(calc)
+            if self.condition_low <= result and self.condition_high > result:
+                return 1
+            else:
+                return 0
+        except:
+            return 0
