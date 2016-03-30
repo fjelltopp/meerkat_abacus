@@ -158,7 +158,10 @@ class Variable():
         return add
 
     def test_not_null(self, row, value):
-        return value is not "" and value is not None
+        if value is not "" and value is not None:
+            return value
+        else:
+            return 0
         
     def test_count_occurence_int_between(self, row, value):
         column2 = self.column2

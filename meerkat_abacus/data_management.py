@@ -442,11 +442,40 @@ def add_new_links():
         links_by_link_value[row.link_def][row.link_value] = row
     for link_def_id in link_defs.keys():
         link_def = link_defs[link_def_id]
-        link_from = session.query(getattr(model, link_def.from_table))
+        if "form_tables." in link_def.from_table:
+            table = link_def.from_table.split(".")[1]
+            from_table = model.form_tables[table]
+        else:
+            from_table = getattr(model, link_def.from_table)
+        if link_def.from_condition:
+            if ":" in link_def.from_condition:
+                column, condition = link_def.from_condition.split(":")
+                link_from = session.query(from_table)
+                if "form_tables." in link_def.from_table:
+                    query_condition = from_table.data[column].astext == condition
+                else:
+                    query_condition = getattr(from_table,column) == condition
+                link_from = session.query(from_table).filter(query_condition)
+            else:
+                raise NameError
+        else:
+                link_from = session.query(from_table)
         link_from_values = {}
         for row in link_from:
-            link_from_values[getattr(row, link_def.from_column)] = row
-        result_to_table = session.query(model.form_tables[link_def.to_table])
+            if "form_tables." in link_def.from_table:
+                link_from_values[row.data[link_def.from_column]] = row
+            else:
+                link_from_values[getattr(row, link_def.from_column)] = row
+        if link_def.to_condition:
+            print(link_def.name)
+            if ":" in link_def.to_condition:
+                column, condition = link_def.to_condition.split(":")
+                result_to_table = session.query(model.form_tables[link_def.to_table]).filter(
+                    model.form_tables[link_def.to_table].data[column].astext == condition)
+            else:
+                raise NameError
+        else:
+            result_to_table = session.query(model.form_tables[link_def.to_table])
         for row in result_to_table:
             if row.uuid not in to_ids:
                 link_to_value = row.data[link_def.to_column]
@@ -461,12 +490,17 @@ def add_new_links():
                             old_link.to_date = to_date
                             old_link.to_id = getattr(row, "uuid"),
                     else:
+                        if "form_tables." in link_def.from_table:
+                            from_date = linked_record.data[link_def.from_date]
+                        else:
+                            from_date = getattr(linked_record,
+                                                 link_def.from_date)
+                            
                         new_link = model.Links(**{
                             "link_value": link_to_value,
                             "to_id": getattr(row, "uuid"),
                             "to_date": to_date,
-                            "from_date": getattr(linked_record,
-                                                 link_def.from_date),
+                            "from_date": from_date,
                             "link_def": link_def_id,
                             "data": data})
                         links_by_link_value[link_def_id][link_to_value] = new_link
@@ -488,18 +522,33 @@ def sort_data(data_def, row):
     data = {}
     for key in data_def.keys():
         data[key] = []
+        default = None
         for value in data_def[key].keys():
             value_dict = data_def[key][value]
-            if isinstance(data_def[key][value]["condition"], list):
-                if row[value_dict["column"]] in value_dict["condition"]:
-                    data[key].append(value)
+            # We can set a default value, if no other value is set
+            if data_def[key][value]["condition"] == "default_value":
+                default = value
+                continue
+
+            if isinstance(data_def[key][value]["column"], list):
+                for c in data_def[key][value]["column"]:
+                    if row[c] == value_dict["condition"]:
+                        data[key].append(value)
+                        break
             else:
-                if value_dict["condition"] == "get_value":
-                    data[key].append(row[value_dict["column"]])
-                elif value_dict["condition"] in row[value_dict["column"]].split(","):
-                    data[key].append(value)
+                if isinstance(data_def[key][value]["condition"], list):
+                    if row[value_dict["column"]] in value_dict["condition"]:
+                        data[key].append(value)
+                else:
+                    if value_dict["condition"] == "get_value":
+                        data[key].append(row[value_dict["column"]])
+                    elif value_dict["condition"] in row[value_dict["column"]].split(","):
+                        data[key].append(value)
+            
         if len(data[key]) == 1:
             data[key] = data[key][0]
+        elif len(data[key]) == 0 and default:
+            data[key] = default
     return data
 
                     

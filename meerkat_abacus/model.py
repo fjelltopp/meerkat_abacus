@@ -103,10 +103,12 @@ class LinkDefinitions(Base):
     from_table = Column(String, index=True)
     from_column = Column(String)
     from_date = Column(String)
+    from_condition = Column(String)
     to_table = Column(String, index=True)
     to_column = Column(String)
     to_date = Column(String)
     to_id = Column(String)
+    to_condition = Column(String)
     which = Column(String)
     data = Column(JSONB)
 

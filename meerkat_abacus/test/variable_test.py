@@ -33,11 +33,11 @@ class VariableTest(unittest.TestCase):
             db_column="index")
         variable = Variable(agg_variable)
         row = {"index": "hei"}
-        assert variable.test(row, "hei") == 1
+        assert variable.test(row, "hei") == "hei"
         row = {"index": ""}
         assert variable.test(row, "") == 0
         row = {"index": 0}
-        assert variable.test(row, 0) == 1
+        assert variable.test(row, 0) == 0
         row = {"index": None}
         assert variable.test(row, None) == 0
 
