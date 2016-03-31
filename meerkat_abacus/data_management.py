@@ -10,6 +10,8 @@ import os
 import boto3
 import importlib
 from dateutil.parser import parse
+#import resource        print(link_def.id, 'Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+
 
 from meerkat_abacus.util.import_locations import import_regions
 from meerkat_abacus.util.import_locations import import_clinics
@@ -461,7 +463,7 @@ def add_new_links():
             else:
                 raise NameError
         else:
-                link_from = session.query(from_table)
+                link_from = session.query(from_table).yield_per(200)
         link_from_values = {}
         for row in link_from:
             if "form_tables." in link_def.from_table:
