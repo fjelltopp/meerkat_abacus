@@ -452,10 +452,12 @@ def add_new_links():
                 column, condition = link_def.from_condition.split(":")
                 link_from = session.query(from_table)
                 if "form_tables." in link_def.from_table:
-                    query_condition = from_table.data[column].astext == condition
+                    query_condition = [from_table.data[column].astext == condition,
+                                       from_table.data[link_def.from_column].astext != None]
                 else:
-                    query_condition = getattr(from_table,column) == condition
-                link_from = session.query(from_table).filter(query_condition)
+                    query_condition = [getattr(from_table,column) == condition,
+                                       getattr(from_table,link_def.from_column) != None]
+                link_from = session.query(from_table).filter(*query_condition)
             else:
                 raise NameError
         else:
@@ -463,11 +465,16 @@ def add_new_links():
         link_from_values = {}
         for row in link_from:
             if "form_tables." in link_def.from_table:
-                link_from_values[row.data[link_def.from_column]] = row
+                if link_def.from_column in row.data:
+                    value = row.data[link_def.from_column]
+                else:
+                    continue
             else:
-                link_from_values[getattr(row, link_def.from_column)] = row
+                value = getattr(row, link_def.from_column)
+            if link_def.compare_lower:
+                value = value.lower()
+            link_from_values[value] = row
         if link_def.to_condition:
-            print(link_def.name)
             if ":" in link_def.to_condition:
                 column, condition = link_def.to_condition.split(":")
                 result_to_table = session.query(model.form_tables[link_def.to_table]).filter(
@@ -475,11 +482,15 @@ def add_new_links():
             else:
                 raise NameError
         else:
-            result_to_table = session.query(model.form_tables[link_def.to_table])
+            result_to_table = session.query(model.form_tables[link_def.to_table]).filter(
+                model.form_tables[link_def.to_table].data.has_key(link_def.to_column),
+                model.form_tables[link_def.to_table].data[link_def.to_column] != None )
         for row in result_to_table:
-            if row.uuid not in to_ids:
+            if row.uuid not in to_ids and link_def.to_column in row.data:
                 link_to_value = row.data[link_def.to_column]
-                if link_to_value in link_from_values.keys():
+                if link_def.compare_lower:
+                    link_to_value = link_to_value.lower()
+                if link_to_value and link_to_value in link_from_values.keys():
                     data = sort_data(link_def.data, row.data)
                     linked_record = link_from_values[link_to_value]
                     to_date = parse(row.data[link_def.to_date])
@@ -529,7 +540,6 @@ def sort_data(data_def, row):
             if data_def[key][value]["condition"] == "default_value":
                 default = value
                 continue
-
             if isinstance(data_def[key][value]["column"], list):
                 for c in data_def[key][value]["column"]:
                     if row[c] == value_dict["condition"]:
@@ -537,12 +547,12 @@ def sort_data(data_def, row):
                         break
             else:
                 if isinstance(data_def[key][value]["condition"], list):
-                    if row[value_dict["column"]] in value_dict["condition"]:
+                    if value_dict["column"] in row and row[value_dict["column"]] in value_dict["condition"]:
                         data[key].append(value)
                 else:
                     if value_dict["condition"] == "get_value":
-                        data[key].append(row[value_dict["column"]])
-                    elif value_dict["condition"] in row[value_dict["column"]].split(","):
+                        data[key].append(row.get(value_dict["column"], None))
+                    elif value_dict["column"] in row and value_dict["condition"] in row[value_dict["column"]].split(","):
                         data[key].append(value)
             
         if len(data[key]) == 1:

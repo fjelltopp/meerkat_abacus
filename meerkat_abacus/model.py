@@ -111,6 +111,7 @@ class LinkDefinitions(Base):
     to_condition = Column(String)
     which = Column(String)
     data = Column(JSONB)
+    compare_lower = Column(Integer)
 
     
 class Links(Base):

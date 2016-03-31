@@ -127,13 +127,22 @@ class Variable():
         return self.test_type(row, value)
 
     def test_count_occurence_list(self, row, value):
-        return value in self.cond_list
+        if value in self.cond_list:
+            return 1
+        else:
+            return 0
 
     def test_count_occurence(self, row, value):
-        return value == self.cond
+        if value == self.cond:
+            return 1
+        else:
+            return 0
 
     def test_count(self, row, value):
-        return value != None
+        if value != None:
+            return 1
+        else:
+            return 0
 
     def test_count_occurence_in(self, row, value):
         column = self.column

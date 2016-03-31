@@ -70,11 +70,11 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
             #All variables in group have same secondary conndition, so only check once
             first_variable = next(iter(variables[table_name][group].values()))
             if first_variable.secondary_condition(row):
-                value = row.get(first_variable.column, "neppe")
+                value = row.get(first_variable.column, 0)
                 for v in variables[table_name][group]:
                     test_outcome = variables[table_name][group][v].test_type(row, value)
                     if test_outcome:
-                        variable_json[v] = int(test_outcome)
+                        variable_json[v] = test_outcome
                         if variables[table_name][group][v].variable.alert:
                             data_alert = {}
                             for data_var in alert_data.keys():
