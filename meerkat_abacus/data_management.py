@@ -457,7 +457,7 @@ def add_new_links():
                 else:
                     query_condition = [getattr(from_table,column) == condition,
                                        getattr(from_table,link_def.from_column) != None]
-                link_from = session.query(from_table).filter(*query_condition)
+                link_from = session.query(from_table).filter(*query_condition).yield_per(200)
             else:
                 raise NameError
         else:
@@ -478,13 +478,13 @@ def add_new_links():
             if ":" in link_def.to_condition:
                 column, condition = link_def.to_condition.split(":")
                 result_to_table = session.query(model.form_tables[link_def.to_table]).filter(
-                    model.form_tables[link_def.to_table].data[column].astext == condition)
+                    model.form_tables[link_def.to_table].data[column].astext == condition).yield_per(200)
             else:
                 raise NameError
         else:
             result_to_table = session.query(model.form_tables[link_def.to_table]).filter(
                 model.form_tables[link_def.to_table].data.has_key(link_def.to_column),
-                model.form_tables[link_def.to_table].data[link_def.to_column] != None )
+                model.form_tables[link_def.to_table].data[link_def.to_column] != None ).yield_per(200)
         for row in result_to_table:
             if row.uuid not in to_ids and link_def.to_column in row.data:
                 link_to_value = row.data[link_def.to_column]
