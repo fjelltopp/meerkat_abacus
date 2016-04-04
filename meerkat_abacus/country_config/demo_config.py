@@ -28,7 +28,7 @@ country_config = {
                  "child_age": {"integer": [0, 60]},
                  "pt1./gender": {"one": ["male", "female"]},
                  "pt./visit_date": {"date": "year"},
-                 "intro./visit_type": {"one": ["new", "return", "referral"]},
+                 "intro./visit": {"one": ["new", "return", "referral"]},
                  "nationality": {"one": ["demo", "null_island"]},
                  "pt1./status": {"one": ["refugee", "national"]},
                  "intro_module": {"multiple": ["mh",
