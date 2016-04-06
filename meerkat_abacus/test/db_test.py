@@ -75,10 +75,10 @@ class DbTest(unittest.TestCase):
                 number_of_female += 1
         total = session.query(model.form_tables["case"]).filter(
             model.form_tables["case"].data.contains(
-                {"intro./visit_type": 'new'}))
+                {"intro./visit": 'new'}))
         female = session.query(model.form_tables["case"]).filter(
             model.form_tables["case"].data.contains(
-                {"intro./visit_type": 'new', "pt1./gender": 'female'}))
+                {"intro./visit": 'new', "pt1./gender": 'female'}))
         assert number_of_totals == len(total.all())
         assert number_of_female == len(female.all())
         
