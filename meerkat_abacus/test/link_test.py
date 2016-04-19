@@ -3,7 +3,7 @@ Testing for DB utilities
 """
 
 import unittest
-from meerkat_abacus.data_management import sort_data
+from meerkat_abacus.data_management import prepare_link_data
 
 class LinkTest(unittest.TestCase):
 
@@ -13,7 +13,7 @@ class LinkTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_sort_date(self):
+    def test_prepare_link_data(self):
         data_def = {
             "Status": {
                 "Ongoing": {"column": "alert_labs./return_lab",
@@ -36,7 +36,7 @@ class LinkTest(unittest.TestCase):
         }
         row1 = {"alert_labs./return_lab": "yes",
                 "pt./checklist": "referral,case_management"}
-        new_data = sort_data(data_def, row1)
+        new_data = prepare_link_data(data_def, row1)
         assert("Status" in new_data.keys())
         assert("checklist" in new_data.keys())
         assert(new_data["Status"] == "Confirmed")
@@ -44,11 +44,11 @@ class LinkTest(unittest.TestCase):
         assert("Case Managment" in new_data["checklist"])
         row2 = {"alert_labs./return_lab": "unsure",
                 "pt./checklist": "referral,case_management"}
-        new_data = sort_data(data_def, row2)
+        new_data = prepare_link_data(data_def, row2)
         assert(new_data["Status"] == "Ongoing")
         row2 = {"alert_labs./return_lab": "",
                 "pt./checklist": "referral,case_management"}
-        new_data = sort_data(data_def, row2)
+        new_data = prepare_link_data(data_def, row2)
         assert(new_data["Status"] == "Ongoing")
         
 if __name__ == "__main__":

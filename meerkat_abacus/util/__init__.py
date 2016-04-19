@@ -1,5 +1,5 @@
 """
-Various utility functions
+Various utility functions for meerkat abacus
 """
 import csv, requests, json
 from datetime import datetime, timedelta
@@ -10,6 +10,11 @@ from meerkat_abacus.config import country_config, hermes_api_root, hermes_api_ke
 def epi_week_start_date(year, epi_config=country_config["epi_week"]):
     """
     Get the first day of epi week 1
+    
+    if epi_config==international epi_week 1 starts on the 1st of January
+    
+    if epi_config== day:X then the first epi_week start on the first weekday X after 1st of January
+    X=0 is Sunday
     
     Args: 
         year: year
@@ -30,7 +35,7 @@ def epi_week_start_date(year, epi_config=country_config["epi_week"]):
 
 def get_link_definitions(session):
     """
-    get a links dict
+    gets all the link definitions from the db
 
     Args:
         session: db session
@@ -44,46 +49,32 @@ def get_link_definitions(session):
         links[row.id] = row
     return links
     
-
-
-def add_new_data(form_name, form, data, session):
+        
+def field_to_list(row, key):
     """
-    adds rows in data that has a uuid not already in the form
-
-    Args:
-        form: form to add to
-        data: data to potentially be added
-        session: db session
-
-    Returns:
-        new_rows(list): a list of rows added
-    """
-    result = session.query(form.uuid)
-    uuids = []
-    deviceids_case = get_deviceids(session, case_report=True)
-    deviceids = get_deviceids(session)
+    Transforms key in row to a list. We split on semicolons if they exist in the string,
+    otherwise we use commas.
     
-    for r in result:
-        uuids.append(r.uuid)
-    new_rows = []
-    for row in data:
-        if row["meta/instanceID"] not in uuids:
-            add = False
-            if form_name in ["case", "register"]:
-                if row["deviceid"] in deviceids_case:
-                    add = True
-            else:
-                if row["deviceid"] in deviceids:
-                    add = True
-            if add:
-                session.add(form(uuid=row["meta/instanceID"], data=row))
-                new_rows.append(row)
-    session.commit()
-    return new_rows
+    Args:
+        row: row of data
+        key: key for the field we want
+    Reutrns:
+        row: modified row
+    """
+    if ";" in row[key]:
+        row[key] = [c.strip() for c in row[key].split(";")]
+    elif "," in row[key]:
+        row[key] = [c.strip() for c in row[key].split(",")]
+    else:
+        row[key] = [row[key]]
+    return row
+
+
 
 def all_location_data(session):
     """
-    get all location data
+    Returns all location data, which is all locations indexed by location_id, 
+    locations by deviceid, regions and districts
 
     Args:
         session: db session
@@ -100,7 +91,7 @@ def all_location_data(session):
 
 def get_variables(session):
     """
-    get variables out of db turn them into Variable classes
+    Returns a list of aggregation variables indexed by the variable_id
 
     Args:
         session: db-session
@@ -139,7 +130,7 @@ def get_regions_districts(session):
 
 def get_locations_by_deviceid(session):
     """
-    get a dict with deviceid: locatino:id
+    get a dict with deviceid: location_id
 
     Args:
         session: db session
@@ -162,7 +153,7 @@ def get_locations_by_deviceid(session):
 
 def get_locations(session):
     """
-    get a location dict
+    get locations indexed by locaction_id
 
     Args:
         session: db session
@@ -173,7 +164,7 @@ def get_locations(session):
     result = session.query(Locations)
     locations = {}
     for row in result:
-        locations[row.id]=row
+        locations[row.id] = row
     return locations
 
 
@@ -184,8 +175,7 @@ def get_deviceids(session, case_report=False):
     Args:
         session: SQLAlchemy session
         case_report: flag to only get deviceids from case 
-                 reporing clinics
-
+                     reporing clinics
     Returns:
         list_of_deviceids(list): list of deviceids
     """
@@ -213,13 +203,12 @@ def write_csv(rows, file_path):
         rows: list of dicts with data
         file_path: path to write file to
     """
-    f = open(file_path, "w", encoding='utf-8')
-    columns = list(rows[0])
-    out = csv.DictWriter(f, columns)
-    out.writeheader()
-    for row in rows:
-        out.writerow(row)
-    f.close()
+    with open(file_path, "w", encoding='utf-8') as f:
+        columns = list(rows[0])
+        out = csv.DictWriter(f, columns)
+        out.writeheader()
+        for row in rows:
+            out.writerow(row)
 
 
 def read_csv(file_path):
@@ -232,75 +221,89 @@ def read_csv(file_path):
     Returns:
         rows(list): list of rows
     """
-    f = open(file_path, "r", encoding='utf-8')
-    reader = csv.DictReader(f)
-    rows = []
-    for row in reader:
-        rows.append(row)
-    f.close()
+    with open(file_path, "r", encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        rows = []
+        for row in reader:
+            rows.append(row)
     return rows
 
-def hermes(url, method, data={}):
-    """Makes a Hermes API request"""
 
-    #If we're in silent mode, don't send any hermes requests. 
+def hermes(url, method, data=None):
+    """
+    Makes a Hermes API request
+
+    Args: 
+       url: hermes url to send the request to
+       method: post/get http method
+       data: data to send
+    """
     if country_config["messaging_silent"]:
-        return {"message":"Abacus is in silent mode"}
-
-    #Add the API key and turn into JSON.
+        return {"message": "Abacus is in silent mode"}
     data["api_key"] = hermes_api_key
+    url = hermes_api_root + url
+    headers = {'content-type': 'application/json'}
+    r = requests.request(method, url, json=data, headers=headers)
+    return r.json()
 
-    #Assemble the other request params.
-    url = hermes_api_root + url 
-    headers = {'content-type' : 'application/json'}
-    
-    #Make the request and handle the response.
-    r = requests.request( method, url, json=data, headers=headers)
-    return r.json()   
 
-def send_alert( alert, variables, locations ):
+def send_alert(alert, variables, locations):
+    """
+    Assemble the alert message and send it using the hermes API
 
+    We need to send alerts to four topics to cover all the different possible subscriptions. 
+    There are:
+    1-allDis for all locations and all diseases
+    1-alert.reason for all locations and the specific disease
+    alert.region-allDis for specific region and all diseases
+    alert.region-alert.reason for specific region and specific disease
+
+
+    Args: 
+        alert: the alert to we need to send a message about
+        variables: dict with variables
+        locations: dict with locations
+    """
     if alert.date > country_config['messaging_start_date']:
-
-        topics=[
+        topics = [
             country_config["messaging_topic_prefix"] + "-1-allDis",
             country_config["messaging_topic_prefix"] + "-1-" + alert.reason,
             country_config["messaging_topic_prefix"] + "-" + str(alert.region) + "-allDis",
             country_config["messaging_topic_prefix"] + "-" + str(alert.region) + "-" + alert.reason      
         ]
 
-        alert_info = ( "Alert: " + variables[alert.reason].name + "\n"
-                       "Date: " + alert.date.strftime("%d %b %Y") + "\n"
-                       "Clinic: " + locations[alert.clinic].name + "\n"
-                       "Region: " + locations[alert.region].name + "\n\n"
-                       "Patient ID: " + alert.uuids + "\n" 
-                       "Gender: " + alert.data["gender"].title() + "\n"
-                       "Age: " + alert.data["age"] + "\n\n"
-                       "Alert ID: " + alert.id + "\n\n" )
+        alert_info = ("Alert: " + variables[alert.reason].name + "\n"
+                      "Date: " + alert.date.strftime("%d %b %Y") + "\n"
+                      "Clinic: " + locations[alert.clinic].name + "\n"
+                      "Region: " + locations[alert.region].name + "\n\n"
+                      "Patient ID: " + alert.uuids + "\n"
+                      "Gender: " + alert.data["gender"].title() + "\n"
+                      "Age: " + alert.data["age"] + "\n\n"
+                      "Alert ID: " + alert.id + "\n\n" )
 
-        message = (  alert_info +
-                    "To unsubscribe from <<country>> public health surveillance notifications "
-                    "please copy and paste the following url into your browser's address bar:\n"
-                    "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n" )
+        message = (alert_info +
+                   "To unsubscribe from <<country>> public health surveillance notifications "
+                   "please copy and paste the following url into your browser's address bar:\n"
+                   "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n" )
 
-        sms_message = ( "A public health surveillance alert from <<country>>:\n\n" + alert_info )
+        sms_message = ("A public health surveillance alert from <<country>>:\n\n" + alert_info)
 
-        html_message = ( "<table style='border:none; margin-left: 20px;'>"
-                         "<tr><td><b>Alert:</b></td><td>" + variables[alert.reason].name + "</td></tr>"
-                         "<tr><td><b>Date:</b></td><td>" + alert.date.strftime("%d %b %Y") + "</td></tr>"
-                         "<tr><td><b>Clinic:</b></td><td>" + locations[alert.clinic].name + "</td></tr>"
-                         "<tr><td><b>Region:</b></td><td>" + locations[alert.region].name + "</td></tr>"
-                         "<tr style='height:10px'></tr>"
-                         "<tr><td><b>Patient ID:</b></td><td>" + alert.uuids + "</td></tr>" 
-                         "<tr><td><b>Gender:</b></td><td>" + alert.data["gender"].title() + "</td></tr>"
-                         "<tr><td><b>Age:</b></td><td>" + alert.data["age"] + "</td></tr>"
-                         "<tr style='height:10px'></tr>"
-                         "<tr><td><b>Alert ID:</b></td><td>" + alert.id + "</td></tr></table>"
-                         "<p>To unsubscribe from <<country>> public health surveillance notifications "
-                         "please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>"
-                         "click here</a>.</p>")        
+        html_message = ("<table style='border:none; margin-left: 20px;'>"
+                        "<tr><td><b>Alert:</b></td><td>" + variables[alert.reason].name + "</td></tr>"
+                        "<tr><td><b>Date:</b></td><td>" + alert.date.strftime("%d %b %Y") + "</td></tr>"
+                        "<tr><td><b>Clinic:</b></td><td>" + locations[alert.clinic].name + "</td></tr>"
+                        "<tr><td><b>Region:</b></td><td>" + locations[alert.region].name + "</td></tr>"
+                        "<tr style='height:10px'></tr>"
+                        "<tr><td><b>Patient ID:</b></td><td>" + alert.uuids + "</td></tr>" 
+                        "<tr><td><b>Gender:</b></td><td>" + alert.data["gender"].title() + "</td></tr>"
+                        "<tr><td><b>Age:</b></td><td>" + alert.data["age"] + "</td></tr>"
+                        "<tr style='height:10px'></tr>"
+                        "<tr><td><b>Alert ID:</b></td><td>" + alert.id + "</td></tr></table>"
+                        "<p>To unsubscribe from <<country>> public health surveillance notifications "
+                        "please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>"
+                        "click here</a>.</p>")        
 
-        data={
+        data = {
             "from": country_config['messaging_sender'],
             "topics": topics,
             "id": alert.id,
@@ -308,8 +311,7 @@ def send_alert( alert, variables, locations ):
             "sms-message": sms_message,
             "html-message": html_message,
             "subject": "Public Health Surveillance Alerts: #" + alert.id,
-            "medium": ['email','sms']
+            "medium": ['email', 'sms']
         }
-
         hermes('/publish', 'PUT', data)
-     
+        #Add some error handling here!

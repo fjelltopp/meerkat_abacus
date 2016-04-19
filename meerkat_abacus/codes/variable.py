@@ -1,6 +1,9 @@
 """
-Functionality to translate raw data into codes
-specified by codes file
+
+Variable class
+
+The variable class implements a method to check if a row of data matches the variable
+
 """
 
 from sqlalchemy import create_engine, Column, Integer
@@ -13,11 +16,32 @@ from meerkat_abacus.model import form_tables
 
 class Variable():
     """
-    A class for storing variables for use in checking records
+    A class for variables such that one can check if a row of data matches the variable
+
+    A variable can have one of many methods. Each method has different function that specifies how we determine if a row
+    matches the variable. In the constructor we set test_type = method_specific_test. 
+
+    Running variable.test(row, value) determins if the row matches the variable. 
+
+    Variables can also have a secondary condition which is tested by the variable.secondary_condition(row, value) function. 
+
+
+    We can have the following variable methods: 
+    * count - Counts all rows with non-zero entry in the specified field of the form
+    * count_occurence - Counts rows where condtion appears in field
+    * count_occurence_in - Counts rows where condition is a substring of the value in the field
+    * int_between - An integer between the two numbers specified in condition
+    * count_occurence_int_between - must both fullfill a count_occurence and a int_between on two different columns
+    * count_occurence_in_int_between - must both fullfill a count_occurence_in and a int_between on two different columns
+    * sum - Returns the numerical value of the field
+    * not_null - true for non-null values of the field
+    * calc_between - allows you to specify a mathematical expression of multiple columns in the row. 
+         The calculated value should then be between the given boundaries
+
     """
     def __init__(self, variable):
         """
-        Store variable dictionary
+        Set up variable class. We prepare the conditions/boundaries and determine the correct test function. 
         
         Args: 
             variable: model.AggregationVariable object
@@ -75,10 +99,8 @@ class Variable():
                 if self.condition == "1":
                     self.cond_list = [1, "1"]
             self.cond_list = [cond.strip() for cond in self.cond_list]
-            
         elif variable.method == "not_null":
             self.test_type = self.test_not_null
-            
         elif variable.method == "calc_between":
             columns, self.calc = self.column.split(";")
             self.columns = [c.strip() for c in columns.split(",")]
@@ -139,19 +161,22 @@ class Variable():
             return 0
 
     def test_count(self, row, value):
-        if value != None:
+        if value is not None:
             return 1
         else:
             return 0
 
     def test_count_occurence_in(self, row, value):
+        """
+        We first test if value is in the list, if not we check if value is a substring of any element in the list
+        """
         column = self.column
         add = 0
-        if row.get(column, "neppe") in self.cond_list:
+        if row.get(column, None) in self.cond_list:
             add = 1
         else:
             for c in self.cond_list:
-                if row.get(column, "neppe") and c in row.get(column, "neppe"):
+                if row.get(column, None) and c in row.get(column, None):
                     add = 1
                     break
         return add
@@ -175,9 +200,9 @@ class Variable():
     def test_count_occurence_int_between(self, row, value):
         column2 = self.column2
         add = 0
-        if (row.get(column2, "neppe") and row.get(column2, "neppe") != 0 or
-            (self.condition_low == 0 and row.get(column2, "neppe") == 0)):
-            n = int(row.get(column2, "neppe"))
+        if (row.get(column2, None) and row.get(column2, None) != 0 or
+            (self.condition_low == 0 and row.get(column2, None) == 0)):
+            n = int(row.get(column2, None))
             if n >= int(self.condition_low) and n < int(self.condition_high):
                 if row[self.column1] in self.cond_list:
                     add = 1
@@ -186,9 +211,9 @@ class Variable():
     def test_count_occurence_in_int_between(self, row, value):
         column2 = self.column2
         add = 0
-        if (row.get(column2, "neppe") and row.get(column2, "neppe") != 0 or
-            (self.condition_low == 0 and row.get(column2, "neppe") == 0)):
-            n = int(row.get(column2, "neppe"))
+        if (row.get(column2, None) and row.get(column2, None) != 0 or
+            (self.condition_low == 0 and row.get(column2, None) == 0)):
+            n = int(row.get(column2, None))
             if n >= int(self.condition_low) and n < int(self.condition_high):
                 column1 = self.column1
                 if row[column1] in self.cond_list:
@@ -208,6 +233,12 @@ class Variable():
             return 0
 
     def test_calc_between(self, row, value):
+        """
+        self. calc should be an expression with column names from the row and mathematical expression 
+        understood by python. We then replace all column names with their numerical values and evalualte
+        the resulting expression. 
+
+        """
         calc = self.calc
         for c in self.columns:
             if c in row:

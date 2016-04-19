@@ -29,39 +29,36 @@ class DbTest(unittest.TestCase):
     def test_db_setup(self):
         manage.create_db(config.DATABASE_URL,
                          model.Base,
-                         config.country_config,
                          drop=True)
         assert database_exists(config.DATABASE_URL)
         engine = create_engine(config.DATABASE_URL)
-        manage.import_locations(config.country_config, config.config_directory, engine)
+
         Session = sessionmaker(bind=engine)
 
         session = Session()
+
+        manage.import_locations(engine, session)
         results = session.query(model.Locations)
         country_test.test_locations(results)
 
-        manage.fake_data(config.country_config,
-                         config.data_directory, engine, N=500)
-        manage.import_data(config.country_config,
-                           config.data_directory,
-                           engine)
-        results = session.query(manage.form_tables["case"])
+        manage.add_fake_data(session, N=500)
+        manage.import_data(engine, session)
+        results = session.query(model.form_tables["case"])
         assert len(results.all()) == 500
-        results = session.query(manage.form_tables["alert"])
+        results = session.query(model.form_tables["alert"])
         assert len(results.all()) == 500
-        results = session.query(manage.form_tables["register"])
+        results = session.query(model.form_tables["register"])
         assert len(results.all()) == 500
 
-        manage.import_variables(config.country_config, engine)
+        manage.import_variables(session)
+        
         agg_var = session.query(model.AggregationVariables).filter(model.AggregationVariables.id == "tot_1")
         assert agg_var.first().name == "Total"
 
-        manage.import_links(config.country_config, engine)
+        manage.import_links(session)
         link_defs = session.query(model.LinkDefinitions)
         assert link_defs.first().name == "Alert Investigation"
-
-
-        manage.raw_data_to_variables(engine)
+        manage.new_data_to_codes(engine)
         agg_var_female = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.name == "Female").first()
         results = session.query(model.Data)
@@ -82,7 +79,7 @@ class DbTest(unittest.TestCase):
         assert number_of_totals == len(total.all())
         assert number_of_female == len(female.all())
         
-        manage.add_links(engine)
+        manage.add_new_links()
         link_query = session.query(model.Links).filter(
             model.Links.link_def == "alert_investigation")
         links = {}
