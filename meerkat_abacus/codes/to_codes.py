@@ -60,7 +60,6 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
     try:
         date = parser.parse(row[date_column])
     except:
-        print(row[date_column])
         return (None, None)
 
     new_record = model.Data(
@@ -78,7 +77,6 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
     elif locations[clinic_id].parent_location in regions:
         new_record.district = None
         new_record.region = locations[clinic_id].parent_location
-
     variable_json = {}
     alert = None
     if table_name in variables.keys():

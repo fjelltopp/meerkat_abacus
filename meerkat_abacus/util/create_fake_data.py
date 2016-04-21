@@ -52,8 +52,6 @@ def get_value(field, data):
                              microsecond=0).isoformat()
     if field_type == "data":
         if argument in data.keys():
-            if len(data[argument]) == 0:
-                print(argument, data)
             value = random.sample(data[argument], 1)[0]
         else:
             print("{} not in data".format(argument))

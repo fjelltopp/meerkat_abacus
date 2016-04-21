@@ -30,22 +30,24 @@ def set_up_db():
 
 
 @app.task
-def get_proccess_data():
+def get_proccess_data(print_progress=False):
     """ get/create new data and proccess it"""
     if config.fake_data:
         add_new_fake_data(5)
     if config.get_data_from_s3:
         get_new_data_from_s3()
-    print("Import new data")
+    if print_progress:
+        print("Import new data")
     import_new_data()
-    print("To Code")
+    if print_progress:
+        print("To Code")
     new_data_to_codes()
-    print("Add Links")
+    if print_progress:
+        print("Add Links")
     add_new_links()
-    print("Finished")
-
-
-
+    if print_progress:
+        print("Finished")
+    
 @app.task
 def get_new_data_from_s3():
     """ get new data from s3"""
@@ -66,7 +68,7 @@ def new_data_to_codes():
     """
     add any new data in form tables to data table
     """
-    return data_management.new_data_to_codes()
+    return data_management.new_data_to_codes(no_print=True)
 
 
 @app.task

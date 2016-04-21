@@ -6,6 +6,9 @@ import unittest
 from meerkat_abacus.data_management import prepare_link_data
 
 class LinkTest(unittest.TestCase):
+    """
+    Test links
+    """
 
     def setUp(self):
         pass
@@ -15,41 +18,40 @@ class LinkTest(unittest.TestCase):
 
     def test_prepare_link_data(self):
         data_def = {
-            "Status": {
-                "Ongoing": {"column": "alert_labs./return_lab",
-                            "condition": ["", "unsure"]},
-                "Confirmed": {"column": "alert_labs./return_lab",
-                              "condition": "yes"},
-                "Discarded": {"column": "alert_labs./return_lab",
-                              "condition": "no"}
-            },
-            "checklist": {
-                "Referral": {"column": "pt./checklist",
-                             "condition": "referral"},
-                "Case Managment": {"column": "pt./checklist",
-                                   "condition": "case_management"},
-                "Contact Tracing": {"column": "pt./checklist",
-                                    "condition": "contact_tracing"},
-                "Laboratory Diagnosis": {"column": "pt./checklist",
-                                         "condition": "return_lab"},
+            "key1": {
+                "A": {
+                    "column": "col1",
+                    "condition": ["A", "B"]
+                },
+                "B": {
+                    "column": "col1",
+                    "condition": "B"
+                },
+                "C": {"condition": "default_value"}
             }
         }
-        row1 = {"alert_labs./return_lab": "yes",
-                "pt./checklist": "referral,case_management"}
+        row1 = {"col1": "A"}
         new_data = prepare_link_data(data_def, row1)
-        assert("Status" in new_data.keys())
-        assert("checklist" in new_data.keys())
-        assert(new_data["Status"] == "Confirmed")
-        assert("Referral" in new_data["checklist"])
-        assert("Case Managment" in new_data["checklist"])
-        row2 = {"alert_labs./return_lab": "unsure",
-                "pt./checklist": "referral,case_management"}
-        new_data = prepare_link_data(data_def, row2)
-        assert(new_data["Status"] == "Ongoing")
-        row2 = {"alert_labs./return_lab": "",
-                "pt./checklist": "referral,case_management"}
-        new_data = prepare_link_data(data_def, row2)
-        assert(new_data["Status"] == "Ongoing")
+        self.assertIn("key1", new_data.keys())
+        self.assertEqual(new_data["key1"], "A")
+        row1 = {"col1": "B"}
+        new_data = prepare_link_data(data_def, row1)
+        self.assertEqual(sorted(new_data["key1"]), ["A", "B"])
+        row1 = {"col1": "C"}
+        new_data = prepare_link_data(data_def, row1)
+        self.assertEqual(new_data["key1"], "C")
+        data_def = {
+            "key1": {
+                "A": {
+                    "column": "col1",
+                    "condition": "get_value"
+                }
+            }
+        }
+        row1 = {"col1": "D"}
+        new_data = prepare_link_data(data_def, row1)
+        self.assertEqual(new_data["key1"], "D")
+        
         
 if __name__ == "__main__":
     unittest.main()

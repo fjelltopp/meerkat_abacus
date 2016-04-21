@@ -64,8 +64,6 @@ class Variable():
                 self.cond_list = variable.condition.split(",")
             else:
                 self.cond_list = [variable.condition]
-                if variable.condition == "1":
-                    self.cond_list = [1, "1"]
             self.cond_list = [cond.strip() for cond in self.cond_list]
         elif variable.method == "int_between":
             self.test_type = self.test_int_between
@@ -82,8 +80,6 @@ class Variable():
                 self.cond_list = self.condition.split(",")
             else:
                 self.cond_list = [self.condition]
-                if self.condition == "1":
-                    self.cond_list = [1, "1"]
             self.cond_list = [cond.strip() for cond in self.cond_list]
         elif variable.method == "count_occurence_in,int_between":
             self.test_type = self.test_count_occurence_in_int_between
@@ -96,8 +92,6 @@ class Variable():
                 self.cond_list = self.condition.split(",")
             else:
                 self.cond_list = [self.condition]
-                if self.condition == "1":
-                    self.cond_list = [1, "1"]
             self.cond_list = [cond.strip() for cond in self.cond_list]
         elif variable.method == "not_null":
             self.test_type = self.test_not_null
@@ -242,15 +236,12 @@ class Variable():
         calc = self.calc
         for c in self.columns:
             if c in row:
-                try:
-                    calc = calc.replace(c, str(float(row[c])))
-                except ValueError:
-                    return 0
-        try:
-            result = eval(calc)
-            if self.condition_low <= result and self.condition_high > result:
-                return 1
+                calc = calc.replace(c, str(float(row[c])))
             else:
                 return 0
-        except:
+        result = eval(calc)
+        if self.condition_low <= result and self.condition_high > result:
+            return 1
+        else:
             return 0
+

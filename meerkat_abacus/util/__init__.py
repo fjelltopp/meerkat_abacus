@@ -33,6 +33,7 @@ def epi_week_start_date(year, epi_config=country_config["epi_week"]):
             adjustment = 7 + adjustment
         return first_of_year + timedelta(days=adjustment)
 
+    
 def get_link_definitions(session):
     """
     gets all the link definitions from the db
@@ -204,7 +205,7 @@ def write_csv(rows, file_path):
         file_path: path to write file to
     """
     with open(file_path, "w", encoding='utf-8') as f:
-        columns = list(rows[0])
+        columns = sorted(list(rows[0]))
         out = csv.DictWriter(f, columns)
         out.writeheader()
         for row in rows:
@@ -271,7 +272,6 @@ def send_alert(alert, variables, locations):
             country_config["messaging_topic_prefix"] + "-" + str(alert.region) + "-allDis",
             country_config["messaging_topic_prefix"] + "-" + str(alert.region) + "-" + alert.reason      
         ]
-
         alert_info = ("Alert: " + variables[alert.reason].name + "\n"
                       "Date: " + alert.date.strftime("%d %b %Y") + "\n"
                       "Clinic: " + locations[alert.clinic].name + "\n"

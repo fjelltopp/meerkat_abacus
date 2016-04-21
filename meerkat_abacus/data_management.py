@@ -369,7 +369,7 @@ def set_up_everything(leave_if_data, drop_db, N):
         engine.execute("ALTER SEQUENCE links_id_seq RESTART WITH 1;")
         session.commit()
         add_new_links()
-
+    return set_up
 
 def import_new_data():
     """
@@ -379,7 +379,7 @@ def import_new_data():
     Session = sessionmaker(bind=engine)
     session = Session()
     for form in model.form_tables.keys():
-        file_path = data_directory + country_config["tables"][form] + ".csv"
+        file_path = config.data_directory + country_config["tables"][form] + ".csv"
         data = util.read_csv(file_path)
         new = add_new_data(form, model.form_tables[form],
                                 data, session)
@@ -435,7 +435,7 @@ def add_new_fake_data(to_add):
     add_fake_data(session, to_add, append=True)
 
 
-def new_data_to_codes(engine=None):
+def new_data_to_codes(engine=None, no_print=False):
     """
     Run all the raw data through the to_codes function to translate it into structured data
 
@@ -473,7 +473,7 @@ def new_data_to_codes(engine=None):
                 if alert:
                     alerts.append(alert)
             i += 1
-            if i % 100 == 0:
+            if i % 100 == 0 and not no_print:
                 print(i)
     add_alerts(alerts, session)
     session.commit()
