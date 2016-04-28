@@ -1,9 +1,11 @@
-"""
-Celery configuration file
+"""Celery configuration file
 
-Needs the broker and backend urls, can be set by environment variable MEERKAT_BROKER_URL.
+To setup celery properly we need the broker and backend urls, which 
+can be set by environment variable MEERKAT_BROKER_URL.
 
-We set up the get_and_proccess data task at the time interval specified in the config file.
+In this config we set up a beat schedule with a timedelta in seconds 
+given by the config.interval value.
+
 """
 from datetime import timedelta
 import os

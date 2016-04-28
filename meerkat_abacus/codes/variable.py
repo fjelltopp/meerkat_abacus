@@ -1,8 +1,6 @@
 """
+Definition of the Variable class
 
-Variable class
-
-The variable class implements a method to check if a row of data matches the variable
 
 """
 
@@ -18,7 +16,7 @@ class Variable():
     """
     A class for variables such that one can check if a row of data matches the variable
 
-    A variable can have one of many methods. Each method has different function that specifies how we determine if a row
+    A variable can have one of many methods. Each method has a different function that specifies how we determine if a row
     matches the variable. In the constructor we set test_type = method_specific_test. 
 
     Running variable.test(row, value) determins if the row matches the variable. 
@@ -27,16 +25,17 @@ class Variable():
 
 
     We can have the following variable methods: 
+
     * count - Counts all rows with non-zero entry in the specified field of the form
-    * count_occurence - Counts rows where condtion appears in field
-    * count_occurence_in - Counts rows where condition is a substring of the value in the field
+    * count_occurrence - Counts rows where condtion appears in field
+    * count_occurrence_in - Counts rows where condition is a substring of the value in the field
     * int_between - An integer between the two numbers specified in condition
-    * count_occurence_int_between - must both fullfill a count_occurence and a int_between on two different columns
-    * count_occurence_in_int_between - must both fullfill a count_occurence_in and a int_between on two different columns
+    * count_occurrence_int_between - must both fullfill a count_occurrence and a int_between on two different columns
+    * count_occurrence_in_int_between - must both fullfill a count_occurrence_in and a int_between on two different columns
     * sum - Returns the numerical value of the field
     * not_null - true for non-null values of the field
     * calc_between - allows you to specify a mathematical expression of multiple columns in the row. 
-         The calculated value should then be between the given boundaries
+           The calculated value should then be between the given boundaries
 
     """
     def __init__(self, variable):
@@ -48,18 +47,18 @@ class Variable():
         """
         self.variable = variable
         self.column = variable.db_column
-        if variable.method == "count_occurence":
+        if variable.method == "count_occurrence":
             if "," in variable.condition:
                 self.cond_list = variable.condition.split(",")
                 self.cond_list = [cond.strip() for cond in self.cond_list]
-                self.test_type = self.test_count_occurence_list
+                self.test_type = self.test_count_occurrence_list
             else:
                 self.cond = variable.condition
-                self.test_type = self.test_count_occurence
+                self.test_type = self.test_count_occurrence
         elif variable.method == "count":
             self.test_type = self.test_count
-        elif variable.method == "count_occurence_in":
-            self.test_type = self.test_count_occurence_in
+        elif variable.method == "count_occurrence_in":
+            self.test_type = self.test_count_occurrence_in
             if "," in variable.condition:
                 self.cond_list = variable.condition.split(",")
             else:
@@ -70,8 +69,8 @@ class Variable():
             self.condition = variable.condition.split(",")
         elif variable.method == "sum":
             self.test_type = self.test_sum
-        elif variable.method == "count_occurence,int_between":
-            self.test_type = self.test_count_occurence_int_between
+        elif variable.method == "count_occurrence,int_between":
+            self.test_type = self.test_count_occurrence_int_between
             self.column1, self.column2 = variable.db_column.split(",")
             self.condition_low, self.condition_high = (
                 variable.condition.split(":")[1].split(","))
@@ -81,8 +80,8 @@ class Variable():
             else:
                 self.cond_list = [self.condition]
             self.cond_list = [cond.strip() for cond in self.cond_list]
-        elif variable.method == "count_occurence_in,int_between":
-            self.test_type = self.test_count_occurence_in_int_between
+        elif variable.method == "count_occurrence_in,int_between":
+            self.test_type = self.test_count_occurrence_in_int_between
             self.column1, self.column2 = variable.db_column.split(",")
             self.condition_low, self.condition_high = (
                 variable.condition.split(":")[1].split(","))
@@ -118,6 +117,8 @@ class Variable():
         
         Args:
            row: db-row
+        Return:
+           result(Bool): result of test
         """
         if row.get(self.sec_column, "neppe") == self.sec_condition:
             return 1
@@ -127,6 +128,11 @@ class Variable():
     def secondary_condition_no(self, row):
         """
         Returns 1 sicne the variable does not have a secondary condition
+        Args:
+           row: db-row
+        Return:
+           result(Bool): 1
+
         """
         return 1
 
@@ -142,25 +148,28 @@ class Variable():
         """
         return self.test_type(row, value)
 
-    def test_count_occurence_list(self, row, value):
+    def test_count_occurrence_list(self, row, value):
+        """Test if value is in condition list"""
         if value in self.cond_list:
             return 1
         else:
             return 0
 
-    def test_count_occurence(self, row, value):
+    def test_count_occurrence(self, row, value):
+        """Test if value==condition"""
         if value == self.cond:
             return 1
         else:
             return 0
 
     def test_count(self, row, value):
+        """Returns 1 as long as value is not None"""
         if value is not None:
             return 1
         else:
             return 0
 
-    def test_count_occurence_in(self, row, value):
+    def test_count_occurrence_in(self, row, value):
         """
         We first test if value is in the list, if not we check if value is a substring of any element in the list
         """
@@ -176,6 +185,7 @@ class Variable():
         return add
 
     def test_int_between(self, row, value):
+        """Test that condtion_lower<=value<condition_upper"""
         column = self.column
         add = 0
         condition_low, condition_high = self.condition
@@ -186,12 +196,14 @@ class Variable():
         return add
 
     def test_not_null(self, row, value):
+        """ Value not equal None"""
         if value is not "" and value is not None:
             return value
         else:
             return 0
         
-    def test_count_occurence_int_between(self, row, value):
+    def test_count_occurrence_int_between(self, row, value):
+        """test both count_occurrence and int_between"""
         column2 = self.column2
         add = 0
         if (row.get(column2, None) and row.get(column2, None) != 0 or
@@ -202,7 +214,8 @@ class Variable():
                     add = 1
         return add
 
-    def test_count_occurence_in_int_between(self, row, value):
+    def test_count_occurrence_in_int_between(self, row, value):
+        """test both count_occurrence_in and int_between"""
         column2 = self.column2
         add = 0
         if (row.get(column2, None) and row.get(column2, None) != 0 or
@@ -220,6 +233,7 @@ class Variable():
         return add
 
     def test_sum(self, row, value):
+        """ Returns the value if it is non-None"""
         value = row.get(self.column, 0)
         if value:
             return int(value)

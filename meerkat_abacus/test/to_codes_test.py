@@ -35,7 +35,7 @@ agg_variables = [
     model.AggregationVariables(
         id=2,
         secondary_condition="",
-        method="count_occurence",
+        method="count_occurrence",
         db_column="column1",
         alert=1,
         condition="A",
@@ -43,7 +43,7 @@ agg_variables = [
     model.AggregationVariables(
         id=3,
         secondary_condition="",
-        method="count_occurence_in",
+        method="count_occurrence_in",
         db_column="column2",
         condition="B",
         form="form1"),

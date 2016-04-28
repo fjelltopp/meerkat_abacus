@@ -25,9 +25,8 @@ def create_db(url, base, drop=False):
     The function creates the database
 
     Args:
-        base: An SQLAlchmey declarative base with the db schema
         url : the database_url
-        country_config: A contry config dictionary
+        base: An SQLAlchmey declarative base with the db schema
         drop: Flag to drop the database before creating it
 
     Returns:
@@ -85,9 +84,9 @@ def add_fake_data(session, N=500, append=False):
         
 def get_data_from_s3(bucket):
     """
-    Get form data from s3 bucket
+    Get csv-files with data from s3 bucket
 
-    To run, needs to be authenticated with AWS.
+    Needs to be authenticated with AWS to run.
 
     Args: 
        bucket: bucket_name
@@ -105,6 +104,7 @@ def table_data_from_csv(filename, table, directory, session,
                         row_function=None):
     """
     Adds all the data from a csv file. We delete all old data first and then add new data. 
+
     Args:
         filename: name of table
         table: table class
@@ -144,7 +144,7 @@ def table_data_from_csv(filename, table, directory, session,
 
 def import_variables(session):
     """
-    Import variables from config file
+    Import variables from codes csv-file.
 
     Args:
        session: db-session
@@ -161,7 +161,7 @@ def import_variables(session):
 
 def import_data(engine, session):
     """
-    Imports data from csv files for the forms
+    Imports csv-files with form data. 
 
     Args:
        engine: db engine
@@ -196,10 +196,10 @@ def import_links(session):
     
 def import_clinics(csv_file, session, country_id):
     """
-    import clinics from csv file
+    Import clinics from csv file.
 
     Args:
-        csv_file: path to csv file with regions
+        csv_file: path to csv file with clinics
         session: SQLAlchemy session
         country_id: id of the country
     """
@@ -261,7 +261,7 @@ def import_clinics(csv_file, session, country_id):
 
 def import_regions(csv_file, session, parent_id):
     """
-    import regions from csv
+    Import regions from csv-file. 
 
     Args:
         csv_file: path to csv file with regions
@@ -280,10 +280,10 @@ def import_regions(csv_file, session, parent_id):
 
 def import_districts(csv_file, session):
     """
-    import districts from csv
+    Import districts from csv file. 
 
     Args:
-        csv_file: path to csv file with regions
+        csv_file: path to csv file with districts
         session: SQLAlchemy session
     """
     regions = {}
@@ -300,7 +300,7 @@ def import_districts(csv_file, session):
 
 def import_locations(engine, session):
     """
-    Imports all locations from csv-files
+    Imports all locations from csv-files.
 
     Args:
         engine: SQLAlchemy connection engine
@@ -324,7 +324,7 @@ def import_locations(engine, session):
 def set_up_everything(leave_if_data, drop_db, N):
     """
     Sets up the db and imports all the data. This should leave 
-    the database completely ready to use by the API.
+    the database completely ready to used by the API.
 
     Args:
         leave_if_data: do nothing if data is there
@@ -373,7 +373,7 @@ def set_up_everything(leave_if_data, drop_db, N):
 
 def import_new_data():
     """
-    Import new data from csv files 
+    Import new data from csv files.
     """
     engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
@@ -388,7 +388,10 @@ def import_new_data():
 
 def add_new_data(form_name, form, data, session):
     """
-    adds rows in data that has a uuid not already in the form
+    Adds new rows from the data variable to the form db table. 
+
+    New rows are rows with a uuid that does not already exist. 
+    We only add rows that have a registered deviceid. 
 
     Args:
         form_name: type of form, case, register etc
@@ -424,7 +427,7 @@ def add_new_data(form_name, form, data, session):
 
 def add_new_fake_data(to_add):
     """
-    add new fake data
+    Wrapper function to add new fake data to the existing csv files
 
     Args:
        to_add: number of new records to add
@@ -480,23 +483,31 @@ def new_data_to_codes(engine=None, no_print=False):
     return True
 
 def add_new_links():
-    """
-    add new links
+    """Finding and adding new links
+
+    Links are between a "from" table and a "to" table matched on the value of 
+    specfied columns, one from each table. We can have conditions on both tables
+    to choose the rows that can take part in links and links can have data generated
+    from the "from" table.
+
+    To find the links we follow these steps:
 
     0. Get all old Links
-    For each type of link we perform the following steps:
-    1. We construct the conditions on the from table and get the from records
-    2. Loop through all the from records and create the link_from_values dict
+
+    For each link type: 
+    
+    1. We construct the conditions on the "from" table and get the "from" records
+    2. Loop through all the "from" records and create the link_from_values dict
          with row[from_key] = row
-    3. Then we sort out the to conditions and get all the to records
-    4. We loop through the to records and find all the to-from matches
-    5. We then check if an old link exist and then use the link rule to update the old link,
-        most links always take the latest record and use it as the link
+    3. Then we sort out the "to" conditions and get all the "to" records
+    4. We loop through the "to" records and find all the "to-from" matches
+    5. We then check if an old link exist and if it does we use the link rule to update the old link,
+        most links take the latest macting record to use for the link. If there is no old link, we create
+        a new link. 
     6. Prepare link data and add the link
 
-    Most of the complexity in the function comes from dealing with the difference between 
-    form tables and other tables. 
-
+    Since we have normal tables like e.g the alert table and form-tables where all the data is stored as json
+    we need to handle these to cases differently.
     """
 
     engine = create_engine(config.DATABASE_URL)
@@ -597,19 +608,17 @@ def add_new_links():
 
 def prepare_link_data(data_def, row):
     """
-    Returns row translated to data after data_def in the link
-    For each key, value pair in data_def we will return a predetermined value based on data in row.
+    Returns row translated to data specified by the data_def. 
+    For each key value pair in data_def we will return a value based on the data in the row.
     
-    Example of data_def
-    {
-    "status": {
-      "Ongoing": {"column": "alert_labs./return_lab",
-                  "condition": ["", "unsure"]},
-      "Confirmed": {"column": "alert_labs./return_lab",
-                    "condition": "yes"},
-      "Disregarded": {"column": "alert_labs./return_lab",
-                       "condition": "no"}
-      }}
+    Example of a data_def::
+
+       {"status": {
+          "Ongoing": {"column": "alert_labs./return_lab", "condition": ["", "unsure"]},
+          "Confirmed": {"column": "alert_labs./return_lab","condition": "yes"},
+          "Disregarded": {"column": "alert_labs./return_lab", "condition": "no"}}
+       }
+
 
     So for each key(here "status") we want to determine which of the values 
     (here: "Ongoing", "Confirmed", "Disregarded") apply for a given row. 
@@ -618,7 +627,7 @@ def prepare_link_data(data_def, row):
     return a list of those options. 
     
     Each option has a column and a condition. If the condition is a list, row[column] can match any of the listed conditions. 
-    If the condition is "default_value", that option is always added. 
+    If the condition is "default_value", that option is added if no other options have matched. 
     
     Args:
         data_def: dictionary with data definition
@@ -660,7 +669,8 @@ def prepare_link_data(data_def, row):
 
 def add_alerts(alerts, session):
     """
-    Inserts all the alerts. and call the send_alert function
+    Inserts all the alerts. and calls the send_alert function.
+
     Args:
         alerts: list of alerts
         session: db session

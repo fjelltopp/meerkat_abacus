@@ -22,7 +22,7 @@ links = [
             "checklist": {
                 "Referral": {"column": "pt./checklist",
                              "condition": "referral"},
-                "Case Managment": {"column": "pt./checklist",
+                "Case Management": {"column": "pt./checklist",
                                    "condition": "case_management"},
                 "Contact Tracing": {"column": "pt./checklist",
                                     "condition": "contact_tracing"},

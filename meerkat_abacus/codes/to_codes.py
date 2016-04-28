@@ -8,8 +8,7 @@ from meerkat_abacus.codes.variable import Variable
 
 def get_variables(session):
     """
-    get variables out of db turn them into Variable classes
-
+    Get the variables out of the db and turn them into Variable classes.
 
     To speed up the next step of the process we group the variables by calculation_group. 
 
@@ -36,7 +35,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
     Takes a row and transforms it into a data row
 
     We iterate through each variable and add the variable_id: test_outcome to the 
-    data.variable json dictionary. 
+    data.variable json dictionary if test_outcome is True. 
 
     To speed up this process we have divded the variables into groups where only one variable
     can be apply to the given record. As soon as we find one of these variables, we don't test

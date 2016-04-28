@@ -1,5 +1,5 @@
 """
-Task queue
+Celery setup and wraper tasks to periodically update the database.
 
 """
 from celery import Celery
@@ -14,12 +14,15 @@ from celery.signals import worker_ready
 # When we start celery we run the set_up_db command
 @worker_ready.connect
 def set_up_task(**kwargs):
+    """
+    Start the set_up_db task as soon as workers are ready
+    """
     set_up_db.delay()
 
 @app.task
 def set_up_db():
     """
-    run the set_up_everything command from data_management
+    Run the set_up_everything command from data_management.
     """
     print("Setting up DB for {}".format(
         config.country_config["country_name"]))
@@ -31,7 +34,7 @@ def set_up_db():
 
 @app.task
 def get_proccess_data(print_progress=False):
-    """ get/create new data and proccess it"""
+    """Get/create new data and proccess it."""
     if config.fake_data:
         add_new_fake_data(5)
     if config.get_data_from_s3:
@@ -50,12 +53,12 @@ def get_proccess_data(print_progress=False):
     
 @app.task
 def get_new_data_from_s3():
-    """ get new data from s3"""
+    """Get new data from s3."""
     data_management.get_data_from_s3(config.s3_bucket)
 @app.task
 def import_new_data():
     """
-    task to check csv files and insert any new data
+    Task to check csv files and insert any new data.
     """
     return data_management.import_new_data()
 @app.task
@@ -66,12 +69,12 @@ def add_new_fake_data(to_add):
 @app.task
 def new_data_to_codes():
     """
-    add any new data in form tables to data table
+    Add any new data in form tables to data table.
     """
     return data_management.new_data_to_codes(no_print=True)
 
 
 @app.task
 def add_new_links():
-    """ Add new links"""
+    """ Add new links."""
     return data_management.add_new_links()

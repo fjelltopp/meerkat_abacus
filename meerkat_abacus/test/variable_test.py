@@ -85,11 +85,11 @@ class VariableTest(unittest.TestCase):
             variable.test(row, None)
         
 
-    def test_count_occurence(self):
+    def test_count_occurrence(self):
         agg_variable = model.AggregationVariables(
             id=4,
             secondary_condition="",
-            method="count_occurence",
+            method="count_occurrence",
             db_column="column1",
             condition="A")
         variable = Variable(agg_variable)
@@ -135,7 +135,7 @@ class VariableTest(unittest.TestCase):
         agg_variable = model.AggregationVariables(
             id=4,
             secondary_condition="",
-            method="count_occurence_in",
+            method="count_occurrence_in",
             db_column="column1",
             condition="A")
         variable = Variable(agg_variable)
@@ -169,11 +169,11 @@ class VariableTest(unittest.TestCase):
         with self.assertRaises(NameError):
             variable = Variable(agg_variable)
         
-    def test_count_occurence_int_between(self):
+    def test_count_occurrence_int_between(self):
         agg_variable = model.AggregationVariables(
             id=4,
             secondary_condition="",
-            method="count_occurence,int_between",
+            method="count_occurrence,int_between",
             db_column="column2,column1",
             condition="AB:0,5")
         variable = Variable(agg_variable)
@@ -196,11 +196,11 @@ class VariableTest(unittest.TestCase):
         row = {"column1": "3", "column2": "B"}
         self.assertEqual(variable.test(row, None), 0)
 
-    def test_count_occurence_in_int_between(self):
+    def test_count_occurrence_in_int_between(self):
         agg_variable = model.AggregationVariables(
             id=4,
             secondary_condition="",
-            method="count_occurence_in,int_between",
+            method="count_occurrence_in,int_between",
             db_column="column2,column1",
             condition="A:0,5")
         variable = Variable(agg_variable)

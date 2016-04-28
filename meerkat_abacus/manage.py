@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-command line tool to run all database tasks
+Command line tool that can be used to run all database related tasks.
 """
 
 import argparse
