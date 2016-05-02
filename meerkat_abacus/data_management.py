@@ -9,6 +9,7 @@ from sqlalchemy_utils import database_exists, create_database, drop_database
 import boto3
 import csv
 from dateutil.parser import parse
+import inspect
 #import resource        print(link_def.id, 'Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
 
 
@@ -27,7 +28,7 @@ def create_db(url, base, drop=False):
     Args:
         url : the database_url
         base: An SQLAlchmey declarative base with the db schema
-        drop: Flag to drop the database before creating it
+|        drop: Flag to drop the database before creating it
 
     Returns:
         Boolean: True
@@ -39,6 +40,13 @@ def create_db(url, base, drop=False):
     engine = create_engine(url)
     base.metadata.create_all(engine)
     return True
+
+def export_data(session):
+    for name, obj in inspect.getmembers(model):
+        if inspect.isclass(obj) and hasattr(obj, "__table__"):
+            for r in session.query(obj):
+                columns = dict((col, getattr(r, col))for col in r.__table__.columns.keys()) 
+                print(name + "(**" + str(columns) + "),")
 
 
 def add_fake_data(session, N=500, append=False):
@@ -682,3 +690,10 @@ def add_alerts(alerts, session):
         util.send_alert(alert, variables, locations)
         session.add(alert)
     session.commit()
+
+if __name__ == "__main__":
+    engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    export_data(session)

@@ -249,7 +249,7 @@ class Variable():
         """
         calc = self.calc
         for c in self.columns:
-            if c in row:
+            if c in row and row[c]:
                 calc = calc.replace(c, str(float(row[c])))
             else:
                 return 0

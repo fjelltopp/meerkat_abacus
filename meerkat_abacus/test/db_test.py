@@ -47,6 +47,13 @@ class DbTest(unittest.TestCase):
     def test_locations(self):
         old_dir = manage.config.config_directory
         manage.config.config_directory = "meerkat_abacus/test/test_data/"
+        manage.config.data_directory = "meerkat_abacus/test/test_data/"
+        old_locs = manage.country_config["locations"]
+        manage.country_config["locations"] = {
+            "clinics": "demo_clinics.csv",
+            "districts": "demo_districts.csv",
+            "regions": "demo_regions.csv"
+            }
         manage.import_locations(self.engine, self.session)
         results = self.session.query(model.Locations).all()
         self.assertEqual(len(results), 12)  # Important as we should not merge the final Clinic 1
@@ -57,9 +64,6 @@ class DbTest(unittest.TestCase):
                     self.assertEqual(r.deviceid, "1,6")
                 else:
                     self.assertEqual(r.deviceid, "7")
-
-        
-
         # This file has a clinic with a non existent district
         old_clinic_file = manage.country_config["locations"]["clinics"]
         manage.country_config["locations"]["clinics"] = "demo_clinics_error.csv"
@@ -69,32 +73,39 @@ class DbTest(unittest.TestCase):
 
         #Clean Up
         manage.country_config["locations"]["clinics"] = old_clinic_file
+        manage.country_config["locations"] = old_locs
         manage.config.config_directory = old_dir
 
     def test_table_data_from_csv(self):
-
+        """Test table_data_from_csv"""
+        
         manage.table_data_from_csv("demo_case", model.form_tables["case"],
                                    "meerkat_abacus/test/test_data/",
                                    self.session, self.engine,
-                                   deviceids=["1", "2", "3", "4", "5", "6"])
+                                   deviceids=["1", "2", "3", "4", "5", "6"],
+                                   table_name=config.country_config["tables"]["case"])
         results = self.session.query(model.form_tables["case"]).all()
         self.assertEqual(len(results), 6)  # Only 6 of the cases have deviceids in 1-6
-
         for r in results:
             self.assertIn(r.uuid, ["1", "2", "3", "4", "5", "6"])
-
 
     def test_links(self):
         deviceids = ["1", "2", "3", "4", "5", "6", "7", "8"]
 
+        manage.create_db(config.DATABASE_URL,
+                         model.Base,
+                         drop=True)
+
         manage.table_data_from_csv("demo_case", model.form_tables["case"],
                                    "meerkat_abacus/test/test_data/",
                                    self.session, self.engine,
+                                   table_name=config.country_config["tables"]["case"],
                                    deviceids=deviceids)
         manage.table_data_from_csv("demo_alert", model.form_tables["alert"],
                                    "meerkat_abacus/test/test_data/",
                                    self.session, self.engine,
-                                   deviceids=deviceids)
+                                   deviceids=deviceids,
+                                   table_name=config.country_config["tables"]["alert"])
         link_def = {
             "id": "test",
             "name": "Test",
@@ -149,9 +160,10 @@ class DbTest(unittest.TestCase):
         results = session.query(model.Locations)
         country_test.test_locations(results)
 
-        for table in model.form_tables:
-            results = session.query(model.form_tables[table])
-            self.assertEqual(len(results.all()), 500)
+        if config.fake_data:
+            for table in model.form_tables:
+                results = session.query(model.form_tables[table])
+                self.assertEqual(len(results.all()), )
         #Import variables
         agg_var = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.id == "tot_1").first()
@@ -229,11 +241,17 @@ class DbTest(unittest.TestCase):
             )
 
     def test_get_proccess_data(self):
+        old_fake = task_queue.config.fake_data
+        old_s3 = task_queue.config.get_data_from_s3
         task_queue.config.fake_data = True
         task_queue.config.get_data_from_s3 = False
+        manage.create_db(config.DATABASE_URL,
+                         model.Base,
+                         drop=True)
         
         numbers = {}
         manage.import_locations(self.engine, self.session)
+        manage.add_fake_data(self.session, N=500, append=False)
         task_queue.get_proccess_data.apply().get()
         for table in model.form_tables:
             res = self.session.query(model.form_tables[table])
@@ -242,6 +260,10 @@ class DbTest(unittest.TestCase):
         for table in model.form_tables:
             res = self.session.query(model.form_tables[table])
             self.assertEqual(numbers[table] + 5, len(res.all()))
+
+        #Clean up
+        task_queue.config.fake_data = old_fake
+        task_queue.config.get_data_from_s3 = old_s3
 
 if __name__ == "__main__":
     unittest.main()
