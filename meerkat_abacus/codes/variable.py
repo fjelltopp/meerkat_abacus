@@ -189,7 +189,7 @@ class Variable():
         column = self.column
         add = 0
         condition_low, condition_high = self.condition
-        if value or (condition_low == "0" and value != "" and int(value) == 0):
+        if value or (value != None and (condition_low == "0" and value != "" and int(value) == 0)):
             n = int(float(row.get(column, -99999)))
             if n >= int(condition_low) and n < int(condition_high):
                 add = 1
