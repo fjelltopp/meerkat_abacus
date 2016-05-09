@@ -32,42 +32,45 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.action == "create-db":
-        create_db(DATABASE_URL, model.Base, country_config, drop=args.drop_db)
+        create_db(config.DATABASE_URL, model.Base, args.drop_db)
     if args.action == "import-locations":
-        engine = create_engine(DATABASE_URL)
+        engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        import_locations(country_config,config.config_directory, engine)
+        session = Session()
+        import_locations(engine, session)
     if args.action == "fake-data":
-        engine = create_engine(DATABASE_URL)
+        engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        fake_data(country_config, data_directory, engine, N=args.N)
+        session = Session()
+        add_fake_data(session, args.N)
     if args.action == "get-data-s3":
         if config.get_data_from_s3:
-            get_data_from_s3(config.s3_bucket,
-                             data_directory,
-                             country_config)
+            get_data_from_s3(config.s3_bucket)
         else:
             print("Not configured for S3")
     if args.action == "import-data":
-        engine = create_engine(DATABASE_URL)
+        engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        import_data(country_config, data_directory, engine)
+        session = Session()
+        import_data(engine, session)
     if args.action == "import-variables":
-        engine = create_engine(DATABASE_URL)
+        engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        import_variables(country_config, engine)
+        session = Session()
+        import_variables(session)
     if args.action == "import-links":
-        engine = create_engine(DATABASE_URL)
+        engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        import_links(country_config, engine)
+        session = Session()
+        import_links(session)
     if args.action == "to-codes":
-        engine = create_engine(DATABASE_URL)
+        engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
-        raw_data_to_variables(engine)
+        new_data_to_codes(engine)
     if args.action == "add-links":
-        engine = create_engine(DATABASE_URL)
+        engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
         add_links(engine)
     if args.action == "all":
-        set_up_everything(DATABASE_URL,args.leave_if_data,
+        set_up_everything(args.leave_if_data,
                           args.drop_db, args.N)

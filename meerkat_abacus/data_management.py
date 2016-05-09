@@ -197,6 +197,8 @@ def import_links(session):
     Args:
         session: db session
     """
+    session.query(model.LinkDefinitions).delete()
+    session.commit()
     for link in config.links.links:
         session.add(model.LinkDefinitions(**link))
     session.commit()
