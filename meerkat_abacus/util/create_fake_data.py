@@ -1,5 +1,5 @@
 """
-Functionality to create fake data csv files
+Functionality to create fake data
 """
 
 import random
@@ -10,6 +10,19 @@ import uuid
 def get_value(field, data):
     """
     Takes a field and returns the value
+    
+    A field is a dict with a key that gives the method to choose from a value for the dict value.
+    I.e.
+      field = {"one": ["A", "B", "C"]}
+    We then want to choose either A, B, or C randomly.
+
+    The available methos are:
+    one: choose one of the items in the list
+    integer: choose an intenger between [uppper, lower]
+    multiple: choose a random subset of the list
+    date: choose a date in the last three weeks
+    data: the value gives a key that should exist in the data dict. We choose one value from the list in the data dict
+
 
     Args:
         field: a field
@@ -75,10 +88,11 @@ def create_form(fields, data=None, N=500,odk=True):
     for i in range(N):
         row = {}
         for field_name in fields.keys():
-            if field_name != "deviceids": #deal with this below
+            if field_name != "deviceids": # We deal with deviceid in the odk part below
                 value = get_value(fields[field_name], data)
                 row[field_name] = value
         if odk:
+            # If we are creating fake data for an odk form, we want to add a number of special fields
             if "deviceids" in data.keys():
                 row["deviceid"] = random.sample(data["deviceids"], 1)[0]
             else:

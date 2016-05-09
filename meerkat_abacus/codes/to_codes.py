@@ -8,7 +8,9 @@ from meerkat_abacus.codes.variable import Variable
 
 def get_variables(session):
     """
-    get variables out of db turn them into Variable classes
+    Get the variables out of the db and turn them into Variable classes.
+
+    To speed up the next step of the process we group the variables by calculation_group. 
 
     Args:
         session: db-session
@@ -32,10 +34,20 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
     """
     Takes a row and transforms it into a data row
 
+    We iterate through each variable and add the variable_id: test_outcome to the 
+    data.variable json dictionary if test_outcome is True. 
+
+    To speed up this process we have divded the variables into groups where only one variable
+    can be apply to the given record. As soon as we find one of these variables, we don't test
+    the rest of the variables in the same group. 
+
     Args;
         row: row of raw data
         variables: dict of variables to check
         locations: list of locations
+        date_column: which column from the row determines the date
+        table_name: the name of the table/from the row comes from
+        alert_data: a dictionary of name:column pairs. For each alert we return the value of row[column] as name. 
     return:
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
@@ -47,8 +59,8 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
     try:
         date = parser.parse(row[date_column])
     except:
-        print(row[date_column])
         return (None, None)
+
     new_record = model.Data(
         date=date,
         uuid=row["meta/instanceID"],
@@ -56,6 +68,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
         clinic_type=locations[clinic_id].clinic_type,
         country=1,
         geolocation=locations[clinic_id].geolocation)
+
     if locations[clinic_id].parent_location in districts:
         new_record.district = locations[clinic_id].parent_location
         new_record.region = (
@@ -70,12 +83,13 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
             #All variables in group have same secondary conndition, so only check once
             first_variable = next(iter(variables[table_name][group].values()))
             if first_variable.secondary_condition(row):
-                value = row.get(first_variable.column, 0)
+                value = row.get(first_variable.column, None)
                 for v in variables[table_name][group]:
                     test_outcome = variables[table_name][group][v].test_type(row, value)
                     if test_outcome:
                         variable_json[v] = test_outcome
                         if variables[table_name][group][v].variable.alert:
+                            # If the variable we just found as a match is a variable we should create an alert for
                             data_alert = {}
                             for data_var in alert_data.keys():
                                 data_alert[data_var] = row[alert_data[data_var]]
@@ -86,7 +100,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
                                 reason=v,
                                 data=data_alert,
                                 date=date)
-                        break
+                        break # We break out of the current group as all variables in a group are mutually exclusive
     new_record.variables = variable_json
     return (new_record, alert)
 

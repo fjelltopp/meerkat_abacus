@@ -3,8 +3,11 @@ Testing for DB utilities
 """
 
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil import parser
 from meerkat_abacus.util import create_fake_data, epi_week_start_date
+from meerkat_abacus import util, model
+from unittest import mock
 
 class UtilTest(unittest.TestCase):
 
@@ -29,17 +32,49 @@ class UtilTest(unittest.TestCase):
     
     def test_create_fake_data_get_value(self):
         """Test get value"""
+        for i in range(100):
+            value = create_fake_data.get_value(
+                {"integer": [1, 2]}, None)
+            self.assertIn(value, [1, 2])
+            value = create_fake_data.get_value(
+                {"one": ["one", "two"]}, None)
+            self.assertIn(value, ["one", "two"])
+
+        min_length = 3
+        max_length = 0
+        found_a = False
+        found_b = False
+        found_c = False
+        for i in range(200):
+            value = create_fake_data.get_value(
+                {"multiple": ["A", "B", "C"]}, None)
+            if "A" in value:
+                found_a = True
+            if "B" in value:
+                found_b = True
+            if "C" in value:
+                found_c = True
+            value = value.split(",")
+            if len(value) > max_length:
+                max_length = len(value)
+            if len(value) < min_length:
+                min_length = len(value)
+        self.assertEqual(max_length, 3)
+        self.assertEqual(min_length, 1)
+        self.assertEqual(found_a, True)
+        self.assertEqual(found_b, True)
+        self.assertEqual(found_c, True)
+
         value = create_fake_data.get_value(
-            {"integer": [1, 2]}, None)
-        assert value >= 1
-        assert value <= 2
-        value = create_fake_data.get_value(
-            {"one": ["one", "two"]}, None)
-        assert value in ["one", "two"]
+            {"date": "year"}, None)
+        self.assertLess(parser.parse(value), datetime.now())
+        self.assertLess(datetime.now() - timedelta(days=22),
+                        parser.parse(value))
         data = {"deviceids": [1, 2, 3, 4, 5]}
-        value = create_fake_data.get_value(
-            {"data": "deviceids"}, data)
-        assert value in data["deviceids"]
+        for i in range(100):
+            value = create_fake_data.get_value(
+                {"data": "deviceids"}, data)
+            assert value in data["deviceids"]
 
     def test_create_fake_data(self):
         """
@@ -47,18 +82,153 @@ class UtilTest(unittest.TestCase):
         """
         fields = {"a": {"integer": [1, 3]},
                   "b": {"one": ["one", "two"]}}
-        records = create_fake_data.create_form(fields, N=50, odk=False)
-        assert len(records) == 50
-        assert "a" in records[0].keys()
-        assert "b" in records[0].keys()
+        records = create_fake_data.create_form(fields, N=499, odk=False)
+        self.assertEqual(len(records), 499)
+
+        tests = {
+            1: False,
+            2: False,
+            3: False,
+            "one": False,
+            "two": False
+        }
+        for r in records:
+            self.assertIn("a", r.keys())
+            self.assertIn("b", r.keys())
+            for t in tests:
+                if t == r["a"] or t == r["b"]:
+                    tests[t] = True
+        for result in tests.values():
+            self.assertEqual(result, True)
         data = {"deviceids": [1, 3]}
+        
         records = create_fake_data.create_form(fields,
                                                N=50,
                                                data=data,
                                                odk=True)
-        assert "deviceid" in records[0].keys()
-        assert "start" in records[0].keys()
-        assert records[-1]["index"] == 49
+        old_uuids = []
+        for i, r in enumerate(records):
+            self.assertIn("deviceid", r.keys())
+            self.assertIn("start", r.keys())
+            self.assertIn("end", r.keys())
+            self.assertIn("SubmissionDate", r.keys())
+
+            self.assertLess(parser.parse(r["start"]), datetime.now())
+            self.assertLess(datetime.now() - timedelta(days=22),
+                            parser.parse(r["start"]))
+            self.assertLess(parser.parse(r["end"]), datetime.now())
+            self.assertLess(datetime.now() - timedelta(days=22),
+                            parser.parse(r["end"]))
+            self.assertLess(parser.parse(r["SubmissionDate"]), datetime.now())
+            self.assertLess(datetime.now() - timedelta(days=22),
+                            parser.parse(r["SubmissionDate"]))
+            self.assertIn("meta/instanceID", r.keys())
+            self.assertNotIn(r["meta/instanceID"], old_uuids)
+            old_uuids.append(r["meta/instanceID"])
+            self.assertEqual(r["index"], i)
+
+    def test_field_to_list(self):
+        row = {"key": "a,b,c"}
+        new_row = util.field_to_list(row, "key")
+        self.assertEqual(new_row["key"], ["a", "b", "c"])
+        row = {"key": "a,b;c"}
+        new_row = util.field_to_list(row, "key")
+        self.assertEqual(new_row["key"], ["a,b", "c"])
+        row = {"key": "a"}
+        new_row = util.field_to_list(row, "key")
+        self.assertEqual(new_row["key"], ["a"])
+
+    def test_read_csv(self):
+        data = "A,B,C\na1,b1,c1\na2,b2,c2"
+        mo = mock.mock_open(read_data=data)
+        # Fix to mock the interation in for row in reader
+        mo.return_value.__iter__ = lambda self: self
+        mo.return_value.__next__ = lambda self: self.readline()
+        with mock.patch('meerkat_abacus.util.open', mo):
+            rows = util.read_csv("test")
+            mo.assert_called_with("test", 'r', encoding='utf-8')
+            self.assertEqual(rows[0], {"A": "a1", "B": "b1", "C": "c1"})
+            self.assertEqual(rows[1], {"A": "a2", "B": "b2", "C": "c2"})
+
+
+    def test_write_csv(self):
+        mo = mock.mock_open()
+        with mock.patch('meerkat_abacus.util.open', mo):
+            rows = [{"A": "a1", "B": "b1", "C": "c1"},
+                    {"A": "a2", "B": "b2", "C": "c2"}]
+            util.write_csv(rows, "test")
+            mo.assert_called_with("test", 'w', encoding='utf-8')
+            handle = mo()
+            handle.write.assert_any_call('A,B,C\r\n')
+            handle.write.assert_any_call('a1,b1,c1\r\n')
+            handle.write.assert_any_call('a2,b2,c2\r\n')
+            
+    @mock.patch('meerkat_abacus.util.requests')
+    def test_hermes(self, mock_requests):
+        util.country_config["messaging_silent"] = True
+        util.hermes("test", "POST", {})
+        self.assertFalse(mock_requests.request.called)
+        util.country_config["messaging_silent"] = False
+        util.hermes("test", "POST", {})
+        sent_data = {"api_key": util.hermes_api_key}
+        headers = {'content-type': 'application/json'}
+        mock_requests.request.assert_called_with("POST",
+                                                util.hermes_api_root + "test",
+                                                json=sent_data,
+                                                headers=headers)
+
+
+    @mock.patch('meerkat_abacus.util.requests')
+    def test_send_alert(self, mock_requests):
+        util.country_config["messaging_start_date"] = datetime.now() - timedelta(days=1)
+        
+        alert = model.Alerts(**{"reason": "1",
+                                "region": 2,
+                                "clinic": 3,
+                                "uuids": "uuid:1",
+                                "data": {"gender": "male",
+                                         "age": "32"},
+                                "id": "abcdef",
+                                "date": datetime.now()
+        })
+        var_mock = mock.Mock()
+        var_mock.configure_mock(name='Rabies')
+
+        region_mock = mock.Mock()
+        region_mock.configure_mock(name="Region")
+
+        clinic_mock = mock.Mock()
+        clinic_mock.configure_mock(name="Clinic")
+        
+        variables = {"1": var_mock}
+        locations = {
+            2: region_mock,
+            3: clinic_mock
+        }
+                                        
+        util.country_config["messaging_silent"] = False
+        util.send_alert(alert, variables, locations)
+        self.assertTrue(mock_requests.request.called)
+        call_args = mock_requests.request.call_args
+        self.assertEqual(call_args[0][0], "PUT")
+        self.assertEqual(call_args[0][1],
+                         util.hermes_api_root + "/publish")
+        self.assertIn("Rabies", call_args[1]["json"]["html-message"])
+        self.assertIn("Rabies", call_args[1]["json"]["sms-message"])
+        self.assertIn("Rabies", call_args[1]["json"]["message"])
+        prefix = util.country_config["messaging_topic_prefix"]
+        self.assertIn(prefix + "-1-allDis", call_args[1]["json"]["topics"])
+        self.assertIn(prefix + "-2-allDis", call_args[1]["json"]["topics"])
+        self.assertIn(prefix + "-1-1", call_args[1]["json"]["topics"])
+        self.assertIn(prefix + "-2-1", call_args[1]["json"]["topics"])
+        
+        # The date is now too early
+        mock_requests.reset_mock()
+        alert.date = datetime.now() - timedelta(days=5)
+        util.send_alert(alert, variables, locations)
+        self.assertFalse(mock_requests.request.called)
+
+        
         
 if __name__ == "__main__":
     unittest.main()

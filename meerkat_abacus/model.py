@@ -11,6 +11,7 @@ from meerkat_abacus.config import country_config
 
 Base = declarative_base()
 
+
 form_tables = {"case": None, "register": None, "alert": None}
 
 for table in country_config["tables"]:
@@ -52,6 +53,11 @@ class Data(Base):
     clinic_type = Column(String)
     variables = Column(JSONB, index=True)
     geolocation = Column(String)
+    
+    def __repr__(self):
+        return "<Data(uuid='%s', id='%s'>" % (
+            self.uuid, self.id )
+
 create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
 listen(Data.__table__, 'after_create', create_index)
 
@@ -80,6 +86,11 @@ class AggregationVariables(Base):
     risk_factors = Column(String)
     symptoms = Column(String)
     labs_diagnostics = Column(String)
+    
+    def __repr__(self):
+        return "<AggregationVariable(name='%s', id='%s'>" % (
+            self.name, self.id)
+
 
     @validates("alert")
     def alert_setter(self, key, alert):
@@ -112,7 +123,9 @@ class LinkDefinitions(Base):
     which = Column(String)
     data = Column(JSONB)
     compare_lower = Column(Integer)
-
+    def __repr__(self):
+        return "<LinkDefinition(name='%s', id='%s'>" % (
+            self.name, self.id)
     
 class Links(Base):
     __tablename__ = 'links'
@@ -124,20 +137,13 @@ class Links(Base):
     to_id = Column(String)
     link_def = Column(String)
     data = Column(JSONB)
+    def __repr__(self):
+        return "<Link(link_def='%s', id='%s'>" % (
+            self.link_def, self.id)
+    
 create_index = DDL("CREATE INDEX links_gin ON links USING gin(data);")
 listen(Links.__table__, 'after_create', create_index)
 
-# class Aggregation(Base):
-#     __tablename__ = 'aggregation'
-
-#     id = Column(Integer, primary_key=True)
-#     start_time = Column(DateTime)
-#     interval = Column(Integer)
-#     variable = Column(Integer)
-#     location = Column(Integer)
-#     value = Column(Float)
-#     classification = Column(String)
-#     geo_location = Column(String)
 
 class Alerts(Base):
     __tablename__ = 'alerts'
@@ -149,12 +155,7 @@ class Alerts(Base):
     region = Column(Integer)
     data = Column(JSONB)
     uuids = Column(String)
-
+    def __repr__(self):
+        return "<Alert(reason='%s', id='%s'>" % (
+            self.reason, self.id)
     
-class AlertNotifications(Base):
-    __tablename__ = 'alert_notifications'
-
-    id = Column(Integer, primary_key=True)
-    alert_id = Column(String)
-    date = Column(DateTime)
-    receivers = Column(String)

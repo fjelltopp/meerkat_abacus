@@ -6,36 +6,29 @@ Functions to create the database, populate the db tables and proccess data.
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
-import os
 import boto3
-import importlib
+import csv
 from dateutil.parser import parse
+import inspect
 #import resource        print(link_def.id, 'Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
 
 
-from meerkat_abacus.util.import_locations import import_regions
-from meerkat_abacus.util.import_locations import import_clinics
-from meerkat_abacus.util.import_locations import import_districts
-from meerkat_abacus.util import create_fake_data, get_deviceids
-from meerkat_abacus.util import write_csv, read_csv, all_location_data
-import meerkat_abacus.model as model
-from meerkat_abacus.model import form_tables
-from meerkat_abacus.config import DATABASE_URL, country_config, data_directory, config_directory
-import meerkat_abacus.config as config
-import meerkat_abacus.codes.to_codes as to_codes
+from meerkat_abacus import model
+from meerkat_abacus import config
+from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
+from meerkat_abacus.util import create_fake_data
+country_config = config.country_config
 
 
-
-def create_db(url, base, country_config, drop=False):
+def create_db(url, base, drop=False):
     """
-    The function creates and sets up the datbase.
+    The function creates the database
 
     Args:
-        base: An SQLAlchmey declarative base with the db schema
         url : the database_url
-        country_config: A contry config dictionary
-        drop: Flag to drop the database before setting it up
+        base: An SQLAlchmey declarative base with the db schema
+|        drop: Flag to drop the database before creating it
 
     Returns:
         Boolean: True
@@ -48,34 +41,41 @@ def create_db(url, base, country_config, drop=False):
     base.metadata.create_all(engine)
     return True
 
+def export_data(session):
+    for name, obj in inspect.getmembers(model):
+        if inspect.isclass(obj) and hasattr(obj, "__table__"):
+            for r in session.query(obj):
+                columns = dict((col, getattr(r, col))for col in r.__table__.columns.keys()) 
+                print(name + "(**" + str(columns) + "),")
 
-def fake_data(country_config, data_directory, engine, N=500, new=True):
+
+def add_fake_data(session, N=500, append=False):
     """
-    Creates csv files with fake data
+    Creates a csv file with fake data for each form. We make
+    sure that the forms have deviceids that match the imported locations.
+
+    For the case report forms we save the X last characters of meta/instanceID to use as alert_ids for 
+    the alert_form, where X is the alert_id_lenght from the config file.
 
     Args:
-        country_config: A country configuration object
-        data_directory: the directory to store the from data
+       session: SQLAlchemy session
+       N: number of rows to create for each from (default=500)
+       append: If we should append the new fake data or write over the old (default=False)
     """
-    try:
-        session = Session()
-    except NameError:
-        Session = sessionmaker(bind=engine)
-        session = Session()
-    deviceids = get_deviceids(session, case_report=True)
+    deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
-    forms = ["case", "register", "alert"]
-    for form in country_config["tables"]:
-        if form not in forms:
-            forms.append(form)
+    forms = list(country_config["tables"].keys())
+    # Make sure the case report form is handled before the alert form
+    forms.remove("case")
+    forms.insert(0, "case")
     for form in forms:
-        print(form)
         form_name = country_config["tables"][form]
-        file_name = data_directory + form_name + ".csv"
+        file_name = config.data_directory + form_name + ".csv"
         current_form = []
-        if not new:
-            current_form = read_csv(file_name)
+        if append:
+            current_form = util.read_csv(file_name)
         if "deviceids" in country_config["fake_data"][form]:
+            # This is a special way to limit the deviceids for a form in the config file
             form_deviceids = country_config["fake_data"][form]["deviceids"]
         else:
             form_deviceids = deviceids
@@ -84,38 +84,34 @@ def fake_data(country_config, data_directory, engine, N=500, new=True):
             data={"deviceids": form_deviceids, "uuids": alert_ids}, N=N)
         if form == "case":
             alert_ids = []
-            for c in new_data:
+            for row in new_data:
                 alert_ids.append(
-                    c["meta/instanceID"][-country_config["alert_id_length"]:])
-        write_csv(current_form + new_data, file_name)
+                    row["meta/instanceID"][-country_config["alert_id_length"]:])
+        util.write_csv(current_form + new_data, file_name)
 
         
-def get_data_from_s3(bucket, data_directory, country_config):
+def get_data_from_s3(bucket):
     """
-    Get form data from s3 bucket
-    
-    To run, needs to be authenticated with AWS.
-    
+    Get csv-files with data from s3 bucket
+
+    Needs to be authenticated with AWS to run.
+
     Args: 
        bucket: bucket_name
-       data_directory: directory to store the downloaded files
-       country_config: country configs to find the form files
     """
-    
     s3 = boto3.resource('s3')
     for form in country_config["tables"].values():
         file_name = form + ".csv"
-        repsonse = s3.meta.client.download_file(bucket,
-                                                "data/"+file_name,
-                                                data_directory + file_name)
+        s3.meta.client.download_file(bucket,
+                                     "data/" + file_name,
+                                     config.data_directory + file_name)
 
-    
 
 def table_data_from_csv(filename, table, directory, session,
-                        engine, deviceids=None, table_name=None, form=True,
+                        engine, deviceids=None, table_name=None,
                         row_function=None):
     """
-    Adds data to table with name
+    Adds all the data from a csv file. We delete all old data first and then add new data. 
 
     Args:
         filename: name of table
@@ -125,281 +121,350 @@ def table_data_from_csv(filename, table, directory, session,
         session: SqlAlchemy session
         deviceids: if we should only add rows with a one of the deviceids
         table_name: name of table if different from filename
-        form: if this is a form table
         row_function: function to appy to the rows before inserting
     """
     session.query(table).delete()
-    if table_name != "aggregation_variables":
-        if not table_name:
-            engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;"
-                           .format(filename))
-        else:
-            engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;"
-                           .format(table_name))
-
+    if not table_name:
+        engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;"
+                       .format(filename))
+    else:
+        engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;"
+                       .format(table_name))
     session.commit()
 
-    for row in read_csv(directory + filename + ".csv"):
+    for row in util.read_csv(directory + filename + ".csv"):
         if "_index" in row:
             row["index"] = row.pop("_index")
         if row_function:
             insert_row = row_function(row)
         else:
             insert_row = row
-        if form:
-            if deviceids:
-                if insert_row["deviceid"] in deviceids:
-                    session.add(table(**{"data": insert_row,
-                                         "uuid": insert_row["meta/instanceID"]
-                                     }))
-            else:
+        if deviceids:
+            if insert_row["deviceid"] in deviceids:
                 session.add(table(**{"data": insert_row,
-                                     "uuid": insert_row["meta/instanceID"]}))
+                                     "uuid": insert_row["meta/instanceID"]
+                }))
         else:
-            insert_row.pop("")
-            session.add(table(**insert_row))
-
+            session.add(table(**{"data": insert_row,
+                                 "uuid": insert_row["meta/instanceID"]}))
     session.commit()
 
-        
-def category_to_list(row):
-    """
-    Transforms category to list in row
-    
-    Args:
-        row: row of data
-    Reutrns:
-        row: modified row
-    """
-    if ";" in row["category"]:
-        row["category"] = [c.strip() for c in row["category"].split(";")]
-    elif "," in row["category"]:
-        row["category"] = [c.strip() for c in row["category"].split(",")]
-    else:
-        row["category"] = [row["category"]]
-    return row
 
-
-def import_variables(country_config, engine):
+def import_variables(session):
     """
-    Delete current data and then import form data
-    from csv files into the database.
+    Import variables from codes csv-file.
 
     Args:
-        country_config: configuration
-        data_directory: directory to find the forms
+       session: db-session
     """
-    try:
-        session = Session()
-    except NameError:
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
-        
-    table_data_from_csv(country_config["codes_file"],
-                        model.AggregationVariables,
-                        config_directory,
-                        session, engine,
-                        table_name="aggregation_variables",
-                        form=False,
-                        row_function=category_to_list)
+    session.query(model.AggregationVariables).delete()
+    session.commit()
+    codes_file = config.config_directory + country_config["codes_file"]+".csv"
+    for row in util.read_csv(codes_file):
+        row.pop("")
+        row = util.field_to_list(row, "category")
+        session.add(model.AggregationVariables(**row))
+    session.commit()
 
 
-def import_data(country_config, data_directory, engine):
+def import_data(engine, session):
     """
-    Delete current data and then import form data
-    from csv files into the database.
+    Imports csv-files with form data. 
 
     Args:
-        country_config: configuration
-        data_directory: directory to find the forms
+       engine: db engine
+       session: db session
     """
-    try:
-        session = Session()
-    except NameError:
-        Session = sessionmaker(bind=engine)
-        session = Session()
-    deviceids_case = get_deviceids(session, case_report=True)
-    deviceids = get_deviceids(session)
-    for form in form_tables.keys():
+
+    deviceids_case = util.get_deviceids(session, case_report=True)
+    deviceids = util.get_deviceids(session)
+    for form in model.form_tables.keys():
         if form in ["case", "register"]:
             form_deviceids = deviceids_case
         else:
             form_deviceids = deviceids
         table_data_from_csv(country_config["tables"][form],
-                            form_tables[form],
-                            data_directory,
+                            model.form_tables[form],
+                            config.data_directory,
                             session, engine,
                             deviceids=form_deviceids)
 
-        
-def import_links(country_config, engine):
+
+def import_links(session):
     """
     Imports all links from links-file
 
     Args:
-        country_config: A country configuration object
-        engine: SQLAlchemy connection engine
+        session: db session
     """
-    try:
-        session = Session()
-    except NameError:
-        Session = sessionmaker(bind=engine)
-        session = Session()
     for link in config.links.links:
         session.add(model.LinkDefinitions(**link))
     session.commit()
 
-def import_locations(country_config, config_directory, engine):
+    
+def import_clinics(csv_file, session, country_id):
     """
-    Imports all locations from csv-files
+    Import clinics from csv file.
 
     Args:
-        country_config: A country configuration object
-        engine: SQLAlchemy connection engine
+        csv_file: path to csv file with clinics
+        session: SQLAlchemy session
+        country_id: id of the country
     """
-    try:
-        session = Session()
-    except NameError:
-        Session = sessionmaker(bind=engine)
-        session = Session()
+
+    result = session.query(model.Locations)\
+                    .filter(model.Locations.parent_location == country_id)
+    regions = {}
+    for region in result:
+        regions[region.name] = region.id
+
+    districts = {}
+    result = session.query(model.Locations)\
+                    .filter(model.Locations.parent_location != country_id)
+    for district in result:
+        districts[district.name] = district.id
+
+    with open(csv_file) as f:
+        clinics_csv = csv.DictReader(f)
+        for row in clinics_csv:
+            if row["deviceid"]:
+                if "case_report" in row.keys():
+                    if row["case_report"] == "Yes":
+                        case_report = 1
+                    else:
+                        case_report = 0
+                else:
+                    case_report = 0
+                # If the clinic has a district we use that as the parent_location,
+                # otherwise we use the region
+                if row["district"]:
+                    parent_location = districts[row["district"]]
+                elif row["region"]:
+                    parent_location = regions[row["region"]]
+                result = session.query(model.Locations)\
+                                .filter(model.Locations.name == row["clinic"],
+                                        model.Locations.parent_location == parent_location,
+                                        model.Locations.clinic_type != None)
+
+                # If two clinics have the same name and the same parent_location,
+                # we are dealing with two tablets from the same clinic, so we
+                # combine them.
+                if len(result.all()) == 0:
+                    if row["longitude"] and row["latitude"]:
+                        geolocation = row["latitude"] + "," + row["longitude"]
+                    else:
+                        geolocation = None
+                    session.add(model.Locations(name=row["clinic"],
+                                                parent_location=parent_location,
+                                                geolocation=geolocation,
+                                                deviceid=row["deviceid"],
+                                                clinic_type=row["clinic_type"],
+                                                case_report=case_report,
+                                                level="clinic"))
+                else:
+                    location = result.first()
+                    location.deviceid = location.deviceid + "," + row["deviceid"]
+    session.commit()
+
+
+def import_regions(csv_file, session, parent_id):
+    """
+    Import regions from csv-file. 
+
+    Args:
+        csv_file: path to csv file with regions
+        session: SQLAlchemy session
+        parent_id: The id of the country
+    """
+    with open(csv_file) as f:
+        csv_regions = csv.DictReader(f)
+        for row in csv_regions:
+            session.add(model.Locations(name=row["region"],
+                                        parent_location=parent_id,
+                                        geolocation=row["geo"],
+                                        level="region"))
+    session.commit()
+
+
+def import_districts(csv_file, session):
+    """
+    Import districts from csv file. 
+
+    Args:
+        csv_file: path to csv file with districts
+        session: SQLAlchemy session
+    """
+    regions = {}
+    for instance in session.query(model.Locations):
+        regions[instance.name] = instance.id
+    with open(csv_file) as f:
+        districts_csv = csv.DictReader(f)
+        for row in districts_csv:
+            session.add(model.Locations(name=row["district"],
+                                        parent_location=regions[row["region"]],
+                                        level="district"))
+    session.commit()
+
+
+def import_locations(engine, session):
+    """
+    Imports all locations from csv-files.
+
+    Args:
+        engine: SQLAlchemy connection engine
+        session: db session
+    """
     session.query(model.Locations).delete()
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
     session.add(model.Locations(name=country_config["country_name"]))
     session.commit()
-    regions_file = (config_directory + "locations/" +
+    regions_file = (config.config_directory + "locations/" +
                     country_config["locations"]["regions"])
-    districts_file = (config_directory + "locations/" +
+    districts_file = (config.config_directory + "locations/" +
                       country_config["locations"]["districts"])
-    clinics_file = (config_directory + "locations/" +
+    clinics_file = (config.config_directory + "locations/" +
                     country_config["locations"]["clinics"])
     import_regions(regions_file, session, 1)
     import_districts(districts_file, session)
     import_clinics(clinics_file, session, 1)
 
 
-def raw_data_to_variables(engine):
+def set_up_everything(leave_if_data, drop_db, N):
     """
-    Turn raw data in forms into structured data with codes using
-    the code from the celery app.
+    Sets up the db and imports all the data. This should leave 
+    the database completely ready to used by the API.
 
     Args:
-        engine: db engine
-    """
-    try:
-        session = Session()
-    except NameError:
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
-    session.query(model.Data).delete()
-    engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
-    session.commit()
-    new_data_to_codes()
-    
-def add_links(engine):
-    """
-    Turn raw data in forms into structured data with codes using
-    the code from the celery app.
-
-    Args:
-        engine: db engine
-    """
-    try:
-        session = Session()
-    except NameError:
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
-    session.query(model.Links).delete()
-    engine.execute("ALTER SEQUENCE links_id_seq RESTART WITH 1;")
-    session.commit()
-    add_new_links()
-
-    
-def set_up_everything(url, leave_if_data, drop_db, N):
-    """
-    Set up everything by calling all the other functions
-
-    Args:
-        url: db url
         leave_if_data: do nothing if data is there
         drop_db: shall db be dropped before created
         N: number of data points to create
     """
     set_up = True
     if leave_if_data:
-        if database_exists(url):
-            engine = create_engine(url)
+        if database_exists(config.DATABASE_URL):
+            engine = create_engine(config.DATABASE_URL)
             Session = sessionmaker(bind=engine)
             session = Session()
             if len(session.query(model.Data).all()) > 0:
                 set_up = False
     if set_up:
         print("Create DB")
-        create_db(url, model.Base, country_config, drop=drop_db)
-        engine = create_engine(url)
+        create_db(config.DATABASE_URL, model.Base, drop=drop_db)
+        engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
+        session = Session()
         print("Import Locations")
-        import_locations(country_config, config_directory, engine)
+        import_locations(engine, session)
         if config.fake_data:
             print("Generate fake data")
-            fake_data(country_config, data_directory, engine, N=N)
+            add_fake_data(session, N=N, append=False)
         if config.get_data_from_s3:
             print("Get data from s3")
-            get_data_from_s3(config.s3_bucket, data_directory, country_config)
+            get_data_from_s3(config.s3_bucket)
         print("Import Data")
-        import_data(country_config, data_directory, engine)
+        import_data(engine, session)
         print("Import Variables")
-        import_variables(country_config, engine)
+        import_variables(session)
         print("Import Links")
-        import_links(country_config, engine)
+        import_links(session)
         print("To codes")
-        raw_data_to_variables(engine)
+        session.query(model.Data).delete()
+        engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
+        session.commit()
+        new_data_to_codes(engine)
         print("Add Links")
-        add_links(engine)
-
+        session.query(model.Links).delete()
+        engine.execute("ALTER SEQUENCE links_id_seq RESTART WITH 1;")
+        session.commit()
+        add_new_links()
+    return set_up
 
 def import_new_data():
     """
-    task to check csv files and insert any new data
+    Import new data from csv files.
     """
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
     for form in model.form_tables.keys():
-        file_path = data_directory + country_config["tables"][form] + ".csv"
+        file_path = config.data_directory + country_config["tables"][form] + ".csv"
         data = util.read_csv(file_path)
-        new = util.add_new_data(form, model.form_tables[form],
+        new = add_new_data(form, model.form_tables[form],
                                 data, session)
     return True
 
 
+def add_new_data(form_name, form, data, session):
+    """
+    Adds new rows from the data variable to the form db table. 
+
+    New rows are rows with a uuid that does not already exist. 
+    We only add rows that have a registered deviceid. 
+
+    Args:
+        form_name: type of form, case, register etc
+        form: form to add to
+        data: data to potentially be added
+        session: db session
+
+    Returns:
+        new_rows(list): a list of rows added
+    """
+    result = session.query(form.uuid)
+    uuids = []
+    deviceids_case = util.get_deviceids(session, case_report=True)
+    deviceids = util.get_deviceids(session)
+    for r in result:
+        uuids.append(r.uuid)
+    new_rows = []
+    for row in data:
+        if row["meta/instanceID"] not in uuids:
+            add = False
+            if form_name in ["case", "register"]:
+                if row["deviceid"] in deviceids_case:
+                    add = True
+            else:
+                if row["deviceid"] in deviceids:
+                    add = True
+            if add:
+                session.add(form(uuid=row["meta/instanceID"], data=row))
+                new_rows.append(row)
+    session.commit()
+    return new_rows
+
+
 def add_new_fake_data(to_add):
     """
-    Adds a new fake data
+    Wrapper function to add new fake data to the existing csv files
 
     Args:
        to_add: number of new records to add
     """
-    engine = create_engine(DATABASE_URL)
-    fake_data(country_config, data_directory, engine, to_add, new=False)
+    engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    add_fake_data(session, to_add, append=True)
 
 
-def new_data_to_codes():
+def new_data_to_codes(engine=None, no_print=False):
     """
-    add any new data in form tables to data table
+    Run all the raw data through the to_codes function to translate it into structured data
+
+    Args: 
+        engine: db engine
+
     """
-    engine = create_engine(DATABASE_URL)
+    if not engine: 
+        engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
     variables = to_codes.get_variables(session)
     locations = util.all_location_data(session)
-    results = session.query(model.Data.uuid)
+    old_data = session.query(model.Data.uuid)
     uuids = []
     alerts = []
     
-    for row in results:
+    for row in old_data:
         uuids.append(row.uuid)
     for form in model.form_tables.keys():
         result = session.query(model.form_tables[form].uuid,
@@ -419,22 +484,46 @@ def new_data_to_codes():
                 if alert:
                     alerts.append(alert)
             i += 1
-            if i % 100 == 0:
+            if i % 100 == 0 and not no_print:
                 print(i)
     add_alerts(alerts, session)
     session.commit()
     return True
 
 def add_new_links():
+    """Finding and adding new links
+
+    Links are between a "from" table and a "to" table matched on the value of 
+    specfied columns, one from each table. We can have conditions on both tables
+    to choose the rows that can take part in links and links can have data generated
+    from the "from" table.
+
+    To find the links we follow these steps:
+
+    0. Get all old Links
+
+    For each link type: 
+    
+    1. We construct the conditions on the "from" table and get the "from" records
+    2. Loop through all the "from" records and create the link_from_values dict
+         with row[from_key] = row
+    3. Then we sort out the "to" conditions and get all the "to" records
+    4. We loop through the "to" records and find all the "to-from" matches
+    5. We then check if an old link exist and if it does we use the link rule to update the old link,
+        most links take the latest macting record to use for the link. If there is no old link, we create
+        a new link. 
+    6. Prepare link data and add the link
+
+    Since we have normal tables like e.g the alert table and form-tables where all the data is stored as json
+    we need to handle these to cases differently.
     """
-    add any new data in form tables to data table
-    """
-    engine = create_engine(DATABASE_URL)
+
+    engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
     link_defs = util.get_link_definitions(session)
     results = session.query(model.Links)
-
+    #Get Old links
     to_ids = []
     links_by_link_value = {}
     for links_def_id in link_defs:
@@ -442,6 +531,7 @@ def add_new_links():
     for row in results:
         to_ids.append(row.to_id)
         links_by_link_value[row.link_def][row.link_value] = row
+        
     for link_def_id in link_defs.keys():
         link_def = link_defs[link_def_id]
         if "form_tables." in link_def.from_table:
@@ -449,6 +539,7 @@ def add_new_links():
             from_table = model.form_tables[table]
         else:
             from_table = getattr(model, link_def.from_table)
+        #Sort out from table conditions and get from records
         if link_def.from_condition:
             if ":" in link_def.from_condition:
                 column, condition = link_def.from_condition.split(":")
@@ -464,7 +555,7 @@ def add_new_links():
                 raise NameError
         else:
                 link_from = session.query(from_table).yield_per(200)
-        link_from_values = {}
+        link_from_values = {} # row[from_key] = row dict
         for row in link_from:
             if "form_tables." in link_def.from_table:
                 if link_def.from_column in row.data:
@@ -476,6 +567,7 @@ def add_new_links():
             if link_def.compare_lower:
                 value = value.lower()
             link_from_values[value] = row
+        #Sort out to_conditions
         if link_def.to_condition:
             if ":" in link_def.to_condition:
                 column, condition = link_def.to_condition.split(":")
@@ -493,7 +585,7 @@ def add_new_links():
                 if link_def.compare_lower:
                     link_to_value = link_to_value.lower()
                 if link_to_value and link_to_value in link_from_values.keys():
-                    data = sort_data(link_def.data, row.data)
+                    data = prepare_link_data(link_def.data, row.data)
                     linked_record = link_from_values[link_to_value]
                     to_date = parse(row.data[link_def.to_date])
                     if link_to_value in links_by_link_value[link_def_id].keys():
@@ -522,9 +614,28 @@ def add_new_links():
     return True
 
 
-def sort_data(data_def, row):
+def prepare_link_data(data_def, row):
     """
-    Returns row translated to data after data_def
+    Returns row translated to data specified by the data_def. 
+    For each key value pair in data_def we will return a value based on the data in the row.
+    
+    Example of a data_def::
+
+       {"status": {
+          "Ongoing": {"column": "alert_labs./return_lab", "condition": ["", "unsure"]},
+          "Confirmed": {"column": "alert_labs./return_lab","condition": "yes"},
+          "Disregarded": {"column": "alert_labs./return_lab", "condition": "no"}}
+       }
+
+
+    So for each key(here "status") we want to determine which of the values 
+    (here: "Ongoing", "Confirmed", "Disregarded") apply for a given row. 
+
+    We loop through the options and check which applies. If more than one applies we 
+    return a list of those options. 
+    
+    Each option has a column and a condition. If the condition is a list, row[column] can match any of the listed conditions. 
+    If the condition is "default_value", that option is added if no other options have matched. 
     
     Args:
         data_def: dictionary with data definition
@@ -556,47 +667,33 @@ def sort_data(data_def, row):
                         data[key].append(row.get(value_dict["column"], None))
                     elif value_dict["column"] in row and value_dict["condition"] in row[value_dict["column"]].split(","):
                         data[key].append(value)
-            
+
         if len(data[key]) == 1:
             data[key] = data[key][0]
         elif len(data[key]) == 0 and default:
             data[key] = default
     return data
 
-                    
+
 def add_alerts(alerts, session):
     """
-    Inserts all the alerts table. If another record from the same
-    day, disease and clinic already exists we create one big record.
+    Inserts all the alerts. and calls the send_alert function.
 
     Args:
         alerts: list of alerts
         session: db session
     """
-    # to_insert = {}
-    # for alert in alerts:
-    #     check = str(alert.clinic) + str(alert.reason) + str(alert.date)
-    #     if check in to_insert.keys():
-    #         to_insert[check].uuids = ",".join(
-    #             sorted(to_insert[check].uuids.split() + [alert.uuids]))
-    #     else:
-    #         to_insert[check] = alert
-    # results = session.query(model.Alerts)
-    # for alert in results:
-    #     check = str(alert.clinic) + str(alert.reason) + str(alert.date)
-    #     if check in to_insert.keys():
-    #         alert.uuids = ",".join(
-    #             sorted(to_insert[check].uuids.split() + [alert.uuids]))
-    #         alert.id = alert.uuids[-country_config["alert_id_length"]:]
-    #         to_insert.pop(check, None)
-
     locations = util.get_locations(session)
     variables = util.get_variables(session)
-
     for alert in alerts:
         alert.id = alert.uuids[-country_config["alert_id_length"]:]
-        util.send_alert( alert, variables, locations  )
+        util.send_alert(alert, variables, locations)
         session.add(alert)
-    
-if __name__ == '__main__':
-    add_new_fake_data(5)
+    session.commit()
+
+if __name__ == "__main__":
+    engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    export_data(session)

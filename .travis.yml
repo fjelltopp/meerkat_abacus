@@ -3,8 +3,8 @@ python:
   - '3.5'
 env:
 - MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
-  DATA_DIRECTORY='/home/travis/build/who-emro/meerkat_abacus/meerkat_abacus/data/'
-  COUNTRY_CONFIG_DIR='/home/travis/build/who-emro/meerkat_abacus/meerkat_abacus/country_config/'
+  DATA_DIRECTORY='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/data/'
+  COUNTRY_CONFIG_DIR='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/country_config/'
 addons:
   postgresql: '9.4'
 services:
