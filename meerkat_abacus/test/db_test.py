@@ -163,7 +163,7 @@ class DbTest(unittest.TestCase):
         if config.fake_data:
             for table in model.form_tables:
                 results = session.query(model.form_tables[table])
-                self.assertEqual(len(results.all()), )
+                self.assertEqual(len(results.all()), 500)
         #Import variables
         agg_var = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.id == "tot_1").first()
