@@ -11,6 +11,6 @@ Meerkat Abacus
             ;, ,     \
 
 
-Meerkat abacus includes code to set up the database neeed for the Meerkat project and for data import and aggregation.
+Meerkat abacus includes code to set up the database that is needed for the Meerkat project as well as for data import and aggregation.
 
 
