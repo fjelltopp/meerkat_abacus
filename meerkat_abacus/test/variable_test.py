@@ -83,7 +83,37 @@ class VariableTest(unittest.TestCase):
         row = {"A": "2", "B": "6"}
         with self.assertRaises(NameError):
             variable.test(row, None)
-        
+
+    def test_calc_between(self):
+        """
+        testing the calc_between method
+        """
+        agg_variable = model.AggregationVariables(
+            id=4,
+            secondary_condition="",
+            method="calc",
+            condition="",
+            db_column="A,B;A+B")
+        variable = Variable(agg_variable)
+
+        row = {"A": "1", "B": "6"}
+        self.assertEqual(variable.test(row, None), 7)
+        row = {"A": "2", "B": "400"}
+        self.assertEqual(variable.test(row, None), 402)
+        row = {"A": "2"} # test if column is missing
+        self.assertEqual(variable.test(row, None), 2)
+
+        agg_variable = model.AggregationVariables(
+            id=4,
+            secondary_condition="",
+            method="calc",
+            condition="",
+            db_column="A,B;A+C")
+        # note we have used C which is not one of the columns, so the test should give an error
+        variable = Variable(agg_variable)
+        row = {"A": "2", "B": "6"}
+        with self.assertRaises(NameError):
+            variable.test(row, None)      
 
     def test_count_occurrence(self):
         agg_variable = model.AggregationVariables(

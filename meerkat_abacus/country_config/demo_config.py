@@ -56,6 +56,7 @@ country_config = {
                  "exclusive_breastfeed": {"one": ["yes", "no"]},
                  "formula": {"one": ["yes", "no"]}},
         "register": {"consult./consultations": {"integer": [10, 20]},
+                     "consult./ncd_consultations":{"integer":[10,20]},
                      "consult./consultations_refugee": {"integer": [5, 15]},
                      "surveillance./afp": {"integer": [1, 5]},
                      "surveillance./measles": {"integer": [1, 5]}

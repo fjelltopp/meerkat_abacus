@@ -102,6 +102,10 @@ class Variable():
             self.condition_low = float(self.condition_low)
             self.condition_high = float(self.condition_high)
             self.test_type = self.test_calc_between
+        elif variable.method == "calc":
+            columns, self.calc = self.column.split(";")
+            self.columns = [c.strip() for c in columns.split(",")]
+            self.test_type = self.test_calc
         else:
             raise NameError("Variable does not have test type {}"
                             .format(variable.method))
@@ -258,4 +262,20 @@ class Variable():
             return 1
         else:
             return 0
+
+    def test_calc(self, row, value):
+        """
+        self. calc should be an expression with column names from the row and mathematical expression 
+        understood by python. We then replace all column names with their numerical values and evalualte
+        the resulting expression. 
+
+        """
+        calc = self.calc
+        for c in self.columns:
+            if c in row and row[c]:
+                calc = calc.replace(c, str(float(row[c])))
+            else:
+                calc = calc.replace(c, "0")      
+ 
+        return eval(calc)
 
