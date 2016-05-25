@@ -92,6 +92,10 @@ class Variable():
             else:
                 self.cond_list = [self.condition]
             self.cond_list = [cond.strip() for cond in self.cond_list]
+        elif variable.method == "count_or_occurrence":
+            self.test_type = self.test_count_or_occurrence
+            self.column1, self.column2 = variable.db_column.split(",")
+            self.cond_one, self.cond_two = variable.condition.split(",")
         elif variable.method == "not_null":
             self.test_type = self.test_not_null
         elif variable.method == "calc_between":
@@ -162,6 +166,15 @@ class Variable():
     def test_count_occurrence(self, row, value):
         """Test if value==condition"""
         if value == self.cond:
+            return 1
+        else:
+            return 0
+
+    def test_count_or_occurrence(self, row, value):
+        """Test if row[column1]==condition1 OR row[column2]==condition2 """
+        condition1 = row.get(self.column1, None) == self.cond_one
+        condition2 = row.get(self.column2, None) == self.cond_two
+        if condition1 or condition2:
             return 1
         else:
             return 0

@@ -139,6 +139,33 @@ class VariableTest(unittest.TestCase):
         self.assertEqual(variable.test(row, row["column1"]), 0)
         row = {"column1": "Aa"}
         self.assertEqual(variable.test(row, row["column1"]), 0)
+
+    def test_count_or_occurrence(self):
+
+        agg_variable = model.AggregationVariables(
+            id=4,
+            secondary_condition="",
+            method="count_or_occurrence",
+            db_column="column1,column2",
+            condition="A,B")
+        variable = Variable(agg_variable)
+
+        row = {"column1": "A"}
+        self.assertEqual(variable.test(row, row["column1"]), 1)
+        row = {"column1": "B"}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
+        row = {"column1": "C"}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
+        row = {"column2": "A"}
+        self.assertEqual(variable.test(row, row["column2"]), 0)
+        row = {"column2": "B"}
+        self.assertEqual(variable.test(row, row["column2"]), 1)
+        row = {"column2": "C"}
+        self.assertEqual(variable.test(row, row["column2"]), 0)
+        row = {"column3": "A"}
+        self.assertEqual(variable.test(row, row["column3"]), 0)
+        row = {"column3": "B"}
+        self.assertEqual(variable.test(row, row["column3"]), 0)
         
     def test_int_between(self):
         agg_variable = model.AggregationVariables(
