@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from dateutil.parser import parse
 from datetime import datetime
 import importlib.util
+from unittest import mock
 
 from meerkat_abacus import data_management as manage
 from meerkat_abacus import model, util, task_queue
