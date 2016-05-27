@@ -47,7 +47,6 @@ class DbTest(unittest.TestCase):
     def test_locations(self):
         old_dir = manage.config.config_directory
         manage.config.config_directory = "meerkat_abacus/test/test_data/"
-        manage.config.data_directory = "meerkat_abacus/test/test_data/"
         old_locs = manage.country_config["locations"]
         manage.country_config["locations"] = {
             "clinics": "demo_clinics.csv",
