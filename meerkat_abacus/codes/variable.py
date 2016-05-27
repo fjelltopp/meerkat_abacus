@@ -290,5 +290,5 @@ class Variable():
             else:
                 calc = calc.replace(c, "0")      
  
-        return eval(calc)
+        return int(eval(calc))
 
