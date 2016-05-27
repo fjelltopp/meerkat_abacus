@@ -148,8 +148,8 @@ class DbTest(unittest.TestCase):
         #Clean up
         manage.config.links.links = old_links
         
-    
-    def test_db_setup(self):
+    @mock.patch('meerkat_abacus.util.requests')
+    def test_db_setup(self, requests):
         
         task_queue.set_up_db.apply().get()
         self.assertTrue(database_exists(config.DATABASE_URL))
