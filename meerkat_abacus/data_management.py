@@ -135,7 +135,7 @@ def table_data_from_csv(filename, table, directory, session,
     for row in util.read_csv(directory + filename + ".csv"):
         if "_index" in row:
             row["index"] = row.pop("_index")
-        if row_function:
+        if row_function:        
             insert_row = row_function(row)
         else:
             insert_row = row
