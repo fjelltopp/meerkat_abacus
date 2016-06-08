@@ -7,7 +7,7 @@ Definition of the Variable class
 from sqlalchemy import create_engine, Column, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
-
+import logging
 import meerkat_abacus.model as model
 from meerkat_abacus.model import form_tables
 
@@ -32,6 +32,7 @@ class Variable():
     * int_between - An integer between the two numbers specified in condition
     * count_occurrence_int_between - must both fullfill a count_occurrence and a int_between on two different columns
     * count_occurrence_in_int_between - must both fullfill a count_occurrence_in and a int_between on two different columns
+    * count_or_occurance - must fulfil count_occurance for either of two columns/conditions. 
     * sum - Returns the numerical value of the field
     * not_null - true for non-null values of the field
     * calc_between - allows you to specify a mathematical expression of multiple columns in the row. 
@@ -172,8 +173,10 @@ class Variable():
 
     def test_count_or_occurrence(self, row, value):
         """Test if row[column1]==condition1 OR row[column2]==condition2 """
+        
         condition1 = row.get(self.column1, None) == self.cond_one
         condition2 = row.get(self.column2, None) == self.cond_two
+
         if condition1 or condition2:
             return 1
         else:

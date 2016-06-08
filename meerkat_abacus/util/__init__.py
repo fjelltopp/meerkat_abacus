@@ -1,7 +1,7 @@
 """
 Various utility functions for meerkat abacus
 """
-import csv, requests, json
+import csv, requests, json, itertools, logging
 from datetime import datetime, timedelta
 from meerkat_abacus.model import Locations, LinkDefinitions, AggregationVariables
 from meerkat_abacus.config import country_config, hermes_api_root, hermes_api_key
@@ -154,7 +154,7 @@ def get_locations_by_deviceid(session):
 
 def get_locations(session):
     """
-    get locations indexed by locaction_id
+    get locations indexed by location_id
 
     Args:
         session: db session
@@ -248,6 +248,38 @@ def hermes(url, method, data=None):
     return r.json()
 
 
+def create_topic_list( alert, locations ):
+    """
+    Assemble the appropriate topic ID list for a given alert.
+    Make sure the topic list includes all appropriate location levels from clinic to whole country.
+
+    So for an alert with reason "rea_1", in country with prefix "null", from clinic "4" in district "3"
+    in region "2" in country "1", we get a topic list that looks like:
+        ['null-rea_1-4', 'null-rea_1-3', 'null-rea_1-2', 
+         'null-rea_1-1', 'null-allDis-4', 'null-allDis-3', 
+         'null-allDis-2', 'null-allDis-1']
+
+    """ 
+    logging.warning( str(alert ))
+    prefix = [country_config["messaging_topic_prefix"]]
+    reason = [alert.reason, 'allDis']   
+    locs = [alert.clinic, alert.region, 1]
+
+    #The district isn't stored in the alert model, so calulate it as the parent of the clinic.
+    district = locations[alert.clinic].parent_location
+    if( district != alert.region ):
+        locs.append( district )
+    
+    combinations = itertools.product( prefix, locs, reason )
+
+    topics = []
+    for comb in combinations:
+        topics.append(str(comb[0]) + "-" + str(comb[1]) + "-" + str(comb[2]) )
+
+    logging.warning( "Sending alert to topic list: " + str(topics) )
+
+    return topics
+
 def send_alert(alert, variables, locations):
     """
     Assemble the alert message and send it using the hermes API
@@ -266,12 +298,7 @@ def send_alert(alert, variables, locations):
         locations: dict with locations
     """
     if alert.date > country_config['messaging_start_date']:
-        topics = [
-            country_config["messaging_topic_prefix"] + "-1-allDis",
-            country_config["messaging_topic_prefix"] + "-1-" + alert.reason,
-            country_config["messaging_topic_prefix"] + "-" + str(alert.region) + "-allDis",
-            country_config["messaging_topic_prefix"] + "-" + str(alert.region) + "-" + alert.reason      
-        ]
+
         alert_info = ("Alert: " + variables[alert.reason].name + "\n"
                       "Date: " + alert.date.strftime("%d %b %Y") + "\n"
                       "Clinic: " + locations[alert.clinic].name + "\n"
@@ -305,7 +332,7 @@ def send_alert(alert, variables, locations):
 
         data = {
             "from": country_config['messaging_sender'],
-            "topics": topics,
+            "topics": create_topic_list( alert, locations ),
             "id": alert.id,
             "message": message,
             "sms-message": sms_message,
