@@ -226,8 +226,9 @@ def read_csv(file_path):
         reader = csv.DictReader(f)
         rows = []
         for row in reader:
-            rows.append(row)
-    return rows
+            yield row
+    #         rows.append(row)
+    # return rows
 
 
 def hermes(url, method, data=None):

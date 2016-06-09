@@ -10,7 +10,8 @@ import boto3
 import csv
 from dateutil.parser import parse
 import inspect
-#import resource        print(link_def.id, 'Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+#gimport resource                print('Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+
 
 
 from meerkat_abacus import model
@@ -51,7 +52,7 @@ def export_data(session):
 
 def add_fake_data(session, N=500, append=False):
     """
-    Creates a csv file with fake data for each form. We make
+v    Creates a csv file with fake data for each form. We make
     sure that the forms have deviceids that match the imported locations.
 
     For the case report forms we save the X last characters of meta/instanceID to use as alert_ids for 
@@ -87,7 +88,7 @@ def add_fake_data(session, N=500, append=False):
             for row in new_data:
                 alert_ids.append(
                     row["meta/instanceID"][-country_config["alert_id_length"]:])
-        util.write_csv(current_form + new_data, file_name)
+        util.write_csv(list(current_form) + new_data, file_name)
 
         
 def get_data_from_s3(bucket):
@@ -132,10 +133,11 @@ def table_data_from_csv(filename, table, directory, session,
                        .format(table_name))
     session.commit()
 
+    i = 0
     for row in util.read_csv(directory + filename + ".csv"):
         if "_index" in row:
             row["index"] = row.pop("_index")
-        if row_function:        
+        if row_function:      
             insert_row = row_function(row)
         else:
             insert_row = row
@@ -147,6 +149,9 @@ def table_data_from_csv(filename, table, directory, session,
         else:
             session.add(table(**{"data": insert_row,
                                  "uuid": insert_row["meta/instanceID"]}))
+        i += 1
+        if i % 500 == 0:
+            session.commit()
     session.commit()
 
 

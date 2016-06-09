@@ -146,6 +146,7 @@ class UtilTest(unittest.TestCase):
         mo.return_value.__next__ = lambda self: self.readline()
         with mock.patch('meerkat_abacus.util.open', mo):
             rows = util.read_csv("test")
+            rows = list(rows)
             mo.assert_called_with("test", 'r', encoding='utf-8')
             self.assertEqual(rows[0], {"A": "a1", "B": "b1", "C": "c1"})
             self.assertEqual(rows[1], {"A": "a2", "B": "b2", "C": "c2"})
