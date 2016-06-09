@@ -7,7 +7,9 @@ from datetime import datetime, timedelta
 from dateutil import parser
 from meerkat_abacus.util import create_fake_data, epi_week_start_date
 from meerkat_abacus import util, model
+from meerkat_abacus.config import country_config
 from unittest import mock
+from collections import namedtuple
 
 class UtilTest(unittest.TestCase):
 
@@ -229,7 +231,46 @@ class UtilTest(unittest.TestCase):
         util.send_alert(alert, variables, locations)
         self.assertFalse(mock_requests.request.called)
 
+    def test_create_topic_list(self):
+        #Create the mock arguments that include all necessary data to complete the function.
+        AlertStruct = namedtuple("AlertStruct", 'reason clinic region')
+        LocationStruct = namedtuple( "LocationStruct", "parent_location" )
+        alert = AlertStruct( reason="rea_1", clinic="4", region="2" )
+        locations = { "4": LocationStruct( parent_location="3" ) }
+
+        #Call the method
+        rv = util.create_topic_list(alert, locations)
         
+        #Check the return value is as expected.
+        def pref(string):
+            return country_config["messaging_topic_prefix"] + "-" + string
+        expected = [ 
+            pref("4-rea_1"),
+            pref("3-rea_1"),
+            pref("2-rea_1"),
+            pref("1-rea_1"),
+            pref("4-allDis"),
+            pref("3-allDis"),
+            pref("2-allDis"),
+            pref("1-allDis")
+        ]
+        self.assertEqual( set(rv), set(expected) )
+            
+        #If the parent location of the clinic is a region, check that no district is included.
+        locations = { "4": LocationStruct( parent_location="2" ) }
+        rv = util.create_topic_list(alert, locations)
+        expected = [ 
+            pref("4-rea_1"),
+            pref("2-rea_1"),
+            pref("1-rea_1"),
+            pref("4-allDis"),
+            pref("2-allDis"),
+            pref("1-allDis")
+        ]
+        self.assertEqual( set(rv), set(expected) )
+            
+        
+
         
 if __name__ == "__main__":
     unittest.main()
