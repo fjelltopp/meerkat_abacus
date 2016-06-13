@@ -70,7 +70,6 @@ class AggregationVariables(Base):
     form = Column(String)
     db_column = Column(String)
     method = Column(String)
-    location = Column(String)
     condition = Column(String)
     category = Column(JSONB)
     daily = Column(Integer)
