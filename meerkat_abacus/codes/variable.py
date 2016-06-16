@@ -108,7 +108,7 @@ class Variable():
             self.column1, self.column2 = variable.db_column.split(" ")
             self.cond_one, self.cond_two = variable.condition.split(",")
         elif variable.method == "count_and_occurrence":
-            self.test_type = self.test_count_or_occurrence
+            self.test_type = self.test_count_and_occurrence
             self.column1, self.column2 = variable.db_column.split(" ")
             self.cond_one, self.cond_two = variable.condition.split(",")
         elif variable.method == "not_null":
@@ -198,7 +198,7 @@ class Variable():
 
     def test_count_and_occurrence(self, row, value):
         """Test if row[column1]==condition1 OR row[column2]==condition2 """
-        
+
         condition1 = row.get(self.column1, None) == self.cond_one
         condition2 = row.get(self.column2, None) == self.cond_two
 
