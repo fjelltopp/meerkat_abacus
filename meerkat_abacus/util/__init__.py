@@ -242,11 +242,24 @@ def hermes(url, method, data=None):
     """
     if country_config["messaging_silent"]:
         return {"message": "Abacus is in silent mode"}
-    data["api_key"] = hermes_api_key
-    url = hermes_api_root + url
-    headers = {'content-type': 'application/json'}
-    r = requests.request(method, url, json=data, headers=headers)
-    return r.json()
+
+    try:
+        data["api_key"] = hermes_api_key
+        url = hermes_api_root + url
+        headers = {'content-type': 'application/json'}
+        r = requests.request(method, url, json=data, headers=headers)
+
+    except Exception as e:
+        logging.warning( "HERMES REQUEST FAILED: " + str(e) )
+
+    output = ""
+
+    try:
+        output = r.json()
+    except Exception as e:
+        logging.warning( "HERMES REQUEST FAILED TO CONVERT TO JSON: " + str(e) )
+
+    return output
 
 
 def create_topic_list( alert, locations ):

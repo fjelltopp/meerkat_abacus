@@ -93,9 +93,23 @@ class Variable():
             else:
                 self.cond_list = [self.condition]
             self.cond_list = [cond.strip() for cond in self.cond_list]
+
+        elif variable.method == "count_or_occurrence,int_between":
+            self.test_type = self.test_count_or_occurrence_int_between
+ 
+            self.column1, self.column2 = variable.db_column.split(",")[0].split(" ")
+            self.column = variable.db_column.split(",")[1]
+            
+            self.cond_one, self.cond_two = variable.condition.split(":")[0].split(",")
+            self.condition = variable.condition.split(":")[1].split(",")
+
         elif variable.method == "count_or_occurrence":
             self.test_type = self.test_count_or_occurrence
-            self.column1, self.column2 = variable.db_column.split(",")
+            self.column1, self.column2 = variable.db_column.split(" ")
+            self.cond_one, self.cond_two = variable.condition.split(",")
+        elif variable.method == "count_and_occurrence":
+            self.test_type = self.test_count_or_occurrence
+            self.column1, self.column2 = variable.db_column.split(" ")
             self.cond_one, self.cond_two = variable.condition.split(",")
         elif variable.method == "not_null":
             self.test_type = self.test_not_null
@@ -182,6 +196,17 @@ class Variable():
         else:
             return 0
 
+    def test_count_and_occurrence(self, row, value):
+        """Test if row[column1]==condition1 OR row[column2]==condition2 """
+        
+        condition1 = row.get(self.column1, None) == self.cond_one
+        condition2 = row.get(self.column2, None) == self.cond_two
+
+        if condition1 and condition2:
+            return 1
+        else:
+            return 0
+
     def test_count(self, row, value):
         """Returns 1 as long as value is not None"""
         if value is not None:
@@ -233,6 +258,14 @@ class Variable():
                 if row[self.column1] in self.cond_list:
                     add = 1
         return add
+
+    def test_count_or_occurrence_int_between(self, row, value):
+        """test both count_occurrence and int_between"""
+        
+        if self.test_count_or_occurrence(row, value) and self.test_int_between(row,value):
+            return 1
+        else:
+            return 0    
 
     def test_count_occurrence_in_int_between(self, row, value):
         """test both count_occurrence_in and int_between"""
