@@ -238,7 +238,7 @@ def import_clinics(csv_file, session, country_id):
         for row in clinics_csv:
             if row["deviceid"]:
                 if "case_report" in row.keys():
-                    if row["case_report"] == "Yes":
+                    if row["case_report"] in ["Yes", "yes"]:
                         case_report = 1
                     else:
                         case_report = 0
