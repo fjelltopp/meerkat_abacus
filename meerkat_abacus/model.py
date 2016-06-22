@@ -28,13 +28,14 @@ class Locations(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    parent_location = Column(Integer)
+    parent_location = Column(Integer, index=True)
     geolocation = Column(String)
     other = Column(String)
     deviceid = Column(String)
     clinic_type = Column(String)
-    case_report = Column(Integer)
-    level = Column(String)
+    case_report = Column(Integer, index=True)
+    level = Column(String, index=True)
+    start_date = Column(DateTime)
 
     def __repr__(self):
         return "<Location(name='%s', id='%s', parent_location='%s')>" % (

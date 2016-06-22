@@ -74,5 +74,6 @@ country_config = {
     "messaging_start_date": datetime.datetime(2016, 2, 15),
     "messaging_topic_prefix": "null",
     "messaging_sender": "",
-    "messaging_silent": True
+    "messaging_silent": True,
+    "default_start_date": datetime.datetime(2016, 1, 1)
 }

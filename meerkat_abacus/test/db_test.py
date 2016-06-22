@@ -64,6 +64,11 @@ class DbTest(unittest.TestCase):
                     self.assertEqual(r.deviceid, "1,6")
                 else:
                     self.assertEqual(r.deviceid, "7")
+            if r.name == "Clinic 2":
+                self.assertEqual(r.start_date, datetime(2016, 2, 2))
+            elif r.level == "clinic":
+                self.assertEqual(r.start_date,
+                                 manage.config.country_config["default_start_date"])
         # This file has a clinic with a non existent district
         old_clinic_file = manage.country_config["locations"]["clinics"]
         manage.country_config["locations"]["clinics"] = "demo_clinics_error.csv"
@@ -76,6 +81,43 @@ class DbTest(unittest.TestCase):
         manage.country_config["locations"] = old_locs
         manage.config.config_directory = old_dir
 
+    def test_should_row_be_added(self):
+        """ testing should row be added"""
+        row = {"deviceid": "2", "pt./visit_date": "10/01/2016"}
+
+        self.assertTrue(manage.should_row_be_added(row,
+                                                   "case",
+                                                   ["2"],
+                                                   {"2": datetime(2016, 1, 1)}
+                                                   )
+                        )
+        self.assertTrue(manage.should_row_be_added(row,
+                                                   "case",
+                                                   None,
+                                                   {"2": datetime(2016, 1, 1)}
+                                                   )
+                        )
+        self.assertTrue(manage.should_row_be_added(row,
+                                                   "case",
+                                                   ["2"],
+                                                   None,
+                                                   )
+                        )
+        self.assertFalse(manage.should_row_be_added(row,
+                                                   "case",
+                                                   ["3"],
+                                                   {"2": datetime(2016, 1, 1)}
+                                                   )
+                        )
+        self.assertFalse(manage.should_row_be_added(row,
+                                                   "case",
+                                                   ["2"],
+                                                   {"2": datetime(2016, 1, 11)}
+                                                   )
+                        )
+        
+                                                    
+        
     def test_table_data_from_csv(self):
         """Test table_data_from_csv"""
         
@@ -83,11 +125,12 @@ class DbTest(unittest.TestCase):
                                    "meerkat_abacus/test/test_data/",
                                    self.session, self.engine,
                                    deviceids=["1", "2", "3", "4", "5", "6"],
-                                   table_name=config.country_config["tables"]["case"])
+                                   start_dates={"2": datetime(2016, 2, 2)},
+                                   table_name="case")
         results = self.session.query(model.form_tables["case"]).all()
-        self.assertEqual(len(results), 6)  # Only 6 of the cases have deviceids in 1-6
+        self.assertEqual(len(results), 5)  # Only 6 of the cases have deviceids in 1-6 and one case has a too early date
         for r in results:
-            self.assertIn(r.uuid, ["1", "2", "3", "4", "5", "6"])
+            self.assertIn(r.uuid, ["1",  "3", "4", "5", "6"])
 
     def test_links(self):
         deviceids = ["1", "2", "3", "4", "5", "6", "7", "8"]

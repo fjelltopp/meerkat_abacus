@@ -151,6 +151,23 @@ def get_locations_by_deviceid(session):
                 locations_by_deviceid[locations[l].deviceid] = l
     return locations_by_deviceid
 
+def get_start_date_by_deviceid(session):
+    """
+    get a dict with deviceid: start_date
+
+
+    Args:
+        session: db session
+
+    Returns:
+        locations(dict) : deviceid:start_date
+    """
+    locations = get_locations(session)
+    locations_by_deviceid = get_locations_by_deviceid(session)
+    start_date_by_deviceid = {}
+    for l in locations_by_deviceid:
+        start_date_by_deviceid[l] = locations[locations_by_deviceid[l]].start_date
+    return start_date_by_deviceid
 
 def get_locations(session):
     """
