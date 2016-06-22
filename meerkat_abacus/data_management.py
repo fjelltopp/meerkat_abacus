@@ -74,7 +74,7 @@ def should_row_be_added(row, form_name, deviceids, start_dates):
     if start_dates and row["deviceid"] in start_dates:
         if not row[country_config["form_dates"][form_name]]:
             ret = False
-        elif parse(row[country_config["form_dates"][form_name]], dayfirst=True) < start_dates[row["deviceid"]]:
+        elif parse(row[country_config["form_dates"][form_name]]) < start_dates[row["deviceid"]]:
             ret = False
     return ret
 
