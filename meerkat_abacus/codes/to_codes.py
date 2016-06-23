@@ -2,7 +2,7 @@
 Functionality to turn raw data into codes
 """
 from dateutil import parser
-
+from datetime import datetime
 import meerkat_abacus.model as model
 from meerkat_abacus.codes.variable import Variable
 
@@ -61,6 +61,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
     except:
         return (None, None)
 
+    date = datetime(date.year, date.month, date.day)
     new_record = model.Data(
         date=date,
         uuid=row["meta/instanceID"],
