@@ -187,7 +187,7 @@ class Variable():
 
     def test_count_or_occurrence(self, row, value):
         """Test if row[column1]==condition1 OR row[column2]==condition2 """
-        
+
         condition1 = row.get(self.column1, None) == self.cond_one
         condition2 = row.get(self.column2, None) == self.cond_two
 
@@ -262,7 +262,10 @@ class Variable():
     def test_count_or_occurrence_int_between(self, row, value):
         """test both count_occurrence and int_between"""
         
-        if self.test_count_or_occurrence(row, value) and self.test_int_between(row,value):
+        #We don't need the value field, extract it from the row. 
+        val = row[self.column]
+
+        if self.test_count_or_occurrence(row, None) and self.test_int_between(row,val):
             return 1
         else:
             return 0    
