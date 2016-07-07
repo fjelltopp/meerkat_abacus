@@ -34,4 +34,3 @@ if config.start_celery:
         'schedule': timedelta(seconds=config.interval)
     }
 
-    

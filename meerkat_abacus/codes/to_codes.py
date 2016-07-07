@@ -84,6 +84,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
             #All variables in group have same secondary conndition, so only check once
             first_variable = next(iter(variables[table_name][group].values()))
             if first_variable.secondary_condition(row):
+                
                 value = row.get(first_variable.column, None)
                 for v in variables[table_name][group]:
                     test_outcome = variables[table_name][group][v].test_type(row, value)

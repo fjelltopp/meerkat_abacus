@@ -72,8 +72,8 @@ class Variable():
                     self.condition = []
                     for cond in variable.condition.split(";"):
                         self.condition.append(cond.split(","))
-                    self.column = self.column.split(",")
-                    if len(self.column) != len(self.condition):
+                    self.column_list = self.column.split(",")
+                    if len(self.column_list) != len(self.condition):
                         raise KeyError("Needs same number of db columns as conditions")
                 else:
                     raise KeyError("Needs same number of db columns as conditions")
@@ -255,7 +255,7 @@ class Variable():
 
     def test_int_between_multiple(self, row, value):
         """ Test multiple int betweens """
-        for i, c in enumerate(self.column):
+        for i, c in enumerate(self.column_list):
             value = row[c]
             condition_low, condition_high = self.condition[i]
             if value or (value != None and (condition_low == "0" and value != "" and int(value) == 0)):
