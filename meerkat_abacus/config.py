@@ -54,6 +54,8 @@ interval = 3600  # Seconds
 hermes_api_key = from_env("HERMES_API_KEY", "")
 hermes_api_root = from_env("HERMES_API_ROOT", "")
 hermes_silent = int(from_env("HERMES_SILENT", False))
+mailing_key = from_env("MAILING_KEY", "")
+mailing_root = from_env("MAILING_ROOT", "")
 
 # Country config
 country_config_file = from_env("COUNTRY_CONFIG", "demo_config.py")
@@ -76,3 +78,4 @@ spec = importlib.util.spec_from_file_location("links",
                                               config_directory + links_file)
 links = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(links)
+

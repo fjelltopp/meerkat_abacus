@@ -75,5 +75,12 @@ country_config = {
     "messaging_topic_prefix": "null",
     "messaging_sender": "",
     "messaging_silent": True,
-    "default_start_date": datetime.datetime(2016, 1, 1)
+    "default_start_date": datetime.datetime(2016, 1, 1),
+    "reports_schedule" : {
+        "cd_public_health":{ "period":"week", "send_day": "0", "language":"en" },
+        "ncd_public_health":{ "period":"month", "send_day": "1", "language":"en" },
+        "communicable_diseases":{ "period":"week", "send_day": "0", "language":"en" },
+        "non_communicable_diseases":{ "period":"month", "send_day": "1", "language":"en" }
+    },
+    "send_reports":False
 }
