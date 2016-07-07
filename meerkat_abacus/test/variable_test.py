@@ -263,6 +263,13 @@ class VariableTest(unittest.TestCase):
         self.assertEqual(variable.test(row, row["column1"]), 0)
         row = {"column1": "0", "column2": "6"}
         self.assertEqual(variable.test(row, row["column1"]), 1)
+
+        row = {"column1": None, "column2": "6"}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
+        row = {"column1": None, "column2": None}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
+        row = {"column1": "3", "column2": None}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
         
     def test_count_occerence_in(self):
         agg_variable = model.AggregationVariables(

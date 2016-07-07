@@ -262,6 +262,8 @@ class Variable():
                 n = int(float(value))
                 if n < int(condition_low) or n >= int(condition_high):
                     return 0
+            else:
+                return 0    
         return 1
     def test_not_null(self, row, value):
         """ Value not equal None"""
