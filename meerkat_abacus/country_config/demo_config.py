@@ -47,6 +47,7 @@ country_config = {
                                                    "polio", "hib", "measles",
                                                    "mumps", "rubella"]},
                  "results./bp_systolic": {"integer": [0, 200]},
+                 "results./bp_diastolic": {"integer": [0, 100]},
                  "results./bmi_weight": {"integer": [40, 120]},
                  "results./bmi_height": {"integer": [120, 210]},
                  "results./glucose_fasting": {"integer": [1, 200]},

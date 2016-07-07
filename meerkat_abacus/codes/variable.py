@@ -29,7 +29,7 @@ class Variable():
     * count - Counts all rows with non-zero entry in the specified field of the form
     * count_occurrence - Counts rows where condtion appears in field
     * count_occurrence_in - Counts rows where condition is a substring of the value in the field
-    * int_between - An integer between the two numbers specified in condition
+    * int_between - An integer between the two numbers specified in condition. One can specify multiple columns and limits by separating columns by comma and sets of limits by semi-colon. We then require all of the columns to be between their respective limits. 
     * count_occurrence_int_between - must both fullfill a count_occurrence and a int_between on two different columns
     * count_occurrence_in_int_between - must both fullfill a count_occurrence_in and a int_between on two different columns
     * count_or_occurance - must fulfil count_occurance for either of two columns/conditions. 
@@ -66,8 +66,21 @@ class Variable():
                 self.cond_list = [variable.condition]
             self.cond_list = [cond.strip() for cond in self.cond_list]
         elif variable.method == "int_between":
-            self.test_type = self.test_int_between
-            self.condition = variable.condition.split(",")
+            if ";" in variable.condition:
+                if "," in variable.db_column:
+                    self.test_type = self.test_int_between_multiple
+                    self.condition = []
+                    for cond in variable.condition.split(";"):
+                        self.condition.append(cond.split(","))
+                    self.column_list = self.column.split(",")
+                    if len(self.column_list) != len(self.condition):
+                        raise KeyError("Needs same number of db columns as conditions")
+                else:
+                    raise KeyError("Needs same number of db columns as conditions")
+            else:
+                self.test_type = self.test_int_between
+                self.condition = variable.condition.split(",")
+            
         elif variable.method == "sum":
             self.test_type = self.test_sum
         elif variable.method == "count_occurrence,int_between":
@@ -240,6 +253,18 @@ class Variable():
                 add = 1
         return add
 
+    def test_int_between_multiple(self, row, value):
+        """ Test multiple int betweens """
+        for i, c in enumerate(self.column_list):
+            value = row[c]
+            condition_low, condition_high = self.condition[i]
+            if value or (value != None and (condition_low == "0" and value != "" and int(value) == 0)):
+                n = int(float(value))
+                if n < int(condition_low) or n >= int(condition_high):
+                    return 0
+            else:
+                return 0    
+        return 1
     def test_not_null(self, row, value):
         """ Value not equal None"""
         if value is not "" and value is not None:

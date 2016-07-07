@@ -69,8 +69,5 @@ if config.country_config['send_reports']:
             'args': (report, language)
         }  
 
-
 logging.warning( "Celery is set up with the following beat schedule:\n" + str(CELERYBEAT_SCHEDULE) )
 
-    
-        

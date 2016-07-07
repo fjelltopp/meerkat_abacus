@@ -245,6 +245,32 @@ class VariableTest(unittest.TestCase):
         row = {"column1": "0"}
         self.assertEqual(variable.test(row, row["column1"]), 1)
 
+    def test_int_between_multiple(self):
+        agg_variable = model.AggregationVariables(
+            id=4,
+            secondary_condition="",
+            method="int_between",
+            db_column="column1,column2",
+            condition="0,6;5,7")
+        variable = Variable(agg_variable)
+        row = {"column1": "3", "column2": "6"}
+        self.assertEqual(variable.test(row, row["column1"]), 1)
+        row = {"column1": "5", "column2": "5"}
+        self.assertEqual(variable.test(row, row["column1"]), 1)
+        row = {"column1": "9", "column2": "6"}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
+        row = {"column1": "4", "column2": "7"}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
+        row = {"column1": "0", "column2": "6"}
+        self.assertEqual(variable.test(row, row["column1"]), 1)
+
+        row = {"column1": None, "column2": "6"}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
+        row = {"column1": None, "column2": None}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
+        row = {"column1": "3", "column2": None}
+        self.assertEqual(variable.test(row, row["column1"]), 0)
+        
     def test_count_occerence_in(self):
         agg_variable = model.AggregationVariables(
             id=4,
