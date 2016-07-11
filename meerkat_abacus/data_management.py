@@ -361,7 +361,8 @@ def import_locations(engine, session):
     """
     session.query(model.Locations).delete()
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
-    session.add(model.Locations(name=country_config["country_name"]))
+    session.add(model.Locations(name=country_config["country_name"],
+                                level="country"))
     session.commit()
     regions_file = (config.config_directory + "locations/" +
                     country_config["locations"]["regions"])
