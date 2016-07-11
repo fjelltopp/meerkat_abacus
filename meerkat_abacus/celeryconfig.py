@@ -8,7 +8,8 @@ given by the config.interval value.
 
 """
 from datetime import timedelta
-import os
+from celery.schedules import crontab
+import logging, os
 
 import meerkat_abacus.config as config
 
@@ -33,4 +34,40 @@ if config.start_celery:
         'task': 'task_queue.get_proccess_data',
         'schedule': timedelta(seconds=config.interval)
     }
+
+#Each report will need it's own sending schedule. 
+#Add them from the country config to the celery schedule here.
+if config.country_config['send_reports']:
+
+    schedule = config.country_config['reports_schedule']
+    
+    for report in schedule:
+        task_name = 'send_' + report
+        language = schedule[report]['language']
+        if schedule[report]["period"] == "week":
+            send_time = crontab( 
+                minute=0, 
+                hour=9, 
+                day_of_week=schedule[report]["send_day"]
+            )
+        elif schedule[report]["period"] == "month":
+            send_time = crontab( 
+                minute=0, 
+                hour=9, 
+                day_of_month=schedule[report]["send_day"]
+            )
+        else:
+            send_time = crontab( 
+                minute=0, 
+                hour=9, 
+                day_of_week=1
+            )
+        #logging.warning( "Now: " + str(crontab(nowfun)) )
+        CELERYBEAT_SCHEDULE[task_name] = {
+            'task': 'task_queue.send_report_email',
+            'schedule': send_time,
+            'args': (report, language)
+        }  
+
+logging.warning( "Celery is set up with the following beat schedule:\n" + str(CELERYBEAT_SCHEDULE) )
 
