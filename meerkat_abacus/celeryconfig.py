@@ -37,7 +37,8 @@ if config.start_celery:
 
 #Each report will need it's own sending schedule. 
 #Add them from the country config to the celery schedule here.
-if config.country_config['send_reports']:
+#Only add if the mailing root is set - to silence reports, empty the env variable.
+if config.mailing_root:
 
     schedule = config.country_config['reports_schedule']
     
