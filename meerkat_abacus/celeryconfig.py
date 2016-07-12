@@ -48,19 +48,19 @@ if config.mailing_root:
         if schedule[report]["period"] == "week":
             send_time = crontab( 
                 minute=0, 
-                hour=9, 
+                hour=4, 
                 day_of_week=schedule[report]["send_day"]
             )
         elif schedule[report]["period"] == "month":
             send_time = crontab( 
                 minute=0, 
-                hour=9, 
+                hour=4, 
                 day_of_month=schedule[report]["send_day"]
             )
         else:
             send_time = crontab( 
                 minute=0, 
-                hour=9, 
+                hour=4, 
                 day_of_week=1
             )
         #logging.warning( "Now: " + str(crontab(nowfun)) )
