@@ -241,11 +241,8 @@ def read_csv(file_path):
     """
     with open(file_path, "r", encoding='utf-8') as f:
         reader = csv.DictReader(f)
-        rows = []
         for row in reader:
             yield row
-    #         rows.append(row)
-    # return rows
 
 
 def hermes(url, method, data=None):

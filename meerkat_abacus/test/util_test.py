@@ -5,6 +5,7 @@ Testing for DB utilities
 import unittest
 from datetime import datetime, timedelta
 from dateutil import parser
+import io
 from meerkat_abacus.util import create_fake_data, epi_week_start_date
 from meerkat_abacus import util, model
 from meerkat_abacus.config import country_config
@@ -141,18 +142,14 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(new_row["key"], ["a"])
 
     def test_read_csv(self):
-        pass
-        # data = "A,B,C\na1,b1,c1\na2,b2,c2"
-        # mo = mock.mock_open(read_data=data)
-        # # Fix to mock the interation in for row in reader
-        # mo.return_value.__iter__ = lambda self: self
-        # mo.return_value.__next__ = lambda self: self.readline()
-        # with mock.patch('meerkat_abacus.util.open', mo):
-        #     rows = util.read_csv("test")
-        #     rows = list(rows)
-        #     mo.assert_called_with("test", 'r', encoding='utf-8')
-        #     self.assertEqual(rows[0], {"A": "a1", "B": "b1", "C": "c1"})
-        #     self.assertEqual(rows[1], {"A": "a2", "B": "b2", "C": "c2"})
+        data = io.StringIO("A,B,C\na1,b1,c1\na2,b2,c2")
+        # Fix to mock the interation in for row in reader
+        with mock.patch('meerkat_abacus.util.open', return_value=data) as mo:
+            rows = util.read_csv("test")
+            rows = list(rows)
+            mo.assert_called_with("test", 'r', encoding='utf-8')
+            self.assertEqual(rows[0], {"A": "a1", "B": "b1", "C": "c1"})
+            self.assertEqual(rows[1], {"A": "a2", "B": "b2", "C": "c2"})
 
 
     def test_write_csv(self):
