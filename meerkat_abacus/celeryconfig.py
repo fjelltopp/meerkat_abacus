@@ -37,7 +37,8 @@ if config.start_celery:
 
 #Each report will need it's own sending schedule. 
 #Add them from the country config to the celery schedule here.
-if config.country_config['send_reports']:
+#Only add if the mailing root is set - to silence reports, empty the env variable.
+if config.mailing_root:
 
     schedule = config.country_config['reports_schedule']
     
@@ -47,19 +48,19 @@ if config.country_config['send_reports']:
         if schedule[report]["period"] == "week":
             send_time = crontab( 
                 minute=0, 
-                hour=9, 
+                hour=4, 
                 day_of_week=schedule[report]["send_day"]
             )
         elif schedule[report]["period"] == "month":
             send_time = crontab( 
                 minute=0, 
-                hour=9, 
+                hour=4, 
                 day_of_month=schedule[report]["send_day"]
             )
         else:
             send_time = crontab( 
                 minute=0, 
-                hour=9, 
+                hour=4, 
                 day_of_week=1
             )
         #logging.warning( "Now: " + str(crontab(nowfun)) )
