@@ -288,7 +288,7 @@ def create_topic_list( alert, locations ):
          'null-allDis-2', 'null-allDis-1']
 
     """ 
-    logging.warning( str(alert ))
+
     prefix = [country_config["messaging_topic_prefix"]]
     reason = [alert.reason, 'allDis']   
     locs = [alert.clinic, alert.region, 1]
@@ -304,7 +304,7 @@ def create_topic_list( alert, locations ):
     for comb in combinations:
         topics.append(str(comb[0]) + "-" + str(comb[1]) + "-" + str(comb[2]) )
 
-    logging.warning( "Sending alert to topic list: " + str(topics) )
+    logging.warning( "Sending alert {} to topic list: {}".format(alert.id, topics) )
 
     return topics
 

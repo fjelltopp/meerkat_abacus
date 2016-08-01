@@ -89,6 +89,7 @@ def send_report_email(report, language):
     headers = {'content-type': 'application/json'}
     url = config.mailing_root + report + "/"   
     url = url.replace( '/en/', '/'+language+'/' )
+
     #Log request
     logging.warning( "Sending report email: " + report + 
                      "with language: " + language + " using url: " + url )  
