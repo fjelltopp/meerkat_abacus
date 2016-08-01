@@ -252,7 +252,7 @@ def import_clinics(csv_file, session, country_id):
         country_id: id of the country
     """
 
-    logging.warning( country_config )
+    logging.warning( country_config["default_start_date"] )
     result = session.query(model.Locations)\
                     .filter(model.Locations.parent_location == country_id)
     regions = {}
