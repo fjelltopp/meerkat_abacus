@@ -304,7 +304,7 @@ def create_topic_list( alert, locations ):
     for comb in combinations:
         topics.append(str(comb[0]) + "-" + str(comb[1]) + "-" + str(comb[2]) )
 
-    logging.warning( "Sending alert {} to topic list: {}".format(alert.id, topics) )
+    logging.warning( "Sending alert to topic list: {}".format(topics) )
 
     return topics
 
