@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import boto3
-import csv
+import csv, logging
 from dateutil.parser import parse
 import inspect
 #gimport resource                print('Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
@@ -252,6 +252,7 @@ def import_clinics(csv_file, session, country_id):
         country_id: id of the country
     """
 
+    logging.warning( country_config )
     result = session.query(model.Locations)\
                     .filter(model.Locations.parent_location == country_id)
     regions = {}
@@ -688,35 +689,74 @@ def prepare_link_data(data_def, row):
     Returns:
         data(dict): the data
     """
-    data = {}
-    for key in data_def.keys():
-        data[key] = []
-        default = None
-        for value in data_def[key].keys():
-            value_dict = data_def[key][value]
-            # We can set a default value, if no other value is set
-            if data_def[key][value]["condition"] == "default_value":
-                default = value
-                continue
-            if isinstance(data_def[key][value]["column"], list):
-                for c in data_def[key][value]["column"]:
-                    if row[c] == value_dict["condition"]:
-                        data[key].append(value)
-                        break
-            else:
-                if isinstance(data_def[key][value]["condition"], list):
-                    if value_dict["column"] in row and row[value_dict["column"]] in value_dict["condition"]:
-                        data[key].append(value)
-                else:
-                    if value_dict["condition"] == "get_value":
-                        data[key].append(row.get(value_dict["column"], None))
-                    elif value_dict["column"] in row and value_dict["condition"] in row[value_dict["column"]].split(","):
-                        data[key].append(value)
 
-        if len(data[key]) == 1:
-            data[key] = data[key][0]
-        elif len(data[key]) == 0 and default:
-            data[key] = default
+    #A nested function that returns whether the row (parent args) satisfies a condition.
+    #True if one of the specified colums in the row has a value in the specified values.
+    def satisfies_cond( columns, values ):
+
+        #Allow single column and value conditions to not be in list form.
+        #Ensure they are converted to a list for consistent processing though.
+        columns = [columns] if not isinstance(columns, list) else columns
+        values = [values] if not isinstance(values, list) else values
+
+        #Return "true" if the value stored in any of row[column] is in the values list.
+        for col in columns:
+            if row[col] in values:
+                return True
+            else:
+                return False
+
+    #Return object, to be populated.
+    data = {}
+    
+    #For each key and each value in data_def, see if the row matches the specified condition.
+    #If it does, store the value under the key in the returned data dictionary.   
+    for key in data_def.keys():
+    
+        data[key] = []
+        default = []
+        
+        for value in data_def[key].keys():
+
+            #A list of many condition/column pairs can be provided that must ALL be satisfied.
+            #If only one is given, convert to list so we are working with consistent data.
+            conditions = data_def[key][value]     
+            conditions = [conditions] if not isinstance(conditions, list) else conditions  
+            
+            #To store which conditions have been satisfied
+            conditions_satisfied = []
+            
+            for condition in conditions:
+
+                #Enable 'default_value' keyword
+                if condition['condition'] == "default_value":
+                    default = [value]
+                    conditions_satisfied.append( False ) #We've appended the actual value instead.  
+                    continue
+
+                #Enable 'get_value' keyword that returns actual row value instead data_def value.
+                elif condition['condition'] == "get_value":
+                    data[key].append( row.get( condition['column'], None ) )
+                    conditions_satisfied.append( False ) #We've appended the actual value instead.    
+                    continue          
+
+                #Otherwise check to see if row matches current condition.
+                else:
+                    conditions_satisfied.append( 
+                        satisfies_cond( condition['column'], condition['condition'] )
+                    )
+            
+            #Append the value under the given key in the returned dictionary 
+            #ONLY IF all conditions in the condition list have been satisfied.
+            if all(conditions_satisfied):
+                data[key].append( value ) 
+
+        #If we have no value matched to key, then set to key's value to default.    
+        data[key] = default if not data[key] else data[key]
+
+        #Only keep as a list if there actually are multiple elements.
+        data[key] = data[key][0] if len(data[key]) == 1 else data[key]                      
+    
     return data
 
 
