@@ -330,18 +330,18 @@ def send_alert(alert, variables, locations):
         alert_info = ("Alert: " + variables[alert.reason].name + "\n"
                       "Date: " + alert.date.strftime("%d %b %Y") + "\n"
                       "Clinic: " + locations[alert.clinic].name + "\n"
-                      "Region: " + locations[alert.region].name + "\n\n"
-                      "Patient ID: " + alert.uuids + "\n"
+                      "Region: " + locations[alert.region].name + "\n"
                       "Gender: " + alert.data["gender"].title() + "\n"
-                      "Age: " + alert.data["age"] + "\n\n"
-                      "Alert ID: " + alert.id + "\n\n" )
+                      "Age: " + alert.data["age"] + "\n"
+                      "Alert ID: " + alert.id + "\n" )
 
         message = (alert_info +
+                   "Patient ID: " + alert.uuids + "\n\n"
                    "To unsubscribe from <<country>> public health surveillance notifications "
                    "please copy and paste the following url into your browser's address bar:\n"
                    "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n" )
 
-        sms_message = ("A public health surveillance alert from <<country>>:\n\n" + alert_info)
+        sms_message = ("<<country>> Public Health Surveillance Alert:\n\n" + alert_info)
 
         html_message = ("<table style='border:none; margin-left: 20px;'>"
                         "<tr><td><b>Alert:</b></td><td>" + variables[alert.reason].name + "</td></tr>"

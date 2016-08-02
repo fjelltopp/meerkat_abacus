@@ -214,9 +214,11 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(call_args[0][0], "PUT")
         self.assertEqual(call_args[0][1],
                          util.hermes_api_root + "/publish")
+        self.assertTrue( len(call_args[1]["json"]["sms-message"]) < 160 ) #160 characters in a single sms
         self.assertIn("Rabies", call_args[1]["json"]["html-message"])
         self.assertIn("Rabies", call_args[1]["json"]["sms-message"])
         self.assertIn("Rabies", call_args[1]["json"]["message"])
+       
         prefix = util.country_config["messaging_topic_prefix"]
         self.assertIn(prefix + "-1-allDis", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-2-allDis", call_args[1]["json"]["topics"])
