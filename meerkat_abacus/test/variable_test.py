@@ -42,7 +42,7 @@ class VariableTest(unittest.TestCase):
             db_column="index")
         variable = Variable(agg_variable)
         row = {"index": "hei"}
-        self.assertEqual(variable.test(row, row["index"]), "hei")
+        self.assertEqual(variable.test(row, row["index"]), 1)
         row = {"index": ""}
         self.assertEqual(variable.test(row, row["index"]), 0)
         row = {"index": 0}

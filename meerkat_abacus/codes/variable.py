@@ -267,8 +267,8 @@ class Variable():
         return 1
     def test_not_null(self, row, value):
         """ Value not equal None"""
-        if value is not "" and value is not None:
-            return value
+        if value is not "" and value is not None and value is not 0:
+            return 1
         else:
             return 0
         
