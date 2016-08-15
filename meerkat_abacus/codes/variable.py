@@ -125,7 +125,14 @@ class Variable():
             self.column1, self.column2 = variable.db_column.split(" ")
             self.cond_one, self.cond_two = variable.condition.split(",")
         elif variable.method == "not_null":
-            self.test_type = self.test_not_null
+            if "," in variable.db_column:
+                self.columns = variable.db_column.split(",")
+                print(self.columns)
+                self.test_type = self.test_not_null_many
+            else:
+                self.test_type = self.test_not_null
+        elif variable.method == "take_value":
+            self.test_type = self.test_take_value
         elif variable.method == "calc_between":
             columns, self.calc = self.column.split(";")
             self.columns = [c.strip() for c in columns.split(",")]
@@ -271,7 +278,22 @@ class Variable():
             return 1
         else:
             return 0
+    def test_take_value(self, row, value):
+        """ Value not equal None"""
+        if value is not "" and value is not None and value is not 0:
+            return value
+        else:
+            return 0
         
+    def test_not_null_many(self, row, value):
+        """ Test if any column not equal None"""
+        for column in self.columns:
+            if column:
+                value = row[column]
+                if value is not "" and value is not None and value is not 0:
+                    return 1
+        return 0
+    
     def test_count_occurrence_int_between(self, row, value):
         """test both count_occurrence and int_between"""
         column2 = self.column2

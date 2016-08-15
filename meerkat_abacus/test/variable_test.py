@@ -49,7 +49,40 @@ class VariableTest(unittest.TestCase):
         self.assertEqual(variable.test(row, row["index"]), 0)
         row = {"index": None}
         self.assertEqual(variable.test(row, row["index"]), 0)
+        agg_variable = model.AggregationVariables(
+            id=4,
+            secondary_condition="",
+            method="not_null",
+            db_column="index1,index2")
+        variable = Variable(agg_variable)
+        row = {"index1": "hei", "index2": 0}
+        self.assertEqual(variable.test(row, row["index1"]), 1)
+        row = {"index1": "", "index2": 0}
+        self.assertEqual(variable.test(row, row["index1"]), 0)
+        row = {"index1": 0, "index2": 0}
+        self.assertEqual(variable.test(row, row["index1"]), 0)
+        row = {"index1": None, "index2": "bjarne"}
+        self.assertEqual(variable.test(row, row["index1"]), 1)
 
+    def test_take_value(self):
+        """
+        testing the not_null method
+        """
+        agg_variable = model.AggregationVariables(
+            id=4,
+            secondary_condition="",
+            method="take_value",
+            db_column="index")
+        variable = Variable(agg_variable)
+        row = {"index": "hei"}
+        self.assertEqual(variable.test(row, row["index"]), "hei")
+        row = {"index": ""}
+        self.assertEqual(variable.test(row, row["index"]), 0)
+        row = {"index": 0}
+        self.assertEqual(variable.test(row, row["index"]), 0)
+        row = {"index": None}
+        self.assertEqual(variable.test(row, row["index"]), 0)
+        
     def test_calc_between(self):
         """
         testing the calc_between method
