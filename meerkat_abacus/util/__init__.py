@@ -3,7 +3,7 @@ Various utility functions for meerkat abacus
 """
 import csv, requests, json, itertools, logging
 from datetime import datetime, timedelta
-from meerkat_abacus.model import Locations, LinkDefinitions, AggregationVariables
+from meerkat_abacus.model import Locations, AggregationVariables
 from meerkat_abacus.config import country_config, hermes_api_root, hermes_api_key
 
 

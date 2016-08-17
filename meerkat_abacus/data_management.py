@@ -71,11 +71,12 @@ def should_row_be_added(row, form_name, deviceids, start_dates):
             ret = True
     else:
         ret = True
-    if start_dates and row["deviceid"] in start_dates:
-        if not row[country_config["form_dates"][form_name]]:
-            ret = False
-        elif parse(row[country_config["form_dates"][form_name]]) < start_dates[row["deviceid"]]:
-            ret = False
+#     if start_dates and row["deviceid"] in start_dates:
+# #        print(row[country_config["form_dates"][form_name]], form_name, row)
+#         if not row[country_config["form_dates"][form_name]]:
+#             ret = False
+#         elif parse(row[country_config["form_dates"][form_name]]) < start_dates[row["deviceid"]]:
+#             ret = False
     return ret
 
 def add_fake_data(session, N=500, append=False):
@@ -228,18 +229,18 @@ def import_data(engine, session):
                             start_dates=start_dates)
 
 
-def import_links(session):
-    """
-    Imports all links from links-file
+# def import_links(session):
+#     """
+#     Imports all links from links-file
 
-    Args:
-        session: db session
-    """
-    session.query(model.LinkDefinitions).delete()
-    session.commit()
-    for link in config.links.links:
-        session.add(model.LinkDefinitions(**link))
-    session.commit()
+#     Args:
+#         session: db session
+#     """
+#     session.query(model.LinkDefinitions).delete()
+#     session.commit()
+#     for link in config.links.links:
+#         session.add(model.LinkDefinitions(**link))
+#     session.commit()
 
     
 def import_clinics(csv_file, session, country_id):
@@ -412,18 +413,18 @@ def set_up_everything(leave_if_data, drop_db, N):
         import_data(engine, session)
         print("Import Variables")
         import_variables(session)
-        print("Import Links")
-        import_links(session)
+        # print("Import Links")
+        # import_links(session)
         print("To codes")
         session.query(model.Data).delete()
         engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
         session.commit()
         new_data_to_codes(engine)
-        print("Add Links")
-        session.query(model.Links).delete()
-        engine.execute("ALTER SEQUENCE links_id_seq RESTART WITH 1;")
-        session.commit()
-        add_new_links()
+        # print("Add Links")
+        # session.query(model.Links).delete()
+        # engine.execute("ALTER SEQUENCE links_id_seq RESTART WITH 1;")
+        # session.commit()
+        # add_new_links()
     return set_up
 
 def import_new_data():
@@ -482,7 +483,7 @@ def add_new_data(form_name, form, data, session):
 def add_new_fake_data(to_add):
     """
     Wrapper function to add new fake data to the existing csv files
-
+i
     Args:
        to_add: number of new records to add
     """

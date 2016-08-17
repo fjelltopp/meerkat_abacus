@@ -22,47 +22,43 @@ locations = {1: model.Locations(name="Demo"),
              8: model.Locations(name="Clinic with no district",
                                 parent_location=2)
 }
-locations_by_deviceid = {1: 6, 2: 7, 3: 8}
-regions = [2, 3]
-districts = [4, 5]
-agg_variables = [
-    model.AggregationVariables(
-        id=1,
-        secondary_condition="",
-        method="count",
-        db_column="index",
-        form="form1"),
-    model.AggregationVariables(
-        id=2,
-        secondary_condition="",
-        method="count_occurrence",
-        db_column="column1",
-        alert=1,
-        condition="A",
-        form="form1"),
-    model.AggregationVariables(
-        id=3,
-        secondary_condition="",
-        method="count_occurrence_in",
-        db_column="column2",
-        condition="B",
-        form="form1"),
-    model.AggregationVariables(
-        id=4,
-        secondary_condition="",
-        method="int_between",
-        db_column="column3",
-        condition="5,10",
-        form="form1")
-]
-alert_data = {"column1": "column1"}
-all_locations = (locations,
-                 locations_by_deviceid,
-                 regions,
-                 districts)
-variables = {"form1": {1: {}, 2: {}, 3: {}, 4: {}}}
-for av in agg_variables:
-    variables["form1"][av.id][av.id] = Variable(av)
+# locations_by_deviceid = {1: 6, 2: 7, 3: 8}
+# regions = [2, 3]
+# districts = [4, 5]
+# agg_variables = [
+#     model.AggregationVariables(
+#         id=1,
+#         method="count",
+#         db_column="index",
+#         form="form1"),
+#     model.AggregationVariables(
+#         id=2,
+#         method="count_occurrence",
+#         db_column="column1",
+#         alert=1,
+#         condition="A",
+#         form="form1"),
+#     model.AggregationVariables(
+#         id=3,
+#         method="count_occurrence_in",
+#         db_column="column2",
+#         condition="B",
+#         form="form1"),
+#     model.AggregationVariables(
+#         id=4,
+#         method="int_between",
+#         db_column="column3",
+#         condition="5,10",
+#         form="form1")
+# ]
+# alert_data = {"column1": "column1"}
+# all_locations = (locations,
+#                  locations_by_deviceid,
+#                  regions,
+#                  districts)
+# variables = {"form1": {1: {}, 2: {}, 3: {}, 4: {}}}
+# for av in agg_variables:
+#     variables["form1"][av.id][av.id] = Variable(av)
 
 
 

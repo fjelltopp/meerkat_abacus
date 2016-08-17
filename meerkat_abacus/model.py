@@ -46,6 +46,7 @@ class Data(Base):
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String)
+    type = Column(String, index=True)
     date = Column(DateTime, index=True)
     country = Column(Integer, index=True)
     region = Column(Integer, index=True)
@@ -73,11 +74,10 @@ class AggregationVariables(Base):
     method = Column(String)
     condition = Column(String)
     category = Column(JSONB)
-    daily = Column(Integer)
-    classification = Column(String)
     alert = Column(Integer)
+    calculation = Column(String)
     calculation_group = Column(String)
-    secondary_condition = Column(String)
+    classification = Column(String)
     classification_casedef = Column(String)
     source = Column(String)
     source_link = Column(String)
@@ -105,57 +105,3 @@ class AggregationVariables(Base):
             return 0
         else:
             return daily
-
-class LinkDefinitions(Base):
-    __tablename__ = 'link_definitions'
-
-    id = Column(String, primary_key=True)
-    name = Column(String)
-    from_table = Column(String, index=True)
-    from_column = Column(String)
-    from_date = Column(String)
-    from_condition = Column(String)
-    to_table = Column(String, index=True)
-    to_column = Column(String)
-    to_date = Column(String)
-    to_id = Column(String)
-    to_condition = Column(String)
-    which = Column(String)
-    data = Column(JSONB)
-    compare_lower = Column(Integer)
-    def __repr__(self):
-        return "<LinkDefinition(name='%s', id='%s'>" % (
-            self.name, self.id)
-    
-class Links(Base):
-    __tablename__ = 'links'
-    
-    id = Column(Integer, primary_key=True)
-    link_value = Column(String)
-    from_date = Column(DateTime, index=True)
-    to_date = Column(DateTime, index=True)
-    to_id = Column(String)
-    link_def = Column(String)
-    data = Column(JSONB)
-    def __repr__(self):
-        return "<Link(link_def='%s', id='%s'>" % (
-            self.link_def, self.id)
-    
-create_index = DDL("CREATE INDEX links_gin ON links USING gin(data);")
-listen(Links.__table__, 'after_create', create_index)
-
-
-class Alerts(Base):
-    __tablename__ = 'alerts'
-
-    id = Column(String, primary_key=True)
-    date = Column(DateTime)
-    reason = Column(String)
-    clinic = Column(Integer)
-    region = Column(Integer)
-    data = Column(JSONB)
-    uuids = Column(String)
-    def __repr__(self):
-        return "<Alert(reason='%s', id='%s'>" % (
-            self.reason, self.id)
-    
