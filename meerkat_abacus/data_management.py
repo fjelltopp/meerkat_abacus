@@ -9,6 +9,7 @@ from sqlalchemy_utils import database_exists, create_database, drop_database
 import boto3
 import csv, logging
 from dateutil.parser import parse
+from datetime import datetime
 import inspect
 #gimport resource                print('Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
 
@@ -94,12 +95,10 @@ def add_fake_data(session, N=500, append=False):
     """
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
-    forms = list(country_config["tables"].keys())
+    forms = country_config["tables"]
     # Make sure the case report form is handled before the alert form
-    forms.remove("case")
-    forms.insert(0, "case")
     for form in forms:
-        form_name = country_config["tables"][form]
+        form_name = form
         file_name = config.data_directory + form_name + ".csv"
         current_form = []
         if append:
@@ -112,7 +111,7 @@ def add_fake_data(session, N=500, append=False):
         new_data = create_fake_data.create_form(
             country_config["fake_data"][form],
             data={"deviceids": form_deviceids, "uuids": alert_ids}, N=N)
-        if form == "case":
+        if "case" in form:
             alert_ids = []
             for row in new_data:
                 alert_ids.append(
@@ -216,11 +215,11 @@ def import_data(engine, session):
     deviceids = util.get_deviceids(session)
     start_dates = util.get_start_date_by_deviceid(session)
     for form in model.form_tables.keys():
-        if form in ["case", "register"]:
+        if form in country_config["require_case_report"]:
             form_deviceids = deviceids_case
         else:
             form_deviceids = deviceids
-        table_data_from_csv(country_config["tables"][form],
+        table_data_from_csv(form,
                             model.form_tables[form],
                             config.data_directory,
                             session, engine,
@@ -435,7 +434,7 @@ def import_new_data():
     Session = sessionmaker(bind=engine)
     session = Session()
     for form in model.form_tables.keys():
-        file_path = config.data_directory + country_config["tables"][form] + ".csv"
+        file_path = config.data_directory + form + ".csv"
         data = util.read_csv(file_path)
         new = add_new_data(form, model.form_tables[form],
                                 data, session)
@@ -469,7 +468,7 @@ def add_new_data(form_name, form, data, session):
     for row in data:
         if row["meta/instanceID"] not in uuids:
             add = False
-            if form_name in ["case", "register"]:
+            if form_name in country_config["require_case_report"]:
                 form_deviceids = deviceids_case
             else:
                 form_deviceids = deviceids
@@ -508,32 +507,53 @@ def new_data_to_codes(engine=None, no_print=False):
     variables = to_codes.get_variables(session)
     locations = util.all_location_data(session)
     old_data = session.query(model.Data.uuid)
+
+    data_types = util.read_csv(config.config_directory + "data_types.csv")
+
     uuids = []
     alerts = []
-    
-    for row in old_data:
-        uuids.append(row.uuid)
-    for form in model.form_tables.keys():
-        result = session.query(model.form_tables[form].uuid,
-                               model.form_tables[form].data).yield_per(500)
+
+    for data_type in data_types:
+        table = model.form_tables[data_type["form"]]
+        if data_type["db_column"]:
+            entries = session.query(table).filter(
+                table.data[data_type["db_column"]].astext == data_type["condition"]).yield_per(500)
+        else:
+            entries = session.query(table).yield_per(500)
         i = 0
-        for row in result:
-            if row.uuid not in uuids:
-                new_data, alert = to_codes.to_code(
-                    row.data,
-                    variables,
-                    locations,
-                    country_config["form_dates"][form],
-                    country_config["tables"][form],
-                    country_config["alert_data"])
-                if new_data and new_data.variables != {}:
-                    session.add(new_data)
-                if alert:
-                    alerts.append(alert)
+        for row in entries:
+            variable_data, location_data = to_codes.to_code(
+                row.data,
+                variables,
+                locations,
+                data_type["type"],
+                country_config["alert_data"])
+
+            try:
+                date = parse(row.data[data_type["date"]])
+                date = datetime(date.year, date.month, date.day)
+            except:
+                print("Invalid Date")
+                continue
+
+            variable_data[data_type["var"]] = 1
+            new_data = model.Data(
+                date=date,
+                type=data_type["type"],
+                uuid=row.data[data_type["uuid"]],
+                variables=variable_data
+                )
+            for l in location_data.keys():
+                setattr(new_data, l, location_data[l])
+            # if alert:
+            #     alerts.append(alert)
             i += 1
+            session.add(new_data)
+            if "alert" in variable_data:
+                alerts.append(new_data)
             if i % 100 == 0 and not no_print:
                 print(i)
-    add_alerts(alerts, session)
+    send_alerts(alerts, session)
     session.commit()
     return True
 
@@ -761,7 +781,7 @@ def prepare_link_data(data_def, row):
     return data
 
 
-def add_alerts(alerts, session):
+def send_alerts(alerts, session):
     """
     Inserts all the alerts. and calls the send_alert function.
 
@@ -772,8 +792,8 @@ def add_alerts(alerts, session):
     locations = util.get_locations(session)
     variables = util.get_variables(session)
     for alert in alerts:
-        alert.id = alert.uuids[-country_config["alert_id_length"]:]
-        util.send_alert(alert, variables, locations)
+        alert_id = alert.uuid[-country_config["alert_id_length"]:]
+        util.send_alert(alert_id, alert, variables, locations)
         session.add(alert)
     session.commit()
 

@@ -290,7 +290,7 @@ def create_topic_list( alert, locations ):
     """ 
 
     prefix = [country_config["messaging_topic_prefix"]]
-    reason = [alert.reason, 'allDis']   
+    reason = [alert.variables["alert_reason"], 'allDis']   
     locs = [alert.clinic, alert.region, 1]
 
     #The district isn't stored in the alert model, so calulate it as the parent of the clinic.
@@ -308,7 +308,7 @@ def create_topic_list( alert, locations ):
 
     return topics
 
-def send_alert(alert, variables, locations):
+def send_alert(alert_id, alert, variables, locations):
     """
     Assemble the alert message and send it using the hermes API
 
@@ -327,16 +327,16 @@ def send_alert(alert, variables, locations):
     """
     if alert.date > country_config['messaging_start_date']:
 
-        alert_info = ("Alert: " + variables[alert.reason].name + "\n"
+        alert_info = ("Alert: " + variables[alert.variables["alert_reason"]].name + "\n"
                       "Date: " + alert.date.strftime("%d %b %Y") + "\n"
                       "Clinic: " + locations[alert.clinic].name + "\n"
                       "Region: " + locations[alert.region].name + "\n"
-                      "Gender: " + alert.data["gender"].title() + "\n"
-                      "Age: " + alert.data["age"] + "\n"
-                      "Alert ID: " + alert.id + "\n" )
+                      "Gender: " + alert.variables["alert_gender"].title() + "\n"
+                      "Age: " + alert.variables["alert_age"] + "\n"
+                      "Alert ID: " + alert_id + "\n" )
 
         message = (alert_info +
-                   "Patient ID: " + alert.uuids + "\n\n"
+                   "Patient ID: " + alert.uuid + "\n\n"
                    "To unsubscribe from <<country>> public health surveillance notifications "
                    "please copy and paste the following url into your browser's address bar:\n"
                    "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n" )
@@ -344,16 +344,16 @@ def send_alert(alert, variables, locations):
         sms_message = ("<<country>> Public Health Surveillance Alert:\n\n" + alert_info)
 
         html_message = ("<table style='border:none; margin-left: 20px;'>"
-                        "<tr><td><b>Alert:</b></td><td>" + variables[alert.reason].name + "</td></tr>"
+                        "<tr><td><b>Alert:</b></td><td>" + variables[alert.variables["alert_reason"]].name + "</td></tr>"
                         "<tr><td><b>Date:</b></td><td>" + alert.date.strftime("%d %b %Y") + "</td></tr>"
                         "<tr><td><b>Clinic:</b></td><td>" + locations[alert.clinic].name + "</td></tr>"
                         "<tr><td><b>Region:</b></td><td>" + locations[alert.region].name + "</td></tr>"
                         "<tr style='height:10px'></tr>"
-                        "<tr><td><b>Patient ID:</b></td><td>" + alert.uuids + "</td></tr>" 
-                        "<tr><td><b>Gender:</b></td><td>" + alert.data["gender"].title() + "</td></tr>"
-                        "<tr><td><b>Age:</b></td><td>" + alert.data["age"] + "</td></tr>"
+                        "<tr><td><b>Patient ID:</b></td><td>" + alert.uuid + "</td></tr>" 
+                        "<tr><td><b>Gender:</b></td><td>" + alert.variables["alert_gender"].title() + "</td></tr>"
+                        "<tr><td><b>Age:</b></td><td>" + alert.variables["alert_age"] + "</td></tr>"
                         "<tr style='height:10px'></tr>"
-                        "<tr><td><b>Alert ID:</b></td><td>" + alert.id + "</td></tr></table>"
+                        "<tr><td><b>Alert ID:</b></td><td>" + alert_id + "</td></tr></table>"
                         "<p>To unsubscribe from <<country>> public health surveillance notifications "
                         "please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>"
                         "click here</a>.</p>")        
@@ -365,7 +365,7 @@ def send_alert(alert, variables, locations):
             "message": message,
             "sms-message": sms_message,
             "html-message": html_message,
-            "subject": "Public Health Surveillance Alerts: #" + alert.id,
+            "subject": "Public Health Surveillance Alerts: #" + alert_id,
             "medium": ['email', 'sms']
         }
         hermes('/publish', 'PUT', data)

@@ -55,7 +55,7 @@ class Variable():
             if "," in condition:
                 c = [c.strip() for c in condition.split(",")]
             else:
-                c = condition
+                c = [condition]
             self.conditions.append(c)
         self.columns = []
         for column in variable.db_column.split(";"):
@@ -65,7 +65,7 @@ class Variable():
                 c = column
             self.columns.append(c)
         if len(self.conditions) != len(self.test_types):
-            raise TypeError("Need same number of conditions as test types")
+            raise TypeError("Need same number of conditions as test types, {}".format(variable))
         self.test_functions = {
             "match": self.test_match,
             "sub_match": self.test_sub_match,
@@ -74,13 +74,15 @@ class Variable():
         }
 
         if "value" in self.test_types:
-            if len(self.conditions) > 1:
-                raise NameError("Value must be only condition")
+            if len(self.test_types) > 1:
+                raise NameError("Value must be only test type")
             self.test_type = self.test_value
         elif "calc" in self.test_types:
-            if len(self.conditions) > 1:
-                raise NameError("calc must be only condition")
+            if len(self.test_types) > 1:
+                raise NameError("calc must be only test_type")
             self.calculation = variable.calculation
+            if not isinstance(self.columns[0], list):
+                self.columns[0] = [self.columns[0]]
             self.test_type = self.test_calc
         elif len(self.test_types) == 1:
             tt = self.test_types[0]
@@ -128,6 +130,7 @@ class Variable():
                 if not isinstance(self.columns[i], list):
                     self.columns[i] = [self.columns[i]]
                 
+
                 res = self.test_calc_between(self.columns[i],
                                              self.conditions[i],
                                              self.calculation[i],
@@ -153,6 +156,7 @@ class Variable():
         """
         We first test if value is in the list, if not we check if value is a substring of any element in the list
         """
+
         add = 0
         if row.get(column, None) in condition:
             add = 1

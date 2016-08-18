@@ -4,11 +4,12 @@ s3_bucket = False
 
 country_config = {
     "country_name": "Demo",
-    "tables": {
-        "case": "demo_case",
-        "alert": "demo_alert",
-        "register": "demo_register",
-    },
+    "tables": [
+        "demo_case",
+        "demo_alert",
+        "demo_register",
+    ],
+    "require_case_report": ["demo_case", "demo_register"],
     "codes_file": "demo_codes",
     "links_file": "demo_links.py",
     "country_tests": "demo_test.py",
@@ -24,7 +25,7 @@ country_config = {
         "register": "end",
     },
     "fake_data": {
-        "case": {"pt1./age": {"integer": [0, 120]},
+        "demo_case": {"pt1./age": {"integer": [0, 120]},
                  "child_age": {"integer": [0, 60]},
                  "pt./pid": {"patient_id": "intro./visit;new"},
                  "pt1./gender": {"one": ["male", "female"]},
@@ -57,19 +58,18 @@ country_config = {
                  "breastfeed": {"one": ["yes", "no"]},
                  "exclusive_breastfeed": {"one": ["yes", "no"]},
                  "formula": {"one": ["yes", "no"]}},
-        "register": {"consult./consultations": {"integer": [10, 20]},
-                     "consult./ncd_consultations":{"integer":[10,20]},
-                     "consult./consultations_refugee": {"integer": [5, 15]},
-                     "surveillance./afp": {"integer": [1, 5]},
-                     "surveillance./measles": {"integer": [1, 5]}
-                     },
-        "alert": {"pt./alert_id": {"data": "uuids"},
+        "demo_register": {"consult./consultations": {"integer": [10, 20]},
+                          "consult./ncd_consultations":{"integer":[10,20]},
+                          "consult./consultations_refugee": {"integer": [5, 15]},
+                          "surveillance./afp": {"integer": [1, 5]},
+                          "surveillance./measles": {"integer": [1, 5]}
+        },
+        "demo_alert": {"pt./alert_id": {"data": "uuids"},
                   "alert_labs./return_lab": {"one": ["yes", "no", "unsure"]},
                   "pt./checklist": {"multiple": ["referral",
                                                  "case_management",
                                                  "contact_tracing",
                                                  "return_lab"]}},
-        "other": []
     },
     "alert_data": {"age": "pt1./age", "gender": "pt1./gender"},
     "alert_id_length": 6,

@@ -12,15 +12,14 @@ from meerkat_abacus.config import country_config
 Base = declarative_base()
 
 
-form_tables = {"case": None, "register": None, "alert": None}
+form_tables = {}
 
 for table in country_config["tables"]:
-    table_name = country_config["tables"][table]
-    form_tables[table] = type(table_name, (Base, ),
-                            {"__tablename__": table_name,
-                             "id": Column(Integer, primary_key=True),
-                             "uuid": Column(String),
-                             "data": Column(JSONB)})
+    form_tables[table] = type(table, (Base, ),
+                              {"__tablename__": table,
+                               "id": Column(Integer, primary_key=True),
+                               "uuid": Column(String),
+                               "data": Column(JSONB)})
 
 
 class Locations(Base):
@@ -69,6 +68,7 @@ class AggregationVariables(Base):
 
     id = Column(String, primary_key=True)
     name = Column(String)
+    type = Column(String)
     form = Column(String)
     db_column = Column(String)
     method = Column(String)
