@@ -70,7 +70,19 @@ def field_to_list(row, key):
         row[key] = [row[key]]
     return row
 
+def get_links(file_path):
+    """
+    Returns links indexed by type
 
+    """
+    links = read_csv(file_path)
+    links_by_type = {}
+    links_by_name = {}
+    for l in links:
+        links_by_type.setdefault(l["type"], [])
+        links_by_type[l["type"]].append(l)
+        links_by_name[l["name"]] = l 
+    return links_by_type, links_by_name
 
 def all_location_data(session):
     """

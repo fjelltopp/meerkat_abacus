@@ -94,10 +94,18 @@ class Variable():
                 self.test_type = partial(self.test_sub_match,
                                                self.columns[0], self.conditions[0])
             elif tt == "between":
+                if not isinstance(self.columns[0], list):
+                    self.columns[0] = [self.columns[0]]
+                
                 self.test_type = partial(self.test_calc_between,
                                                self.columns[0],
                                                self.conditions[0],
                                                variable.calculation)
+            elif tt == "not_null":
+                self.test_type = partial(self.test_not_null,
+                                               self.columns[0])
+
+
             else:
                 self.test_type = self.test_functions[self.test_types[0]]
         else:
@@ -105,7 +113,7 @@ class Variable():
                 self.calculation = variable.calculation.split(";")
             self.test_type = self.test_many
 
-    def test(self, row, value):
+    def test(self, row):
         """
         Tests if current variable is true for row
 
@@ -115,17 +123,17 @@ class Variable():
         Returns:
             id(int): 0 if false and 1 (or sum) if true
         """
-        return self.test_type(row, value)
+        return self.test_type(row)
 
-    def test_many(self, row, value):
+    def test_many(self, row):
 
         res_dict = {}
         for i in range(len(self.test_types)):
             tt = self.test_types[i]
             if tt == "match":
-                res = self.test_match(self.columns[i], self.conditions[i], row, value)
+                res = self.test_match(self.columns[i], self.conditions[i], row)
             elif tt == "sub_match":
-                res = self.test_sub_match(self.columns[i], self.conditions[i], row, value)
+                res = self.test_sub_match(self.columns[i], self.conditions[i], row)
             elif tt == "between":
                 if not isinstance(self.columns[i], list):
                     self.columns[i] = [self.columns[i]]
@@ -134,9 +142,12 @@ class Variable():
                 res = self.test_calc_between(self.columns[i],
                                              self.conditions[i],
                                              self.calculation[i],
-                                             row, value)
+                                             row)
+            elif tt == "not_null":
+                res = self.test_not_null(self.columns[i], row)
+
             else:
-                res = self.test_functions[self.test_types[i]](row, value)
+                res = self.test_functions[self.test_types[i]](row)
             res_dict[self.bool_variables[i]] = res
         r = sympify(self.bool_expression).subs(res_dict)
 
@@ -145,14 +156,14 @@ class Variable():
         else:
             return 0
         
-    def test_match(self, column, condition, row, value):
+    def test_match(self, column, condition, row):
         """Test if value is in condition list"""
         if row.get(column, None) in condition:
             return 1
         else:
             return 0
 
-    def test_sub_match(self, column, condition, row, value):
+    def test_sub_match(self, column, condition, row):
         """
         We first test if value is in the list, if not we check if value is a substring of any element in the list
         """
@@ -167,39 +178,45 @@ class Variable():
                     break
         return add
 
-    def test_not_null(self, row, value):
+    def test_not_null(self, column, row):
         """ Value not equal None"""
+        if column not in row:
+            return 0
+        value = row[column]
         if value is not "" and value is not None and value is not 0:
             return 1
         else:
             return 0
-    def test_value(self, row, value):
+    def test_value(self, row):
         """ Value not equal None"""
+        if self.columns[0] not in row:
+            return 0
+        value = row[self.columns[0]]
         if value is not "" and value is not None and value is not 0:
             return value
         else:
             return 0
 
-    def test_calc_between(self, columns, condition, calc, row, value,):
+    def test_calc_between(self, columns, condition, calc, row,):
         """
         self. calc should be an expression with column names from the row and mathematical expression 
         understood by python. We then replace all column names with their numerical values and evalualte
         the resulting expression. 
 
         """
-
         for c in columns:
             if c in row and row[c]:
                 calc = calc.replace(c, str(float(row[c])))
             else:
                 return 0
-        result = eval(calc)
+        result = float(eval(calc))
         if float(condition[0]) <= result and float(condition[1]) > result:
             return 1
+    
         else:
             return 0
 
-    def test_calc(self, row, value):
+    def test_calc(self, row):
         """
         self. calc should be an expression with column names from the row and mathematical expression 
         understood by python. We then replace all column names with their numerical values and evalualte
@@ -214,111 +231,4 @@ class Variable():
             else:
                 calc = calc.replace(c, "0")      
  
-        return int(eval(calc))
-
-        # if variable.method == "count_occurrence":
-        #     if "," in variable.condition:
-        #         self.cond_list = variable.condition.split(",")
-        #         self.cond_list = [cond.strip() for cond in self.cond_list]
-        #         self.test_type = self.test_count_occurrence_list
-        #     else:
-        #         self.cond = variable.condition
-        #         self.test_type = self.test_count_occurrence
-        # elif variable.method == "count":
-        #     self.test_type = self.test_count
-        # elif variable.method == "count_occurrence_in":
-        #     self.test_type = self.test_count_occurrence_in
-        #     if "," in variable.condition:
-        #         self.cond_list = variable.condition.split(",")
-        #     else:
-        #         self.cond_list = [variable.condition]
-        #     self.cond_list = [cond.strip() for cond in self.cond_list]
-        # elif variable.method == "int_between":
-        #     if ";" in variable.condition:
-        #         if "," in variable.db_column:
-        #             self.test_type = self.test_int_between_multiple
-        #             self.condition = []
-        #             for cond in variable.condition.split(";"):
-        #                 self.condition.append(cond.split(","))
-        #             self.column_list = self.column.split(",")
-        #             if len(self.column_list) != len(self.condition):
-        #                 raise KeyError("Needs same number of db columns as conditions")
-        #         else:
-        #             raise KeyError("Needs same number of db columns as conditions")
-        #     else:
-        #         self.test_type = self.test_int_between
-        #         self.condition = variable.condition.split(",")
-            
-        # elif variable.method == "sum":
-        #     self.test_type = self.test_sum
-        # elif variable.method == "count_occurrence,int_between":
-        #     self.test_type = self.test_count_occurrence_int_between
-        #     self.column1, self.column2 = variable.db_column.split(",")
-        #     self.condition_low, self.condition_high = (
-        #         variable.condition.split(":")[1].split(","))
-        #     self.condition = variable.condition.split(":")[0]
-        #     if "," in self.condition:
-        #         self.cond_list = self.condition.split(",")
-        #     else:
-        #         self.cond_list = [self.condition]
-        #     self.cond_list = [cond.strip() for cond in self.cond_list]
-        # elif variable.method == "count_occurrence_in,int_between":
-        #     self.test_type = self.test_count_occurrence_in_int_between
-        #     self.column1, self.column2 = variable.db_column.split(",")
-        #     self.condition_low, self.condition_high = (
-        #         variable.condition.split(":")[1].split(","))
-
-        #     self.condition = variable.condition.split(":")[0]
-        #     if "," in self.condition:
-        #         self.cond_list = self.condition.split(",")
-        #     else:
-        #         self.cond_list = [self.condition]
-        #     self.cond_list = [cond.strip() for cond in self.cond_list]
-
-        # elif variable.method == "count_or_occurrence,int_between":
-        #     self.test_type = self.test_count_or_occurrence_int_between
- 
-        #     self.column1, self.column2 = variable.db_column.split(",")[0].split(" ")
-        #     self.column = variable.db_column.split(",")[1]
-            
-        #     self.cond_one, self.cond_two = variable.condition.split(":")[0].split(",")
-        #     self.condition = variable.condition.split(":")[1].split(",")
-
-        # elif variable.method == "count_or_occurrence":
-        #     self.test_type = self.test_count_or_occurrence
-        #     self.column1, self.column2 = variable.db_column.split(" ")
-        #     self.cond_one, self.cond_two = variable.condition.split(",")
-        # elif variable.method == "count_and_occurrence":
-        #     self.test_type = self.test_count_and_occurrence
-        #     self.column1, self.column2 = variable.db_column.split(" ")
-        #     self.cond_one, self.cond_two = variable.condition.split(",")
-        # elif variable.method == "not_null":
-        #     if "," in variable.db_column:
-        #         self.columns = variable.db_column.split(",")
-        #         print(self.columns)
-        #         self.test_type = self.test_not_null_many
-        #     else:
-        #         self.test_type = self.test_not_null
-        # elif variable.method == "take_value":
-        #     self.test_type = self.test_take_value
-        # elif variable.method == "calc_between":
-        #     columns, self.calc = self.column.split(";")
-        #     self.columns = [c.strip() for c in columns.split(",")]
-        #     self.condition_low, self.condition_high = (
-        #         variable.condition.split(","))
-        #     self.condition_low = float(self.condition_low)
-        #     self.condition_high = float(self.condition_high)
-        #     self.test_type = self.test_calc_between
-        # elif variable.method == "calc":
-        #     columns, self.calc = self.column.split(";")
-        #     self.columns = [c.strip() for c in columns.split(",")]
-        #     self.test_type = self.test_calc
-        # else:
-        #     raise NameError("Variable does not have test type {}"
-        #                     .format(variable.method))
-        # if variable.secondary_condition:
-        #     self.secondary_condition = self.secondary_condition_test
-        #     self.sec_column, self.sec_condition = variable.secondary_condition.split(":")
-        # else:
-        #     self.secondary_condition = self.secondary_condition_no
-            
+        return float(eval(calc))

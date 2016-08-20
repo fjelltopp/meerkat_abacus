@@ -52,6 +52,7 @@ class Data(Base):
     district = Column(Integer, index=True)
     clinic = Column(Integer, index=True)
     clinic_type = Column(String)
+    links = Column(JSONB)
     variables = Column(JSONB, index=True)
     geolocation = Column(String)
     
@@ -70,6 +71,7 @@ class AggregationVariables(Base):
     name = Column(String)
     type = Column(String)
     form = Column(String)
+    multiple_link = Column(String)
     db_column = Column(String)
     method = Column(String)
     condition = Column(String)

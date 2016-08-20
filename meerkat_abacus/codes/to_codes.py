@@ -30,7 +30,7 @@ def get_variables(session):
     return variables
 
 
-def to_code(row, variables, locations, data_type, alert_data):
+def to_code(row, variables, locations, data_type, location_form, alert_data):
     """
     Takes a row and transforms it into a data row
 
@@ -53,7 +53,7 @@ def to_code(row, variables, locations, data_type, alert_data):
         alert(model.Alerts): Alert record if created
     """
     locations, locations_by_deviceid, regions, districts = locations
-    clinic_id = locations_by_deviceid.get(row["deviceid"], None)
+    clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"], None)
     if not clinic_id:
         return (None, None, None)
     ret_location = {
@@ -71,45 +71,42 @@ def to_code(row, variables, locations, data_type, alert_data):
         ret_location["district"] = None
         ret_location["region"] = locations[clinic_id].parent_location
     variable_json = {}
-    alert = None
+    multiple_method = {"last": -1, "first": 0}
     for group in variables[data_type].keys():
         #All variables in group have same secondary conndition, so only check once
         for v in variables[data_type][group]:
-            test_outcome = variables[data_type][group][v].test_type(row, None)
-            if test_outcome:
-                variable_json[v] = test_outcome
-                if variables[data_type][group][v].variable.alert:
-                    variable_json["alert"] = 1
-                    variable_json["alert_reason"] = variables[data_type][group][v].variable.id
-                    for data_var in alert_data.keys():
-                        variable_json["alert_"+data_var] = row[alert_data[data_var]]
-                break # We break out of the current group as all variables in a group are mutually exclusive
+            form = variables[data_type][group][v].variable.form
+            if form in row and row[form]:
+                if isinstance(row[form], list):
+                    method = variables[data_type][group][v].variable.multiple_link
+                    if method in ["last", "first"]:
+                        data = row[form][multiple_method[method]]
+                        test_outcome = variables[data_type][group][v].test_type(data)
+                    elif method == "count":
+                        test_outcome = len(row[form])
+                    elif method == "any":
+                        test_outcome = 0
+                        for d in row[form]:
+                            test_outcome = variables[data_type][group][v].test_type(d)
+                            if test_outcome:
+                                break
+                    elif method == "all":
+                        test_outcome = 1
+                        for d in row[form]:
+                            t_o = variables[data_type][group][v].test_type(d)
+                            if not t_o:
+                                test_outcome = 0
+                                break
+                else:
+                    test_outcome = variables[data_type][group][v].test_type(row[form])
+                    data = row[form]
+                if test_outcome:
+                    variable_json[v] = test_outcome
+                    if variables[data_type][group][v].variable.alert:
+                        variable_json["alert"] = 1
+                        variable_json["alert_reason"] = variables[data_type][group][v].variable.id
+                        for data_var in alert_data.keys():
+                            variable_json["alert_"+data_var] = row[location_form][alert_data[data_var]]
+                    break # We break out of the current group as all variables in a group are mutually exclusive
     return (variable_json, ret_location)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-                    # # If the variable we just found as a match is a variable we should create an alert for
-                    # data_alert = {}
-                    # for data_var in alert_data.keys():
-                    #     data_alert[data_var] = row[alert_data[data_var]]
-                    # alert = model.Alerts(
-                    #     uuids=row["meta/instanceID"],
-                    #     clinic=clinic_id,
-                    #     region=new_record.region, 
-                    #     reason=v,
-                    #     data=data_alert,
-                    #     date=date)

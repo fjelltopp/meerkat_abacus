@@ -3,7 +3,7 @@ Functions to create the database, populate the db tables and proccess data.
 
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import boto3
@@ -509,277 +509,108 @@ def new_data_to_codes(engine=None, no_print=False):
     old_data = session.query(model.Data.uuid)
 
     data_types = util.read_csv(config.config_directory + "data_types.csv")
-
+    links_by_type, links_by_name = util.get_links(config.config_directory + "links.csv")
     uuids = []
     alerts = []
 
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
+
+        joins = []
+        tables = [table]
+        link_names = [None]
+        if data_type["type"] in links_by_type:
+            for link in links_by_type[data_type["type"]]:
+                if link["from_form"] == data_type["form"]:
+                    to_form = model.form_tables[link["to_form"]]
+                    link_names.append(link["name"])
+                    tables.append(to_form)
+                    if link["method"] == "match":
+                        join_on = to_form.data[link["to_column"]].astext == table.data[link["from_column"]].astext
+                    elif link["method"] == "alert_match":
+                        join_on = to_form.data[link["to_column"]].astext == func.substring(table.data[link["from_column"]].astext,
+                                                                                    42 - country_config["alert_id_length"],
+                                                                                    country_config["alert_id_length"])
+                    joins.append((to_form, join_on))
+        
         if data_type["db_column"]:
-            entries = session.query(table).filter(
-                table.data[data_type["db_column"]].astext == data_type["condition"]).yield_per(500)
+            condition =  table.data[data_type["db_column"]].astext == data_type["condition"]
         else:
-            entries = session.query(table).yield_per(500)
+            condition = True
+
+        if len(joins) > 0:
+            entries = session.query(*tables)
+            for join in joins:
+                entries = entries.outerjoin(join)
+            entries = entries.filter(condition).yield_per(500)
+        else:
+            entries = session.query(table).filter(condition).yield_per(500)
         i = 0
+
+        data = {}
         for row in entries:
+            if not isinstance(row, tuple):
+                row = (row, )
+            
+            uuid = row[0].uuid
+            if uuid in data:
+                for i in range(1, len(row)):
+                    data[uuid][link_names[i]].append(row[i].data)
+            else:
+                data[uuid] = {}
+                data[uuid][tables[0].__tablename__] = row[0].data
+                for i in range(1, len(row)):
+                    if row[i]:
+                        data[uuid][link_names[i]] = [row[i].data]
+        for row in data.values():
+            links = {}
+            if len(row.keys()) > 1:
+                for k in row.keys():
+                    if k in link_names:
+                        # Want to correctly order the linked forms
+                        column, method = links_by_name[k]["order_by"].split(";")
+                        if method == "date":
+                            sort_function = lambda x: parse(x[column])
+                        else:
+                            sort_function = lambda x: x[column]
+                        row[k] = sorted(row[k], key=sort_function)
+                        links[k] = [x[links_by_name[k]["uuid"]] for x in row[k]]
             variable_data, location_data = to_codes.to_code(
-                row.data,
+                row,
                 variables,
                 locations,
                 data_type["type"],
+                data_type["form"],
                 country_config["alert_data"])
-
+            
             try:
-                date = parse(row.data[data_type["date"]])
+                date = parse(row[data_type["form"]][data_type["date"]])
                 date = datetime(date.year, date.month, date.day)
             except:
                 print("Invalid Date")
                 continue
-
+            if "alert" in variable_data:
+                variable_data["alert_id"] = row[data_type["form"]][data_type["uuid"]][-country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1
             new_data = model.Data(
                 date=date,
                 type=data_type["type"],
-                uuid=row.data[data_type["uuid"]],
-                variables=variable_data
+                uuid=row[data_type["form"]][data_type["uuid"]],
+                variables=variable_data,
+                links=links
                 )
             for l in location_data.keys():
                 setattr(new_data, l, location_data[l])
-            # if alert:
-            #     alerts.append(alert)
-            i += 1
-            session.add(new_data)
             if "alert" in variable_data:
                 alerts.append(new_data)
+            i += 1
+            session.add(new_data)
+ 
             if i % 100 == 0 and not no_print:
                 print(i)
     send_alerts(alerts, session)
     session.commit()
     return True
-
-def add_new_links():
-    """Finding and adding new links
-
-    Links are between a "from" table and a "to" table matched on the value of 
-    specfied columns, one from each table. We can have conditions on both tables
-    to choose the rows that can take part in links and links can have data generated
-    from the "from" table.
-
-    To find the links we follow these steps:
-
-    0. Get all old Links
-
-    For each link type: 
-    
-    1. We construct the conditions on the "from" table and get the "from" records
-    2. Loop through all the "from" records and create the link_from_values dict
-         with row[from_key] = row
-    3. Then we sort out the "to" conditions and get all the "to" records
-    4. We loop through the "to" records and find all the "to-from" matches
-    5. We then check if an old link exist and if it does we use the link rule to update the old link,
-        most links take the latest macting record to use for the link. If there is no old link, we create
-        a new link. 
-    6. Prepare link data and add the link
-
-    Since we have normal tables like e.g the alert table and form-tables where all the data is stored as json
-    we need to handle these to cases differently.
-    """
-
-    engine = create_engine(config.DATABASE_URL)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    link_defs = util.get_link_definitions(session)
-    results = session.query(model.Links)
-    #Get Old links
-    to_ids = []
-    links_by_link_value = {}
-    for links_def_id in link_defs:
-        links_by_link_value[links_def_id] = {}
-    for row in results:
-        to_ids.append(row.to_id)
-        links_by_link_value[row.link_def][row.link_value] = row
-        
-    for link_def_id in link_defs.keys():
-        link_def = link_defs[link_def_id]
-        if "form_tables." in link_def.from_table:
-            table = link_def.from_table.split(".")[1]
-            from_table = model.form_tables[table]
-        else:
-            from_table = getattr(model, link_def.from_table)
-        #Sort out from table conditions and get from records
-        if link_def.from_condition:
-            if ":" in link_def.from_condition:
-                column, condition = link_def.from_condition.split(":")
-                link_from = session.query(from_table)
-                if "form_tables." in link_def.from_table:
-                    query_condition = [from_table.data[column].astext == condition,
-                                       from_table.data[link_def.from_column].astext != None]
-                else:
-                    query_condition = [getattr(from_table,column) == condition,
-                                       getattr(from_table,link_def.from_column) != None]
-                link_from = session.query(from_table).filter(*query_condition).yield_per(200)
-            else:
-                raise NameError
-        else:
-                link_from = session.query(from_table).yield_per(200)
-        link_from_values = {} # row[from_key] = row dict
-        for row in link_from:
-            if "form_tables." in link_def.from_table:
-                if link_def.from_column in row.data:
-                    value = row.data[link_def.from_column]
-                else:
-                    continue
-            else:
-                value = getattr(row, link_def.from_column)
-            if link_def.compare_lower:
-                value = value.lower()
-            link_from_values[value] = row
-        #Sort out to_conditions
-        if link_def.to_condition:
-            if ":" in link_def.to_condition:
-                column, condition = link_def.to_condition.split(":")
-                result_to_table = session.query(model.form_tables[link_def.to_table]).filter(
-                    model.form_tables[link_def.to_table].data[column].astext == condition).yield_per(200)
-            else:
-                raise NameError
-        else:
-            result_to_table = session.query(model.form_tables[link_def.to_table]).filter(
-                model.form_tables[link_def.to_table].data.has_key(link_def.to_column),
-                model.form_tables[link_def.to_table].data[link_def.to_column] != None ).yield_per(200)
-        for row in result_to_table:
-            if row.uuid not in to_ids and link_def.to_column in row.data:
-                link_to_value = row.data[link_def.to_column]
-                if link_def.compare_lower:
-                    link_to_value = link_to_value.lower()
-                if link_to_value and link_to_value in link_from_values.keys():
-                    data = prepare_link_data(link_def.data, row.data)
-                    linked_record = link_from_values[link_to_value]
-                    to_date = parse(row.data[link_def.to_date])
-                    if link_to_value in links_by_link_value[link_def_id].keys():
-                        old_link = links_by_link_value[link_def_id][link_to_value]
-                        if link_def.which == "last" and old_link.to_date <= to_date:
-                            old_link.data = data
-                            old_link.to_date = to_date
-                            old_link.to_id = getattr(row, "uuid"),
-                    else:
-                        if "form_tables." in link_def.from_table:
-                            from_date = linked_record.data[link_def.from_date]
-                        else:
-                            from_date = getattr(linked_record,
-                                                 link_def.from_date)
-                            
-                        new_link = model.Links(**{
-                            "link_value": link_to_value,
-                            "to_id": getattr(row, "uuid"),
-                            "to_date": to_date,
-                            "from_date": from_date,
-                            "link_def": link_def_id,
-                            "data": data})
-                        links_by_link_value[link_def_id][link_to_value] = new_link
-                        session.add(new_link)
-    session.commit()
-    return True
-
-
-def prepare_link_data(data_def, row):
-    """
-    Returns row translated to data specified by the data_def. 
-    For each key value pair in data_def we will return a value based on the data in the row.
-    
-    Example of a data_def::
-
-       {"status": {
-          "Ongoing": {"column": "alert_labs./return_lab", "condition": ["", "unsure"]},
-          "Confirmed": {"column": "alert_labs./return_lab","condition": "yes"},
-          "Disregarded": {"column": "alert_labs./return_lab", "condition": "no"}}
-       }
-
-
-    So for each key(here "status") we want to determine which of the values 
-    (here: "Ongoing", "Confirmed", "Disregarded") apply for a given row. 
-
-    We loop through the options and check which applies. If more than one applies we 
-    return a list of those options. 
-    
-    Each option has a column and a condition. If the condition is a list, row[column] can match any of the listed conditions. 
-    If the condition is "default_value", that option is added if no other options have matched. 
-    
-    Args:
-        data_def: dictionary with data definition
-        row: a row to be translated
-    Returns:
-        data(dict): the data
-    """
-
-    #A nested function that returns whether the row (parent args) satisfies a condition.
-    #True if one of the specified colums in the row has a value in the specified values.
-    def satisfies_cond( columns, values ):
-
-        #Allow single column and value conditions to not be in list form.
-        #Ensure they are converted to a list for consistent processing though.
-        columns = [columns] if not isinstance(columns, list) else columns
-        values = [values] if not isinstance(values, list) else values
-
-        #Return "true" if the value stored in any of row[column] is in the values list.
-        for col in columns:
-            if row[col] in values:
-                return True
-            else:
-                return False
-
-    #Return object, to be populated.
-    data = {}
-    
-    #For each key and each value in data_def, see if the row matches the specified condition.
-    #If it does, store the value under the key in the returned data dictionary.   
-    for key in data_def.keys():
-    
-        data[key] = []
-        default = []
-        
-        for value in data_def[key].keys():
-
-            #A list of many condition/column pairs can be provided that must ALL be satisfied.
-            #If only one is given, convert to list so we are working with consistent data.
-            conditions = data_def[key][value]     
-            conditions = [conditions] if not isinstance(conditions, list) else conditions  
-            
-            #To store which conditions have been satisfied
-            conditions_satisfied = []
-            
-            for condition in conditions:
-
-                #Enable 'default_value' keyword
-                if condition['condition'] == "default_value":
-                    default = [value]
-                    conditions_satisfied.append( False ) #We've appended the actual value instead.  
-                    continue
-
-                #Enable 'get_value' keyword that returns actual row value instead data_def value.
-                elif condition['condition'] == "get_value":
-                    data[key].append( row.get( condition['column'], None ) )
-                    conditions_satisfied.append( False ) #We've appended the actual value instead.    
-                    continue          
-
-                #Otherwise check to see if row matches current condition.
-                else:
-                    conditions_satisfied.append( 
-                        satisfies_cond( condition['column'], condition['condition'] )
-                    )
-            
-            #Append the value under the given key in the returned dictionary 
-            #ONLY IF all conditions in the condition list have been satisfied.
-            if all(conditions_satisfied):
-                data[key].append( value ) 
-
-        #If we have no value matched to key, then set to key's value to default.    
-        data[key] = default if not data[key] else data[key]
-
-        #Only keep as a list if there actually are multiple elements.
-        data[key] = data[key][0] if len(data[key]) == 1 else data[key]                      
-    
-    return data
-
 
 def send_alerts(alerts, session):
     """
