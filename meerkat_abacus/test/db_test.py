@@ -81,117 +81,24 @@ class DbTest(unittest.TestCase):
         manage.country_config["locations"] = old_locs
         manage.config.config_directory = old_dir
 
-    def test_should_row_be_added(self):
-        """ testing should row be added"""
-        row = {"deviceid": "2", "pt./visit_date": "10 Jan, 2016"}
-
-        self.assertTrue(manage.should_row_be_added(row,
-                                                   "case",
-                                                   ["2"],
-                                                   {"2": datetime(2016, 1, 1)}
-                                                   )
-                        )
-        self.assertTrue(manage.should_row_be_added(row,
-                                                   "case",
-                                                   None,
-                                                   {"2": datetime(2016, 1, 1)}
-                                                   )
-                        )
-        self.assertTrue(manage.should_row_be_added(row,
-                                                   "case",
-                                                   ["2"],
-                                                   None,
-                                                   )
-                        )
-        self.assertFalse(manage.should_row_be_added(row,
-                                                   "case",
-                                                   ["3"],
-                                                   {"2": datetime(2016, 1, 1)}
-                                                   )
-                        )
-        self.assertFalse(manage.should_row_be_added(row,
-                                                   "case",
-                                                   ["2"],
-                                                   {"2": datetime(2016, 1, 11)}
-                                                   )
-                        )
         
                                                     
         
     def test_table_data_from_csv(self):
         """Test table_data_from_csv"""
         
-        manage.table_data_from_csv("demo_case", model.form_tables["case"],
+        manage.table_data_from_csv("demo_case", model.form_tables["demo_case"],
                                    "meerkat_abacus/test/test_data/",
                                    self.session, self.engine,
                                    deviceids=["1", "2", "3", "4", "5", "6"],
                                    start_dates={"2": datetime(2016, 2, 2)},
-                                   table_name="case")
-        results = self.session.query(model.form_tables["case"]).all()
-        self.assertEqual(len(results), 5)  # Only 6 of the cases have deviceids in 1-6 and one case has a too early date
+                                   table_name="demo_case")
+        results = self.session.query(model.form_tables["demo_case"]).all()
+        self.assertEqual(len(results), 6)  # Only 6 of the cases have deviceids in 1-6
         for r in results:
-            self.assertIn(r.uuid, ["1",  "3", "4", "5", "6"])
+            self.assertIn(r.uuid, ["1", "2", "3", "4", "5", "6"])
 
-    def test_links(self):
-        deviceids = ["1", "2", "3", "4", "5", "6", "7", "8"]
-
-        manage.create_db(config.DATABASE_URL,
-                         model.Base,
-                         drop=True)
-
-        manage.table_data_from_csv("demo_case", model.form_tables["case"],
-                                   "meerkat_abacus/test/test_data/",
-                                   self.session, self.engine,
-                                   table_name=config.country_config["tables"]["case"],
-                                   deviceids=deviceids)
-        manage.table_data_from_csv("demo_alert", model.form_tables["alert"],
-                                   "meerkat_abacus/test/test_data/",
-                                   self.session, self.engine,
-                                   deviceids=deviceids,
-                                   table_name=config.country_config["tables"]["alert"])
-        link_def = {
-            "id": "test",
-            "name": "Test",
-            "from_table": "form_tables.case",
-            "from_column": "meta/instanceID",
-            "from_condition": "intro./visit:new",
-            "from_date": "start",
-            "to_table": "alert",
-            "to_column": "link_to",
-            "to_date": "end",
-            "to_condition": "condition:yes",
-            "which": "last",
-            "data": {
-                "status": {
-                    "A": {"column": "letter",
-                          "condition": "A"},
-                    "B": {"column": "letter",
-                          "condition": "B"},
-                    "C": {"column": ["index", "letter"],
-                          "condition": "7"}
-                }
-            }
-        }
-        old_links = manage.config.links.links
-        manage.config.links.links = [link_def]
-        manage.import_links(self.session)
-        self.session.query(model.Links).delete()
-        self.session.commit()
-
-        manage.add_new_links()
-
-        links = self.session.query(model.Links).all()
-        # Should be 5 links 
-        self.assertEqual(5, len(links))
-        for link in links:
-            if link.link_value == "1":
-                # Check that it got the latest
-                self.assertEqual(link.data, {"status": "B"}) 
-            if link.link_value == "8":
-                self.assertEqual(link.data, {"status": "C"}) 
-        #Clean up
-        manage.config.links.links = old_links
-        
+  
     @mock.patch('meerkat_abacus.util.requests')
     def test_db_setup(self, requests):
         
@@ -212,13 +119,16 @@ class DbTest(unittest.TestCase):
             model.AggregationVariables.id == "tot_1").first()
         self.assertEqual(agg_var.name, "Total")
         
-        link_defs = session.query(model.LinkDefinitions)
-        self.assertEqual(link_defs.first().name, "Alert Investigation")
-        #To codes
+        # Number of cases
+
+        n_cases = len(session.query(model.Data).filter(model.Data.type == "case").all())
+        t = model.form_tables[config.country_config["tables"][0]]
+        n_expected_cases = len(session.query(t).filter(t.data["intro./visit"].astext == "new").all())
+        self.assertEqual(n_cases, n_expected_cases)
+        
         agg_var_female = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.name == "Female").first()
         results = session.query(model.Data)
-        sec_condition = agg_var.secondary_condition.split(":")
         number_of_totals = 0
         number_of_female = 0
         for row in results:
@@ -226,59 +136,14 @@ class DbTest(unittest.TestCase):
                 number_of_totals += 1
             if str(agg_var_female.id) in row.variables.keys():
                 number_of_female += 1
-        total = session.query(model.form_tables["case"]).filter(
-            model.form_tables["case"].data.contains(
-                {sec_condition[0]: sec_condition[1]}))
-        female = session.query(model.form_tables["case"]).filter(
-            model.form_tables["case"].data.contains(
-                {sec_condition[0]: sec_condition[1],
-                 agg_var_female.db_column: agg_var_female.condition}))
+        total = session.query(t).filter(
+            t.data.contains({"intro./visit": "new"}))
+        female = session.query(t).filter(
+            t.data.contains({"intro./visit": "new",
+                             agg_var_female.db_column: agg_var_female.condition}))
         self.assertEqual(number_of_totals, len(total.all()))
         self.assertEqual(number_of_female, len(female.all()))
-        #Add links
-        manage.add_new_links()
-        link_query = session.query(model.Links).filter(
-            model.Links.link_def == "alert_investigation")
-        links = {}
-        for link in link_query:
-            links[link.link_value] = link
-        
-        alert_query = session.query(model.Alerts)
-        alerts = {}
-        for a in alert_query:
-            alerts[a.id] = a
-        alert_inv_query = session.query(model.form_tables["alert"])
-        alert_invs = {}
-        for a in alert_inv_query:
-            alert_invs.setdefault(a.data["pt./alert_id"], [])
-            alert_invs[a.data["pt./alert_id"]].append(a)
-
-        for alert_id in alerts.keys():
-            if alert_id in alert_invs.keys():
-                self.assertIn(alert_id, links.keys())
-                if len(alert_invs[alert_id]) == 1:
-                    self.assertEqual(links[alert_id].to_date,
-                                     parse(alert_invs[alert_id][0].data["end"]))
-                    labs = (alert_invs[alert_id][0]
-                            .data["alert_labs./return_lab"])
-                    country_test.test_alert_status(labs, links[alert_id])
-      
-                else:
-                    investigations = alert_invs[alert_id]
-                    largest_date = datetime(2015, 1, 1)
-                    largest_inv = None
-                    for inv in investigations:
-                        if parse(inv.data["end"]) > largest_date:
-                            largest_date = parse(inv.data["end"])
-                            largest_inv = inv
-                    self.assertEqual(links[alert_id].to_date, largest_date)
-                    labs = (largest_inv
-                            .data["alert_labs./return_lab"])
-                    country_test.test_alert_status(labs, links[alert_id])
-            else:
-                self.assertNotIn(alert_id, links.keys())
         session.close()
-
         self.assertFalse(
             manage.set_up_everything(True, False, 100)
             )
@@ -294,6 +159,7 @@ class DbTest(unittest.TestCase):
         
         numbers = {}
         manage.import_locations(self.engine, self.session)
+        manage.import_variables(self.session)
         manage.add_fake_data(self.session, N=500, append=False)
         task_queue.get_proccess_data.apply().get()
         for table in model.form_tables:

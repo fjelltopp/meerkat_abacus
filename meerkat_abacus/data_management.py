@@ -51,34 +51,6 @@ def export_data(session):
                 print(name + "(**" + str(columns) + "),")
 
 
-def should_row_be_added(row, form_name, deviceids, start_dates):
-    """
-    Determines if a data row should be added. 
-
-    If deviceid is not None, the reccord need to have one of the deviceids.
-    If start_dates is not None, the record needs to be dated after the corresponding start date
-
-    Args:
-        row: row to be added
-        form_name: name of form
-        deviceids(dict)
-        start_date(dict)
-    Returns:
-        should_add(Bool)
-    """
-    ret = False
-    if deviceids is not None:
-        if row["deviceid"] in deviceids:
-            ret = True
-    else:
-        ret = True
-#     if start_dates and row["deviceid"] in start_dates:
-# #        print(row[country_config["form_dates"][form_name]], form_name, row)
-#         if not row[country_config["form_dates"][form_name]]:
-#             ret = False
-#         elif parse(row[country_config["form_dates"][form_name]]) < start_dates[row["deviceid"]]:
-#             ret = False
-    return ret
 
 def add_fake_data(session, N=500, append=False):
     """
@@ -170,13 +142,16 @@ def table_data_from_csv(filename, table, directory, session,
         else:
             insert_row = row
         if deviceids:
-            if should_row_be_added(insert_row, table_name, deviceids, start_dates):
+            if row["deviceid"] in deviceids:
                 session.add(table(**{"data": insert_row,
                                      "uuid": insert_row["meta/instanceID"]
                 }))
         else:
             session.add(table(**{"data": insert_row,
-                                 "uuid": insert_row["meta/instanceID"]}))
+                                 "uuid": insert_row["meta/instanceID"]
+            }))
+                
+        
         i += 1
         if i % 500 == 0:
             session.commit()
@@ -467,14 +442,21 @@ def add_new_data(form_name, form, data, session):
     new_rows = []
     for row in data:
         if row["meta/instanceID"] not in uuids:
-            add = False
             if form_name in country_config["require_case_report"]:
                 form_deviceids = deviceids_case
             else:
                 form_deviceids = deviceids
-            if should_row_be_added(row, form_name, form_deviceids, start_dates):
-                session.add(form(uuid=row["meta/instanceID"], data=row))
-                new_rows.append(row)
+
+            if deviceids:
+                if row["deviceid"] in form_deviceids:
+                    session.add(form(**{"data": row,
+                                        "uuid": row["meta/instanceID"]
+                    }))
+                    new_rows.append(row)
+            else:
+                session.add(form(**{"data": row,
+                                    "uuid": row["meta/instanceID"]
+                }))
     session.commit()
     return new_rows
 
@@ -492,7 +474,7 @@ i
     add_fake_data(session, to_add, append=True)
 
 
-def new_data_to_codes(engine=None, no_print=False):
+def new_data_to_codes(engine=None, no_print=False, only_new=False):
     """
     Run all the raw data through the to_codes function to translate it into structured data
 
@@ -528,23 +510,26 @@ def new_data_to_codes(engine=None, no_print=False):
                     if link["method"] == "match":
                         join_on = to_form.data[link["to_column"]].astext == table.data[link["from_column"]].astext
                     elif link["method"] == "alert_match":
-                        join_on = to_form.data[link["to_column"]].astext == func.substring(table.data[link["from_column"]].astext,
-                                                                                    42 - country_config["alert_id_length"],
-                                                                                    country_config["alert_id_length"])
+                        join_on = to_form.data[link["to_column"]].astext == func.substring(table.data[link["from_column"]].astext, 42 - country_config["alert_id_length"],country_config["alert_id_length"])
                     joins.append((to_form, join_on))
         
         if data_type["db_column"]:
-            condition =  table.data[data_type["db_column"]].astext == data_type["condition"]
+            condition =  [table.data[data_type["db_column"]].astext == data_type["condition"]]
         else:
-            condition = True
+            condition = []
+
+        if only_new:
+            current_uuids = [r[0] for r in session.query(model.Data.uuid)]
+            if len(current_uuids) > 0:
+                condition.append(~table.uuid.in_(current_uuids))
 
         if len(joins) > 0:
             entries = session.query(*tables)
             for join in joins:
                 entries = entries.outerjoin(join)
-            entries = entries.filter(condition).yield_per(500)
+            entries = entries.filter(*condition).yield_per(500)
         else:
-            entries = session.query(table).filter(condition).yield_per(500)
+            entries = session.query(table).filter(*condition).yield_per(500)
         i = 0
 
         data = {}
@@ -589,6 +574,9 @@ def new_data_to_codes(engine=None, no_print=False):
             except:
                 print("Invalid Date")
                 continue
+
+            if date < locations[0][location_data["clinic"]].start_date:
+                next
             if "alert" in variable_data:
                 variable_data["alert_id"] = row[data_type["form"]][data_type["uuid"]][-country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1

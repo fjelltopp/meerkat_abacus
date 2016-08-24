@@ -22,43 +22,45 @@ locations = {1: model.Locations(name="Demo"),
              8: model.Locations(name="Clinic with no district",
                                 parent_location=2)
 }
-# locations_by_deviceid = {1: 6, 2: 7, 3: 8}
-# regions = [2, 3]
-# districts = [4, 5]
-# agg_variables = [
-#     model.AggregationVariables(
-#         id=1,
-#         method="count",
-#         db_column="index",
-#         form="form1"),
-#     model.AggregationVariables(
-#         id=2,
-#         method="count_occurrence",
-#         db_column="column1",
-#         alert=1,
-#         condition="A",
-#         form="form1"),
-#     model.AggregationVariables(
-#         id=3,
-#         method="count_occurrence_in",
-#         db_column="column2",
-#         condition="B",
-#         form="form1"),
-#     model.AggregationVariables(
-#         id=4,
-#         method="int_between",
-#         db_column="column3",
-#         condition="5,10",
-#         form="form1")
-# ]
-# alert_data = {"column1": "column1"}
-# all_locations = (locations,
-#                  locations_by_deviceid,
-#                  regions,
-#                  districts)
-# variables = {"form1": {1: {}, 2: {}, 3: {}, 4: {}}}
-# for av in agg_variables:
-#     variables["form1"][av.id][av.id] = Variable(av)
+locations_by_deviceid = {1: 6, 2: 7, 3: 8}
+regions = [2, 3]
+districts = [4, 5]
+agg_variables = [
+    model.AggregationVariables(
+        id=1,
+        method="not_null",
+        db_column="index",
+        condition="",
+        form="form1"),
+    model.AggregationVariables(
+        id=2,
+        method="match",
+        db_column="column1",
+        alert=1,
+        condition="A",
+        form="form1"),
+    model.AggregationVariables(
+        id=3,
+        method="sub_match",
+        db_column="column2",
+        condition="B",
+        form="form1"),
+    model.AggregationVariables(
+        id=4,
+        method="between",
+        calculation="column3",
+        db_column="column3",
+        condition="5,10",
+        form="form1")
+]
+alert_data = {"column1": "column1"}
+all_locations = (locations,
+                 locations_by_deviceid,
+                 regions,
+                 districts)
+variables = {"case": {1: {}, 2: {}, 3: {}, 4: {}}}
+for av in agg_variables:
+    variables["case"][av.id][av.id] = Variable(av)
 
 
 
@@ -76,90 +78,58 @@ class ToCodeTest(unittest.TestCase):
         """
         Testing that all the location infomation is translated correctly
         """
-        row = {"index": 1, "column1": "A", "column2": "B34", "column3": "7",
+        row = {"form1":
+               {"index": 1, "column1": "A", "column2": "B34", "column3": "7",
                 "date": "2015-10-25", "deviceid": 1, "meta/instanceID": "a"}
-        result, alert = to_code(row, variables, all_locations,
-                                "date", "form1", alert_data)
-        self.assertEqual(result.country, 1)
-        self.assertEqual(result.region, 2)
-        self.assertEqual(result.district, 4)
-        self.assertEqual(result.clinic, 6)
+               }
+        var, ret_location = to_code(row, variables, all_locations,
+                                "case", "form1", alert_data)
+        self.assertEqual(ret_location["country"], 1)
+        self.assertEqual(ret_location["region"], 2)
+        self.assertEqual(ret_location["district"], 4)
+        self.assertEqual(ret_location["clinic"], 6)
         
-        row["deviceid"] = 2
-        result, alert = to_code(row, variables, all_locations,
-                                "date", "form1", alert_data)
-        self.assertEqual(result.country, 1)
-        self.assertEqual(result.region, 3)
-        self.assertEqual(result.district, 5)
-        self.assertEqual(alert.clinic, 7)
+        row["form1"]["deviceid"] = 2
+        var, ret_location = to_code(row, variables, all_locations,
+                                "case", "form1", alert_data)
+        self.assertEqual(ret_location["country"], 1)
+        self.assertEqual(ret_location["region"], 3)
+        self.assertEqual(ret_location["district"], 5)
 
-        row["deviceid"] = 3
-        result, alert = to_code(row, variables, all_locations,
-                                "date", "form1", alert_data)
-        self.assertEqual(result.country, 1)
-        self.assertEqual(result.region, 2)
-        self.assertEqual(result.district, None)
-        self.assertEqual(alert.clinic, 8)
-        row["deviceid"] = 99 
-        result, alert = to_code(row, variables, all_locations,
-                                "date", "form1", alert_data)
-        self.assertEqual(result, None)
+        row["form1"]["deviceid"] = 3
+        var, ret_location = to_code(row, variables, all_locations,
+                                "case", "form1", alert_data)
+        self.assertEqual(ret_location["country"], 1)
+        self.assertEqual(ret_location["region"], 2)
+        self.assertEqual(ret_location["district"], None)
+        row["form1"]["deviceid"] = 99 
+        var, ret_location = to_code(row, variables, all_locations,
+                                    "case", "form1", alert_data)
+        self.assertEqual(ret_location, None)
 
-    def test_date(self):
-        """
-        Check that the date is handled properly
-        """
-        row = {"index": 1, "column1": "A", "column2": "B34", "column3": "7",
-                "date": "2015-10-25", "deviceid": 1, "meta/instanceID": "a"}
-        result, alert = to_code(row, variables, all_locations,
-                                "date", "form1", alert_data)
-        self.assertEqual(result.date , datetime.datetime(2015, 10, 25))
-        row["date"] = "Sep 6, 2015"
-        result, alert = to_code(row, variables, all_locations,
-                                "date", "form1", alert_data)
-        self.assertEqual(result.date , datetime.datetime(2015, 9, 6))
-
-        # With a missing date column
-        result, alert = to_code(row, variables, all_locations,
-                                "another_date", "form1", alert_data)
-        self.assertEqual(result, None)
-        #With a non date
-        row["date"] = "this is not a date"
-        result, alert = to_code(row, variables, all_locations,
-                                "another_date", "form1", alert_data)
-        self.assertEqual(result, None)
 
     def test_variables(self):
         """
         Checking that variables returned and alerts are working
         """
-        row1 = {"index": 1, "column1": "A", "column2": "B34", "column3": "7",
-                "date": "2015-10-25", "deviceid": 1, "meta/instanceID": "a"}
-        row2 = {"index": 2, "column1": "B", "column2": "A", "column3": "4",
-                "date": "2015-10-25", "deviceid": 2, "meta/instanceID": "b"}
-        row3 = {"index": 1, "column1": "A", "column2": "C", "column3": "7",
-                "date": "2015-10-25", "deviceid": 2, "meta/instanceID": "c"}
-        result, alert = to_code(row1, variables, all_locations,
-                                "date", "form1", alert_data)
-        self.assertEqual(result.variables , {1: 1, 2: 1, 3: 1, 4: 1})
-        self.assertEqual(alert.uuids , "a")
-        self.assertEqual(alert.clinic , 6)
-        self.assertEqual(alert.reason , 2)
-        self.assertEqual(alert.date , datetime.datetime(2015, 10, 25))
-        self.assertEqual(alert.data , {"column1": "A"})
+        row1 = {"form1": {"index": 1, "column1": "A", "column2": "B34", "column3": "7",
+                "date": "2015-10-25", "deviceid": 1, "meta/instanceID": "a"}}
+        row2 = {"form1": {"index": 2, "column1": "B", "column2": "A", "column3": "4",
+                "date": "2015-10-25", "deviceid": 2, "meta/instanceID": "b"}}
+        row3 = {"form1": {"index": 1, "column1": "A", "column2": "C", "column3": "7",
+                          "date": "2015-10-25", "deviceid": 2, "meta/instanceID": "c"}}
+        var, ret_loc = to_code(row1, variables, all_locations,
+                                "case", "form1", alert_data)
+        self.assertEqual(var , {1: 1, 2: 1, 3: 1, 4: 1,'alert_reason': 2, 'alert': 1, 'alert_column1': 'A'})
 
-        result, alert = to_code(row2, variables, all_locations,
-                                "date", "form1", alert_data)
-        self.assertEqual(result.variables , {1: 1})
-        self.assertEqual(alert,  None)
+        var, ret_loc = to_code(row2, variables, all_locations,
+                                "case", "form1", alert_data)
+        self.assertEqual(var , {1: 1})
 
-        result, alert = to_code(row3, variables, all_locations,
-                                "date", "form1", alert_data)
-        self.assertEqual(result.variables , {1: 1, 2: 1, 4: 1})
-        self.assertEqual(alert.uuids , "c")
-        self.assertEqual(alert.reason , 2)
-        self.assertEqual(alert.date , datetime.datetime(2015, 10, 25))
-        self.assertEqual(alert.data , {"column1": "A"})
+        var, ret_loc = to_code(row3, variables, all_locations,
+                                "case", "form1", alert_data)
+        self.assertEqual(var , {1: 1, 2: 1, 4: 1, 'alert': 1, 'alert_column1': 'A', 'alert_reason': 2})
+
 
 if __name__ == "__main__":
     unittest.main()

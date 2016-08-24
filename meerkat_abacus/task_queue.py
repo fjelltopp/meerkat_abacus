@@ -47,11 +47,8 @@ def get_proccess_data(print_progress=False):
         print("To Code")
     new_data_to_codes()
     if print_progress:
-        print("Add Links")
-    add_new_links()
-    if print_progress:
         print("Finished")
-    
+
 @app.task
 def get_new_data_from_s3():
     """Get new data from s3."""
@@ -74,12 +71,8 @@ def new_data_to_codes():
     """
     Add any new data in form tables to data table.
     """
-    return data_management.new_data_to_codes(no_print=True)
-
-@app.task
-def add_new_links():
-    """ Add new links."""
-    return data_management.add_new_links()
+    return data_management.new_data_to_codes(no_print=True,
+                                             only_new=True )
 
 @app.task
 def send_report_email(report, language):

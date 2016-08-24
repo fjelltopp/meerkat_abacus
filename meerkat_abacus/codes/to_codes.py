@@ -55,7 +55,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
     locations, locations_by_deviceid, regions, districts = locations
     clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"], None)
     if not clinic_id:
-        return (None, None, None)
+        return (None, None)
     ret_location = {
         "clinic":clinic_id,
         "clinic_type":locations[clinic_id].clinic_type,
