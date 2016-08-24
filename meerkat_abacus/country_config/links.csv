@@ -1,0 +1,2 @@
+name,type,to_form,from_form,from_column,to_column,method,order_by,uuid
+alert_investigation,case,demo_alert,demo_case,meta/instanceID,pt./alert_id,alert_match,SubmissionDate;date,meta/instanceID
