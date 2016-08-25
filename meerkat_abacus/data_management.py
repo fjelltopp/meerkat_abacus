@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import boto3
 import csv, logging
+import time
 from dateutil.parser import parse
 from datetime import datetime
 import inspect
@@ -101,7 +102,7 @@ def get_data_from_s3(bucket):
        bucket: bucket_name
     """
     s3 = boto3.resource('s3')
-    for form in country_config["tables"].values():
+    for form in country_config["tables"]:
         file_name = form + ".csv"
         s3.meta.client.download_file(bucket,
                                      "data/" + file_name,
@@ -482,6 +483,7 @@ def new_data_to_codes(engine=None, no_print=False, only_new=False):
         engine: db engine
 
     """
+    s = time.time()
     if not engine: 
         engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
@@ -490,8 +492,9 @@ def new_data_to_codes(engine=None, no_print=False, only_new=False):
     locations = util.all_location_data(session)
     old_data = session.query(model.Data.uuid)
 
-    data_types = util.read_csv(config.config_directory + "data_types.csv")
-    links_by_type, links_by_name = util.get_links(config.config_directory + "links.csv")
+    data_types = util.read_csv(config.config_directory + country_config["types_file"] )
+    links_by_type, links_by_name = util.get_links(
+        config.config_directory + country_config["links_file"])
     uuids = []
     alerts = []
 
@@ -533,6 +536,7 @@ def new_data_to_codes(engine=None, no_print=False, only_new=False):
         i = 0
 
         data = {}
+        print("stage 1 " + str(time.time() - s))
         for row in entries:
             if not isinstance(row, tuple):
                 row = (row, )
@@ -547,6 +551,11 @@ def new_data_to_codes(engine=None, no_print=False, only_new=False):
                 for i in range(1, len(row)):
                     if row[i]:
                         data[uuid][link_names[i]] = [row[i].data]
+            i += 1
+            if i % 100 == 0:
+                print(i)
+        i = 0
+        print("stage 2 " + str(time.time() - s))
         for row in data.values():
             links = {}
             if len(row.keys()) > 1:
@@ -596,8 +605,12 @@ def new_data_to_codes(engine=None, no_print=False, only_new=False):
  
             if i % 100 == 0 and not no_print:
                 print(i)
+                session.commit()
+            if i == 200:
+                break
+        print("stage 3 " + str(time.time() - s))
     send_alerts(alerts, session)
-    session.commit()
+    
     return True
 
 def send_alerts(alerts, session):

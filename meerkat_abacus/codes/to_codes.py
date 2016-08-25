@@ -20,6 +20,8 @@ def get_variables(session):
     """
     result = session.query(model.AggregationVariables)
     variables = {}
+    variable_forms = {}
+    
     for row in result:
         group = row.calculation_group
         if not group:
@@ -27,7 +29,9 @@ def get_variables(session):
         variables.setdefault(row.type, {})
         variables[row.type].setdefault(group, {})
         variables[row.type][group][row.id] = Variable(row)
-    return variables
+        variable_forms[row.id] = row.form
+        variable_tests[row.id] = variables[row.type][group][row.id].test_type
+    return variables, variable_forms, variable_tests
 
 
 def to_code(row, variables, locations, data_type, location_form, alert_data):
@@ -62,7 +66,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
         "country":1,
         "geolocation":locations[clinic_id].geolocation
     }
-
+    variables, variable_forms = variables
     if locations[clinic_id].parent_location in districts:
         ret_location["district"] = locations[clinic_id].parent_location
         ret_location["region"] = (
@@ -73,9 +77,8 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
     variable_json = {}
     multiple_method = {"last": -1, "first": 0}
     for group in variables[data_type].keys():
-        #All variables in group have same secondary conndition, so only check once
         for v in variables[data_type][group]:
-            form = variables[data_type][group][v].variable.form
+            form = variable_forms[v]
             if form in row and row[form]:
                 if isinstance(row[form], list):
                     method = variables[data_type][group][v].variable.multiple_link
@@ -98,8 +101,8 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
                                 test_outcome = 0
                                 break
                 else:
-                    test_outcome = variables[data_type][group][v].test_type(row[form])
-                    data = row[form]
+                    test_outcome = variable_tests[v](row[form])
+#                    data = row[form]
                 if test_outcome:
                     variable_json[v] = test_outcome
                     if variables[data_type][group][v].variable.alert:
@@ -107,6 +110,6 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
                         variable_json["alert_reason"] = variables[data_type][group][v].variable.id
                         for data_var in alert_data.keys():
                             variable_json["alert_"+data_var] = row[location_form][alert_data[data_var]]
-                    break # We break out of the current group as all variables in a group are mutually exclusive
+                    break  # We break out of the current group as all variables in a group are mutually exclusive
     return (variable_json, ret_location)
 
