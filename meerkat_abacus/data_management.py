@@ -265,10 +265,11 @@ def import_clinics(csv_file, session, country_id):
     for district in result:
         districts[district.name] = district.id
 
+    deviceids = []
     with open(csv_file) as f:
         clinics_csv = csv.DictReader(f)
         for row in clinics_csv:
-            if row["deviceid"] and row["clinic"].lower() != "not used":
+            if row["deviceid"] and row["clinic"].lower() != "not used" and row["deviceid"] not in deviceids:
                 if "case_report" in row.keys():
                     if row["case_report"] in ["Yes", "yes"]:
                         case_report = 1
@@ -285,7 +286,7 @@ def import_clinics(csv_file, session, country_id):
                     tags = []
                 session.add(model.Devices(device_id=row["deviceid"],
                                           tags=tags))
-                
+                deviceids.append(row["deviceid"])
                 # If the clinic has a district we use that as the parent_location,
                 # otherwise we use the region
                 if row["district"]:
