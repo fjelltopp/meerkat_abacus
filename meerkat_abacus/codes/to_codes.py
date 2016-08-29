@@ -52,7 +52,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
     """
-    locations, locations_by_deviceid, regions, districts = locations
+    locations, locations_by_deviceid, regions, districts, devices = locations
     clinic_id = locations_by_deviceid.get(row["deviceid"], None)
     if not clinic_id:
         return (None, None)
@@ -67,6 +67,7 @@ def to_code(row, variables, locations, date_column, table_name, alert_data):
         uuid=row["meta/instanceID"],
         clinic=clinic_id,
         clinic_type=locations[clinic_id].clinic_type,
+        tags=devices[row["deviceid"]],
         country=1,
         geolocation=locations[clinic_id].geolocation)
 

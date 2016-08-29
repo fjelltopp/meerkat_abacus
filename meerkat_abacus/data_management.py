@@ -276,6 +276,16 @@ def import_clinics(csv_file, session, country_id):
                         case_report = 0
                 else:
                     case_report = 0
+
+                # Prepare a device item
+
+                if "device_tags" in row:
+                    tags = row["device_tags"].split(",")
+                else:
+                    tags = []
+                session.add(model.Devices(device_id=row["deviceid"],
+                                          tags=tags))
+                
                 # If the clinic has a district we use that as the parent_location,
                 # otherwise we use the region
                 if row["district"]:
@@ -362,6 +372,7 @@ def import_locations(engine, session):
     """
     session.query(model.Locations).delete()
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
+    session.query(model.Devices).delete()
     session.add(model.Locations(name=country_config["country_name"],
                                 level="country"))
     session.commit()
