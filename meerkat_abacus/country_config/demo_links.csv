@@ -1,2 +1,3 @@
-name,type,to_form,from_form,from_column,to_column,method,order_by,uuid
-alert_investigation,case,demo_alert,demo_case,meta/instanceID,pt./alert_id,alert_match,SubmissionDate;date,meta/instanceID
+name,type,to_form,from_form,from_column,to_column,method,order_by,uuid,to_condition
+alert_investigation,case,jor_alert,jor_case,meta/instanceID,pt./alert_id,alert_match,SubmissionDate;date,meta/instanceID,
+return_visit,case,jor_alert,jor_alert,pt./nationalid,pt./nationalid,match,pt./visit_date;date,meta/instanceID,intro./visit:new
