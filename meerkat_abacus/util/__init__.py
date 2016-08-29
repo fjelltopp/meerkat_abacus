@@ -3,7 +3,7 @@ Various utility functions for meerkat abacus
 """
 import csv, requests, json, itertools, logging
 from datetime import datetime, timedelta
-from meerkat_abacus.model import Locations, LinkDefinitions, AggregationVariables
+from meerkat_abacus.model import Locations, LinkDefinitions, AggregationVariables, Devices
 from meerkat_abacus.config import country_config, hermes_api_root, hermes_api_key
 
 
@@ -87,7 +87,8 @@ def all_location_data(session):
     locations_by_deviceid = get_locations_by_deviceid(session)
     regions, districts = get_regions_districts(session)
 
-    return (locations, locations_by_deviceid, regions, districts)
+    devices = get_device_tags(session)
+    return (locations, locations_by_deviceid, regions, districts, devices)
 
 
 def get_variables(session):
@@ -106,7 +107,22 @@ def get_variables(session):
         variables[row.id] = row
     return variables
 
+def get_device_tags(session):
+    """
+    Returns a dict of device tags by id
 
+    Args:
+        session: db-session
+
+    Returns: 
+       devices(dict): dict of device_id:tags
+    """
+    result = session.query(Devices)
+    devices = {}
+    for row in result:
+        devices[row.device_id] = row.tags
+    return devices
+    
 def get_regions_districts(session):
     """
     get list of ids for regions and districts

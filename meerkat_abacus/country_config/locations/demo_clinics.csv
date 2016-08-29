@@ -1,7 +1,7 @@
-who_code,deviceid,sim_id,clinic,clinic_type,case_report,district,region,longitude,latitude,start_date
-1,1,1,Clinic 1,Primary,Yes,District 1,Region 1,0.1,0.1,01/02/16
-2,2,2,Clinic 2,Primary,Yes,District 1,Region 1,0.2,0.2,01/02/16
-3,3,3,Clinic 3,Focal,No,District 1,Region 1,0.3,0.2,01/02/16
-4,4,4,Clinic 4,Primary,Yes,District 2,Region 1,0.2,0.3,01/02/16
-5,5,5,Clinic 5,Hospital,Yes,District 3,Region 2,0.4,-0.1,
-6,6,6,Clinic 1,Primary,Yes,District 1,Region 1,0.1,0.1,
+who_code,deviceid,sim_id,clinic,clinic_type,case_report,device_tags,district,region,longitude,latitude,start_date
+1,1,1,Clinic 1,Primary,Yes,"CD",District 1,Region 1,0.1,0.1,01/02/16
+2,2,2,Clinic 2,Primary,Yes,"CD",District 1,Region 1,0.2,0.2,01/02/16
+3,3,3,Clinic 3,Focal,No,"CD,NCD",District 1,Region 1,0.3,0.2,01/02/16
+4,4,4,Clinic 4,Primary,Yes,"CD,NCD",District 2,Region 1,0.2,0.3,01/02/16
+5,5,5,Clinic 5,Hospital,Yes,"CD,NCD",District 3,Region 2,0.4,-0.1,
+6,6,6,Clinic 1,Primary,Yes,NCD,District 1,Region 1,0.1,0.1,
