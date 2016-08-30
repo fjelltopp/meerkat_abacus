@@ -21,7 +21,7 @@ def get_variables(session):
     result = session.query(model.AggregationVariables)
     variables = {}
     variable_forms = {}
-    
+    variable_tests = {}
     for row in result:
         group = row.calculation_group
         if not group:
@@ -66,7 +66,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
         "country":1,
         "geolocation":locations[clinic_id].geolocation
     }
-    variables, variable_forms = variables
+    variables, variable_forms, variable_tests = variables
     if locations[clinic_id].parent_location in districts:
         ret_location["district"] = locations[clinic_id].parent_location
         ret_location["region"] = (

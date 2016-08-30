@@ -4,7 +4,7 @@ Functions to create the database, populate the db tables and proccess data.
 """
 
 from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import boto3
 import csv, logging
@@ -31,7 +31,7 @@ def create_db(url, base, drop=False):
     Args:
         url : the database_url
         base: An SQLAlchmey declarative base with the db schema
-|        drop: Flag to drop the database before creating it
+        drop: Flag to drop the database before creating it
 
     Returns:
         Boolean: True
@@ -500,43 +500,46 @@ def new_data_to_codes(engine=None, no_print=False, only_new=False):
 
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
-
+        print(data_type["type"])
         joins = []
         tables = [table]
         link_names = [None]
+        conditions = []
         if data_type["type"] in links_by_type:
             for link in links_by_type[data_type["type"]]:
                 if link["from_form"] == data_type["form"]:
                     to_form = model.form_tables[link["to_form"]]
                     link_names.append(link["name"])
-                    tables.append(to_form)
+                    link_alias = aliased(to_form)
+                    tables.append(link_alias)
                     if link["method"] == "match":
-                        join_on = to_form.data[link["to_column"]].astext == table.data[link["from_column"]].astext
+                        join_on = link_alias.data[link["to_column"]].astext == table.data[link["from_column"]].astext
                     elif link["method"] == "alert_match":
-                        join_on = to_form.data[link["to_column"]].astext == func.substring(table.data[link["from_column"]].astext, 42 - country_config["alert_id_length"],country_config["alert_id_length"])
-                    joins.append((to_form, join_on))
+                        join_on = link_alias.data[link["to_column"]].astext == func.substring(table.data[link["from_column"]].astext, 42 - country_config["alert_id_length"],country_config["alert_id_length"])
+
+                    joins.append((link_alias, join_on))
+                    if link["to_condition"]:
+                        column, condition = link["to_condition"].split(":")
+                        conditions.append(link_alias.data[column].astext == condition)
         
         if data_type["db_column"]:
-            condition =  [table.data[data_type["db_column"]].astext == data_type["condition"]]
-        else:
-            condition = []
+            conditions.append(table.data[data_type["db_column"]].astext == data_type["condition"])
 
         if only_new:
             current_uuids = [r[0] for r in session.query(model.Data.uuid)]
             if len(current_uuids) > 0:
-                condition.append(~table.uuid.in_(current_uuids))
-
+                conditions.append(~table.uuid.in_(current_uuids))
         if len(joins) > 0:
             entries = session.query(*tables)
             for join in joins:
                 entries = entries.outerjoin(join)
-            entries = entries.filter(*condition).yield_per(500)
+            entries = entries.filter(*conditions).yield_per(500)
         else:
-            entries = session.query(table).filter(*condition).yield_per(500)
+            entries = session.query(table).filter(*conditions).yield_per(500)
         i = 0
 
         data = {}
-        print("stage 1 " + str(time.time() - s))
+        print(str(entries))
         for row in entries:
             if not isinstance(row, tuple):
                 row = (row, )
@@ -544,19 +547,22 @@ def new_data_to_codes(engine=None, no_print=False, only_new=False):
             uuid = row[0].uuid
             if uuid in data:
                 for i in range(1, len(row)):
-                    data[uuid][link_names[i]].append(row[i].data)
+                    if row[i]:
+                        data[uuid][link_names[i]].append(row[i].data)
             else:
                 data[uuid] = {}
                 data[uuid][tables[0].__tablename__] = row[0].data
                 for i in range(1, len(row)):
                     if row[i]:
                         data[uuid][link_names[i]] = [row[i].data]
+                    else:
+                        data[uuid][link_names[i]] = []
             i += 1
             if i % 100 == 0:
                 print(i)
         i = 0
-        print("stage 2 " + str(time.time() - s))
         for row in data.values():
+
             links = {}
             if len(row.keys()) > 1:
                 for k in row.keys():
@@ -606,9 +612,8 @@ def new_data_to_codes(engine=None, no_print=False, only_new=False):
             if i % 100 == 0 and not no_print:
                 print(i)
                 session.commit()
-            if i == 200:
-                break
-        print("stage 3 " + str(time.time() - s))
+            # if i == 200:
+            #     break
     send_alerts(alerts, session)
     
     return True
