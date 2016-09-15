@@ -22,10 +22,9 @@ class DbTest(unittest.TestCase):
     """
     Test setting up database functionality
     """
+
     def setUp(self):
-        manage.create_db(config.DATABASE_URL,
-                         model.Base,
-                         drop=True)
+        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
         self.engine = create_engine(config.DATABASE_URL)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
@@ -35,14 +34,12 @@ class DbTest(unittest.TestCase):
         self.session.close()
         if database_exists(config.DATABASE_URL):
             drop_database(config.DATABASE_URL)
-        
+
     def test_create_db(self):
         if database_exists(config.DATABASE_URL):
             drop_database(config.DATABASE_URL)
         self.assertFalse(database_exists(config.DATABASE_URL))
-        manage.create_db(config.DATABASE_URL,
-                         model.Base,
-                         drop=True)
+        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
         self.assertTrue(database_exists(config.DATABASE_URL))
 
     def test_locations(self):
@@ -53,10 +50,12 @@ class DbTest(unittest.TestCase):
             "clinics": "demo_clinics.csv",
             "districts": "demo_districts.csv",
             "regions": "demo_regions.csv"
-            }
+        }
         manage.import_locations(self.engine, self.session)
         results = self.session.query(model.Locations).all()
-        self.assertEqual(len(results), 12)  # Important as we should not merge the final Clinic 1
+        self.assertEqual(
+            len(results),
+            12)  # Important as we should not merge the final Clinic 1
         for r in results:
             #Checking that devideids are handled properly
             if r.name == "Clinic 1":
@@ -67,41 +66,42 @@ class DbTest(unittest.TestCase):
             if r.name == "Clinic 2":
                 self.assertEqual(r.start_date, datetime(2016, 2, 2))
             elif r.level == "clinic":
-                self.assertEqual(r.start_date,
-                                 manage.config.country_config["default_start_date"])
+                self.assertEqual(
+                    r.start_date,
+                    manage.config.country_config["default_start_date"])
         # This file has a clinic with a non existent district
         old_clinic_file = manage.country_config["locations"]["clinics"]
-        manage.country_config["locations"]["clinics"] = "demo_clinics_error.csv"
+        manage.country_config["locations"][
+            "clinics"] = "demo_clinics_error.csv"
         with self.assertRaises(KeyError):
             manage.import_locations(self.engine, self.session)
-
 
         #Clean Up
         manage.country_config["locations"]["clinics"] = old_clinic_file
         manage.country_config["locations"] = old_locs
         manage.config.config_directory = old_dir
 
-        
-                                                    
-        
     def test_table_data_from_csv(self):
         """Test table_data_from_csv"""
-        
-        manage.table_data_from_csv("demo_case", model.form_tables["demo_case"],
-                                   "meerkat_abacus/test/test_data/",
-                                   self.session, self.engine,
-                                   deviceids=["1", "2", "3", "4", "5", "6"],
-                                   start_dates={"2": datetime(2016, 2, 2)},
-                                   table_name="demo_case")
+
+        manage.table_data_from_csv(
+            "demo_case",
+            model.form_tables["demo_case"],
+            "meerkat_abacus/test/test_data/",
+            self.session,
+            self.engine,
+            deviceids=["1", "2", "3", "4", "5", "6"],
+            start_dates={"2": datetime(2016, 2, 2)},
+            table_name="demo_case")
         results = self.session.query(model.form_tables["demo_case"]).all()
-        self.assertEqual(len(results), 6)  # Only 6 of the cases have deviceids in 1-6
+        self.assertEqual(len(results),
+                         6)  # Only 6 of the cases have deviceids in 1-6
         for r in results:
             self.assertIn(r.uuid, ["1", "2", "3", "4", "5", "6"])
 
-  
     @mock.patch('meerkat_abacus.util.requests')
     def test_db_setup(self, requests):
-        
+
         task_queue.set_up_db.apply().get()
         self.assertTrue(database_exists(config.DATABASE_URL))
         engine = self.engine
@@ -118,14 +118,17 @@ class DbTest(unittest.TestCase):
         agg_var = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.id == "tot_1").first()
         self.assertEqual(agg_var.name, "Total")
-        
+
         # Number of cases
 
-        n_cases = len(session.query(model.Data).filter(model.Data.type == "case").all())
+        n_cases = len(
+            session.query(model.Data).filter(model.Data.type == "case").all())
         t = model.form_tables[config.country_config["tables"][0]]
-        n_expected_cases = len(session.query(t).filter(t.data["intro./visit"].astext == "new").all())
+        n_expected_cases = len(
+            session.query(t).filter(t.data["intro./visit"].astext == "new")
+            .all())
         self.assertEqual(n_cases, n_expected_cases)
-        
+
         agg_var_female = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.name == "Female").first()
         results = session.query(model.Data)
@@ -140,23 +143,20 @@ class DbTest(unittest.TestCase):
             t.data.contains({"intro./visit": "new"}))
         female = session.query(t).filter(
             t.data.contains({"intro./visit": "new",
-                             agg_var_female.db_column: agg_var_female.condition}))
+                             agg_var_female.db_column: agg_var_female.condition
+                             }))
         self.assertEqual(number_of_totals, len(total.all()))
         self.assertEqual(number_of_female, len(female.all()))
         session.close()
-        self.assertFalse(
-            manage.set_up_everything(True, False, 100)
-            )
+        self.assertFalse(manage.set_up_everything(True, False, 100))
 
     def test_get_proccess_data(self):
         old_fake = task_queue.config.fake_data
         old_s3 = task_queue.config.get_data_from_s3
         task_queue.config.fake_data = True
         task_queue.config.get_data_from_s3 = False
-        manage.create_db(config.DATABASE_URL,
-                         model.Base,
-                         drop=True)
-        
+        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+
         numbers = {}
         manage.import_locations(self.engine, self.session)
         manage.import_variables(self.session)
@@ -169,10 +169,10 @@ class DbTest(unittest.TestCase):
         for table in model.form_tables:
             res = self.session.query(model.form_tables[table])
             self.assertEqual(numbers[table] + 5, len(res.all()))
-
         #Clean up
         task_queue.config.fake_data = old_fake
         task_queue.config.get_data_from_s3 = old_s3
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,7 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, Float, DDL
+from sqlalchemy import Column, Integer, String, DateTime, DDL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
@@ -18,10 +18,14 @@ for table in country_config["tables"]:
     form_tables[table] = type(table, (Base, ),
                               {"__tablename__": table,
                                "id": Column(Integer, primary_key=True),
-                               "uuid": Column(String),
+                               "uuid": Column(String, index=True),
                                "data": Column(JSONB)})
+    create_index = DDL("CREATE INDEX {} ON {} USING gin(data);".format(table+"_gin",table))
+    listen(form_tables[table].__table__, 'after_create', create_index)
 
 
+
+    
 class Locations(Base):
     __tablename__ = 'locations'
 
@@ -63,6 +67,14 @@ class Data(Base):
 create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
 listen(Data.__table__, 'after_create', create_index)
 
+
+class Links(Base):
+    __tablename__ = 'links'
+    id = Column(Integer, primary_key=True)
+    uuid_from = Column(String, index=True)
+    uuid_to = Column(String, index=True)
+    type = Column(String, index=True)
+    data_to = Column(JSONB)
 
 class AggregationVariables(Base):
     __tablename__ = 'aggregation_variables'

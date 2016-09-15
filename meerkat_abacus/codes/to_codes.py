@@ -20,8 +20,10 @@ def get_variables(session):
     """
     result = session.query(model.AggregationVariables)
     variables = {}
+
     variable_forms = {}
     variable_tests = {}
+    variables_group = {}
     for row in result:
         group = row.calculation_group
         if not group:
@@ -31,27 +33,47 @@ def get_variables(session):
         variables[row.type][group][row.id] = Variable(row)
         variable_forms[row.id] = row.form
         variable_tests[row.id] = variables[row.type][group][row.id].test_type
-    return variables, variable_forms, variable_tests
+        variables_group.setdefault(group, [])
+        variables_group[group].append(row.id)
+    # variables_group_list = {}
+    # variables_tests_list = {}
+    # variables_forms_list = {}
+    # for data_type in variables.keys():
+    #     variables_group_list[data_type] = []
+    #     variables_tests_list[data_type] = []
+    #     variables_forms_list[data_type] = []
+    #     for group in variables[data_type].keys():
+    #         variables_group_list[data_type].append()
+    #         for v in variables_group[group]:
+    #             variables_tests_list.append(variable_tests[v])
+    #             variables_forms_list.append(variables_forms[v])
+            
+            
+    
+    return variables, variable_forms, variable_tests, variables_group
 
 
+multiple_method = {"last": -1, "first": 0}
+mul_forms = {"return_visit": 1}
 def to_code(row, variables, locations, data_type, location_form, alert_data):
     """
     Takes a row and transforms it into a data row
 
     We iterate through each variable and add the variable_id: test_outcome to the 
-    data.variable json dictionary if test_outcome is True. 
+    data.variable json dictionary if test_outcome is True.
 
     To speed up this process we have divded the variables into groups where only one variable
     can be apply to the given record. As soon as we find one of these variables, we don't test
-    the rest of the variables in the same group. 
+    the rest of the variables in the same group.
 
-    Args;
+    Args:
         row: row of raw data
         variables: dict of variables to check
         locations: list of locations
         date_column: which column from the row determines the date
         table_name: the name of the table/from the row comes from
-        alert_data: a dictionary of name:column pairs. For each alert we return the value of row[column] as name. 
+        alert_data: a dictionary of name:column pairs.
+            For each alert we return the value of row[column] as name.
     return:
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
@@ -61,12 +83,12 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
     if not clinic_id:
         return (None, None)
     ret_location = {
-        "clinic":clinic_id,
-        "clinic_type":locations[clinic_id].clinic_type,
-        "country":1,
-        "geolocation":locations[clinic_id].geolocation
+        "clinic": clinic_id,
+        "clinic_type": locations[clinic_id].clinic_type,
+        "country": 1,
+        "geolocation": locations[clinic_id].geolocation
     }
-    variables, variable_forms, variable_tests = variables
+    variables, variable_forms, variable_tests, variables_group = variables
     if locations[clinic_id].parent_location in districts:
         ret_location["district"] = locations[clinic_id].parent_location
         ret_location["region"] = (
@@ -75,35 +97,37 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
         ret_location["district"] = None
         ret_location["region"] = locations[clinic_id].parent_location
     variable_json = {}
-    multiple_method = {"last": -1, "first": 0}
+
     for group in variables[data_type].keys():
-        for v in variables[data_type][group]:
+        for v in variables_group[group]:
             form = variable_forms[v]
-            if form in row and row[form]:
-                if isinstance(row[form], list):
+            datum = row.get(form, None)
+            if datum:
+                if form in mul_forms:
                     method = variables[data_type][group][v].variable.multiple_link
                     if method in ["last", "first"]:
-                        data = row[form][multiple_method[method]]
+                        data = datum[multiple_method[method]]
                         test_outcome = variables[data_type][group][v].test_type(data)
                     elif method == "count":
-                        test_outcome = len(row[form])
+                        test_outcome = len(datum)
                     elif method == "any":
                         test_outcome = 0
-                        for d in row[form]:
+                        for d in datum:
                             test_outcome = variables[data_type][group][v].test_type(d)
                             if test_outcome:
                                 break
                     elif method == "all":
                         test_outcome = 1
-                        for d in row[form]:
+                        for d in datum:
                             t_o = variables[data_type][group][v].test_type(d)
                             if not t_o:
                                 test_outcome = 0
                                 break
                 else:
-                    test_outcome = variable_tests[v](row[form])
-#                    data = row[form]
+                    test_outcome = variable_tests[v](datum)
                 if test_outcome:
+                    if test_outcome == 1:
+                        test_outcome = 1
                     variable_json[v] = test_outcome
                     if variables[data_type][group][v].variable.alert:
                         variable_json["alert"] = 1
