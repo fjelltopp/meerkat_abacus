@@ -35,21 +35,7 @@ def get_variables(session):
         variable_tests[row.id] = variables[row.type][group][row.id].test_type
         variables_group.setdefault(group, [])
         variables_group[group].append(row.id)
-    # variables_group_list = {}
-    # variables_tests_list = {}
-    # variables_forms_list = {}
-    # for data_type in variables.keys():
-    #     variables_group_list[data_type] = []
-    #     variables_tests_list[data_type] = []
-    #     variables_forms_list[data_type] = []
-    #     for group in variables[data_type].keys():
-    #         variables_group_list[data_type].append()
-    #         for v in variables_group[group]:
-    #             variables_tests_list.append(variable_tests[v])
-    #             variables_forms_list.append(variables_forms[v])
-            
-            
-    
+
     return variables, variable_forms, variable_tests, variables_group
 
 
@@ -78,17 +64,19 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
     """
-    locations, locations_by_deviceid, regions, districts = locations
+    locations, locations_by_deviceid, regions, districts, devices = locations
     clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"], None)
     if not clinic_id:
         return (None, None)
     ret_location = {
         "clinic": clinic_id,
         "clinic_type": locations[clinic_id].clinic_type,
+        "tags": devices[row["deviceid"]],
         "country": 1,
         "geolocation": locations[clinic_id].geolocation
     }
     variables, variable_forms, variable_tests, variables_group = variables
+
     if locations[clinic_id].parent_location in districts:
         ret_location["district"] = locations[clinic_id].parent_location
         ret_location["region"] = (

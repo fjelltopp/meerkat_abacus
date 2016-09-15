@@ -44,6 +44,13 @@ class Locations(Base):
         return "<Location(name='%s', id='%s', parent_location='%s')>" % (
             self.name, self.id, self.parent_location)
 
+
+class Devices(Base):
+    __tablename__ = 'devices'
+    device_id = Column(String, primary_key=True)
+    tags = Column(JSONB)
+
+    
 class Data(Base):
     __tablename__ = 'data'
 
@@ -57,6 +64,7 @@ class Data(Base):
     clinic = Column(Integer, index=True)
     clinic_type = Column(String)
     links = Column(JSONB)
+    tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
     geolocation = Column(String)
     

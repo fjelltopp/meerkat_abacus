@@ -46,11 +46,19 @@ agg_variables = [
                     form="form1")
 ]
 alert_data = {"column1": "column1"}
-all_locations = (locations, locations_by_deviceid, regions, districts)
+
+devices = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: []}
+all_locations = (locations,
+                 locations_by_deviceid,
+                 regions,
+                 districts,
+                 devices)
+
 variables = {"case": {1: {}, 2: {}, 3: {}, 4: {}}}
 variables_forms = {}
 variables_test = {}
 variables_groups = {}
+
 for av in agg_variables:
     variables["case"][av.id][av.id] = Variable(av)
     variables_forms[av.id] = "form1"
