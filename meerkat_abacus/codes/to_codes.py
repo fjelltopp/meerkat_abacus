@@ -71,7 +71,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data):
     ret_location = {
         "clinic": clinic_id,
         "clinic_type": locations[clinic_id].clinic_type,
-        "tags": devices[row["deviceid"]],
+        "tags": devices[row[location_form]["deviceid"]],
         "country": 1,
         "geolocation": locations[clinic_id].geolocation
     }
