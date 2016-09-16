@@ -229,12 +229,12 @@ class Variable():
         result = float(eval(calc))
         return float(condition[0]) <= result and float(condition[1]) > result
           
-
     def test_calc(self, row):
         """
-        self. calc should be an expression with column names from the row and mathematical expression 
-        understood by python. We then replace all column names with their numerical values and evalualte
-        the resulting expression. 
+        self. calc should be an expression with column names from
+        the row and mathematical expression understood by python.
+        We then replace all column names with their numerical values
+        and evalualte the resulting expression.
 
         """
         for c in self.columns[0]:
@@ -242,5 +242,7 @@ class Variable():
                 pass
             else:
                 row[c] = 0
-
-        return float(eval(self.calculation))
+        try:
+            return float(eval(self.calculation))
+        except ZeroDivisionError:
+            return 0
