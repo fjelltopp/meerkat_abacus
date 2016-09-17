@@ -83,7 +83,7 @@ class DbTest(unittest.TestCase):
 
     def test_should_row_be_added(self):
         """ testing should row be added"""
-        row = {"deviceid": "2", "pt./visit_date": "10 Jan, 2016"}
+        row = {"deviceid": "2", "SubmissionDate": "10 Jan, 2016"}
 
         self.assertTrue(manage.should_row_be_added(row,
                                                    "case",
