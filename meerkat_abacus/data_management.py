@@ -114,6 +114,7 @@ def table_data_from_csv(filename,
                         directory,
                         session,
                         engine,
+                        only_new=False,
                         deviceids=None,
                         table_name=None,
                         row_function=None,
@@ -131,18 +132,26 @@ def table_data_from_csv(filename,
         table_name: name of table if different from filename
         row_function: function to appy to the rows before inserting
     """
-    session.query(table).delete()
-    #    if not table_name:
-    engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(filename))
-    # else:
-    #     engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;"
-    #                    .format(table_name))
-    session.commit()
+
+    if only_new:
+        result = session.query(form.uuid)
+        uuids = []
+        for r in result:
+            uuids.append(r.uuid)
+    else:
+        session.query(table).delete()
+        engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(
+            filename))
+        session.commit()
 
     i = 0
     dicts = []
     conn = engine.connect()
+    new_rows = []
     for row in util.read_csv(directory + filename + ".csv"):
+
+        if only_new and row["meta/instanceID"] in uuids:
+            continue
         if "_index" in row:
             row["index"] = row.pop("_index")
         if row_function:
@@ -150,12 +159,15 @@ def table_data_from_csv(filename,
         else:
             insert_row = row
         if deviceids:
-            if row["deviceid"] in deviceids:
+            if should_row_be_added(insert_row, table_name, deviceids,
+                                   start_dates):
                 dicts.append({"data": insert_row,
                               "uuid": insert_row["meta/instanceID"]})
+                new_rows.append(insert_row["meta/instanceID"])
         else:
             dicts.append({"data": insert_row,
                           "uuid": insert_row["meta/instanceID"]})
+            new_rows.append(insert_row["meta/instanceID"])
         i += 1
         if i % 10000 == 0:
             conn.execute(table.__table__.insert(), dicts)
@@ -163,6 +175,38 @@ def table_data_from_csv(filename,
         #     session.commit()
     conn.execute(table.__table__.insert(), dicts)
     conn.close()
+    return new_rows
+
+
+def should_row_be_added(row, form_name, deviceids, start_dates):
+    """
+    Determines if a data row should be added.
+    If deviceid is not None, the reccord need to have one of the deviceids.
+    If start_dates is not None, the record needs to be dated
+    after the corresponding start date
+
+    Args:
+        row: row to be added
+        form_name: name of form
+        deviceids(dict)
+        start_date(dict)
+    Returns:
+        should_add(Bool)
+    """
+    ret = False
+    if deviceids is not None:
+        if row["deviceid"] in deviceids:
+            ret = True
+    else:
+        ret = True
+    if start_dates and row["deviceid"] in start_dates:
+        if not row["SubmissionDate"]:
+            ret = False
+        elif parse(row["SubmissionDate"]) < start_dates[
+                row["deviceid"]]:
+            ret = False
+    return ret
+
 
 def import_variables(session):
     """
@@ -211,6 +255,36 @@ def import_data(engine, session):
             table_name=form,
             start_dates=start_dates)
 
+
+def import_new_data():
+    """
+    Import new data from csv files.
+    """
+    engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    new_records = []
+    deviceids_case = util.get_deviceids(session, case_report=True)
+    deviceids = util.get_deviceids(session)
+    start_dates = util.get_start_date_by_deviceid(session)
+    for form in model.form_tables.keys():
+        if form in country_config["require_case_report"]:
+            form_deviceids = deviceids_case
+        else:
+            form_deviceids = deviceids
+        new_records += table_data_from_csv(
+            form,
+            model.form_tables[form],
+            config.data_directory,
+            session,
+            engine,
+            only_new=True,
+            deviceids=form_deviceids,
+            table_name=form,
+            start_dates=start_dates)
+
+    return new_records
+
 # def import_links(session):
 #     """
 #     Imports all links from links-file
@@ -252,7 +326,8 @@ def import_clinics(csv_file, session, country_id):
     with open(csv_file) as f:
         clinics_csv = csv.DictReader(f)
         for row in clinics_csv:
-            if row["deviceid"] and row["clinic"].lower() != "not used" and row["deviceid"] not in deviceids:
+            if row["deviceid"] and row["clinic"].lower() != "not used" and row[
+                    "deviceid"] not in deviceids:
                 if "case_report" in row.keys():
                     if row["case_report"] in ["Yes", "yes"]:
                         case_report = 1
@@ -267,8 +342,9 @@ def import_clinics(csv_file, session, country_id):
                     tags = row["device_tags"].split(",")
                 else:
                     tags = []
-                session.add(model.Devices(device_id=row["deviceid"],
-                                          tags=tags))
+                session.add(
+                    model.Devices(
+                        device_id=row["deviceid"], tags=tags))
                 deviceids.append(row["deviceid"])
                 # If the clinic has a district we use that as the parent_location,
                 # otherwise we use the region
@@ -312,7 +388,7 @@ def import_clinics(csv_file, session, country_id):
 
 def import_regions(csv_file, session, parent_id):
     """
-    Import regions from csv-file. 
+    Import regions from csv-file.
 
     Args:
         csv_file: path to csv file with regions
@@ -333,7 +409,7 @@ def import_regions(csv_file, session, parent_id):
 
 def import_districts(csv_file, session):
     """
-    Import districts from csv file. 
+    Import districts from csv file.
 
     Args:
         csv_file: path to csv file with districts
@@ -434,69 +510,6 @@ def set_up_everything(leave_if_data, drop_db, N):
         # session.commit()
         # add_new_links()
     return set_up
-
-
-def import_new_data():
-    """
-    Import new data from csv files.
-    """
-    engine = create_engine(config.DATABASE_URL)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    new_records = []
-    for form in model.form_tables.keys():
-        file_path = config.data_directory + form + ".csv"
-        data = util.read_csv(file_path)
-        new_records += add_new_data(form,
-                                    model.form_tables[form],
-                                    data, session)
-    return new_records
-
-
-def add_new_data(form_name, form, data, session):
-    """
-    Adds new rows from the data variable to the form db table.
-
-    New rows are rows with a uuid that does not already exist.
-    We only add rows that have a registered deviceid.
-
-    Args:
-        form_name: type of form, case, register etc
-        form: form to add to
-        data: data to potentially be added
-        session: db session
-
-    Returns:
-        new_rows(list): a list of rows added
-    """
-    result = session.query(form.uuid)
-    uuids = []
-    deviceids_case = util.get_deviceids(session, case_report=True)
-    deviceids = util.get_deviceids(session)
-    for r in result:
-        uuids.append(r.uuid)
-    new_rows = []
-    for row in data:
-
-        if row["meta/instanceID"] not in uuids:
-            if form_name in country_config["require_case_report"]:
-                form_deviceids = deviceids_case
-            else:
-                form_deviceids = deviceids
-
-            if deviceids:
-                if row["deviceid"] in form_deviceids:
-                    session.add(
-                        form(**{"data": row,
-                                "uuid": row["meta/instanceID"]}))
-                    new_rows.append(row["meta/instanceID"])
-            else:
-                session.add(
-                    form(**{"data": row,
-                            "uuid": row["meta/instanceID"]}))
-                new_rows.append(row["meta/instanceID"])
-    session.commit()
-    return new_rows
 
 
 def add_new_fake_data(to_add):
@@ -619,7 +632,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             stream_results=True).execute(query.statement)
         print("Executed")
         added = 0
-        
+
         while True:
             chunk = res.fetchmany(500)
             if not chunk:
