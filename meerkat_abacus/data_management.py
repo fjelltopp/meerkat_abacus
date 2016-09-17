@@ -134,7 +134,7 @@ def table_data_from_csv(filename,
     """
 
     if only_new:
-        result = session.query(form.uuid)
+        result = session.query(table.uuid)
         uuids = []
         for r in result:
             uuids.append(r.uuid)
