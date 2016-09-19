@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import boto3
+
 import csv, logging
 from dateutil.parser import parse
 from datetime import datetime
@@ -109,6 +110,35 @@ def get_data_from_s3(bucket):
                                      config.data_directory + file_name)
 
 
+
+def get_etag(filename):
+
+    filesize = os.path.getsize(sourcePath)
+    hash = hashlib.md5()
+
+    if filesize > AWS_UPLOAD_MAX_SIZE:
+
+        block_count = 0
+        md5string = ""
+        with open(sourcePath, "rb") as f:
+            for block in iter(lambda: f.read(AWS_UPLOAD_PART_SIZE), ""):
+                hash = hashlib.md5()
+                hash.update(block)
+                md5string = md5string + binascii.unhexlify(hash.hexdigest())
+                block_count += 1
+
+        hash = hashlib.md5()
+        hash.update(md5string)
+        return hash.hexdigest() + "-" + str(block_count)
+
+    else:
+        with open(sourcePath, "rb") as f:
+            for block in iter(lambda: f.read(AWS_UPLOAD_PART_SIZE), ""):
+                hash.update(block)
+        return hash.hexdigest()
+
+
+        
 def table_data_from_csv(filename,
                         table,
                         directory,
@@ -487,7 +517,7 @@ def set_up_everything(leave_if_data, drop_db, N):
             add_fake_data(session, N=N, append=False)
         if config.get_data_from_s3:
             print("Get data from s3")
-            get_data_from_s3(config.s3_bucket)
+            #get_data_from_s3(config.s3_bucket)
         print("Import Data")
         import_data(engine, session)
         print("Import Variables")
@@ -525,7 +555,7 @@ i
     add_fake_data(session, to_add, append=True)
 
 
-def create_links(data_type, conditions, table, session, conn):
+def create_links(data_type, input_conditions, table, session, conn):
     """
     Creates all the links in the Links table.
 
@@ -536,6 +566,7 @@ def create_links(data_type, conditions, table, session, conn):
     link_names = []
     if data_type["type"] in links_by_type:
         for link in links_by_type[data_type["type"]]:
+            conditions = list(input_conditions)
             columns = [table.uuid.label("uuid_from")]
             if link["from_form"] == data_type["form"]:
                 to_form = model.form_tables[link["to_form"]]
@@ -558,6 +589,9 @@ def create_links(data_type, conditions, table, session, conn):
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
                         link_alias.data[column].astext == condition)
+                conditions.append(link_alias.data[link["to_column"]].astext != '')
+                conditions.append(table.data[link["from_column"]].astext != '')
+
                 link_query = session.query(*columns).join(
                     (link_alias, join_on)).filter(*conditions)
                 insert = model.Links.__table__.insert().from_select(
@@ -682,6 +716,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
     """
     alerts = []
     data_rows = []
+    multiple_forms = set(link_names)
     for key, row in data.items():
         if not key:
             continue
@@ -699,7 +734,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                     links[k] = [x[links_by_name[k]["uuid"]] for x in row[k]]
         variable_data, location_data = to_codes.to_code(
             row, variables, locations, data_type["type"], data_type["form"],
-            country_config["alert_data"])
+            country_config["alert_data"], multiple_forms)
 
         try:
             date = parse(row[data_type["form"]][data_type["date"]])

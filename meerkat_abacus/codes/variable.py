@@ -3,7 +3,7 @@ Definition of the Variable class
 
 
 """
-
+from dateutil.parser import parse
 from functools import partial
 
 # from sympy import sympify
@@ -78,6 +78,8 @@ class Variable():
             if len(self.test_types) > 1:
                 raise NameError("Value must be only test type")
             self.test_type = self.test_value
+            self.calculation = variable.calculation
+            
         elif "calc" in self.test_types:
             if len(self.test_types) > 1:
                 raise NameError("calc must be only test_type")
@@ -206,7 +208,10 @@ class Variable():
             return 0
         value = row[self.columns[0]]
         if value is not "" and value is not None and value is not 0:
-            return value
+            if self.calculation == "date":
+                return parse(value).isoformat()
+            else:
+                return value
         else:
             return 0
 
@@ -216,9 +221,10 @@ class Variable():
                           calc,
                           row, ):
         """
-        self. calc should be an expression with column names from the row and mathematical expression 
-        understood by python. We then replace all column names with their numerical values and evalualte
-        the resulting expression.
+        self. calc should be an expression with column names
+        from the row and mathematical expression  understood by python.
+        We then replace all column names with their numerical values
+        and evalualte the resulting expression.
 
         """
         for c in columns:

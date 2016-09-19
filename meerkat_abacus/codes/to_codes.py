@@ -40,8 +40,7 @@ def get_variables(session):
 
 
 multiple_method = {"last": -1, "first": 0}
-mul_forms = {"return_visit": 1}
-def to_code(row, variables, locations, data_type, location_form, alert_data):
+def to_code(row, variables, locations, data_type, location_form, alert_data, mul_forms):
     """
     Takes a row and transforms it into a data row
 
