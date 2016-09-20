@@ -517,7 +517,7 @@ def set_up_everything(leave_if_data, drop_db, N):
             add_fake_data(session, N=N, append=False)
         if config.get_data_from_s3:
             print("Get data from s3")
-            #get_data_from_s3(config.s3_bucket)
+            get_data_from_s3(config.s3_bucket)
         print("Import Data")
         import_data(engine, session)
         print("Import Variables")
