@@ -37,7 +37,7 @@ class Variable():
                             "not_null", "calc"]:
                     self.test_types.append(term)
                 else:
-                    raise NameError("Wrong test type")
+                    raise NameError("{} has wrong test type".format(variable.id))
                 var = chr(97 + i)
                 self.bool_expression += 'res_dict["' + var + '"]'
                 self.bool_variables.append(var)
