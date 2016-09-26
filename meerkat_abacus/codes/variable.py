@@ -130,6 +130,7 @@ class Variable():
                         for c in self.columns[i]:
                             calc = calc.replace(c, 'float(row["' + c + '"])')
                         self.calculation[i] = compile(calc, "<string>", "eval")
+
             self.test_type = self.test_many
     
     def test(self, row):

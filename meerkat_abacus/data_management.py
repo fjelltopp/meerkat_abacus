@@ -609,6 +609,11 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
         engine: db engine
 
     """
+    print(restrict_uuids)
+    if restrict_uuids is not None:
+        if restrict_uuids == []:
+            print("No new data to add")
+            return True
     if not engine:
         engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
@@ -647,7 +652,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
 
         # Main Query
 
-        if restrict_uuids:
+        if restrict_uuids is not None:
             result = session.query(model.Links.uuid_from).filter(
                 model.Links.uuid_to.in_(restrict_uuids))
             restrict_uuids_all = restrict_uuids + [row.uuid_from
@@ -690,8 +695,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                     data_dicts, new_alerts = to_data(data, link_names,
                                                      links_by_name, data_type,
                                                      locations, variables)
-                    conn2.execute(model.Data.__table__.insert(), data_dicts)
-                    added += len(data_dicts)
+                    newly_added = data_to_db(conn2, data_dicts)
+                    added += newly_added
                     alerts += new_alerts
                 data = {uuid: last_data}
             print("Added {} records".format(added))
@@ -706,6 +711,11 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     conn.close()
     conn2.close()
     return True
+
+
+def data_to_db(conn2, data_dicts):
+    conn2.execute(model.Data.__table__.insert(), data_dicts)
+    return len(data_dicts)
 
 
 def to_data(data, link_names, links_by_name, data_type, locations, variables):
