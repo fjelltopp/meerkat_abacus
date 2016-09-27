@@ -26,11 +26,11 @@ class CeleryTaskTest(unittest.TestCase):
     @mock.patch('meerkat_abacus.task_queue.requests')
     def test_send_email_report(self, request_mock):
         report = 'test_report'
-        task_queue.send_report_email(report, 'fr')
+        task_queue.send_report_email(report, 'fr', "1")
         self.assertTrue( request_mock.request.called )
         request_mock.request.assert_called_with( 
             'POST', 
-            config.mailing_root + report +"/",
+            config.mailing_root + report +"/1/" ,
             json={"key": config.mailing_key}, 
             headers={'content-type': 'application/json'}     
         )

@@ -87,7 +87,7 @@ def send_report_email(report, language, location):
     #Assemble params, we currently send all reports nationally for their default time period. 
     data = {"key": config.mailing_key} 
     headers = {'content-type': 'application/json'}
-    url = config.mailing_root + report + "/" + location 
+    url = config.mailing_root + report + "/" + location + "/"
     url = url.replace( '/en/', '/'+language+'/' )
 
     #Log request
