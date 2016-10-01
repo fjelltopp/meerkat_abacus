@@ -1,7 +1,7 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, Float, DDL
+from sqlalchemy import Column, Integer, String, DateTime, DDL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
@@ -12,17 +12,20 @@ from meerkat_abacus.config import country_config
 Base = declarative_base()
 
 
-form_tables = {"case": None, "register": None, "alert": None}
+form_tables = {}
 
 for table in country_config["tables"]:
-    table_name = country_config["tables"][table]
-    form_tables[table] = type(table_name, (Base, ),
-                            {"__tablename__": table_name,
-                             "id": Column(Integer, primary_key=True),
-                             "uuid": Column(String),
-                             "data": Column(JSONB)})
+    form_tables[table] = type(table, (Base, ),
+                              {"__tablename__": table,
+                               "id": Column(Integer, primary_key=True),
+                               "uuid": Column(String, index=True),
+                               "data": Column(JSONB)})
+    create_index = DDL("CREATE INDEX {} ON {} USING gin(data);".format(table+"_gin",table))
+    listen(form_tables[table].__table__, 'after_create', create_index)
 
 
+
+    
 class Locations(Base):
     __tablename__ = 'locations'
 
@@ -53,12 +56,14 @@ class Data(Base):
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String)
+    type = Column(String, index=True)
     date = Column(DateTime, index=True)
     country = Column(Integer, index=True)
     region = Column(Integer, index=True)
     district = Column(Integer, index=True)
     clinic = Column(Integer, index=True)
     clinic_type = Column(String)
+    links = Column(JSONB)
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
     geolocation = Column(String)
@@ -71,21 +76,30 @@ create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
 listen(Data.__table__, 'after_create', create_index)
 
 
+class Links(Base):
+    __tablename__ = 'links'
+    id = Column(Integer, primary_key=True)
+    uuid_from = Column(String, index=True)
+    uuid_to = Column(String, index=True)
+    type = Column(String, index=True)
+    data_to = Column(JSONB)
+
 class AggregationVariables(Base):
     __tablename__ = 'aggregation_variables'
 
     id = Column(String, primary_key=True)
     name = Column(String)
+    type = Column(String)
     form = Column(String)
+    multiple_link = Column(String)
     db_column = Column(String)
     method = Column(String)
     condition = Column(String)
     category = Column(JSONB)
-    daily = Column(Integer)
-    classification = Column(String)
     alert = Column(Integer)
+    calculation = Column(String)
     calculation_group = Column(String)
-    secondary_condition = Column(String)
+    classification = Column(String)
     classification_casedef = Column(String)
     source = Column(String)
     source_link = Column(String)
@@ -113,57 +127,3 @@ class AggregationVariables(Base):
             return 0
         else:
             return daily
-
-class LinkDefinitions(Base):
-    __tablename__ = 'link_definitions'
-
-    id = Column(String, primary_key=True)
-    name = Column(String)
-    from_table = Column(String, index=True)
-    from_column = Column(String)
-    from_date = Column(String)
-    from_condition = Column(String)
-    to_table = Column(String, index=True)
-    to_column = Column(String)
-    to_date = Column(String)
-    to_id = Column(String)
-    to_condition = Column(String)
-    which = Column(String)
-    data = Column(JSONB)
-    compare_lower = Column(Integer)
-    def __repr__(self):
-        return "<LinkDefinition(name='%s', id='%s'>" % (
-            self.name, self.id)
-    
-class Links(Base):
-    __tablename__ = 'links'
-    
-    id = Column(Integer, primary_key=True)
-    link_value = Column(String)
-    from_date = Column(DateTime, index=True)
-    to_date = Column(DateTime, index=True)
-    to_id = Column(String)
-    link_def = Column(String)
-    data = Column(JSONB)
-    def __repr__(self):
-        return "<Link(link_def='%s', id='%s'>" % (
-            self.link_def, self.id)
-    
-create_index = DDL("CREATE INDEX links_gin ON links USING gin(data);")
-listen(Links.__table__, 'after_create', create_index)
-
-
-class Alerts(Base):
-    __tablename__ = 'alerts'
-
-    id = Column(String, primary_key=True)
-    date = Column(DateTime)
-    reason = Column(String)
-    clinic = Column(Integer)
-    region = Column(Integer)
-    data = Column(JSONB)
-    uuids = Column(String)
-    def __repr__(self):
-        return "<Alert(reason='%s', id='%s'>" % (
-            self.reason, self.id)
-    
