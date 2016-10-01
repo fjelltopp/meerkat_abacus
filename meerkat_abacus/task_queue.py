@@ -77,12 +77,12 @@ def new_data_to_codes(restrict_uuids=None):
                                              )
 
 @app.task
-def send_report_email(report, language):
+def send_report_email(report, language, location):
     """Send a report email."""
     #Assemble params, we currently send all reports nationally for their default time period. 
     data = {"key": config.mailing_key} 
     headers = {'content-type': 'application/json'}
-    url = config.mailing_root + report + "/"   
+    url = config.mailing_root + report + "/" + location + "/"
     url = url.replace( '/en/', '/'+language+'/' )
 
     #Log request

@@ -95,7 +95,7 @@ class DbTest(unittest.TestCase):
             table_name="demo_case")
         results = self.session.query(model.form_tables["demo_case"]).all()
         self.assertEqual(len(results),
-                         6)  # Only 6 of the cases have deviceids in 1-6
+                         5)  # Only 6 of the cases have deviceids in 1-6
         for r in results:
             self.assertIn(r.uuid, ["1", "2", "3", "4", "5", "6"])
 

@@ -45,6 +45,7 @@ if config.mailing_root:
     for report in schedule:
         task_name = 'send_' + report
         language = schedule[report]['language']
+        location = schedule[report].get('location', 1 )
         if schedule[report]["period"] == "week":
             send_time = crontab( 
                 minute=0, 
@@ -67,7 +68,7 @@ if config.mailing_root:
         CELERYBEAT_SCHEDULE[task_name] = {
             'task': 'task_queue.send_report_email',
             'schedule': send_time,
-            'args': (report, language)
+            'args': (report, language, location)
         }  
 
 logging.warning( "Celery is set up with the following beat schedule:\n" + str(CELERYBEAT_SCHEDULE) )
