@@ -12,6 +12,7 @@ from meerkat_abacus import data_management
 from celery.signals import worker_ready
 import requests, logging
 
+
 # When we start celery we run the set_up_db command
 @worker_ready.connect
 def set_up_task(**kwargs):
@@ -42,16 +43,13 @@ def get_proccess_data(print_progress=False):
         get_new_data_from_s3()
     if print_progress:
         print("Import new data")
-    import_new_data()
+    new_records = import_new_data()
     if print_progress:
         print("To Code")
-    new_data_to_codes()
-    if print_progress:
-        print("Add Links")
-    add_new_links()
+    new_data_to_codes(restrict_uuids=new_records)
     if print_progress:
         print("Finished")
-    
+
 @app.task
 def get_new_data_from_s3():
     """Get new data from s3."""
@@ -70,16 +68,13 @@ def add_new_fake_data(to_add):
     return data_management.add_new_fake_data(to_add)
 
 @app.task
-def new_data_to_codes():
+def new_data_to_codes(restrict_uuids=None):
     """
     Add any new data in form tables to data table.
     """
-    return data_management.new_data_to_codes(no_print=True)
-
-@app.task
-def add_new_links():
-    """ Add new links."""
-    return data_management.add_new_links()
+    return data_management.new_data_to_codes(no_print=True,
+                                             restrict_uuids=restrict_uuids
+                                             )
 
 @app.task
 def send_report_email(report, language, location):

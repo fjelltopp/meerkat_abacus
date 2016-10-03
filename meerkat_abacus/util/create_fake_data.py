@@ -40,6 +40,8 @@ def get_value(field, data):
     if field_type == "multiple":
         number_of_options = random.randint(1, len(argument))
         value = ",".join(random.sample(argument, number_of_options))
+    if field_type == "patient_id":
+        value = random.randint(0, 10000)
     if field_type == "date":
         now = datetime.datetime.now()
         start = now - datetime.timedelta(days=21)
@@ -87,10 +89,27 @@ def create_form(fields, data=None, N=500,odk=True):
     list_of_records = []
     for i in range(N):
         row = {}
+        unique_ids = {}
         for field_name in fields.keys():
             if field_name != "deviceids": # We deal with deviceid in the odk part below
                 value = get_value(fields[field_name], data)
                 row[field_name] = value
+        for field_name in fields.keys():
+            if list(fields[field_name].keys())[0] == "patient_id":
+                unique_ids.setdefault(field_name, list())
+                unique_field, unique_condition = fields[field_name]["patient_id"].split(";")
+                if row[unique_field] == unique_condition:
+                    current_id = row[field_name]
+                    while current_id in unique_ids[field_name]:
+                        current_id = random.randint(0, 100000)
+                    row[field_name] = current_id
+                    unique_ids[field_name].append(row[field_name])
+                else:
+                    if field_name in unique_ids and len(unique_ids[field_name]) > 1:
+                        row[field_name] = random.sample(unique_ids[field_name], 1)[0]
+                    else:
+                        row[field_name] = random.randint(0, 10000)
+                        
         if odk:
             # If we are creating fake data for an odk form, we want to add a number of special fields
             if "deviceids" in data.keys():

@@ -183,14 +183,15 @@ class UtilTest(unittest.TestCase):
     def test_send_alert(self, mock_requests):
         util.country_config["messaging_start_date"] = datetime.now() - timedelta(days=1)
         
-        alert = model.Alerts(**{"reason": "1",
-                                "region": 2,
-                                "clinic": 3,
-                                "uuids": "uuid:1",
-                                "data": {"gender": "male",
-                                         "age": "32"},
-                                "id": "abcdef",
-                                "date": datetime.now()
+        alert = model.Data(**{"region": 2,
+                              "clinic": 3,
+                              "uuid": "uuid:1",
+                              "variables": {"alert_reason": "1",
+                                            "alert_id": "abcdef",
+                                            "alert_gender": "male",
+                                            "alert_age": "32"},
+                              "id": "abcdef",
+                              "date": datetime.now()
         })
         var_mock = mock.Mock()
         var_mock.configure_mock(name='Rabies')
@@ -208,7 +209,7 @@ class UtilTest(unittest.TestCase):
         }
                                         
         util.country_config["messaging_silent"] = False
-        util.send_alert(alert, variables, locations)
+        util.send_alert("abcdef", alert, variables, locations)
         self.assertTrue(mock_requests.request.called)
         call_args = mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "PUT")
@@ -228,14 +229,14 @@ class UtilTest(unittest.TestCase):
         # The date is now too early
         mock_requests.reset_mock()
         alert.date = datetime.now() - timedelta(days=5)
-        util.send_alert(alert, variables, locations)
+        util.send_alert("abcdef", alert, variables, locations)
         self.assertFalse(mock_requests.request.called)
 
     def test_create_topic_list(self):
         #Create the mock arguments that include all necessary data to complete the function.
-        AlertStruct = namedtuple("AlertStruct", 'reason clinic region')
+        AlertStruct = namedtuple("AlertStruct", 'variables clinic region')
         LocationStruct = namedtuple( "LocationStruct", "parent_location" )
-        alert = AlertStruct( reason="rea_1", clinic="4", region="2" )
+        alert = AlertStruct( variables={"alert_reason":"rea_1"}, clinic="4", region="2" )
         locations = { "4": LocationStruct( parent_location="3" ) }
 
         #Call the method

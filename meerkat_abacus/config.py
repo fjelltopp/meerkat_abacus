@@ -70,12 +70,3 @@ if hermes_silent:
     country_config["messaging_silent"] = True
 
 s3_bucket = country_config_module.s3_bucket
-
-# import links
-
-links_file = country_config["links_file"]
-spec = importlib.util.spec_from_file_location("links",
-                                              config_directory + links_file)
-links = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(links)
-
