@@ -45,7 +45,7 @@ if config.mailing_root:
     for report in schedule:
         task_name = 'send_' + report
         language = schedule[report]['language']
-        location = schedule[report].get('location', 1 )
+        location = schedule[report].get('location', '1' )
         if schedule[report]["period"] == "week":
             send_time = crontab( 
                 minute=0, 

@@ -79,6 +79,7 @@ def new_data_to_codes(restrict_uuids=None):
 @app.task
 def send_report_email(report, language, location):
     """Send a report email."""
+
     #Assemble params, we currently send all reports nationally for their default time period. 
     data = {"key": config.mailing_key} 
     headers = {'content-type': 'application/json'}
@@ -87,7 +88,8 @@ def send_report_email(report, language, location):
 
     #Log request
     logging.warning( "Sending report email: " + report + 
-                     "with language: " + language + " using url: " + url )  
+                     "with language: " + language + " using url: " + url ) 
+ 
     #Make the request and handle the response.
     try:
         r = requests.request( 'POST', url, json=data, headers=headers )
