@@ -225,7 +225,8 @@ class UtilTest(unittest.TestCase):
         self.assertIn(prefix + "-2-allDis", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-1-1", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-2-1", call_args[1]["json"]["topics"])
-        
+        self.assertEqual("abcdef", call_args[1]["json"]["id"])
+    
         # The date is now too early
         mock_requests.reset_mock()
         alert.date = datetime.now() - timedelta(days=5)

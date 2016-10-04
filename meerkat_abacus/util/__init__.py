@@ -312,8 +312,8 @@ def create_topic_list( alert, locations ):
 
     So for an alert with reason "rea_1", in country with prefix "null", from clinic "4" in district "3"
     in region "2" in country "1", we get a topic list that looks like:
-        ['null-rea_1-4', 'null-rea_1-3', 'null-rea_1-2', 
-         'null-rea_1-1', 'null-allDis-4', 'null-allDis-3', 
+        ['null-rea_1-4', 'null-rea_1-3', 'null-rea_1-2',
+         'null-rea_1-1', 'null-allDis-4', 'null-allDis-3',
          'null-allDis-2', 'null-allDis-1']
 
     """ 
@@ -385,12 +385,12 @@ def send_alert(alert_id, alert, variables, locations):
                         "<tr><td><b>Alert ID:</b></td><td>" + alert_id + "</td></tr></table>"
                         "<p>To unsubscribe from <<country>> public health surveillance notifications "
                         "please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>"
-                        "click here</a>.</p>")        
+                        "click here</a>.</p>")      
 
         data = {
             "from": country_config['messaging_sender'],
             "topics": create_topic_list( alert, locations ),
-            "id": alert.id,
+            "id": alert_id,
             "message": message,
             "sms-message": sms_message,
             "html-message": html_message,
