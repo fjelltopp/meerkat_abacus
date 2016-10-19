@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dateutil import parser
 import io
 from meerkat_abacus.util import create_fake_data, epi_week_start_date
-from meerkat_abacus import util, model
+from meerkat_abacus import util, model, config
 from meerkat_abacus.config import country_config
 from unittest import mock
 from collections import namedtuple
@@ -166,17 +166,16 @@ class UtilTest(unittest.TestCase):
             
     @mock.patch('meerkat_abacus.util.requests')
     def test_hermes(self, mock_requests):
-        util.country_config["messaging_silent"] = True
+        config.hermes_dev = True
+        util.hermes("test", "POST", {"topics":["test-topic"]})
+        self.assertFalse( mock_requests.request.called )
+        config.hermes_dev = False
         util.hermes("test", "POST", {})
-        self.assertFalse(mock_requests.request.called)
-        util.country_config["messaging_silent"] = False
-        util.hermes("test", "POST", {})
-        sent_data = {"api_key": util.hermes_api_key}
         headers = {'content-type': 'application/json'}
-        mock_requests.request.assert_called_with("POST",
-                                                util.hermes_api_root + "test",
-                                                json=sent_data,
-                                                headers=headers)
+        mock_requests.request.assert_called_with( "POST",
+                                                  config.hermes_api_root + "/test",
+                                                  json={},
+                                                  headers=headers )
 
 
     @mock.patch('meerkat_abacus.util.requests')
@@ -214,7 +213,7 @@ class UtilTest(unittest.TestCase):
         call_args = mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "PUT")
         self.assertEqual(call_args[0][1],
-                         util.hermes_api_root + "/publish")
+                         config.hermes_api_root + "/publish")
         self.assertTrue( len(call_args[1]["json"]["sms-message"]) < 160 ) #160 characters in a single sms
         self.assertIn("Rabies", call_args[1]["json"]["html-message"])
         self.assertIn("Rabies", call_args[1]["json"]["sms-message"])

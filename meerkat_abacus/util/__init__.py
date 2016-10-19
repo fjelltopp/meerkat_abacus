@@ -293,8 +293,8 @@ def refine_hermes_topics(topics):
     logging.warning( "Topics: " + str( topics ) )
     logging.warning( "Allowed topics: " + str( config.hermes_dev_topics ) )
 
-    #Make topics a list if it isn't already one.
-    topics = [topics] if not isinstance( topics, list ) else topics
+    #Make topics a copied (don't edit original) list if it isn't already one.
+    topics = list([topics]) if not isinstance( topics, list ) else list(topics)
 
     #If in development/testing environment, remove topics that aren't pre-specified as allowed.
     if config.hermes_dev:
@@ -316,17 +316,19 @@ def hermes(url, method, data=None):
        data: data to send
     """
     #If we are in the dev envirnoment only allow publishing to specially selected topics. 
-    topics = refine_hermes_topics( data.get('topics', []) )
-
-    #Return a error message if we have tried to publish a mass email from the dev envirnoment. 
-    if not topics:
-        return {"message": "No topics to publish to, perhaps because system is in hermes dev mode."}
-    else:
-        data['topics'] = topics
+    
+    if data.get('topics', []):
+        logging.warning( data )
+        topics = refine_hermes_topics( data.get('topics', []) )
+        logging.warning( data )
+        #Return a error message if we have tried to publish a mass email from the dev envirnoment. 
+        if not topics:
+            return {"message": "No topics to publish to, perhaps because system is in hermes dev mode."}
+        else:
+            data['topics'] = topics
 
     try:
-        data["api_key"] = config.hermes_api_key
-        url = config.hermes_api_root + url
+        url = config.hermes_api_root + "/" + url
         headers = {'content-type': 'application/json'}
         r = requests.request(method, url, json=data, headers=headers)
 
@@ -435,5 +437,5 @@ def send_alert(alert_id, alert, variables, locations):
             "subject": "Public Health Surveillance Alerts: #" + alert_id,
             "medium": ['email', 'sms']
         }
-        hermes('/publish', 'PUT', data)
+        hermes('publish', 'PUT', data)
         #TODO: Add some error handling here!
