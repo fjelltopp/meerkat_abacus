@@ -84,6 +84,34 @@ class DbTest(unittest.TestCase):
     def test_table_data_from_csv(self):
         """Test table_data_from_csv"""
 
+        variables = [
+            model.AggregationVariables(
+                id="qul_1",
+                type="import",
+                form="demo_case",
+                db_column="results./bmi_height",
+                method="between",
+                calculation="results./bmi_height",
+                condition="50,220"
+            ),
+            model.AggregationVariables(
+                id="qul_2",
+                type="import",
+                form="demo_case",
+                db_column="pt./visit_date",
+                method="between",
+                category="discard",
+                calculation='date:pt./visit_date',
+                condition="1388527200,2019679200"
+            )
+        ]
+        
+        self.session.query(model.AggregationVariables).delete()
+        self.session.commit()
+        for v in variables:
+            self.session.add(v)
+        self.session.commit()
+        
         manage.table_data_from_csv(
             "demo_case",
             model.form_tables["demo_case"],
@@ -92,13 +120,23 @@ class DbTest(unittest.TestCase):
             self.engine,
             deviceids=["1", "2", "3", "4", "5", "6"],
             start_dates={"2": datetime(2016, 2, 2)},
-            table_name="demo_case")
+            table_name="demo_case",
+            quality_control=True)
         results = self.session.query(model.form_tables["demo_case"]).all()
-        self.assertEqual(len(results),
-                         5)  # Only 6 of the cases have deviceids in 1-6
+        self.assertEqual(len(results), 4)
+        # Only 6 of the cases have deviceids in 1-6
+        # One has to early submission date and one
+        # is discarded by qul_2 above
+        
         for r in results:
-            self.assertIn(r.uuid, ["1", "2", "3", "4", "5", "6"])
-
+            if r.uuid in ["1", "3"]:
+                self.assertEqual(r.data["results./bmi_height"], None)
+                self.assertNotEqual(r.data["results./bmi_weight"], None)
+            else:
+                self.assertNotEqual(r.data["results./bmi_height"], None)
+                self.assertNotEqual(r.data["results./bmi_weight"], None)
+            self.assertIn(r.uuid, ["3", "4", "5", "1"])
+            
     @mock.patch('meerkat_abacus.util.requests')
     def test_db_setup(self, requests):
 

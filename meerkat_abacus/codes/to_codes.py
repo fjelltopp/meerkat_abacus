@@ -6,7 +6,7 @@ from datetime import datetime
 import meerkat_abacus.model as model
 from meerkat_abacus.codes.variable import Variable
 
-def get_variables(session):
+def get_variables(session, restrict=None):
     """
     Get the variables out of the db and turn them into Variable classes.
 
@@ -18,7 +18,12 @@ def get_variables(session):
     Returns:
         variables(dict): dict of id:Variable
     """
-    result = session.query(model.AggregationVariables)
+    if restrict:
+        result = session.query(model.AggregationVariables).filter(
+            model.AggregationVariables.type == restrict
+        )
+    else:
+        result = session.query(model.AggregationVariables)
     variables = {}
 
     variable_forms = {}

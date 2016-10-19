@@ -15,7 +15,6 @@ class Variable():
     matches the variable
 
     """
-
     def __init__(self, variable):
         """
         Set up variable class. We prepare the conditions/boundaries
@@ -106,9 +105,13 @@ class Variable():
                     self.columns[0] = [self.columns[0]]
 
                 self.calculation = variable.calculation
-                for c in self.columns[0]:
-                    self.calculation = self.calculation.replace(
-                        c, 'float(row["' + c + '"])')
+
+                if "date:" in self.calculation:
+                    self.calculation = 'parse(row["' + self.calculation.split(":")[1] + '"]).timestamp()'
+                else:
+                    for c in self.columns[0]:
+                        self.calculation = self.calculation.replace(
+                            c, 'float(row["' + c + '"])')
                 self.calculation = compile(self.calculation, "<string>",
                                            "eval")
                 self.test_type = partial(self.test_calc_between,
@@ -233,7 +236,10 @@ class Variable():
                 pass
             else:
                 return 0
-        result = float(eval(calc))
+        try:
+            result = float(eval(calc))
+        except ValueError:
+            return 0
         return float(condition[0]) <= result and float(condition[1]) > result
           
     def test_calc(self, row):

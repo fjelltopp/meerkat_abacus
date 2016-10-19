@@ -75,6 +75,8 @@ def add_fake_data(session, N=500, append=False):
         form_name = form
         file_name = config.data_directory + form_name + ".csv"
         current_form = []
+        if form not in country_config["fake_data"]:
+            continue
         if append:
             current_form = util.read_csv(file_name)
         if "deviceids" in country_config["fake_data"][form]:
@@ -109,35 +111,6 @@ def get_data_from_s3(bucket):
         s3.meta.client.download_file(bucket, "data/" + file_name,
                                      config.data_directory + file_name)
 
-
-
-def get_etag(filename):
-
-    filesize = os.path.getsize(sourcePath)
-    hash = hashlib.md5()
-
-    if filesize > AWS_UPLOAD_MAX_SIZE:
-
-        block_count = 0
-        md5string = ""
-        with open(sourcePath, "rb") as f:
-            for block in iter(lambda: f.read(AWS_UPLOAD_PART_SIZE), ""):
-                hash = hashlib.md5()
-                hash.update(block)
-                md5string = md5string + binascii.unhexlify(hash.hexdigest())
-                block_count += 1
-
-        hash = hashlib.md5()
-        hash.update(md5string)
-        return hash.hexdigest() + "-" + str(block_count)
-
-    else:
-        with open(sourcePath, "rb") as f:
-            for block in iter(lambda: f.read(AWS_UPLOAD_PART_SIZE), ""):
-                hash.update(block)
-        return hash.hexdigest()
-
-
         
 def table_data_from_csv(filename,
                         table,
@@ -148,6 +121,7 @@ def table_data_from_csv(filename,
                         deviceids=None,
                         table_name=None,
                         row_function=None,
+                        quality_control=None,
                         start_dates=None):
     """
     Adds all the data from a csv file. We delete all old data first and then add new data. 
@@ -178,6 +152,12 @@ def table_data_from_csv(filename,
     dicts = []
     conn = engine.connect()
     new_rows = []
+    to_check = []
+    if quality_control:
+        (variables, variable_forms, variable_tests,
+         variables_group) = to_codes.get_variables(session, "import")
+        if variables:
+            to_check = [variables["import"][x][x] for x in variables["import"].keys()]
     for row in util.read_csv(directory + filename + ".csv"):
 
         if only_new and row["meta/instanceID"] in uuids:
@@ -188,6 +168,19 @@ def table_data_from_csv(filename,
             insert_row = row_function(row)
         else:
             insert_row = row
+        # If we have quality checks
+        remove = False
+        if to_check:
+            for variable in to_check:
+                if not variable.test(insert_row):
+                    if variable.variable.category == "discard":
+                        remove = True
+                        break
+                    else:
+                        insert_row[variable.column] = None
+                        # Set the
+        if remove:
+            continue
         if deviceids:
             if should_row_be_added(insert_row, table_name, deviceids,
                                    start_dates):
@@ -270,11 +263,16 @@ def import_data(engine, session):
     deviceids_case = util.get_deviceids(session, case_report=True)
     deviceids = util.get_deviceids(session)
     start_dates = util.get_start_date_by_deviceid(session)
+
     for form in model.form_tables.keys():
         if form in country_config["require_case_report"]:
             form_deviceids = deviceids_case
         else:
             form_deviceids = deviceids
+        quality_control = False
+        if "quality_control" in country_config:
+            if form in country_config["quality_control"]:
+                quality_control = True
         table_data_from_csv(
             form,
             model.form_tables[form],
@@ -283,7 +281,8 @@ def import_data(engine, session):
             engine,
             deviceids=form_deviceids,
             table_name=form,
-            start_dates=start_dates)
+            start_dates=start_dates,
+            quality_control=quality_control)
 
 
 def import_new_data():
@@ -302,6 +301,12 @@ def import_new_data():
             form_deviceids = deviceids_case
         else:
             form_deviceids = deviceids
+
+        quality_control = False
+        if "quality_control" in country_config:
+            if form in country_config["quality_control"]:
+                quality_control = True
+        
         new_records += table_data_from_csv(
             form,
             model.form_tables[form],
@@ -311,22 +316,12 @@ def import_new_data():
             only_new=True,
             deviceids=form_deviceids,
             table_name=form,
-            start_dates=start_dates)
+            start_dates=start_dates,
+            quality_control=quality_control)
 
     return new_records
 
-# def import_links(session):
-#     """
-#     Imports all links from links-file
 
-#     Args:
-#         session: db session
-#     """
-#     session.query(model.LinkDefinitions).delete()
-#     session.commit()
-#     for link in config.links.links:
-#         session.add(model.LinkDefinitions(**link))
-#     session.commit()
 
 
 def import_clinics(csv_file, session, country_id):
@@ -750,7 +745,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             date = parse(row[data_type["form"]][data_type["date"]])
             date = datetime(date.year, date.month, date.day)
         except:
-            print("Invalid Date")
+            print("Invalid Date", row[data_type["form"]][data_type["date"]])
             continue
 
         if date < locations[0][location_data["clinic"]].start_date:
