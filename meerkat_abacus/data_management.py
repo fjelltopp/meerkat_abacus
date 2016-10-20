@@ -153,11 +153,15 @@ def table_data_from_csv(filename,
     conn = engine.connect()
     new_rows = []
     to_check = []
+    print(filename)
     if quality_control:
+        print("Doing Quality Control")
         (variables, variable_forms, variable_tests,
          variables_group) = to_codes.get_variables(session, "import")
         if variables:
             to_check = [variables["import"][x][x] for x in variables["import"].keys()]
+        print([c.variable.id for c in to_check])
+    removed = {}
     for row in util.read_csv(directory + filename + ".csv"):
 
         if only_new and row["meta/instanceID"] in uuids:
@@ -173,13 +177,22 @@ def table_data_from_csv(filename,
         if to_check:
             for variable in to_check:
                 if not variable.test(insert_row):
-                    if variable.variable.category == "discard":
+                    if variable.variable.category == ["discard"]:
+                        print("Should discard")
+                        print(variable.variable.id)
                         remove = True
-                        break
                     else:
-                        insert_row[variable.column] = None
+                        if insert_row[variable.column]:
+                            insert_row[variable.column] = None
+                            if variable.column in removed:
+                                removed[variable.column] += 1
+                            else:
+                                removed[variable.column] = 1
+
+
                         # Set the
         if remove:
+            print("Discarded")
             continue
         if deviceids:
             if should_row_be_added(insert_row, table_name, deviceids,
@@ -196,6 +209,8 @@ def table_data_from_csv(filename,
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
         #     session.commit()
+    if to_check:
+        print(removed)
     conn.execute(table.__table__.insert(), dicts)
     conn.close()
     return new_rows
@@ -513,10 +528,11 @@ def set_up_everything(leave_if_data, drop_db, N):
         if config.get_data_from_s3:
             print("Get data from s3")
             get_data_from_s3(config.s3_bucket)
-        print("Import Data")
-        import_data(engine, session)
         print("Import Variables")
         import_variables(session)
+        print("Import Data")
+        import_data(engine, session)
+
         # print("Import Links")
         # import_links(session)
         print("To codes")
