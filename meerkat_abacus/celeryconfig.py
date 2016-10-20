@@ -81,7 +81,7 @@ if config.mailing_root:
         #It's sent every year at this time, but deployments never last that long!
         if config.send_test_emails:
             task_name = 'send_test_' + report
-            send_time = datetime.now() + timedelta(minutes=5)
+            send_time = datetime.now() + timedelta(minutes=10)
             send_time = crontab( 
                     minute=send_time.minute , 
                     hour=send_time.hour, 
@@ -97,14 +97,14 @@ if config.mailing_root:
             #If these don't go out, I have a working day to debug. 
             task_name = 'send_prelim_' + report
             send_time = crontab( 
-                    minute=0, 
-                    hour=9, 
-                    day_of_week=4 
+                minute=0, 
+                hour=7, 
+                day_of_week=4 
             ) 
             CELERYBEAT_SCHEDULE[task_name] = {
                 'task': 'task_queue.send_report_email',
                 'schedule': send_time,
-                'args': ('test_'+report, language, location)
+                'args': ('test_' + report, language, location)
             } 
 
 logging.warning( "Celery is set up with the following beat schedule:\n" + str(CELERYBEAT_SCHEDULE) )

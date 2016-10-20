@@ -174,7 +174,7 @@ class UtilTest(unittest.TestCase):
         headers = {'content-type': 'application/json'}
         mock_requests.request.assert_called_with( "POST",
                                                   config.hermes_api_root + "/test",
-                                                  json={},
+                                                  json={'api_key': config.hermes_api_key},
                                                   headers=headers )
 
 

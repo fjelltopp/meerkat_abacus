@@ -293,7 +293,7 @@ def refine_hermes_topics(topics):
     #Make topics a copied (don't edit original) list if it isn't already one.
     topics = list([topics]) if not isinstance( topics, list ) else list(topics)
 
-    logging.warning( "Initial topics: " + str( topics ) )
+    logging.info( "Initial topics: " + str( topics ) )
 
     #If in development/testing environment, remove topics that aren't pre-specified as allowed.
     if config.hermes_dev:
@@ -301,7 +301,7 @@ def refine_hermes_topics(topics):
             if topics[t] not in config.hermes_dev_topics:
                 del topics[t]
 
-    logging.warning( "Refined topics: " + str( topics ) )
+    logging.info( "Refined topics: " + str( topics ) )
 
     return topics
 
