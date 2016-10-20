@@ -92,7 +92,20 @@ if config.mailing_root:
                 'task': 'task_queue.send_report_email',
                 'schedule': send_time,
                 'args': ('test_'+report, language, location)
-            }  
+            } 
+            #Also send the test reports every Thursday morning.
+            #If these don't go out, I have a working day to debug. 
+            task_name = 'send_prelim_' + report
+            send_time = crontab( 
+                    minute=0, 
+                    hour=9, 
+                    day_of_week=4 
+            ) 
+            CELERYBEAT_SCHEDULE[task_name] = {
+                'task': 'task_queue.send_report_email',
+                'schedule': send_time,
+                'args': ('test_'+report, language, location)
+            } 
 
 logging.warning( "Celery is set up with the following beat schedule:\n" + str(CELERYBEAT_SCHEDULE) )
 
