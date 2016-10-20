@@ -127,7 +127,7 @@ def send_report_email(report, language, location):
 
         #Notify the developers that there has been a problem.          
         data = {
-            "id": str(report) + datetime.now().isoformat(),
+            "id": "failed-" + str(report) + "-" + datetime.now().isoformat(),
             "topics": "error-reporting",
             "subject": "FAILED: " + str(report) + " email",
             "message": ( "<p>Hi <<first_name>> <<last_name>>,</p>" +
