@@ -100,7 +100,7 @@ class DbTest(unittest.TestCase):
                 form="demo_case",
                 db_column="pt./visit_date",
                 method="between",
-                category="discard",
+                category=["discard"],
                 calculation='date:pt./visit_date',
                 condition="1388527200,2019679200"
             )
@@ -161,22 +161,35 @@ class DbTest(unittest.TestCase):
 
         n_cases = len(
             session.query(model.Data).filter(model.Data.type == "case").all())
+
+        n_disregarded_cases =  len(
+            session.query(model.DisregardedData).filter(model.Data.type == "case").all())
+        
         t = model.form_tables[config.country_config["tables"][0]]
         n_expected_cases = len(
             session.query(t).filter(t.data["intro./visit"].astext == "new")
             .all())
-        self.assertEqual(n_cases, n_expected_cases)
+        self.assertEqual(n_cases + n_disregarded_cases, n_expected_cases)
 
         agg_var_female = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.name == "Female").first()
         results = session.query(model.Data)
+        results2 = session.query(model.DisregardedData)
         number_of_totals = 0
         number_of_female = 0
         for row in results:
+            print(row)
             if "tot_1" in row.variables.keys():
                 number_of_totals += 1
             if str(agg_var_female.id) in row.variables.keys():
                 number_of_female += 1
+        for row in results2:
+            if "tot_1" in row.variables.keys():
+                number_of_totals += 1
+            if str(agg_var_female.id) in row.variables.keys():
+                number_of_female += 1
+
+                
         total = session.query(t).filter(
             t.data.contains({"intro./visit": "new"}))
         female = session.query(t).filter(

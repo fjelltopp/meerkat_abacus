@@ -111,7 +111,7 @@ def get_data_from_s3(bucket):
         s3.meta.client.download_file(bucket, "data/" + file_name,
                                      config.data_directory + file_name)
 
-        
+
 def table_data_from_csv(filename,
                         table,
                         directory,
@@ -159,8 +159,8 @@ def table_data_from_csv(filename,
         (variables, variable_forms, variable_tests,
          variables_group) = to_codes.get_variables(session, "import")
         if variables:
-            to_check = [variables["import"][x][x] for x in variables["import"].keys()]
-        print([c.variable.id for c in to_check])
+            to_check = [variables["import"][x][x]
+                        for x in variables["import"].keys()]
     removed = {}
     for row in util.read_csv(directory + filename + ".csv"):
 
@@ -178,8 +178,6 @@ def table_data_from_csv(filename,
             for variable in to_check:
                 if not variable.test(insert_row):
                     if variable.variable.category == ["discard"]:
-                        print("Should discard")
-                        print(variable.variable.id)
                         remove = True
                     else:
                         if insert_row[variable.column]:
@@ -189,10 +187,8 @@ def table_data_from_csv(filename,
                             else:
                                 removed[variable.column] = 1
 
-
                         # Set the
         if remove:
-            print("Discarded")
             continue
         if deviceids:
             if should_row_be_added(insert_row, table_name, deviceids,
@@ -240,8 +236,7 @@ def should_row_be_added(row, form_name, deviceids, start_dates):
     if start_dates and row["deviceid"] in start_dates:
         if not row["SubmissionDate"]:
             ret = False
-        elif parse(row["SubmissionDate"]) < start_dates[
-                row["deviceid"]]:
+        elif parse(row["SubmissionDate"]) < start_dates[row["deviceid"]]:
             ret = False
     return ret
 
@@ -321,7 +316,7 @@ def import_new_data():
         if "quality_control" in country_config:
             if form in country_config["quality_control"]:
                 quality_control = True
-        
+
         new_records += table_data_from_csv(
             form,
             model.form_tables[form],
@@ -335,8 +330,6 @@ def import_new_data():
             quality_control=quality_control)
 
     return new_records
-
-
 
 
 def import_clinics(csv_file, session, country_id):
@@ -600,7 +593,8 @@ def create_links(data_type, input_conditions, table, session, conn):
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
                         link_alias.data[column].astext == condition)
-                conditions.append(link_alias.data[link["to_column"]].astext != '')
+                conditions.append(
+                    link_alias.data[link["to_column"]].astext != '')
                 conditions.append(table.data[link["from_column"]].astext != '')
 
                 link_query = session.query(*columns).join(
@@ -703,19 +697,21 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                 # Send all data apart from the latest UUID to to_data function
                 last_data = data.pop(uuid)
                 if data:
-                    data_dicts, new_alerts = to_data(data, link_names,
-                                                     links_by_name, data_type,
-                                                     locations, variables)
-                    newly_added = data_to_db(conn2, data_dicts)
+                    data_dicts, disregarded_data_dicts, new_alerts = to_data(
+                        data, link_names, links_by_name, data_type, locations,
+                        variables)
+                    newly_added = data_to_db(conn2, data_dicts,
+                                             disregarded_data_dicts)
                     added += newly_added
                     alerts += new_alerts
                 data = {uuid: last_data}
             print("Added {} records".format(added))
         if data:
-            data_dicts, new_alerts = to_data(data, link_names, links_by_name,
-                                             data_type, locations, variables)
-            conn2.execute(model.Data.__table__.insert(), data_dicts)
-            added += len(data_dicts)
+            data_dicts, disregarded_data_dicts, new_alerts = to_data(
+                data, link_names, links_by_name, data_type, locations,
+                variables)
+            newly_added = data_to_db(conn2, data_dicts, disregarded_data_dicts)
+            added += newly_added
             print("Added {} records".format(added))
             alerts += new_alerts
     send_alerts(alerts, session)
@@ -724,8 +720,12 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     return True
 
 
-def data_to_db(conn2, data_dicts):
-    conn2.execute(model.Data.__table__.insert(), data_dicts)
+def data_to_db(conn2, data_dicts, disregarded_data_dicts):
+    if data_dicts:
+        conn2.execute(model.Data.__table__.insert(), data_dicts)
+    if disregarded_data_dicts:
+        conn2.execute(model.DisregardedData.__table__.insert(),
+                      disregarded_data_dicts)
     return len(data_dicts)
 
 
@@ -737,6 +737,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
     """
     alerts = []
     data_rows = []
+    disregarded_data_rows = []
     multiple_forms = set(link_names)
     for key, row in data.items():
         if not key:
@@ -753,7 +754,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                         sort_function = lambda x: x[column]
                     row[k] = sorted(row[k], key=sort_function)
                     links[k] = [x[links_by_name[k]["uuid"]] for x in row[k]]
-        variable_data, location_data = to_codes.to_code(
+        variable_data, location_data, disregard = to_codes.to_code(
             row, variables, locations, data_type["type"], data_type["form"],
             country_config["alert_data"], multiple_forms)
 
@@ -781,8 +782,11 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             new_data[l] = location_data[l]
         if "alert" in variable_data:
             alerts.append(new_data)
-        data_rows.append(new_data)
-    return data_rows, alerts
+        if disregard:
+            disregarded_data_rows.append(new_data)
+        else:
+            data_rows.append(new_data)
+    return data_rows, disregarded_data_rows, alerts
 
 
 def send_alerts(alerts, session):
