@@ -8,19 +8,20 @@ from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import boto3
 
+
 import csv, logging
 from dateutil.parser import parse
 from datetime import datetime
 import inspect
 # import resource                print('Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
 
+from meerkat_abacus import alerts as alert_functions
 from meerkat_abacus import model
 from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
 country_config = config.country_config
-
 
 def create_db(url, base, drop=False):
     """
@@ -525,26 +526,57 @@ def set_up_everything(leave_if_data, drop_db, N):
         import_variables(session)
         print("Import Data")
         import_data(engine, session)
-
-        # print("Import Links")
-        # import_links(session)
         print("To codes")
         session.query(model.Data).delete()
         engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
         session.commit()
 
-        # engine = create_engine(config.DATABASE_URL, echo=True)
-        # Session = sessionmaker(bind=engine)
-        # session = Session()
-
         new_data_to_codes(engine)
-        # print("Add Links")
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        print("Add alerts")
+        add_alerts(session)
         # session.query(model.Links).delete()
         # engine.execute("ALTER SEQUENCE links_id_seq RESTART WITH 1;")
         # session.commit()
         # add_new_links()
     return set_up
 
+
+def add_alerts(session):
+    """
+    Adds alerts
+
+    """
+    alerts = session.query(model.AggregationVariables).filter(
+        model.AggregationVariables.alert == 1)
+    for a in alerts:
+        if "threshold:" in a.alert_type:
+            limits = [int(x) for x in a.alert_type.split(":")[1].split(",")]
+            new_alerts = alert_functions.threshold(a.id, limits, session)
+            print(new_alerts)
+            for new_alert in new_alerts:
+                new_alert["id"] = create_alert_id(new_alert)
+                session.add(model.Alert(**new_alert))
+            session.commit()
+
+
+def create_alert_id(alert):
+    """
+    Create an alert id based on the alert we have
+
+    Args:
+        alert: alert_dictionary
+
+    returns:
+       alert_id: an alert id
+
+    """
+    return "".join(sorted(alert["uuids"]))[-country_config["alert_id_length"]:]
+    
+                            
+            
+            
 
 def add_new_fake_data(to_add):
     """
@@ -714,7 +746,10 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             added += newly_added
             print("Added {} records".format(added))
             alerts += new_alerts
-    send_alerts(alerts, session)
+    if alerts:
+        session.bulk_save_objects(alerts)
+        session.commit()
+    #send_alerts(alerts, session)
     conn.close()
     conn2.close()
     return True
@@ -770,6 +805,15 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
         if "alert" in variable_data:
             variable_data["alert_id"] = row[data_type["form"]][data_type[
                 "uuid"]][-country_config["alert_id_length"]:]
+            alerts.append(model.Alert(
+                id=variable_data["alert_id"],
+                type="individual",
+                clinic = location_data["clinic"],
+                reason=variable_data["alert_reason"],
+                date=date,
+                uuids=[row[data_type["form"]][data_type["uuid"]]]
+                )
+            )
         variable_data[data_type["var"]] = 1
         new_data = {
             "date": date,
@@ -780,8 +824,8 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
         }
         for l in location_data.keys():
             new_data[l] = location_data[l]
-        if "alert" in variable_data:
-            alerts.append(new_data)
+        # if "alert" in variable_data:
+        #     alerts.append(new_data)
         if disregard:
             disregarded_data_rows.append(new_data)
         else:

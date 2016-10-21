@@ -32,6 +32,7 @@ agg_variables = [
         method="match",
         db_column="column1",
         alert=1,
+        alert_type="individual",
         condition="A",
         form="form1"),
     model.AggregationVariables(

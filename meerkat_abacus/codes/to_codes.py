@@ -126,12 +126,14 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                         test_outcome = 1
                     variable_json[v] = test_outcome
                     if variables[data_type][group][v].variable.alert:
-                        variable_json["alert"] = 1
-                        variable_json["alert_reason"] = variables[data_type][
-                            group][v].variable.id
-                        for data_var in alert_data.keys():
-                            variable_json["alert_" + data_var] = row[
-                                location_form][alert_data[data_var]]
+                        if variables[data_type][group][
+                                v].variable.alert_type == "individual":
+                            variable_json["alert"] = 1
+                            variable_json["alert_reason"] = variables[
+                                data_type][group][v].variable.id
+                            for data_var in alert_data.keys():
+                                variable_json["alert_" + data_var] = row[
+                                    location_form][alert_data[data_var]]
                     if variables[data_type][group][v].variable.disregard:
                         disregard = True
                     break  # We break out of the current group as all variables in a group are mutually exclusive

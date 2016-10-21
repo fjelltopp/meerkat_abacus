@@ -119,8 +119,9 @@ class AggregationVariables(Base):
     db_column = Column(String)
     method = Column(String)
     condition = Column(String)
-    category = Column(JSONB)
-    alert = Column(Integer)
+    category = Column(JSONB, index=True)
+    alert = Column(Integer, index=True)
+    alert_type = Column(String, index=True)
     calculation = Column(String)
     disregard = Column(Integer)
     calculation_group = Column(String)
@@ -158,3 +159,14 @@ class AggregationVariables(Base):
             return 0
         else:
             return disregard
+
+
+class Alert(Base):
+    __tablename__ = 'alerts'
+    id = Column(String, primary_key=True)
+    type = Column(String, index=True)
+    reason = Column(String, index=True)
+    date = Column(DateTime, index=True)
+    duration = Column(Integer, index=True)
+    clinic = Column(Integer, index=True)
+    uuids = Column(JSONB)
