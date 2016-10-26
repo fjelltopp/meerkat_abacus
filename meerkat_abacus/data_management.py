@@ -4,10 +4,10 @@ Functions to create the database, populate the db tables and proccess data.
 """
 from sqlalchemy import create_engine, func, or_
 from sqlalchemy.orm import sessionmaker, aliased
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
 import boto3
-
 
 import csv, logging
 from dateutil.parser import parse
@@ -22,6 +22,7 @@ from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
 country_config = config.country_config
+
 
 def create_db(url, base, drop=False):
     """
@@ -550,15 +551,54 @@ def add_alerts(session):
     """
     alerts = session.query(model.AggregationVariables).filter(
         model.AggregationVariables.alert == 1)
-    for a in alerts:
-        if "threshold:" in a.alert_type:
+    for a in alerts.all():
+        if a.alert_type and "threshold:" in a.alert_type:
+            var_id = a.id
             limits = [int(x) for x in a.alert_type.split(":")[1].split(",")]
-            new_alerts = alert_functions.threshold(a.id, limits, session)
-            print(new_alerts)
+            new_alerts = alert_functions.threshold(var_id, limits, session)
             for new_alert in new_alerts:
-                new_alert["id"] = create_alert_id(new_alert)
-                session.add(model.Alert(**new_alert))
-            session.commit()
+                representative = sorted(new_alert["uuids"])[0]
+                others = sorted(new_alert["uuids"])[1:]
+                records = session.query(
+                    model.Data, model.form_tables[a.form]).join(
+                        (model.form_tables[a.form],
+                         model.form_tables[a.form].uuid == model.Data.uuid
+                         )).filter(model.Data.uuid.in_(new_alert["uuids"]))
+                data_records_by_uuid = {}
+                form_records_by_uuid = {}
+                for r in records.all():
+                    data_records_by_uuid[r[0].uuid] = r[0]
+                    form_records_by_uuid[r[1].uuid] = r[1]
+                new_variables = data_records_by_uuid[representative].variables
+                new_variables["alert"] = 1
+                new_variables["linked_alerts"] = others
+                new_variables["alert_type"] = "threshold"
+                new_variables["alert_duration"] = new_alert["duration"]
+                new_variables["alert_reason"] = var_id
+                new_variables["alert_id"] = data_records_by_uuid[
+                    representative].uuid[-country_config["alert_id_length"]:]
+
+                for data_var in country_config["alert_data"].keys():
+                    new_variables["alert_" + data_var] = form_records_by_uuid[
+                        representative].data[country_config["alert_data"][
+                            data_var]]
+                data_records_by_uuid[representative].variables = new_variables
+                flag_modified(data_records_by_uuid[representative],
+                              "variables")
+                for o in others:
+                    data_records_by_uuid[representative].variables[
+                        "sub_alert"] = 1
+                    data_records_by_uuid[representative].variables[
+                        "master_alert"] = data_records_by_uuid[
+                            representative].uuid
+
+                    for data_var in country_config["alert_data"].keys():
+                        data_records_by_uuid[o].variables[
+                            "alert_" + data_var] = form_records_by_uuid[
+                                o].data[country_config["alert_data"][data_var]]
+                    flag_modified(data_records_by_uuid[o], "variables")
+                session.commit()
+                session.flush()
 
 
 def create_alert_id(alert):
@@ -573,10 +613,7 @@ def create_alert_id(alert):
 
     """
     return "".join(sorted(alert["uuids"]))[-country_config["alert_id_length"]:]
-    
-                            
-            
-            
+
 
 def add_new_fake_data(to_add):
     """
@@ -805,15 +842,15 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
         if "alert" in variable_data:
             variable_data["alert_id"] = row[data_type["form"]][data_type[
                 "uuid"]][-country_config["alert_id_length"]:]
-            alerts.append(model.Alert(
-                id=variable_data["alert_id"],
-                type="individual",
-                clinic = location_data["clinic"],
-                reason=variable_data["alert_reason"],
-                date=date,
-                uuids=[row[data_type["form"]][data_type["uuid"]]]
-                )
-            )
+            # alerts.append(model.Alert(
+            #     id=variable_data["alert_id"],
+            #     type="individual",
+            #     clinic = location_data["clinic"],
+            #     reason=variable_data["alert_reason"],
+            #     date=date,
+            #     uuids=[row[data_type["form"]][data_type["uuid"]]]
+            #     )
+            # )
         variable_data[data_type["var"]] = 1
         new_data = {
             "date": date,

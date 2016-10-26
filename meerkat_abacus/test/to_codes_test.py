@@ -159,6 +159,7 @@ class ToCodeTest(unittest.TestCase):
                                4: 1,
                                'alert_reason': 2,
                                'alert': 1,
+                               'alert_type': "individual",
                                'alert_column1': 'A'})
         self.assertEqual(disregard, True)
         var, ret_loc, disregard = to_code(
@@ -176,6 +177,7 @@ class ToCodeTest(unittest.TestCase):
                                4: 1,
                                'alert': 1,
                                'alert_column1': 'A',
+                               "alert_type": "individual",
                                'alert_reason': 2})
         self.assertEqual(disregard, True)
 

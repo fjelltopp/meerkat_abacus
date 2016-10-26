@@ -46,7 +46,6 @@ def threshold(var_id, limits, session):
     weekly = data.groupby(["clinic", pd.TimeGrouper(
         key="date", freq=freq, label="left")]).sum()[var_id]
     weekly_over_threshold = weekly[weekly >= limits[1]]
-    print(weekly)
     for clinic_date in weekly_over_threshold.index:
         clinic, date = clinic_date
         uuids = list(data[(data["clinic"] == clinic) & (data["date"] >= date) &

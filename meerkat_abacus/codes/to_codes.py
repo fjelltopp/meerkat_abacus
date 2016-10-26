@@ -129,6 +129,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                         if variables[data_type][group][
                                 v].variable.alert_type == "individual":
                             variable_json["alert"] = 1
+                            variable_json["alert_type"] = "individual"
                             variable_json["alert_reason"] = variables[
                                 data_type][group][v].variable.id
                             for data_var in alert_data.keys():
@@ -137,4 +138,6 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                     if variables[data_type][group][v].variable.disregard:
                         disregard = True
                     break  # We break out of the current group as all variables in a group are mutually exclusive
+    if disregard and variable_json.get("alert_type", None) != "individual":
+        disregard = False
     return (variable_json, ret_location, disregard)
