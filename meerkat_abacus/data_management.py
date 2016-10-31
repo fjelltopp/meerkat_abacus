@@ -552,13 +552,17 @@ def add_alerts(session):
     alerts = session.query(model.AggregationVariables).filter(
         model.AggregationVariables.alert == 1)
     for a in alerts.all():
+        new_alerts = []
         if a.alert_type and "threshold:" in a.alert_type:
             var_id = a.id
             limits = [int(x) for x in a.alert_type.split(":")[1].split(",")]
             new_alerts = alert_functions.threshold(var_id, limits, session)
+            type_name = "threshold"
+        print(a.id)
+        if new_alerts:
             for new_alert in new_alerts:
-                representative = sorted(new_alert["uuids"])[0]
-                others = sorted(new_alert["uuids"])[1:]
+                representative = new_alert["uuids"][0]
+                others = new_alert["uuids"][1:]
                 records = session.query(
                     model.Data, model.form_tables[a.form]).join(
                         (model.form_tables[a.form],
@@ -571,8 +575,8 @@ def add_alerts(session):
                     form_records_by_uuid[r[1].uuid] = r[1]
                 new_variables = data_records_by_uuid[representative].variables
                 new_variables["alert"] = 1
-                new_variables["linked_alerts"] = others
-                new_variables["alert_type"] = "threshold"
+                # new_variables["linked_alerts"] = others
+                new_variables["alert_type"] = type_name
                 new_variables["alert_duration"] = new_alert["duration"]
                 new_variables["alert_reason"] = var_id
                 new_variables["alert_id"] = data_records_by_uuid[
@@ -585,12 +589,13 @@ def add_alerts(session):
                 data_records_by_uuid[representative].variables = new_variables
                 flag_modified(data_records_by_uuid[representative],
                               "variables")
+                print(new_variables)
+                print(representative)
                 for o in others:
-                    data_records_by_uuid[representative].variables[
+                    data_records_by_uuid[o].variables[
                         "sub_alert"] = 1
-                    data_records_by_uuid[representative].variables[
-                        "master_alert"] = data_records_by_uuid[
-                            representative].uuid
+                    data_records_by_uuid[o].variables[
+                        "master_alert"] = representative
 
                     for data_var in country_config["alert_data"].keys():
                         data_records_by_uuid[o].variables[
@@ -599,6 +604,7 @@ def add_alerts(session):
                     flag_modified(data_records_by_uuid[o], "variables")
                 session.commit()
                 session.flush()
+            new_alerts = []
 
 
 def create_alert_id(alert):
@@ -842,16 +848,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
         if "alert" in variable_data:
             variable_data["alert_id"] = row[data_type["form"]][data_type[
                 "uuid"]][-country_config["alert_id_length"]:]
-            # alerts.append(model.Alert(
-            #     id=variable_data["alert_id"],
-            #     type="individual",
-            #     clinic = location_data["clinic"],
-            #     reason=variable_data["alert_reason"],
-            #     date=date,
-            #     uuids=[row[data_type["form"]][data_type["uuid"]]]
-            #     )
-            # )
-        variable_data[data_type["var"]] = 1
+            variable_data[data_type["var"]] = 1
         new_data = {
             "date": date,
             "type": data_type["type"],

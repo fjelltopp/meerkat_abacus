@@ -4,7 +4,7 @@ Command line tool that can be used to run all database related tasks.
 """
 
 import argparse
-from meerkat_abacus.data_management import *
+from data_management import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -73,7 +73,7 @@ if __name__ == "__main__":
         Session = sessionmaker(bind=engine)
         new_data_to_codes(engine)
     if args.action == "add-alerts":
-        engine = create_engine(config.DATABASE_URL, echo=True)
+        engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
         session = Session()
         add_alerts(session)

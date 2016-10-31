@@ -159,14 +159,3 @@ class AggregationVariables(Base):
             return 0
         else:
             return disregard
-
-
-class Alert(Base):
-    __tablename__ = 'alerts'
-    id = Column(String, primary_key=True)
-    type = Column(String, index=True)
-    reason = Column(String, index=True)
-    date = Column(DateTime, index=True)
-    duration = Column(Integer, index=True)
-    clinic = Column(Integer, index=True)
-    uuids = Column(JSONB)
