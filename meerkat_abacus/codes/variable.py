@@ -5,7 +5,10 @@ Definition of the Variable class
 """
 from dateutil.parser import parse
 from functools import partial
-
+from datetime import datetime, timedelta
+from meerkat_abacus import config
+import logging
+country_config = config.country_config
 # from sympy import sympify
 
 
@@ -89,7 +92,6 @@ class Variable():
             for c in self.columns[0]:
                 self.calculation = self.calculation.replace(
                     c, 'float(row["' + c + '"])')
-            self.calculation = compile(self.calculation, "<string>", "eval")
 
             self.test_type = self.test_calc
 
@@ -109,8 +111,6 @@ class Variable():
                 for c in self.columns[0]:
                     self.calculation = self.calculation.replace(
                         c, 'float(row["' + c + '"])')
-                self.calculation = compile(self.calculation, "<string>",
-                                           "eval")
                 self.test_type = partial(self.test_calc_between,
                                          self.columns[0], self.conditions[0],
                                          self.calculation)
@@ -129,7 +129,7 @@ class Variable():
                             self.columns[i] = [self.columns[i]]
                         for c in self.columns[i]:
                             calc = calc.replace(c, 'float(row["' + c + '"])')
-                        self.calculation[i] = compile(calc, "<string>", "eval")
+                        self.calculation[i] = calc
 
             self.test_type = self.test_many
     
@@ -235,21 +235,63 @@ class Variable():
                 return 0
         result = float(eval(calc))
         return float(condition[0]) <= result and float(condition[1]) > result
-          
+
     def test_calc(self, row):
         """
         self. calc should be an expression with column names from
         the row and mathematical expression understood by python.
         We then replace all column names with their numerical values
-        and evalualte the resulting expression.
+        and evalualte the resulting expression.  If the column value is 
+        a date, we replace with the number of seconds since epi week start 
+        after epoch (e.g the first sunday after epoch for Jordan). 
 
         """
         for c in self.columns[0]:
-            if c in row and row[c]:
-                pass
-            else:
+            
+            
+            #Initialise non-existing variables to 0.
+            if not c in row or not row[c]:
                 row[c] = 0
+             
+            #If datestring convert to no of seconds from epi week start day after 1-1-70.
+
+            date = Variable.to_date( row[c] )            
+            if date:
+                #We want to perform calcs on the number of seconds from the epi week start after epoch.
+                #Epoch was on a thursday 1st Jan 1970, so...
+                #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
+                epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
+                #Replace the value in the row by the calculated number of seconds.
+                row[c] = (date - (datetime(1970,1,1) + timedelta(days=epi_offset))) / timedelta(seconds=1)
+        if( self.variable.id == "reg_5" ):
+            log_string = str(self.calculation)
+            log_string = log_string.replace( "row[\"SubmissionDate\"]", str(row["SubmissionDate"]) )
+            log_string = log_string.replace( "row[\"intro./visit_date\"]", str(row["intro./visit_date"]) )   
+            logging.warning( str(log_string) + " ~~ " + str(float(eval(self.calculation))) )                 
         try:
             return float(eval(self.calculation))
         except ZeroDivisionError:
             return 0
+
+    @staticmethod
+    def to_date(string):
+        """
+        Returns a datetime object from a string, if the string conforms to one of the specified
+        date formats. Returns False otherwise.
+        """
+        #Initialise the return value to False.  This is set if a date is successfully extracted.
+        date_obj = False
+        #Return false if value is not string.
+        if type(string) is not str:
+            return date_obj
+        #A list of the valid datestring formats
+        allowed_formats = ['%b %d, %Y', '%b %d, %Y %I:%M:%S %p']  
+        #For each format, try to parse a date from the given string. 
+        #If success, break and return the date, otherwise try the next format.
+        for date_format in allowed_formats:
+            try:
+                date_obj = datetime.strptime( string, date_format )
+                break
+            except ValueError as e:
+                pass
+        return date_obj
