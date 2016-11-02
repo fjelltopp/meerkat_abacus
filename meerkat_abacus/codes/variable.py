@@ -266,26 +266,30 @@ class Variable():
         except ZeroDivisionError:
             return 0
 
-
     @staticmethod
     def to_date(element):
         """
         If the specified element is a date, returns the #seconds since the epi-week start
-        day after epoch e.g. for Jordan, the first Sunday after 1/1/1970. 
-        Just returns the element otherwise.
+        day after epoch e.g. for Jordan, the first Sunday after 1/1/1970. This enables us
+        to do epi-week calculations more efficiently, as each new epi week is % 7. 
+        Just returns the element if it is not a datestring.
         """
         #If element isn't even a string, just return the element instantly.
         if type(element) is not str:
             return element
 
         try:
+
             date = parse( element )
+
             #We want to perform calcs on the number of seconds from the epi week start after epoch.
             #Let's call this the epiepoch. Epoch was on a Thursday 1st Jan 1970, so...
             #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
             epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
+
             #Time since epiepoch = date - epiepoch, where epiepoch = epoch + epioffset.  
             since_epi_epoch = date - (datetime(1970,1,1) + timedelta(days=epi_offset))
+
             #Return the calculated number of seconds.
             return since_epi_epoch.total_seconds()
 
