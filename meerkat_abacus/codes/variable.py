@@ -269,31 +269,46 @@ class Variable():
     @staticmethod
     def to_date(element):
         """
-        If the specified element is a date, returns the #seconds since the epi-week start
-        day after epoch e.g. for Jordan, the first Sunday after 1/1/1970. This enables us
-        to do epi-week calculations more efficiently, as each new epi week is % 7. 
-        Just returns the element if it is not a datestring.
+        Returns a datetime object from a row element, if the element conforms to one of the specified
+        date formats. Just returns the element otherwise.
         """
         #If element isn't even a string, just return the element instantly.
         if type(element) is not str:
             return element
 
-        try:
-            #Use dateutil.parser.parse() to extract date object from string (raises ValueError).
-            date = parse( element )
+        #Initialise the return value to False. This is later set to the date extracted.
+        date_obj = False
+        #A list of the valid datestring formats
+        allowed_formats = [
+            '%d-%b-%Y',
+            '%b %d, %Y', 
+            '%d-%b-%Y %I:%M:%S',
+            '%b %d, %Y %I:%M:%S %p', 
+            '%Y-%m-%dT%H:%M:%S.%f'
+        ]  
 
-            #We want to perform calcs on the number of seconds from the epi week start after epoch.
-            #Let's call this the epiepoch. Epoch was on a Thursday 1st Jan 1970, so...
-            #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
-            epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
+        #For each format, try to parse and convert a date from the given element.
+        #If parsing fails, try the next format.
+        #If success, return the converted date.
+        for date_format in allowed_formats:
 
-            #Time since epiepoch = date - epiepoch, where epiepoch = epoch + epioffset.  
-            since_epi_epoch = date - (datetime(1970,1,1) + timedelta(days=epi_offset))
+            try:
+                date = datetime.strptime( element, date_format )
+                #We want to perform calcs on the number of seconds from the epi week start after epoch.
+                #Let's call this the epiepoch. Epoch was on a Thursday 1st Jan 1970, so...
+                #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
+                epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
 
-            #Return the calculated number of seconds.
-            return since_epi_epoch.total_seconds()
+                #Time since epiepoch = date - epiepoch, where epiepoch = epoch + epioffset.  
+                since_epi_epoch = date - (datetime(1970,1,1) + timedelta(days=epi_offset))
 
-        #If failed to parse the date, just return the element.
-        except ValueError as e:
-            return element
+                #Return the calculated number of seconds.
+                return since_epi_epoch.total_seconds()
+
+            #If failed to parse the date, try a different acceptable date format.
+            except ValueError as e:
+                pass
+
+        #If the element didn't conform to any date format, just return the element.
+        return element
         
