@@ -242,11 +242,14 @@ class Variable():
         self. calc should be an expression with column names from
         the row and mathematical expression understood by python.
         We then replace all column names with their numerical values
-        and evalualte the resulting expression.  If the column value is 
-        a date, we replace with the number of seconds since epi week start 
-        after epoch (e.g the first sunday after epoch for Jordan). 
+        and evalualte the resulting expression.  
+
+        If the column value is a date, we replace with the number of 
+        seconds since epi week start after epoch (e.g the first 
+        sunday after epoch for Jordan). 
 
         """
+        #Copy row because we don't want to actually edit the row's data in to_date().
         row = deepcopy(row)
 
         for c in self.columns[0]:
@@ -255,49 +258,36 @@ class Variable():
             if not c in row or not row[c]:
                 row[c] = 0
              
-            #If row[c] is a datestring convert to no. of seconds from epi week start day after 1-1-70.
+            #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
             row[c] = Variable.to_date( row[c] )            
             
         try:
-            result = float(eval(self.calculation))
+            return float(eval(self.calculation))
         except ZeroDivisionError:
-            result = 0
-            
-        return result
+            return 0
 
 
     @staticmethod
     def to_date(element):
         """
-        Returns a datetime object from a row element, if the element conforms to one of the specified
-        date formats. Just returns the element otherwise.
+        If the specified element is a date, returns the #seconds since the epi-week start
+        day after epoch e.g. for Jordan, the first Sunday after 1/1/1970. 
+        Just returns the element otherwise.
         """
         #If element isn't even a string, just return the element instantly.
         if type(element) is not str:
             return element
 
-        #Initialise the return value to False. This is later set to the date extracted.
-        date_obj = False
-        #A list of the valid datestring formats
-        allowed_formats = ['%b %d, %Y', '%b %d, %Y %I:%M:%S %p', '%Y-%m-%dT%H:%M:%S.%f']  
+        try:
+            date = parse( element )
+            #We want to perform calcs on the number of seconds from the epi week start after epoch.
+            #Epoch was on a Thursday 1st Jan 1970, so...
+            #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
+            epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
+            #Replace the value in the row by the calculated number of seconds.
+            return (date - (datetime(1970,1,1) + timedelta(days=epi_offset))) / timedelta(seconds=1)
 
-        #For each format, try to parse and convert a date from the given element.
-        #If parsing fails, try the next format.
-        #If success, returnthe converted date.
-        for date_format in allowed_formats:
-
-            try:
-                date = datetime.strptime( element, date_format )
-                #We want to perform calcs on the number of seconds from the epi week start after epoch.
-                #Epoch was on a thursday 1st Jan 1970, so...
-                #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
-                epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
-                #Replace the value in the row by the calculated number of seconds.
-                return (date - (datetime(1970,1,1) + timedelta(days=epi_offset))) / timedelta(seconds=1)
-
-            #If failed to parse the date, try a different acceptable date format.
-            except ValueError as e:
-                pass
-
-        #If the element didn't conform to any date format, just return the element.
-        return element
+        #If failed to parse the date, just return the element.
+        except ValueError as e:
+            return element
+        
