@@ -279,7 +279,7 @@ class Variable():
             return element
 
         try:
-
+            #Use dateutil.parser.parse() to extract date object from string (raises ValueError).
             date = parse( element )
 
             #We want to perform calcs on the number of seconds from the epi week start after epoch.
