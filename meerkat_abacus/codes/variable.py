@@ -281,11 +281,13 @@ class Variable():
         try:
             date = parse( element )
             #We want to perform calcs on the number of seconds from the epi week start after epoch.
-            #Epoch was on a Thursday 1st Jan 1970, so...
+            #Let's call this the epiepoch. Epoch was on a Thursday 1st Jan 1970, so...
             #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
             epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
-            #Replace the value in the row by the calculated number of seconds.
-            return (date - (datetime(1970,1,1) + timedelta(days=epi_offset))) / timedelta(seconds=1)
+            #Time since epiepoch = date - epiepoch, where epiepoch = epoch + epioffset.  
+            since_epi_epoch = date - (datetime(1970,1,1) + timedelta(days=epi_offset))
+            #Return the calculated number of seconds.
+            return since_epi_epoch.total_seconds()
 
         #If failed to parse the date, just return the element.
         except ValueError as e:
