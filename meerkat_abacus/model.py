@@ -39,6 +39,7 @@ class Locations(Base):
     case_report = Column(Integer, index=True)
     level = Column(String, index=True)
     start_date = Column(DateTime)
+    population = Column(Integer, default=0)
 
     def __repr__(self):
         return "<Location(name='%s', id='%s', parent_location='%s')>" % (
