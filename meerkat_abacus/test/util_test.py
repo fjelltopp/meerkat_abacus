@@ -184,6 +184,7 @@ class UtilTest(unittest.TestCase):
         
         alert = model.Data(**{"region": 2,
                               "clinic": 3,
+                              "district": 4,
                               "uuid": "uuid:1",
                               "variables": {"alert_reason": "1",
                                             "alert_id": "abcdef",
@@ -200,11 +201,15 @@ class UtilTest(unittest.TestCase):
 
         clinic_mock = mock.Mock()
         clinic_mock.configure_mock(name="Clinic")
+
+        district_mock = mock.Mock()
+        district_mock.configure_mock(name="District")
         
         variables = {"1": var_mock}
         locations = {
             2: region_mock,
-            3: clinic_mock
+            3: clinic_mock,
+            4: district_mock
         }
                                         
         util.country_config["messaging_silent"] = False
