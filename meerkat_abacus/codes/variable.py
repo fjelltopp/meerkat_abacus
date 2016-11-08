@@ -276,8 +276,6 @@ class Variable():
         if type(element) is not str:
             return element
 
-        #Initialise the return value to False. This is later set to the date extracted.
-        date_obj = False
         #A list of the valid datestring formats
         allowed_formats = [
             '%d-%b-%Y',

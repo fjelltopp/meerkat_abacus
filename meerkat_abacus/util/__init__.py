@@ -397,37 +397,87 @@ def send_alert(alert_id, alert, variables, locations):
     """
     if alert.date > country_config['messaging_start_date']:
 
-        alert_info = ("Alert: " + variables[alert.variables["alert_reason"]].name + "\n"
-                      "Date: " + alert.date.strftime("%d %b %Y") + "\n"
-                      "Clinic: " + locations[alert.clinic].name + "\n"
-                      "Region: " + locations[alert.region].name + "\n"
-                      "Gender: " + alert.variables["alert_gender"].title() + "\n"
-                      "Age: " + alert.variables["alert_age"] + "\n"
-                      "Alert ID: " + alert_id + "\n" )
+        #List the possible strings that construct an alert sms message
+        text_strings = {
+            'reason': "Alert: " + variables[alert.variables["alert_reason"]].name + "\n",
+            'date': "Date: " + alert.date.strftime("%d %b %Y") + "\n",    
+            'clinic': "Clinic: " + locations[alert.clinic].name + "\n",
+            'district': "District: " + locations[alert.district].name + "\n",
+            'region': "Region: " + locations[alert.region].name + "\n",
+            'patient': "Patient ID: " + alert.uuid + "\n",
+            'gender': "Gender: " + alert.variables["alert_gender"].title() + "\n",
+            'age': "Age: " + alert.variables["alert_age"] + "\n",
+            'id': "Alert ID: " + alert_id + "\n"
+        }
 
-        message = (alert_info +
-                   "Patient ID: " + alert.uuid + "\n\n"
+        #List the possible strings that construct an alert email message
+        html_strings = {
+            'reason': ( "<tr><td><b>Alert:</b></td><td>" + 
+                        variables[alert.variables["alert_reason"]].name + "</td></tr>" ),
+            'date': ( "<tr><td><b>Date:</b></td><td>" + 
+                      alert.date.strftime("%d %b %Y") + "</td></tr>" ),    
+            'clinic': ( "<tr><td><b>Clinic:</b></td><td>" + 
+                        locations[alert.clinic].name + "</td></tr>" ),
+            'district': ( "<tr><td><b>District:</b></td><td>" + 
+                          locations[alert.district].name + "</td></tr>" ),
+            'region': ( "<tr><td><b>Region:</b></td><td>" + 
+                        locations[alert.region].name + "</td></tr>" ),
+            'patient': ( "<tr><td><b>Patient ID:</b></td><td>" + 
+                         alert.uuid + "</td></tr>"),
+            'gender': ( "<tr><td><b>Gender:</b></td><td>" + 
+                        alert.variables["alert_gender"].title() + "</td></tr>" ),
+            'age': ( "<tr><td><b>Age:</b></td><td>" + 
+                     alert.variables["alert_age"] + "</td></tr>" ),
+            'id': "<tr><td><b>Alert ID:</b></td><td>" + alert_id + "</td></tr>",
+            'breaker': "<tr style='height:10px'></tr>"
+        }
+
+        #Get which sms strings to be used and in which order from the country config.
+        sms_data = country_config.get(
+            'alert_sms_content',
+            [ 'reason', 'date', 'clinic', 'region', 'gender', 'age', 'id' ]
+        )
+
+        #Assemble alert info for sms message from configs.
+        sms_alert_info = ""
+        for item in sms_data:
+            sms_alert_info += text_strings.get(item, "")
+
+        #Get which text strings to be used and in which order from the country config.
+        text_data = country_config.get(
+            'alert_text_content',
+            [ 'reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id' ]
+        )
+
+        #Assemble the alert info for a plain text email message.
+        alert_info = ""
+        for item in text_data:
+            alert_info += text_strings.get(item, "")
+
+        #Get which sms strings to be used and in which order from the country config.
+        html_data = country_config.get(
+            'alert_email_content',
+            [ 'reason', 'date', 'clinic', 'region', 'breaker', 'patient', 'gender', 'age', 'breaker', 'id' ]
+        )
+
+        #Assemble alert info for email message from configs.
+        html_alert_info = "<table style='border:none; margin-left: 20px;'>"
+        for item in html_data:
+            html_alert_info += html_strings.get(item, "")
+        html_alert_info += "</table>"
+
+        #Add to the alert info any other necessary information and store for sending to hermes.
+        message = ( alert_info +
                    "To unsubscribe from <<country>> public health surveillance notifications "
                    "please copy and paste the following url into your browser's address bar:\n"
                    "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n" )
-
-        sms_message = ("<<country>> Public Health Surveillance Alert:\n\n" + alert_info)
-
-        html_message = ("<table style='border:none; margin-left: 20px;'>"
-                        "<tr><td><b>Alert:</b></td><td>" + variables[alert.variables["alert_reason"]].name + "</td></tr>"
-                        "<tr><td><b>Date:</b></td><td>" + alert.date.strftime("%d %b %Y") + "</td></tr>"
-                        "<tr><td><b>Clinic:</b></td><td>" + locations[alert.clinic].name + "</td></tr>"
-                        "<tr><td><b>Region:</b></td><td>" + locations[alert.region].name + "</td></tr>"
-                        "<tr style='height:10px'></tr>"
-                        "<tr><td><b>Patient ID:</b></td><td>" + alert.uuid + "</td></tr>" 
-                        "<tr><td><b>Gender:</b></td><td>" + alert.variables["alert_gender"].title() + "</td></tr>"
-                        "<tr><td><b>Age:</b></td><td>" + alert.variables["alert_age"] + "</td></tr>"
-                        "<tr style='height:10px'></tr>"
-                        "<tr><td><b>Alert ID:</b></td><td>" + alert_id + "</td></tr></table>"
+        sms_message = ("<<country>> Public Health Surveillance Alert:\n\n" + sms_alert_info)
+        html_message = ( html_alert_info +
                         "<p>To unsubscribe from <<country>> public health surveillance notifications "
                         "please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>"
-                        "click here</a>.</p>")      
-
+                        "click here</a>.</p>") 
+     
+        #Structure and send the hermes request
         data = {
             "from": country_config['messaging_sender'],
             "topics": create_topic_list( alert, locations ),
@@ -438,5 +488,9 @@ def send_alert(alert_id, alert, variables, locations):
             "subject": "Public Health Surveillance Alerts: #" + alert_id,
             "medium": ['email', 'sms']
         }
+
+        logging.warning( "CREATED ALERT" )
+        logging.warning( data )
+
         hermes('publish', 'PUT', data)
         #TODO: Add some error handling here!
