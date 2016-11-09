@@ -53,9 +53,12 @@ get_data_from_s3 = int(from_env("GET_DATA_FROM_S3", False))
 interval = 3600  # Seconds
 hermes_api_key = from_env("HERMES_API_KEY", "")
 hermes_api_root = from_env("HERMES_API_ROOT", "")
-hermes_silent = int(from_env("HERMES_SILENT", False))
+hermes_dev = int(from_env("HERMES_DEV", False))
+hermes_dev_topics = []# ['test-emails','error-reporting'] #To test emails from dev.
 mailing_key = from_env("MAILING_KEY", "")
 mailing_root = from_env("MAILING_ROOT", "")
+auth_root = from_env( 'MEERKAT_AUTH_ROOT', 'http://dev_nginx_1/auth' )
+send_test_emails = from_env( 'MEERKAT_TEST_EMAILS', True )
 
 # Country config
 country_config_file = from_env("COUNTRY_CONFIG", "demo_config.py")
@@ -66,7 +69,7 @@ country_config_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(country_config_module)
 country_config = country_config_module.country_config
 
-if hermes_silent:
+if hermes_dev:
     country_config["messaging_silent"] = True
 
 s3_bucket = country_config_module.s3_bucket

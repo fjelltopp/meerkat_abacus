@@ -7,7 +7,7 @@ In this config we set up a beat schedule with a timedelta in seconds
 given by the config.interval value.
 
 """
-from datetime import timedelta
+from datetime import timedelta, datetime
 from celery.schedules import crontab
 import logging, os
 
@@ -43,9 +43,13 @@ if config.mailing_root:
     schedule = config.country_config['reports_schedule']
     
     for report in schedule:
+        
+        #Set up some stuff.
         task_name = 'send_' + report
         language = schedule[report]['language']
         location = schedule[report].get('location', '1' )
+
+        #Create the correct crontab object denoting the time the emails is to be sent out.
         if schedule[report]["period"] == "week":
             send_time = crontab( 
                 minute=0, 
@@ -64,12 +68,44 @@ if config.mailing_root:
                 hour=4, 
                 day_of_week=1
             )
-        #logging.warning( "Now: " + str(crontab(nowfun)) )
+
+        #Add the email sending process to the celery schedule.
         CELERYBEAT_SCHEDULE[task_name] = {
             'task': 'task_queue.send_report_email',
             'schedule': send_time,
             'args': (report, language, location)
-        }  
+        }
+    
+        #If the ENV variable is set, also add the report to the testing schedule.
+        #Send the test report 15 minutes after this moment (schedule should have started).
+        #It's sent every year at this time, but deployments never last that long!
+        if config.send_test_emails:
+            task_name = 'send_test_' + report
+            send_time = datetime.now() + timedelta(minutes=10)
+            send_time = crontab( 
+                    minute=send_time.minute , 
+                    hour=send_time.hour, 
+                    day_of_month=send_time.day,
+                    month_of_year=send_time.month    
+            )
+            CELERYBEAT_SCHEDULE[task_name] = {
+                'task': 'task_queue.send_report_email',
+                'schedule': send_time,
+                'args': ('test_'+report, language, location)
+            } 
+            #Also send the test reports every Thursday morning.
+            #If these don't go out, I have a working day to debug. 
+            task_name = 'send_prelim_' + report
+            send_time = crontab( 
+                minute=0, 
+                hour=7, 
+                day_of_week=4 
+            ) 
+            CELERYBEAT_SCHEDULE[task_name] = {
+                'task': 'task_queue.send_report_email',
+                'schedule': send_time,
+                'args': ('test_' + report, language, location)
+            } 
 
 logging.warning( "Celery is set up with the following beat schedule:\n" + str(CELERYBEAT_SCHEDULE) )
 

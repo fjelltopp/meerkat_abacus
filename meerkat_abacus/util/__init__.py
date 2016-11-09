@@ -5,7 +5,8 @@ import csv, requests, json, itertools, logging
 from datetime import datetime, timedelta
 
 from meerkat_abacus.model import Locations, AggregationVariables, Devices
-from meerkat_abacus.config import country_config, hermes_api_root, hermes_api_key
+from meerkat_abacus.config import country_config
+import meerkat_abacus.config as config
 
 
 def epi_week_start_date(year, epi_config=country_config["epi_week"]):
@@ -273,6 +274,36 @@ def read_csv(file_path):
         for row in reader:
             yield row
 
+def refine_hermes_topics(topics):
+    """
+    We don't want mass emails to be sent from the dev environment, but we do want the ability to test.
+
+    This function takes a list of hermes topics, and if we are in the development/testing 
+    environment (determined by config "hermes_dev") this function strips them back to only those topics
+    in the config variable "hermes_dev_topics".
+
+    Args:
+        topics ([str]) A list of topic ids that a message is initially intended to be published to.
+
+    Returns:
+        [str] A refined list of topic ids containing only those topics from config "hermes_dev_topics",
+        if config "hermes_dev" == 1. 
+    """
+
+    #Make topics a copied (don't edit original) list if it isn't already one.
+    topics = list([topics]) if not isinstance( topics, list ) else list(topics)
+
+    logging.info( "Initial topics: " + str( topics ) )
+
+    #If in development/testing environment, remove topics that aren't pre-specified as allowed.
+    if config.hermes_dev:
+        for t in range( len(topics)-1, -1, -1 ):
+            if topics[t] not in config.hermes_dev_topics:
+                del topics[t]
+
+    logging.info( "Refined topics: " + str( topics ) )
+
+    return topics
 
 def hermes(url, method, data=None):
     """
@@ -283,12 +314,22 @@ def hermes(url, method, data=None):
        method: post/get http method
        data: data to send
     """
-    if country_config["messaging_silent"]:
-        return {"message": "Abacus is in silent mode"}
+
+    #If we are in the dev envirnoment only allow publishing to specially selected topics. 
+    if data.get('topics', []):
+
+        topics = refine_hermes_topics( data.get('topics', []) )
+        #Return a error message if we have tried to publish a mass email from the dev envirnoment. 
+        if not topics:
+            return {"message": "No topics to publish to, perhaps because system is in hermes dev mode."}
+        else:
+            data['topics'] = topics
+
+    #Add the API key and turn into JSON.
+    data["api_key"] = config.hermes_api_key
 
     try:
-        data["api_key"] = hermes_api_key
-        url = hermes_api_root + url
+        url = config.hermes_api_root + "/" + url
         headers = {'content-type': 'application/json'}
         r = requests.request(method, url, json=data, headers=headers)
 
@@ -397,5 +438,5 @@ def send_alert(alert_id, alert, variables, locations):
             "subject": "Public Health Surveillance Alerts: #" + alert_id,
             "medium": ['email', 'sms']
         }
-        hermes('/publish', 'PUT', data)
-        #Add some error handling here!
+        hermes('publish', 'PUT', data)
+        #TODO: Add some error handling here!

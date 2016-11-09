@@ -5,7 +5,11 @@ Definition of the Variable class
 """
 from dateutil.parser import parse
 from functools import partial
-
+from datetime import datetime, timedelta
+from meerkat_abacus import config
+from copy import deepcopy
+import logging
+country_config = config.country_config
 # from sympy import sympify
 
 
@@ -89,7 +93,6 @@ class Variable():
             for c in self.columns[0]:
                 self.calculation = self.calculation.replace(
                     c, 'float(row["' + c + '"])')
-            self.calculation = compile(self.calculation, "<string>", "eval")
 
             self.test_type = self.test_calc
 
@@ -109,8 +112,6 @@ class Variable():
                 for c in self.columns[0]:
                     self.calculation = self.calculation.replace(
                         c, 'float(row["' + c + '"])')
-                self.calculation = compile(self.calculation, "<string>",
-                                           "eval")
                 self.test_type = partial(self.test_calc_between,
                                          self.columns[0], self.conditions[0],
                                          self.calculation)
@@ -129,7 +130,7 @@ class Variable():
                             self.columns[i] = [self.columns[i]]
                         for c in self.columns[i]:
                             calc = calc.replace(c, 'float(row["' + c + '"])')
-                        self.calculation[i] = compile(calc, "<string>", "eval")
+                        self.calculation[i] = calc
 
             self.test_type = self.test_many
     
@@ -235,21 +236,79 @@ class Variable():
                 return 0
         result = float(eval(calc))
         return float(condition[0]) <= result and float(condition[1]) > result
-          
+
     def test_calc(self, row):
         """
         self. calc should be an expression with column names from
         the row and mathematical expression understood by python.
         We then replace all column names with their numerical values
-        and evalualte the resulting expression.
+        and evalualte the resulting expression.  
+
+        If the column value is a date, we replace with the number of 
+        seconds since epi week start after epoch (e.g the first 
+        sunday after epoch for Jordan). 
 
         """
+        #Copy row because we don't want to actually edit the row's data in to_date().
+        row = deepcopy(row)
+
         for c in self.columns[0]:
-            if c in row and row[c]:
-                pass
-            else:
+                  
+            #Initialise non-existing variables to 0.
+            if not c in row or not row[c]:
                 row[c] = 0
+             
+            #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
+            row[c] = Variable.to_date( row[c] )            
+            
         try:
             return float(eval(self.calculation))
         except ZeroDivisionError:
             return 0
+
+    @staticmethod
+    def to_date(element):
+        """
+        Returns a datetime object from a row element, if the element conforms to one of the specified
+        date formats. Just returns the element otherwise.
+        """
+        #If element isn't even a string, just return the element instantly.
+        if type(element) is not str:
+            return element
+
+        #Initialise the return value to False. This is later set to the date extracted.
+        date_obj = False
+        #A list of the valid datestring formats
+        allowed_formats = [
+            '%d-%b-%Y',
+            '%b %d, %Y', 
+            '%d-%b-%Y %I:%M:%S',
+            '%b %d, %Y %I:%M:%S %p', 
+            '%Y-%m-%dT%H:%M:%S.%f'
+        ]  
+
+        #For each format, try to parse and convert a date from the given element.
+        #If parsing fails, try the next format.
+        #If success, return the converted date.
+        for date_format in allowed_formats:
+
+            try:
+                date = datetime.strptime( element, date_format )
+                #We want to perform calcs on the number of seconds from the epi week start after epoch.
+                #Let's call this the epiepoch. Epoch was on a Thursday 1st Jan 1970, so...
+                #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
+                epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
+
+                #Time since epiepoch = date - epiepoch, where epiepoch = epoch + epioffset.  
+                since_epi_epoch = date - (datetime(1970,1,1) + timedelta(days=epi_offset))
+
+                #Return the calculated number of seconds.
+                return since_epi_epoch.total_seconds()
+
+            #If failed to parse the date, try a different acceptable date format.
+            except ValueError as e:
+                pass
+
+        #If the element didn't conform to any date format, just return the element.
+        return element
+        

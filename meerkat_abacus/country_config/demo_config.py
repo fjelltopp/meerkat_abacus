@@ -14,7 +14,7 @@ country_config = {
     "links_file": "demo_links.csv",
     "types_file": "data_types.csv",
     "country_tests": "demo_test.py",
-    "epi_week": "international",
+    "epi_week": "day:0",
     "locations": {
         "clinics": "demo_clinics.csv",
         "districts": "demo_districts.csv",
@@ -84,6 +84,5 @@ country_config = {
         "ncd_public_health": {"period": "month", "send_day": "1", "language": "en"},
         "communicable_diseases": {"period": "week", "send_day": "0", "language": "en"},
         "non_communicable_diseases": {"period": "month", "send_day": "1", "language": "en"}
-    },
-    "send_reports": False
+    }
 }
