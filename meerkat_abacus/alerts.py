@@ -25,12 +25,11 @@ def threshold(var_id, limits, session):
     daily_over_threshold = daily[daily >= limits[0]]
 
     alerts = []
-
     for clinic_date in daily_over_threshold.index:
         clinic, date = clinic_date
         uuids = list(data[(data["clinic"] == clinic) & (data["date"] == date)][
             "uuid"])
-        if len(uuids) > limits[1]:
+        if len(uuids) >= limits[0]:
             alerts.append({
                 "clinic": clinic,
                 "reason": var_id,
@@ -53,7 +52,7 @@ def threshold(var_id, limits, session):
                           (data["date"] < date + timedelta(days=7))]
         
         uuids = list(cases.sort(columns=["date"])["uuid"])
-        if len(uuids) > limits[1]:
+        if len(uuids) >= limits[1]:
             alerts.append({
                 "clinic": clinic,
                 "reason": var_id,

@@ -51,7 +51,7 @@ class UtilTest(unittest.TestCase):
                 clinic=6,
                 uuid="6",
                 variables={"cmd_1": 1}),
-|            model.Data(
+            model.Data(
                 date=datetime(year, 1, 11),
                 clinic=6,
                 uuid="7",
@@ -212,27 +212,26 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(sorted(new_alerts[0]["uuids"]), ["1", "2", "3"])
         self.assertEqual(new_alerts[0]["clinic"], 6)
         self.assertEqual(new_alerts[0]["reason"], "cmd_1")
-        self.assertEqual(new_alerts[0]["date"], datetime(self.year, 1, 3))
-        
+
         self.assertEqual(new_alerts[1]["duration"], 7)
-        self.assertEqual(sorted(new_alerts[1]["uuids"]),
-                         ["4", "5", "6", "7", "8"])
+        self.assertEqual(
+            sorted(new_alerts[1]["uuids"]), ["4", "5", "6", "7", "8"])
         self.assertEqual(new_alerts[1]["clinic"], 6)
         self.assertEqual(new_alerts[1]["reason"], "cmd_1")
-        self.assertEqual(new_alerts[1]["date"], datetime(self.year, 1, 8))
-   def test_double_double(self):
+
+    def test_double_double(self):
 
         self.session.query(model.Data).delete()
         self.session.commit()
         self.session.bulk_save_objects(self.double)
         self.session.commit()
 
-        new_alerts = alerts.double_double("cmd_1", [3, 5], self.session)
+        new_alerts = alerts.double_double("cmd_1", self.session)
         self.assertEqual(len(new_alerts), 1)
 
         self.assertEqual(new_alerts[0]["duration"], 7)
-        self.assertEqual(sorted(new_alerts[0]["uuids"]), ["8","9","10","11", "12", "13", "14"])
+        self.assertEqual(
+            sorted(new_alerts[0]["uuids"]),
+            sorted(["7", "8", "9", "10", "11", "12", "13", "14"]))
         self.assertEqual(new_alerts[0]["clinic"], 6)
         self.assertEqual(new_alerts[0]["reason"], "cmd_1")
-        self.assertEqual(new_alerts[0]["date"], datetime(self.year, 1, 17))
-
