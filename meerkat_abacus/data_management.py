@@ -387,6 +387,8 @@ def import_clinics(csv_file, session, country_id):
                     parent_location = districts[row["district"]]
                 elif row["region"]:
                     parent_location = regions[row["region"]]
+                else:
+                    parent_location = 1
                 result = session.query(model.Locations)\
                                 .filter(model.Locations.name == row["clinic"],
                                         model.Locations.parent_location == parent_location,
@@ -558,6 +560,10 @@ def add_alerts(session):
             limits = [int(x) for x in a.alert_type.split(":")[1].split(",")]
             new_alerts = alert_functions.threshold(var_id, limits, session)
             type_name = "threshold"
+        if a.alert_type == "double":
+            new_alerts = alert_functions.double_double(a.id, session)
+            type_name = "threshold"
+            var_id = a.id
         print(a.id)
         if new_alerts:
             for new_alert in new_alerts:
@@ -589,8 +595,6 @@ def add_alerts(session):
                 data_records_by_uuid[representative].variables = new_variables
                 flag_modified(data_records_by_uuid[representative],
                               "variables")
-                print(new_variables)
-                print(representative)
                 for o in others:
                     data_records_by_uuid[o].variables[
                         "sub_alert"] = 1

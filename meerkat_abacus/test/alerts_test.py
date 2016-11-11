@@ -51,7 +51,7 @@ class UtilTest(unittest.TestCase):
                 clinic=6,
                 uuid="6",
                 variables={"cmd_1": 1}),
-            model.Data(
+|            model.Data(
                 date=datetime(year, 1, 11),
                 clinic=6,
                 uuid="7",
@@ -60,6 +60,138 @@ class UtilTest(unittest.TestCase):
                 date=datetime(year, 1, 12),
                 clinic=6,
                 uuid="8",
+                variables={"cmd_1": 1}),
+        ]
+        self.double = [
+            model.Data(
+                date=datetime(year, 1, 3),
+                clinic=6,
+                uuid="1",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 3),
+                clinic=6,
+                uuid="2",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 10),
+                clinic=6,
+                uuid="3",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 10),
+                clinic=6,
+                uuid="4",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 10),
+                clinic=6,
+                uuid="5",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 10),
+                clinic=6,
+                uuid="6",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                clinic=6,
+                uuid="7",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                clinic=6,
+                uuid="8",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                clinic=6,
+                uuid="9",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                clinic=6,
+                uuid="10",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                clinic=6,
+                uuid="11",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                clinic=6,
+                uuid="12",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                clinic=6,
+                uuid="13",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                clinic=6,
+                uuid="14",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 10),
+                clinic=6,
+                uuid="15",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 10),
+                clinic=6,
+                uuid="16",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 10),
+                clinic=6,
+                uuid="17",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 10),
+                clinic=6,
+                uuid="18",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 17),
+                clinic=6,
+                uuid="19",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 17),
+                clinic=6,
+                uuid="20",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 17),
+                clinic=6,
+                uuid="21",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 17),
+                clinic=6,
+                uuid="22",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 17),
+                clinic=6,
+                uuid="23",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 17),
+                clinic=6,
+                uuid="24",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 17),
+                clinic=6,
+                uuid="25",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 2, 17),
+                clinic=6,
+                uuid="26",
                 variables={"cmd_1": 1}),
         ]
 
@@ -88,3 +220,19 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(new_alerts[1]["clinic"], 6)
         self.assertEqual(new_alerts[1]["reason"], "cmd_1")
         self.assertEqual(new_alerts[1]["date"], datetime(self.year, 1, 8))
+   def test_double_double(self):
+
+        self.session.query(model.Data).delete()
+        self.session.commit()
+        self.session.bulk_save_objects(self.double)
+        self.session.commit()
+
+        new_alerts = alerts.double_double("cmd_1", [3, 5], self.session)
+        self.assertEqual(len(new_alerts), 1)
+
+        self.assertEqual(new_alerts[0]["duration"], 7)
+        self.assertEqual(sorted(new_alerts[0]["uuids"]), ["8","9","10","11", "12", "13", "14"])
+        self.assertEqual(new_alerts[0]["clinic"], 6)
+        self.assertEqual(new_alerts[0]["reason"], "cmd_1")
+        self.assertEqual(new_alerts[0]["date"], datetime(self.year, 1, 17))
+
