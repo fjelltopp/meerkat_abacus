@@ -623,7 +623,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
         engine: db engine
 
     """
-    print(restrict_uuids)
+    #print(restrict_uuids)
     if restrict_uuids is not None:
         if restrict_uuids == []:
             print("No new data to add")
