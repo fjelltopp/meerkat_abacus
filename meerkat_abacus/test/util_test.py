@@ -180,8 +180,6 @@ class UtilTest(unittest.TestCase):
 
     @mock.patch('meerkat_abacus.util.requests')
     def test_send_alert(self, mock_requests):
-        util.country_config["messaging_start_date"] = datetime.now() - timedelta(days=1)
-        
         alert = model.Data(**{"region": 2,
                               "clinic": 3,
                               "district": 4,
@@ -233,7 +231,7 @@ class UtilTest(unittest.TestCase):
     
         # The date is now too early
         mock_requests.reset_mock()
-        alert.date = datetime.now() - timedelta(days=5)
+        alert.date = datetime.now() - timedelta(days=8)
         util.send_alert("abcdef", alert, variables, locations)
         self.assertFalse(mock_requests.request.called)
 
