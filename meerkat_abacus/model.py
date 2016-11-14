@@ -55,7 +55,7 @@ class Data(Base):
     __tablename__ = 'data'
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String)
+    uuid = Column(String, unique=True)
     type = Column(String, index=True)
     date = Column(DateTime, index=True)
     country = Column(Integer, index=True)

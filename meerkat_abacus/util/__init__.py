@@ -395,7 +395,7 @@ def send_alert(alert_id, alert, variables, locations):
         variables: dict with variables
         locations: dict with locations
     """
-    if alert.date > country_config['messaging_start_date']:
+    if alert.date > datetime.now() - timedelta(days=7):
 
         #List the possible strings that construct an alert sms message
         text_strings = {

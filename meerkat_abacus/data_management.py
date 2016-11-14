@@ -703,8 +703,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
         if data:
             data_dicts, new_alerts = to_data(data, link_names, links_by_name,
                                              data_type, locations, variables)
-            conn2.execute(model.Data.__table__.insert(), data_dicts)
-            added += len(data_dicts)
+            newly_added = data_to_db(conn2, data_dicts)
+            added += newly_added
             print("Added {} records".format(added))
             alerts += new_alerts
     send_alerts(alerts, session)
@@ -713,8 +713,11 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     return True
 
 
-def data_to_db(conn2, data_dicts):
-    conn2.execute(model.Data.__table__.insert(), data_dicts)
+def data_to_db(conn, data_dicts):
+    uuids = [row["uuid"] for row in data_dicts]
+    conn.execute(model.Data.__table__.delete().where(
+        model.Data.__table__.c.uuid.in_(uuids)))
+    conn.execute(model.Data.__table__.insert(), data_dicts)
     return len(data_dicts)
 
 
