@@ -229,13 +229,22 @@ class Variable():
         and evalualte the resulting expression.
 
         """
-        for c in columns:
-            if c in row and row[c]:
-                pass
-            else:
-                return 0
-        result = float(eval(calc))
-        return float(condition[0]) <= result and float(condition[1]) > result
+        #Copy row because we don't want to actually edit the row's data in to_date().
+        row = deepcopy(row)
+
+        for c in self.columns:  
+  
+            #Initialise non-existing variables to 0.
+            if not c in row or not row[c]:
+                row[c] = 0
+
+            #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
+            row[c] = Variable.to_date( row[c] )            
+            
+        try:
+            return float(condition[0]) <= float(eval(self.calculation)) > result
+        except ZeroDivisionError:
+            return 0
 
     def test_calc(self, row):
         """
@@ -257,7 +266,7 @@ class Variable():
             #Initialise non-existing variables to 0.
             if not c in row or not row[c]:
                 row[c] = 0
-             
+
             #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
             row[c] = Variable.to_date( row[c] )            
             
