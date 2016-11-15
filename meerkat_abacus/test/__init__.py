@@ -28,10 +28,11 @@ class CeleryTaskTest(unittest.TestCase):
         report = 'test_report'
         task_queue.send_report_email(report, 'fr', "1")
         self.assertTrue( request_mock.request.called )
-        request_mock.request.assert_called_with( 
+        request_mock.request.assert_any_call( 
             'POST', 
-            config.mailing_root + report +"/1/" ,
-            json={"key": config.mailing_key}, 
+            config.auth_root + '/api/login' ,
+            json={ "username": "report-emails",
+                   "password": config.mailing_key }, 
             headers={'content-type': 'application/json'}     
         )
         

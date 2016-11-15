@@ -14,7 +14,7 @@ country_config = {
     "links_file": "demo_links.csv",
     "types_file": "data_types.csv",
     "country_tests": "demo_test.py",
-    "epi_week": "international",
+    "epi_week": "day:0",
     "locations": {
         "clinics": "demo_clinics.csv",
         "districts": "demo_districts.csv",
@@ -74,6 +74,11 @@ country_config = {
     },
     "alert_data": {"age": "pt1./age", "gender": "pt1./gender"},
     "alert_id_length": 6,
+    "alert_text_content": [ 'reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id' ],
+    "alert_sms_content": [ 'reason', 'date', 'clinic', 'region', 'gender', 'age', 'id' ],
+    "alert_email_content": [ 
+        'reason', 'date', 'clinic', 'region', 'breaker', 'patient', 'gender', 'age', 'breaker', 'id' 
+    ],
     "messaging_start_date": datetime.datetime(2016, 2, 15),
     "messaging_topic_prefix": "null",
     "messaging_sender": "",
@@ -84,6 +89,5 @@ country_config = {
         "ncd_public_health": {"period": "month", "send_day": "1", "language": "en"},
         "communicable_diseases": {"period": "week", "send_day": "0", "language": "en"},
         "non_communicable_diseases": {"period": "month", "send_day": "1", "language": "en"}
-    },
-    "send_reports": False
+    }
 }

@@ -564,7 +564,6 @@ def add_alerts(session):
             new_alerts = alert_functions.double_double(a.id, session)
             type_name = "threshold"
             var_id = a.id
-        print(a.id)
         if new_alerts:
             for new_alert in new_alerts:
                 representative = new_alert["uuids"][0]
@@ -608,6 +607,8 @@ def add_alerts(session):
                     flag_modified(data_records_by_uuid[o], "variables")
                 session.commit()
                 session.flush()
+                send_alerts([data_records_by_uuid[representative]], session)
+
             new_alerts = []
 
 
@@ -793,22 +794,26 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             added += newly_added
             print("Added {} records".format(added))
             alerts += new_alerts
-    if alerts:
-        session.bulk_save_objects(alerts)
-        session.commit()
-    #send_alerts(alerts, session)
+    send_alerts(alerts, session)
     conn.close()
     conn2.close()
     return True
 
 
-def data_to_db(conn2, data_dicts, disregarded_data_dicts):
+def data_to_db(conn, data_dicts, disregarded_data_dicts):
     if data_dicts:
-        conn2.execute(model.Data.__table__.insert(), data_dicts)
+        uuids = [row["uuid"] for row in data_dicts]
+        conn.execute(model.Data.__table__.delete().where(
+            model.Data.__table__.c.uuid.in_(uuids)))
+        conn.execute(model.Data.__table__.insert(), data_dicts)
     if disregarded_data_dicts:
-        conn2.execute(model.DisregardedData.__table__.insert(),
-                      disregarded_data_dicts)
-    return len(data_dicts)
+        uuids = [row["uuid"] for row in disregarded_data_dicts]
+        conn.execute(model.DisregardedData.__table__.delete().where(
+            model.DisregardedData.__table__.c.uuid.in_(uuids)))
+
+        conn.execute(model.DisregardedData.__table__.insert(),
+                     disregarded_data_dicts)
+    return len(data_dicts) + len(disregarded_data_dicts)
 
 
 def to_data(data, link_names, links_by_name, data_type, locations, variables):
@@ -853,6 +858,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             variable_data["alert_id"] = row[data_type["form"]][data_type[
                 "uuid"]][-country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1
+
         new_data = {
             "date": date,
             "type": data_type["type"],
@@ -867,6 +873,8 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
         if disregard:
             disregarded_data_rows.append(new_data)
         else:
+            if "alert" in variable_data:
+                alerts.append(model.Data(**new_data))
             data_rows.append(new_data)
     return data_rows, disregarded_data_rows, alerts
 
@@ -882,7 +890,6 @@ def send_alerts(alerts, session):
     locations = util.get_locations(session)
     variables = util.get_variables(session)
     for alert in alerts:
-        alert = model.Data(**alert)
         alert_id = alert.uuid[-country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations)
 

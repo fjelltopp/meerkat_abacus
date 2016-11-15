@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dateutil import parser
 import io
 from meerkat_abacus.util import create_fake_data, epi_week_start_date
-from meerkat_abacus import util, model
+from meerkat_abacus import util, model, config
 from meerkat_abacus.config import country_config
 from unittest import mock
 from collections import namedtuple
@@ -166,25 +166,23 @@ class UtilTest(unittest.TestCase):
             
     @mock.patch('meerkat_abacus.util.requests')
     def test_hermes(self, mock_requests):
-        util.country_config["messaging_silent"] = True
+        config.hermes_dev = True
+        util.hermes("test", "POST", {"topics":["test-topic"]})
+        self.assertFalse( mock_requests.request.called )
+        config.hermes_dev = False
         util.hermes("test", "POST", {})
-        self.assertFalse(mock_requests.request.called)
-        util.country_config["messaging_silent"] = False
-        util.hermes("test", "POST", {})
-        sent_data = {"api_key": util.hermes_api_key}
         headers = {'content-type': 'application/json'}
-        mock_requests.request.assert_called_with("POST",
-                                                util.hermes_api_root + "test",
-                                                json=sent_data,
-                                                headers=headers)
+        mock_requests.request.assert_called_with( "POST",
+                                                  config.hermes_api_root + "/test",
+                                                  json={'api_key': config.hermes_api_key},
+                                                  headers=headers )
 
 
     @mock.patch('meerkat_abacus.util.requests')
     def test_send_alert(self, mock_requests):
-        util.country_config["messaging_start_date"] = datetime.now() - timedelta(days=1)
-        
         alert = model.Data(**{"region": 2,
                               "clinic": 3,
+                              "district": 4,
                               "uuid": "uuid:1",
                               "variables": {"alert_reason": "1",
                                             "alert_id": "abcdef",
@@ -201,11 +199,15 @@ class UtilTest(unittest.TestCase):
 
         clinic_mock = mock.Mock()
         clinic_mock.configure_mock(name="Clinic")
+
+        district_mock = mock.Mock()
+        district_mock.configure_mock(name="District")
         
         variables = {"1": var_mock}
         locations = {
             2: region_mock,
-            3: clinic_mock
+            3: clinic_mock,
+            4: district_mock
         }
                                         
         util.country_config["messaging_silent"] = False
@@ -214,7 +216,7 @@ class UtilTest(unittest.TestCase):
         call_args = mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "PUT")
         self.assertEqual(call_args[0][1],
-                         util.hermes_api_root + "/publish")
+                         config.hermes_api_root + "/publish")
         self.assertTrue( len(call_args[1]["json"]["sms-message"]) < 160 ) #160 characters in a single sms
         self.assertIn("Rabies", call_args[1]["json"]["html-message"])
         self.assertIn("Rabies", call_args[1]["json"]["sms-message"])
@@ -229,7 +231,7 @@ class UtilTest(unittest.TestCase):
     
         # The date is now too early
         mock_requests.reset_mock()
-        alert.date = datetime.now() - timedelta(days=5)
+        alert.date = datetime.now() - timedelta(days=8)
         util.send_alert("abcdef", alert, variables, locations)
         self.assertFalse(mock_requests.request.called)
 
