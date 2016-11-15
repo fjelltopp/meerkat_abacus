@@ -18,7 +18,7 @@ class UtilTest(unittest.TestCase):
         self.engine = create_engine(config.DATABASE_URL)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
-        year = datetime.today().year
+        year = 2014
         self.year = year
         self.threshold = [
             model.Data(
@@ -206,6 +206,7 @@ class UtilTest(unittest.TestCase):
         self.session.commit()
 
         new_alerts = alerts.threshold("cmd_1", [3, 5], self.session)
+        print(new_alerts)
         self.assertEqual(len(new_alerts), 2)
 
         self.assertEqual(new_alerts[0]["duration"], 1)

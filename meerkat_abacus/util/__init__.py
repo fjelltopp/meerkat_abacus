@@ -333,7 +333,7 @@ def hermes(url, method, data=None):
     try:
         url = config.hermes_api_root + "/" + url
         headers = {'content-type': 'application/json'}
-        # r = requests.request(method, url, json=data, headers=headers)
+        r = requests.request(method, url, json=data, headers=headers)
 
     except Exception as e:
         logging.warning( "HERMES REQUEST FAILED: " + str(e) )
