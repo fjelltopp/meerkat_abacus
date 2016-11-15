@@ -278,8 +278,11 @@ class Variable():
     @staticmethod
     def to_date(element):
         """
-        Returns a datetime object from a row element, if the element conforms to one of the specified
-        date formats. Just returns the element otherwise.
+        Converts a row element date string to a number, if the element conforms to one of the specified
+        date formats. If the specified row element is a datestring, this function calulates the number of 
+        seconds between that datetime and the epi week start after the epoch i.e. in Jordan, the first 
+        Sunday after 1st January 1970. If the specified row element doesn't conform to an acceptable
+        date string form, it just returns the element instead.  
         """
         #If element isn't even a string, just return the element instantly.
         if type(element) is not str:
