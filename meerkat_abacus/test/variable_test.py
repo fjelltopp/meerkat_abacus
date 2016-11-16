@@ -120,7 +120,7 @@ class VariableTest(unittest.TestCase):
         row = {"A": "2", "B": "400"}
         self.assertEqual(variable.test(row), 402)
         row = {"A": "2"}  # test if column is missing
-        self.assertEqual(variable.test(row), 2)
+        self.assertEqual(variable.test(row), 0)
 
         agg_variable = model.AggregationVariables(
             id=4,
