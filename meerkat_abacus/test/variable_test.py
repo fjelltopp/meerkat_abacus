@@ -93,16 +93,14 @@ class VariableTest(unittest.TestCase):
             id=4,
             method="between",
             condition="1388527200,2019679200", # 2014-2034
-            calculation="date:A",
+            calculation="Variable.to_date(A)",
             db_column="A")
         variable = Variable(agg_variable)
-        row = {"A": "2016/1/1"}
+        row = {"A": "01-Jan-2016"}
         self.assertEqual(variable.test(row), 1)
-        row = {"A": "2035/1/1"}
+        row = {"A": "01-Jan-2035"}
         self.assertEqual(variable.test(row), 0)
-        row = {"A": "2010/1/1"}
-        self.assertEqual(variable.test(row), 0)
-        row = {"A": "asdlfkj"}
+        row = {"A": "01-Jan-2010"}
         self.assertEqual(variable.test(row), 0)
         
     def test_calc(self):

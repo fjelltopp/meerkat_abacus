@@ -155,6 +155,7 @@ def table_data_from_csv(filename,
     conn = engine.connect()
     new_rows = []
     to_check = []
+    to_check_test = {}
     print(filename)
     if quality_control:
         print("Doing Quality Control")
@@ -163,6 +164,8 @@ def table_data_from_csv(filename,
         if variables:
             to_check = [variables["import"][x][x]
                         for x in variables["import"].keys()]
+            for variable in to_check:
+                to_check_test[variable] = variable.test
     removed = {}
     for row in util.read_csv(directory + filename + ".csv"):
 
@@ -178,7 +181,7 @@ def table_data_from_csv(filename,
         remove = False
         if to_check:
             for variable in to_check:
-                if not variable.test(insert_row):
+                if not to_check_test[variable](insert_row):
                     if variable.variable.category == ["discard"]:
                         remove = True
                     else:
@@ -191,6 +194,7 @@ def table_data_from_csv(filename,
 
                         # Set the
         if remove:
+            print("Removed")
             continue
         if deviceids:
             if should_row_be_added(insert_row, table_name, deviceids,
@@ -781,7 +785,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                         data, link_names, links_by_name, data_type, locations,
                         variables)
                     newly_added = data_to_db(conn2, data_dicts,
-                                             disregarded_data_dicts)
+                                             disregarded_data_dicts, data_type["type"])
                     added += newly_added
                     alerts += new_alerts
                 data = {uuid: last_data}
@@ -790,7 +794,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
                 variables)
-            newly_added = data_to_db(conn2, data_dicts, disregarded_data_dicts)
+            newly_added = data_to_db(conn2, data_dicts,
+                                     disregarded_data_dicts, data_type["type"])
             added += newly_added
             print("Added {} records".format(added))
             alerts += new_alerts
@@ -800,16 +805,19 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     return True
 
 
-def data_to_db(conn, data_dicts, disregarded_data_dicts):
+def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
     if data_dicts:
         uuids = [row["uuid"] for row in data_dicts]
         conn.execute(model.Data.__table__.delete().where(
-            model.Data.__table__.c.uuid.in_(uuids)))
+            model.Data.__table__.c.uuid.in_(uuids)).where(
+                model.Data.__table__.c.type == data_type)
+        )
         conn.execute(model.Data.__table__.insert(), data_dicts)
     if disregarded_data_dicts:
         uuids = [row["uuid"] for row in disregarded_data_dicts]
         conn.execute(model.DisregardedData.__table__.delete().where(
-            model.DisregardedData.__table__.c.uuid.in_(uuids)))
+            model.DisregardedData.__table__.c.uuid.in_(uuids)).where(
+                model.DisregardedData.__table__.c.type == data_type))
 
         conn.execute(model.DisregardedData.__table__.insert(),
                      disregarded_data_dicts)

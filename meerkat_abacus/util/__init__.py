@@ -408,7 +408,7 @@ def send_alert(alert_id, alert, variables, locations):
             'region': "Region: " + locations[alert.region].name + "\n",
             'patient': "Patient ID: " + alert.uuid + "\n",
             'gender': "Gender: " + alert.variables["alert_gender"].title() + "\n",
-            'age': "Age: " + alert.variables["alert_age"] + "\n",
+            'age': "Age: " + str(alert.variables["alert_age"]) + "\n",
             'id': "Alert ID: " + alert_id + "\n"
         }
 
@@ -429,7 +429,7 @@ def send_alert(alert_id, alert, variables, locations):
             'gender': ( "<tr><td><b>Gender:</b></td><td>" + 
                         alert.variables["alert_gender"].title() + "</td></tr>" ),
             'age': ( "<tr><td><b>Age:</b></td><td>" + 
-                     alert.variables["alert_age"] + "</td></tr>" ),
+                     str(alert.variables["alert_age"]) + "</td></tr>" ),
             'id': "<tr><td><b>Alert ID:</b></td><td>" + alert_id + "</td></tr>",
             'breaker': "<tr style='height:10px'></tr>"
         }

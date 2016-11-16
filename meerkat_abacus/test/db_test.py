@@ -101,7 +101,7 @@ class DbTest(unittest.TestCase):
                 db_column="pt./visit_date",
                 method="between",
                 category=["discard"],
-                calculation='date:pt./visit_date',
+                calculation='Variable.to_date(pt./visit_date)',
                 condition="1388527200,2019679200"
             )
         ]
@@ -123,6 +123,7 @@ class DbTest(unittest.TestCase):
             table_name="demo_case",
             quality_control=True)
         results = self.session.query(model.form_tables["demo_case"]).all()
+        print(results)
         self.assertEqual(len(results), 4)
         # Only 6 of the cases have deviceids in 1-6
         # One has to early submission date and one
