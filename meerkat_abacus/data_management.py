@@ -624,7 +624,7 @@ def add_alerts(session):
                     flag_modified(data_records_by_uuid[o], "variables")
                 session.commit()
                 session.flush()
-                send_alerts([data_records_by_uuid[representative]], session)
+                #send_alerts([data_records_by_uuid[representative]], session)
 
             new_alerts = []
 
