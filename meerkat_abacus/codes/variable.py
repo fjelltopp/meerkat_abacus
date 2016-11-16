@@ -57,6 +57,8 @@ class Variable():
         for condition in variable.condition.split(";"):
             if "," in condition:
                 c = [c.strip() for c in condition.split(",")]
+                if '' in c:
+                    c.append(None)
             else:
                 c = [condition]
             self.conditions.append(c)
@@ -238,7 +240,7 @@ class Variable():
   
             #Initialise non-existing variables to 0.
             if not c in row or not row[c]:
-                row[c] = 0
+                return 0
 
                 # If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
             try:
@@ -270,7 +272,7 @@ class Variable():
                   
             #Initialise non-existing variables to 0.
             if not c in row or not row[c]:
-                row[c] = 0
+                return 0
 
             #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
             try:

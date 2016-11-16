@@ -394,7 +394,7 @@ def import_clinics(csv_file, session, country_id):
                     parent_location = regions[row["region"]]
 
                 population = 0
-                if row["population"]:
+                if "population" in row and row["population"]:
                     population = int(row["population"])
                     pop_parent_location = parent_location
                     while pop_parent_location:
