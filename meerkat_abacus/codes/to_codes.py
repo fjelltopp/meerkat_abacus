@@ -1,12 +1,11 @@
 """
 Functionality to turn raw data into codes
 """
-from dateutil import parser
-from datetime import datetime
 import meerkat_abacus.model as model
 from meerkat_abacus.codes.variable import Variable
 
-def get_variables(session):
+
+def get_variables(session, restrict=None):
     """
     Get the variables out of the db and turn them into Variable classes.
 
@@ -18,7 +17,11 @@ def get_variables(session):
     Returns:
         variables(dict): dict of id:Variable
     """
-    result = session.query(model.AggregationVariables)
+    if restrict:
+        result = session.query(model.AggregationVariables).filter(
+            model.AggregationVariables.type == restrict)
+    else:
+        result = session.query(model.AggregationVariables)
     variables = {}
 
     variable_forms = {}
@@ -40,7 +43,10 @@ def get_variables(session):
 
 
 multiple_method = {"last": -1, "first": 0}
-def to_code(row, variables, locations, data_type, location_form, alert_data, mul_forms):
+
+
+def to_code(row, variables, locations, data_type, location_form, alert_data,
+            mul_forms):
     """
     Takes a row and transforms it into a data row
 
@@ -66,7 +72,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data, mul
     locations, locations_by_deviceid, regions, districts, devices = locations
     clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"], None)
     if not clinic_id:
-        return (None, None)
+        return (None, None, None)
     ret_location = {
         "clinic": clinic_id,
         "clinic_type": locations[clinic_id].clinic_type,
@@ -84,23 +90,26 @@ def to_code(row, variables, locations, data_type, location_form, alert_data, mul
         ret_location["district"] = None
         ret_location["region"] = locations[clinic_id].parent_location
     variable_json = {}
-
+    disregard = False
     for group in variables[data_type].keys():
         for v in variables_group[group]:
             form = variable_forms[v]
             datum = row.get(form, None)
             if datum:
                 if form in mul_forms:
-                    method = variables[data_type][group][v].variable.multiple_link
+                    method = variables[data_type][group][
+                        v].variable.multiple_link
                     if method in ["last", "first"]:
                         data = datum[multiple_method[method]]
-                        test_outcome = variables[data_type][group][v].test_type(data)
+                        test_outcome = variables[data_type][group][
+                            v].test_type(data)
                     elif method == "count":
                         test_outcome = len(datum)
                     elif method == "any":
                         test_outcome = 0
                         for d in datum:
-                            test_outcome = variables[data_type][group][v].test_type(d)
+                            test_outcome = variables[data_type][group][
+                                v].test_type(d)
                             if test_outcome:
                                 break
                     elif method == "all":
@@ -117,10 +126,18 @@ def to_code(row, variables, locations, data_type, location_form, alert_data, mul
                         test_outcome = 1
                     variable_json[v] = test_outcome
                     if variables[data_type][group][v].variable.alert:
-                        variable_json["alert"] = 1
-                        variable_json["alert_reason"] = variables[data_type][group][v].variable.id
-                        for data_var in alert_data.keys():
-                            variable_json["alert_"+data_var] = row[location_form][alert_data[data_var]]
+                        if variables[data_type][group][
+                                v].variable.alert_type == "individual":
+                            variable_json["alert"] = 1
+                            variable_json["alert_type"] = "individual"
+                            variable_json["alert_reason"] = variables[
+                                data_type][group][v].variable.id
+                            for data_var in alert_data.keys():
+                                variable_json["alert_" + data_var] = row[
+                                    location_form][alert_data[data_var]]
+                    if variables[data_type][group][v].variable.disregard:
+                        disregard = True
                     break  # We break out of the current group as all variables in a group are mutually exclusive
-    return (variable_json, ret_location)
-
+    if disregard and variable_json.get("alert_type", None) != "individual":
+        disregard = False
+    return (variable_json, ret_location, disregard)

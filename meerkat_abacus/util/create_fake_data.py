@@ -95,7 +95,7 @@ def create_form(fields, data=None, N=500,odk=True):
                 value = get_value(fields[field_name], data)
                 row[field_name] = value
         for field_name in fields.keys():
-            if list(fields[field_name].keys())[0] == "patient_id":
+            if field_name != "deviceids" and list(fields[field_name].keys())[0] == "patient_id":
                 unique_ids.setdefault(field_name, list())
                 unique_field, unique_condition = fields[field_name]["patient_id"].split(";")
                 if row[unique_field] == unique_condition:
@@ -113,7 +113,8 @@ def create_form(fields, data=None, N=500,odk=True):
         if odk:
             # If we are creating fake data for an odk form, we want to add a number of special fields
             if "deviceids" in data.keys():
-                row["deviceid"] = random.sample(data["deviceids"], 1)[0]
+                row["deviceid"] = random.sample(data["deviceids"],
+                                                1)[0]
             else:
                 print("No deviceids given for an odk form")
             row["index"] = i

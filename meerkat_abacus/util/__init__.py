@@ -64,6 +64,8 @@ def field_to_list(row, key):
     Reutrns:
         row: modified row
     """
+    if not row[key]:
+        return row
     if ";" in row[key]:
         row[key] = [c.strip() for c in row[key].split(";")]
     elif "," in row[key]:
@@ -406,7 +408,7 @@ def send_alert(alert_id, alert, variables, locations):
             'region': "Region: " + locations[alert.region].name + "\n",
             'patient': "Patient ID: " + alert.uuid + "\n",
             'gender': "Gender: " + alert.variables["alert_gender"].title() + "\n",
-            'age': "Age: " + alert.variables["alert_age"] + "\n",
+            'age': "Age: " + str(alert.variables["alert_age"]) + "\n",
             'id': "Alert ID: " + alert_id + "\n"
         }
 
@@ -427,7 +429,7 @@ def send_alert(alert_id, alert, variables, locations):
             'gender': ( "<tr><td><b>Gender:</b></td><td>" + 
                         alert.variables["alert_gender"].title() + "</td></tr>" ),
             'age': ( "<tr><td><b>Age:</b></td><td>" + 
-                     alert.variables["alert_age"] + "</td></tr>" ),
+                     str(alert.variables["alert_age"]) + "</td></tr>" ),
             'id': "<tr><td><b>Alert ID:</b></td><td>" + alert_id + "</td></tr>",
             'breaker': "<tr style='height:10px'></tr>"
         }
@@ -494,3 +496,4 @@ def send_alert(alert_id, alert, variables, locations):
 
         hermes('publish', 'PUT', data)
         #TODO: Add some error handling here!
+

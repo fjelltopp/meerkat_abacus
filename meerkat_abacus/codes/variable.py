@@ -19,7 +19,6 @@ class Variable():
     matches the variable
 
     """
-
     def __init__(self, variable):
         """
         Set up variable class. We prepare the conditions/boundaries
@@ -92,8 +91,8 @@ class Variable():
                 self.columns[0] = [self.columns[0]]
             for c in self.columns[0]:
                 self.calculation = self.calculation.replace(
-                    c, 'float(row["' + c + '"])')
-
+                    c, 'row["' + c + '"]')
+            self.calculation = compile(self.calculation, "<string>", "eval")
             self.test_type = self.test_calc
 
         elif len(self.test_types) == 1:
@@ -107,11 +106,13 @@ class Variable():
             elif tt == "between":
                 if not isinstance(self.columns[0], list):
                     self.columns[0] = [self.columns[0]]
-
+                
                 self.calculation = variable.calculation
+
                 for c in self.columns[0]:
                     self.calculation = self.calculation.replace(
-                        c, 'float(row["' + c + '"])')
+                        c, 'row["' + c + '"]')
+                self.calculation = compile(self.calculation, "<string>", "eval")
                 self.test_type = partial(self.test_calc_between,
                                          self.columns[0], self.conditions[0],
                                          self.calculation)
@@ -129,7 +130,9 @@ class Variable():
                         if not isinstance(self.columns[i], list):
                             self.columns[i] = [self.columns[i]]
                         for c in self.columns[i]:
-                            calc = calc.replace(c, 'float(row["' + c + '"])')
+                            calc = calc.replace(
+                                c, 'row["' + c + '"]')
+                        calc = compile(calc, "<string>", "eval")
                         self.calculation[i] = calc
 
             self.test_type = self.test_many
@@ -229,22 +232,26 @@ class Variable():
         and evalualte the resulting expression.
 
         """
-        #Copy row because we don't want to actually edit the row's data in to_date().
-        row = deepcopy(row)
 
-        for c in self.columns:  
+        #Copy row because we don't want to actually edit the row's data in to_date().
+        for c in columns:
   
             #Initialise non-existing variables to 0.
             if not c in row or not row[c]:
                 row[c] = 0
 
-            #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
-            row[c] = Variable.to_date( row[c] )            
-            
+                # If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
+            try:
+                row[c] = float(row[c])
+            except ValueError:
+                pass
+                
         try:
-            return float(condition[0]) <= float(eval(self.calculation)) > result
+            result = float(eval(calc))
+            return (float(condition[0]) <= result) & (float(condition[1]) > result)
         except ZeroDivisionError:
             return 0
+
 
     def test_calc(self, row):
         """
@@ -259,8 +266,6 @@ class Variable():
 
         """
         #Copy row because we don't want to actually edit the row's data in to_date().
-        row = deepcopy(row)
-
         for c in self.columns[0]:
                   
             #Initialise non-existing variables to 0.
@@ -268,8 +273,10 @@ class Variable():
                 row[c] = 0
 
             #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
-            row[c] = Variable.to_date( row[c] )            
-            
+            try:
+                row[c] = float(row[c])
+            except ValueError:
+                pass
         try:
             return float(eval(self.calculation))
         except ZeroDivisionError:
@@ -290,10 +297,10 @@ class Variable():
 
         #A list of the valid datestring formats
         allowed_formats = [
+            '%b %d, %Y',
             '%d-%b-%Y',
-            '%b %d, %Y', 
             '%d-%b-%Y %I:%M:%S',
-            '%b %d, %Y %I:%M:%S %p', 
+            '%b %d, %Y %I:%M:%S %p',
             '%Y-%m-%dT%H:%M:%S.%f'
         ]  
 

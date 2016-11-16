@@ -87,6 +87,22 @@ class VariableTest(unittest.TestCase):
         with self.assertRaises(NameError):
             variable.test(row)
 
+
+        # Test with date
+        agg_variable = model.AggregationVariables(
+            id=4,
+            method="between",
+            condition="1388527200,2019679200", # 2014-2034
+            calculation="Variable.to_date(A)",
+            db_column="A")
+        variable = Variable(agg_variable)
+        row = {"A": "01-Jan-2016"}
+        self.assertEqual(variable.test(row), 1)
+        row = {"A": "01-Jan-2035"}
+        self.assertEqual(variable.test(row), 0)
+        row = {"A": "01-Jan-2010"}
+        self.assertEqual(variable.test(row), 0)
+        
     def test_calc(self):
         """
         testing the calc_between method

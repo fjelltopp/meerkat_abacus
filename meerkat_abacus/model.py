@@ -56,7 +56,7 @@ class Data(Base):
     __tablename__ = 'data'
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String, unique=True)
+    uuid = Column(String)
     type = Column(String, index=True)
     date = Column(DateTime, index=True)
     country = Column(Integer, index=True)
@@ -75,6 +75,30 @@ class Data(Base):
 
 create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
 listen(Data.__table__, 'after_create', create_index)
+
+class DisregardedData(Base):
+    __tablename__ = 'disregarded_data'
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String)
+    type = Column(String, index=True)
+    date = Column(DateTime, index=True)
+    country = Column(Integer, index=True)
+    region = Column(Integer, index=True)
+    district = Column(Integer, index=True)
+    clinic = Column(Integer, index=True)
+    clinic_type = Column(String)
+    links = Column(JSONB)
+    tags = Column(JSONB, index=True)
+    variables = Column(JSONB, index=True)
+    geolocation = Column(String)
+    
+    def __repr__(self):
+        return "<DisregardedData(uuid='%s', id='%s'>" % (
+            self.uuid, self.id )
+
+create_index = DDL("CREATE INDEX disregarded_variables_gin ON disregarded_data USING gin(variables);")
+listen(DisregardedData.__table__, 'after_create', create_index)
 
 
 class Links(Base):
@@ -96,9 +120,11 @@ class AggregationVariables(Base):
     db_column = Column(String)
     method = Column(String)
     condition = Column(String)
-    category = Column(JSONB)
-    alert = Column(Integer)
+    category = Column(JSONB, index=True)
+    alert = Column(Integer, index=True)
+    alert_type = Column(String, index=True)
     calculation = Column(String)
+    disregard = Column(Integer)
     calculation_group = Column(String)
     classification = Column(String)
     classification_casedef = Column(String)
@@ -114,7 +140,6 @@ class AggregationVariables(Base):
         return "<AggregationVariable(name='%s', id='%s'>" % (
             self.name, self.id)
 
-
     @validates("alert")
     def alert_setter(self, key, alert):
         if alert == "":
@@ -128,3 +153,10 @@ class AggregationVariables(Base):
             return 0
         else:
             return daily
+        
+    @validates("disregard")
+    def disregard_setter(self, key, disregard):
+        if disregard == "":
+            return 0
+        else:
+            return disregard
