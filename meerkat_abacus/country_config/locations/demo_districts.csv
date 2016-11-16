@@ -1,4 +1,4 @@
-district,region
-District 1,Region 1
-District 2,Region 1
-District 3,Region 2
+district,region,population
+District 1,Region 1,20000
+District 2,Region 1,20000
+District 3,Region 2,20000

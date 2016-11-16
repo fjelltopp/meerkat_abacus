@@ -18,7 +18,7 @@ def epi_week_start_date(year, epi_config=country_config["epi_week"]):
     if epi_config== day:X then the first epi_week start on the first weekday X after 1st of January
     X=0 is Sunday
     
-    Args: 
+    Args:
         year: year
         epi_config: how epi-weeks are calculated
     Returns:

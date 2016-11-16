@@ -378,10 +378,22 @@ def import_clinics(csv_file, session, country_id):
                 deviceids.append(row["deviceid"])
                 # If the clinic has a district we use that as the parent_location,
                 # otherwise we use the region
+                parent_location = 1
                 if row["district"]:
                     parent_location = districts[row["district"]]
                 elif row["region"]:
                     parent_location = regions[row["region"]]
+
+                population = 0
+                if row["population"]:
+                    population = int(row["population"])
+                    pop_parent_location = parent_location
+                    while pop_parent_location:
+                        r = session.query(model.Locations).filter(
+                            model.Locations.id == pop_parent_location).first()
+                        r.population += population
+                        pop_parent_location = r.parent_location
+                        session.commit()
                 result = session.query(model.Locations)\
                                 .filter(model.Locations.name == row["clinic"],
                                         model.Locations.parent_location == parent_location,
@@ -390,6 +402,7 @@ def import_clinics(csv_file, session, country_id):
                 # If two clinics have the same name and the same parent_location,
                 # we are dealing with two tablets from the same clinic, so we
                 # combine them.
+
                 if len(result.all()) == 0:
                     if row["longitude"] and row["latitude"]:
                         geolocation = row["latitude"] + "," + row["longitude"]
@@ -408,6 +421,7 @@ def import_clinics(csv_file, session, country_id):
                             clinic_type=row["clinic_type"],
                             case_report=case_report,
                             level="clinic",
+                            population=population,
                             start_date=start_date))
                 else:
                     location = result.first()
@@ -609,7 +623,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
         engine: db engine
 
     """
-    print(restrict_uuids)
+    #print(restrict_uuids)
     if restrict_uuids is not None:
         if restrict_uuids == []:
             print("No new data to add")
