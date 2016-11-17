@@ -239,8 +239,8 @@ class Variable():
         for c in columns:
   
             #Initialise non-existing variables to 0.
-            if not c in row or not row[c]:
-                return 0
+            if not c in row or row[c] == '' or row[c] is None:
+                    return 0
 
                 # If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
             try:
@@ -271,7 +271,7 @@ class Variable():
         for c in self.columns[0]:
                   
             #Initialise non-existing variables to 0.
-            if not c in row or not row[c]:
+            if not c in row or row[c] == '' or row[c] is None:
                 return 0
 
             #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.

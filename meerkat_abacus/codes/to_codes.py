@@ -89,6 +89,9 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
     elif locations[clinic_id].parent_location in regions:
         ret_location["district"] = None
         ret_location["region"] = locations[clinic_id].parent_location
+    else:
+        ret_location["district"] = None
+        ret_location["region"] = None
     variable_json = {}
     disregard = False
     for group in variables[data_type].keys():
