@@ -46,6 +46,13 @@ def create_db(url, base, drop=False):
 
 
 def export_data(session):
+    """
+    Helper function to export all the data in the database.
+    Prints out all the objects
+
+    Args: 
+       session: db_session
+    """
     for name, obj in inspect.getmembers(model):
         if inspect.isclass(obj) and hasattr(obj, "__table__"):
             for r in session.query(obj):
@@ -104,7 +111,7 @@ def get_data_from_s3(bucket):
 
     Needs to be authenticated with AWS to run.
 
-    Args: 
+    Args:
        bucket: bucket_name
     """
     s3 = boto3.resource('s3')
@@ -126,17 +133,27 @@ def table_data_from_csv(filename,
                         quality_control=None,
                         start_dates=None):
     """
-    Adds all the data from a csv file. We delete all old data first and then add new data. 
+    Adds all the data from a csv file. We delete all old data first
+    and then add new data.
+
+    If quality_control is true we look among the aggregation variables
+    for variables of the import type. If this variable is not true the
+    corresponding value is set to zero. If the variable has the disregard
+    category we remove the whole row.
 
     Args:
         filename: name of table
         table: table class
         directory: directory where the csv file is
-        engine: SqlAlchemy engine
         session: SqlAlchemy session
+        engine: SqlAlchemy engine
+        only_new: If we should add only new data
         deviceids: if we should only add rows with a one of the deviceids
         table_name: name of table if different from filename
         row_function: function to appy to the rows before inserting
+        start_dates: Clinic start dates, we do not add any data submitted
+                     before these dates
+        quality_control: If we are performing quality controll on the data.
     """
 
     if only_new:
@@ -155,8 +172,9 @@ def table_data_from_csv(filename,
     conn = engine.connect()
     new_rows = []
     to_check = []
-    to_check_test = {}
+    to_check_test = {} # For speed
     print(filename)
+    
     if quality_control:
         print("Doing Quality Control")
         (variables, variable_forms, variable_tests,
@@ -170,7 +188,7 @@ def table_data_from_csv(filename,
     for row in util.read_csv(directory + filename + ".csv"):
 
         if only_new and row["meta/instanceID"] in uuids:
-            continue
+            continue # In this case we only add new data
         if "_index" in row:
             row["index"] = row.pop("_index")
         if row_function:
@@ -194,7 +212,6 @@ def table_data_from_csv(filename,
 
                         # Set the
         if remove:
-            print("Removed")
             continue
         if deviceids:
             if should_row_be_added(insert_row, table_name, deviceids,
@@ -210,8 +227,8 @@ def table_data_from_csv(filename,
         if i % 10000 == 0:
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
-        #     session.commit()
     if to_check:
+        print("Quality Controll performed: ")
         print(removed)
     conn.execute(table.__table__.insert(), dicts)
     conn.close()
@@ -228,8 +245,8 @@ def should_row_be_added(row, form_name, deviceids, start_dates):
     Args:
         row: row to be added
         form_name: name of form
-        deviceids(dict)
-        start_date(dict)
+        deviceids(list): the approved deviceid
+        start_dates(dict): Clinic start dates
     Returns:
         should_add(Bool)
     """
@@ -269,7 +286,7 @@ def import_variables(session):
 
 def import_data(engine, session):
     """
-    Imports csv-files with form data.
+    Imports all the data for all the forms from the csv files
 
     Args:
        engine: db engine
@@ -303,7 +320,7 @@ def import_data(engine, session):
 
 def import_new_data():
     """
-    Import new data from csv files.
+    Import only new data from csv files.
     """
     engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
@@ -348,7 +365,6 @@ def import_clinics(csv_file, session, country_id):
         country_id: id of the country
     """
 
-    logging.warning(country_config["default_start_date"])
     result = session.query(model.Locations)\
                     .filter(model.Locations.parent_location == country_id)
     regions = {}
@@ -385,14 +401,17 @@ def import_clinics(csv_file, session, country_id):
                     model.Devices(
                         device_id=row["deviceid"], tags=tags))
                 deviceids.append(row["deviceid"])
-                # If the clinic has a district we use that as the parent_location,
-                # otherwise we use the region
+                
+                # If the clinic has a district we use that as
+                # the parent_location, otherwise we use the region
                 parent_location = 1
                 if row["district"]:
                     parent_location = districts[row["district"]]
                 elif row["region"]:
                     parent_location = regions[row["region"]]
 
+                # Add population to the clinic and add it up through
+                # All the other locations
                 population = 0
                 if "population" in row and row["population"]:
                     population = int(row["population"])
@@ -512,7 +531,7 @@ def import_locations(engine, session):
 
 def set_up_everything(leave_if_data, drop_db, N):
     """
-    Sets up the db and imports all the data. This should leave 
+    Sets up the db and imports all the data. This should leave
     the database completely ready to used by the API.
 
     Args:
@@ -556,22 +575,38 @@ def set_up_everything(leave_if_data, drop_db, N):
         session = Session()
         print("Add alerts")
         add_alerts(session)
-        # session.query(model.Links).delete()
-        # engine.execute("ALTER SEQUENCE links_id_seq RESTART WITH 1;")
-        # session.commit()
-        # add_new_links()
     return set_up
 
 
 def add_alerts(session):
     """
-    Adds alerts
+    Adds non indivdual alerts.
+
+    Individual alerts are added during the add data process.
+    For any type of alert based on more than one case we add those
+    alerts here.
+
+
+    For each variable that should trigger a form of "threshold" alert.
+    We calculate which records should make up the alert.
+    We then choose the earliest alert as the representative of the whole
+    alert. All the others are linked to it.
+    
+    TODO: We need to figure out a better way of dealing with the representative
+    alert as there could be multiple alerts from the same day etc. Maybe we
+    could generate alert_id from clinic name + week or date. Due to this
+    issue we are currently not sending any threshold alert messages.
+    
+    Args:
+        session: db_session
+
 
     """
     alerts = session.query(model.AggregationVariables).filter(
         model.AggregationVariables.alert == 1)
     for a in alerts.all():
         new_alerts = []
+        
         if a.alert_type and "threshold:" in a.alert_type:
             var_id = a.id
             limits = [int(x) for x in a.alert_type.split(":")[1].split(",")]
@@ -581,8 +616,10 @@ def add_alerts(session):
             new_alerts = alert_functions.double_double(a.id, session)
             type_name = "threshold"
             var_id = a.id
+
         if new_alerts:
             for new_alert in new_alerts:
+                # Choose a representative record for the alert
                 representative = new_alert["uuids"][0]
                 others = new_alert["uuids"][1:]
                 records = session.query(
@@ -596,8 +633,9 @@ def add_alerts(session):
                     data_records_by_uuid[r[0].uuid] = r[0]
                     form_records_by_uuid[r[1].uuid] = r[1]
                 new_variables = data_records_by_uuid[representative].variables
+
+                # Update the variables of the representative alert
                 new_variables["alert"] = 1
-                # new_variables["linked_alerts"] = others
                 new_variables["alert_type"] = type_name
                 new_variables["alert_duration"] = new_alert["duration"]
                 new_variables["alert_reason"] = var_id
@@ -608,9 +646,12 @@ def add_alerts(session):
                     new_variables["alert_" + data_var] = form_records_by_uuid[
                         representative].data[country_config["alert_data"][
                             data_var]]
+
+                # Tell sqlalchemy that we have changed the variables field
                 data_records_by_uuid[representative].variables = new_variables
                 flag_modified(data_records_by_uuid[representative],
                               "variables")
+                # Update all the non-representative rows
                 for o in others:
                     data_records_by_uuid[o].variables[
                         "sub_alert"] = 1
@@ -624,7 +665,7 @@ def add_alerts(session):
                     flag_modified(data_records_by_uuid[o], "variables")
                 session.commit()
                 session.flush()
-                #send_alerts([data_records_by_uuid[representative]], session)
+                # send_alerts([data_records_by_uuid[representative]], session)
 
             new_alerts = []
 
@@ -660,6 +701,19 @@ def create_links(data_type, input_conditions, table, session, conn):
     """
     Creates all the links in the Links table.
 
+    This function uses sql queries to directly populate the links
+    table with all the links without pulling the data in to python
+    at all. Based on the links defined in the links file we
+    generate the required sql query to create the links table.
+
+    Args:
+        data_type: The data type we are working with
+        input_conditions: Some data types have conditions for
+                          which records qualify
+        table: Class of the table we are linking from
+        session: Db session
+        conn: DB connection
+
     """
 
     links_by_type, links_by_name = util.get_links(config.config_directory +
@@ -676,6 +730,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                 columns.append(link_alias.uuid.label("uuid_to"))
                 columns.append(bindparam("type", link["name"]).label("type"))
                 columns.append(link_alias.data.label("data_to"))
+                
                 if link["method"] == "match":
                     join_on = link_alias.data[link[
                         "to_column"]].astext == table.data[link[
@@ -686,6 +741,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                             table.data[link["from_column"]].astext,
                             42 - country_config["alert_id_length"],
                             country_config["alert_id_length"])
+                
                 if link["to_condition"]:
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
@@ -709,40 +765,44 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
 
     Args:
         engine: db engine
+        no_print: Do not print
+        restrict_uuids: If we should only update data related to
+                       uuids in this list
 
     """
-    #print(restrict_uuids)
     if restrict_uuids is not None:
         if restrict_uuids == []:
             print("No new data to add")
             return True
     if not engine:
         engine = create_engine(config.DATABASE_URL)
+        
     Session = sessionmaker(bind=engine)
     session = Session()
     variables = to_codes.get_variables(session)
     locations = util.all_location_data(session)
-    #    old_data = session.query(model.Data.uuid)
 
     data_types = util.read_csv(config.config_directory + country_config[
         "types_file"])
     links_by_type, links_by_name = util.get_links(config.config_directory +
                                                   country_config["links_file"])
-    #   uuids = []
-    alerts = []
 
+    alerts = []
     conn = engine.connect()
     conn2 = engine.connect()
     session.query(model.Links).delete()
     session.commit()
+    
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
-        print(data_type["type"])
+        if not no_print:
+            print(data_type["type"])
+            
         tables = [table]
         link_names = [None]
         conditions = []
-
         query_condtion = []
+        
         if data_type["db_column"]:
             query_condtion = [
                 table.data[data_type["db_column"]].astext ==
@@ -750,10 +810,10 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             ]
             conditions.append(query_condtion[0])
 
+        # Set up the links
         link_names += create_links(data_type, conditions, table, session, conn)
 
         # Main Query
-
         if restrict_uuids is not None:
             result = session.query(model.Links.uuid_from).filter(
                 model.Links.uuid_to.in_(restrict_uuids))
@@ -768,12 +828,11 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                  table.uuid == model.Links.uuid_from)).filter(*query_condtion)
 
         data = {}
-
         res = conn.execution_options(
             stream_results=True).execute(query.statement)
-        print("Executed")
+        # We stream the results to avoid using too much memory
+        
         added = 0
-
         while True:
             chunk = res.fetchmany(500)
             if not chunk:
@@ -791,6 +850,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                         if link_type:
                             data[uuid].setdefault(link_type, [])
                             data[uuid][link_type].append(row[2])
+
                 # Send all data apart from the latest UUID to to_data function
                 last_data = data.pop(uuid)
                 if data:
@@ -798,11 +858,13 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                         data, link_names, links_by_name, data_type, locations,
                         variables)
                     newly_added = data_to_db(conn2, data_dicts,
-                                             disregarded_data_dicts, data_type["type"])
+                                             disregarded_data_dicts,
+                                             data_type["type"])
                     added += newly_added
                     alerts += new_alerts
                 data = {uuid: last_data}
-            print("Added {} records".format(added))
+            if not no_print:
+                print("Added {} records".format(added))
         if data:
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
@@ -810,7 +872,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             newly_added = data_to_db(conn2, data_dicts,
                                      disregarded_data_dicts, data_type["type"])
             added += newly_added
-            print("Added {} records".format(added))
+            if not no_print:
+                print("Added {} records".format(added))
             alerts += new_alerts
     send_alerts(alerts, session)
     conn.close()
@@ -819,6 +882,18 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
 
 
 def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
+    """
+    Adds a list of data_dicts to the database. We make sure we do
+    not add any duplicates by deleting any possible duplicates first
+
+    Args: 
+        conn: Db connection
+        data_dicts: List of data dictionaries
+        disregarded_data_dicts: List of date for the disregard data table
+        data_type: The data typer we are adding
+    Returns: 
+        Number of records added
+    """
     if data_dicts:
         uuids = [row["uuid"] for row in data_dicts]
         conn.execute(model.Data.__table__.delete().where(
@@ -839,8 +914,23 @@ def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
 
 def to_data(data, link_names, links_by_name, data_type, locations, variables):
     """
-    Constructs structured data from the entries in the data
-    list. 
+    Constructs structured data from the entries in the data list.
+    We pass the data row with all its links through the to_codes function
+    to generate the list of codes for this row. We then prepare the data
+    for insertion
+
+    Args:
+        data: list of data rows
+        link_names: list of link names
+        links_by_name: dictionary of link defs by name
+        data_type: The current data type
+        locations: Locations dictionary
+        variables: Dict of variables
+
+    Returns:
+        data_dicts: Data to add to the Data table
+        disregarded_data_dicts: Data to add to the diregarded data table
+        alerts: Any new alerts added
 
     """
     alerts = []
@@ -862,6 +952,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                         sort_function = lambda x: x[column]
                     row[k] = sorted(row[k], key=sort_function)
                     links[k] = [x[links_by_name[k]["uuid"]] for x in row[k]]
+        
         variable_data, location_data, disregard = to_codes.to_code(
             row, variables, locations, data_type["type"], data_type["form"],
             country_config["alert_data"], multiple_forms)
@@ -873,8 +964,8 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             print("Invalid Date", row[data_type["form"]][data_type["date"]])
             continue
 
-        if date < locations[0][location_data["clinic"]].start_date:
-            next
+        # if date < locations[0][location_data["clinic"]].start_date:
+        #     next
         if "alert" in variable_data:
             variable_data["alert_id"] = row[data_type["form"]][data_type[
                 "uuid"]][-country_config["alert_id_length"]:]
@@ -889,8 +980,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
         }
         for l in location_data.keys():
             new_data[l] = location_data[l]
-        # if "alert" in variable_data:
-        #     alerts.append(new_data)
+
         if disregard:
             disregarded_data_rows.append(new_data)
         else:
@@ -902,7 +992,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
 
 def send_alerts(alerts, session):
     """
-    Inserts all the alerts. and calls the send_alert function.
+    Send alert messages
 
     Args:
         alerts: list of alerts
