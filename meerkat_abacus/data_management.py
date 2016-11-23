@@ -878,8 +878,8 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
         if "alert" in variable_data:
             variable_data["alert_id"] = row[data_type["form"]][data_type[
                 "uuid"]][-country_config["alert_id_length"]:]
-            variable_data[data_type["var"]] = 1
-
+        variable_data[data_type["var"]] = 1
+            
         new_data = {
             "date": date,
             "type": data_type["type"],
