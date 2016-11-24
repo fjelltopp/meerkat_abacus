@@ -680,6 +680,11 @@ def create_links(data_type, input_conditions, table, session, conn):
                     join_on = link_alias.data[link[
                         "to_column"]].astext == table.data[link[
                             "from_column"]].astext
+                elif link["method"] == "lower_match":
+                    join_on = func.replace(func.lower(link_alias.data[link[
+                        "to_column"]].astext), "-", "_") == func.replace(func.lower(table.data[link[
+                            "from_column"]].astext), "-", "_")
+
                 elif link["method"] == "alert_match":
                     join_on = link_alias.data[link[
                         "to_column"]].astext == func.substring(
@@ -696,6 +701,7 @@ def create_links(data_type, input_conditions, table, session, conn):
 
                 link_query = session.query(*columns).join(
                     (link_alias, join_on)).filter(*conditions)
+                print(link_query)
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
                 conn.execute(insert)
