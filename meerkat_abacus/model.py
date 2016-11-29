@@ -67,6 +67,7 @@ class Data(Base):
     links = Column(JSONB)
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
+    categories = Column(JSONB, index=True)
     geolocation = Column(String)
     
     def __repr__(self):
@@ -75,6 +76,8 @@ class Data(Base):
 
 create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
 listen(Data.__table__, 'after_create', create_index)
+create_index2 = DDL("CREATE INDEX categories_gin ON data USING gin(categories);")
+listen(Data.__table__, 'after_create', create_index2)
 
 class DisregardedData(Base):
     __tablename__ = 'disregarded_data'
@@ -91,15 +94,17 @@ class DisregardedData(Base):
     links = Column(JSONB)
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
+    categories = Column(JSONB, index=True)
     geolocation = Column(String)
     
     def __repr__(self):
         return "<DisregardedData(uuid='%s', id='%s'>" % (
             self.uuid, self.id )
 
-create_index = DDL("CREATE INDEX disregarded_variables_gin ON disregarded_data USING gin(variables);")
-listen(DisregardedData.__table__, 'after_create', create_index)
-
+create_index3 = DDL("CREATE INDEX disregarded_variables_gin ON disregarded_data USING gin(variables);")
+listen(DisregardedData.__table__, 'after_create', create_index3)
+create_index4 = DDL("CREATE INDEX disregarded_category_gin ON disregarded_data USING gin(categories);")
+listen(DisregardedData.__table__, 'after_create', create_index4)
 
 class Links(Base):
     __tablename__ = 'links'

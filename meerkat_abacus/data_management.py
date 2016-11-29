@@ -61,7 +61,7 @@ def export_data(session):
                 print(name + "(**" + str(columns) + "),")
 
 
-def add_fake_data(session, N=500, append=False):
+def add_fake_data(session, N=5000, append=False):
     """
     Creates a csv file with fake data for each form. We make
     sure that the forms have deviceids that match the imported locations.
@@ -953,7 +953,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                     row[k] = sorted(row[k], key=sort_function)
                     links[k] = [x[links_by_name[k]["uuid"]] for x in row[k]]
         
-        variable_data, location_data, disregard = to_codes.to_code(
+        variable_data, category_data, location_data, disregard = to_codes.to_code(
             row, variables, locations, data_type["type"], data_type["form"],
             country_config["alert_data"], multiple_forms)
 
@@ -976,6 +976,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             "type": data_type["type"],
             "uuid": row[data_type["form"]][data_type["uuid"]],
             "variables": variable_data,
+            "categories": category_data,
             "links": links
         }
         for l in location_data.keys():
