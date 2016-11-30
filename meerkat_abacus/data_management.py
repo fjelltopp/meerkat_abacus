@@ -430,6 +430,7 @@ def import_clinics(csv_file, session, country_id):
                             deviceid=row["deviceid"],
                             clinic_type=row["clinic_type"],
                             case_report=case_report,
+                            case_type=row.get("case_type", None),
                             level="clinic",
                             population=population,
                             start_date=start_date))
@@ -717,7 +718,6 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
         engine: db engine
 
     """
-    #print(restrict_uuids)
     if restrict_uuids is not None:
         if restrict_uuids == []:
             print("No new data to add")
