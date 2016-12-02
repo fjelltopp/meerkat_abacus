@@ -24,6 +24,7 @@ if new_url:
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
+CELERY_IMPORTS = ('meerkat_api.background_tasks.export_data',)
 CELERY_ENABLE_UTC = True
 CELERYD_MAX_TASKS_PER_CHILD = 1  # To help with memory constraints
 
