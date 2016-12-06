@@ -2,25 +2,25 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func, or_
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
-import boto3
-
-import csv, logging
 from dateutil.parser import parse
 from datetime import datetime
-import inspect
-# import resource                print('Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
-
 from meerkat_abacus import alerts as alert_functions
 from meerkat_abacus import model
 from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
+import inspect
+import csv
+import logging
+import boto3
+
+
 country_config = config.country_config
 
 
@@ -82,7 +82,8 @@ def add_fake_data(session, N=500, append=False):
         if append:
             current_form = util.read_csv(file_name)
         if "deviceids" in country_config["fake_data"][form]:
-            # This is a special way to limit the deviceids for a form in the config file
+            # This is a special way to limit the deviceids for a form in
+            # the config file
             form_deviceids = country_config["fake_data"][form]["deviceids"]
         else:
             form_deviceids = deviceids
@@ -104,7 +105,7 @@ def get_data_from_s3(bucket):
 
     Needs to be authenticated with AWS to run.
 
-    Args: 
+    Args:
        bucket: bucket_name
     """
     s3 = boto3.resource('s3')
@@ -126,7 +127,8 @@ def table_data_from_csv(filename,
                         quality_control=None,
                         start_dates=None):
     """
-    Adds all the data from a csv file. We delete all old data first and then add new data. 
+    Adds all the data from a csv file. We delete all old data first and then
+    add new data.
 
     Args:
         filename: name of table
@@ -385,8 +387,8 @@ def import_clinics(csv_file, session, country_id):
                     model.Devices(
                         device_id=row["deviceid"], tags=tags))
                 deviceids.append(row["deviceid"])
-                # If the clinic has a district we use that as the parent_location,
-                # otherwise we use the region
+                # If the clinic has a district we use that as the
+                # parent_location, otherwise we use the region
                 parent_location = 1
                 if row["district"]:
                     parent_location = districts[row["district"]]
@@ -404,15 +406,15 @@ def import_clinics(csv_file, session, country_id):
                         pop_parent_location = r.parent_location
                         session.commit()
 
-                result = session.query(model.Locations)\
-                                .filter(model.Locations.name == row["clinic"],
-                                        model.Locations.parent_location == parent_location,
-                                        model.Locations.clinic_type != None)
+                result = session.query(model.Locations).filter(
+                    model.Locations.name == row["clinic"],
+                    model.Locations.parent_location == parent_location,
+                    model.Locations.clinic_type is not None
+                )
 
-                # If two clinics have the same name and the same parent_location,
-                # we are dealing with two tablets from the same clinic, so we
-                # combine them.
-
+                # If two clinics have the same name and the same
+                # parent_location, we are dealing with two tablets from the
+                # same clinic, so we combine them.
                 if len(result.all()) == 0:
                     if row["longitude"] and row["latitude"]:
                         geolocation = row["latitude"] + "," + row["longitude"]
@@ -515,7 +517,7 @@ def import_locations(engine, session):
 
 def set_up_everything(leave_if_data, drop_db, N):
     """
-    Sets up the db and imports all the data. This should leave 
+    Sets up the db and imports all the data. This should leave
     the database completely ready to used by the API.
 
     Args:
@@ -627,7 +629,7 @@ def add_alerts(session):
                     flag_modified(data_records_by_uuid[o], "variables")
                 session.commit()
                 session.flush()
-                #send_alerts([data_records_by_uuid[representative]], session)
+                # send_alerts([data_records_by_uuid[representative]], session)
 
             new_alerts = []
 
@@ -685,8 +687,9 @@ def create_links(data_type, input_conditions, table, session, conn):
                             "from_column"]].astext
                 elif link["method"] == "lower_match":
                     join_on = func.replace(func.lower(link_alias.data[link[
-                        "to_column"]].astext), "-", "_") == func.replace(func.lower(table.data[link[
-                            "from_column"]].astext), "-", "_")
+                        "to_column"]].astext), "-", "_") == func.replace(
+                            func.lower(table.data[link["from_column"]].astext),
+                            "-", "_")
 
                 elif link["method"] == "alert_match":
                     join_on = link_alias.data[link[
@@ -805,8 +808,11 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                     data_dicts, disregarded_data_dicts, new_alerts = to_data(
                         data, link_names, links_by_name, data_type, locations,
                         variables)
-                    newly_added = data_to_db(conn2, data_dicts,
-                                             disregarded_data_dicts, data_type["type"])
+                    newly_added = data_to_db(
+                        conn2, data_dicts,
+                        disregarded_data_dicts,
+                        data_type["type"]
+                    )
                     added += newly_added
                     alerts += new_alerts
                 data = {uuid: last_data}
@@ -848,7 +854,7 @@ def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
 def to_data(data, link_names, links_by_name, data_type, locations, variables):
     """
     Constructs structured data from the entries in the data
-    list. 
+    list.
 
     """
     alerts = []
@@ -887,7 +893,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             variable_data["alert_id"] = row[data_type["form"]][data_type[
                 "uuid"]][-country_config["alert_id_length"]:]
         variable_data[data_type["var"]] = 1
-            
+
         new_data = {
             "date": date,
             "type": data_type["type"],
@@ -918,6 +924,12 @@ def send_alerts(alerts, session):
     """
     locations = util.get_locations(session)
     variables = util.get_variables(session)
+
+    # Sort the alerts by date, and only use the 10 most recent.
+    # To avoid accidental spamming - should never need to send more than 10.
+    alerts.sort(key=lambda alert: alert.date)
+    alerts = alerts[-10:]
+
     for alert in alerts:
         alert_id = alert.uuid[-country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations)
