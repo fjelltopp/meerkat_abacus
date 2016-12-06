@@ -11,6 +11,8 @@ from celery.signals import worker_ready
 from datetime import datetime
 import requests, logging, traceback
 
+from api_background.export_data import export_form, export_category, export_data
+
 
 # When we start celery we run the set_up_db command
 @worker_ready.connect

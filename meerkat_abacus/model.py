@@ -1,7 +1,7 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, DDL
+from sqlalchemy import Column, Integer, String, DateTime, DDL, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
@@ -24,7 +24,16 @@ for table in country_config["tables"]:
     listen(form_tables[table].__table__, 'after_create', create_index)
 
 
+class DownloadDataFiles(Base):
+    __tablename__ = 'download_data_files'
 
+    uuid = Column(String, primary_key=True)
+    generation_time = Column(DateTime)
+    type = Column(String)
+    status = Column(Float)
+    success = Column(Integer)
+    content = Column(String)
+    
     
 class Locations(Base):
     __tablename__ = 'locations'
