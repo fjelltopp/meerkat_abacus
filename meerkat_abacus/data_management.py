@@ -2,25 +2,25 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func, or_
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
-import boto3
-
-import csv, logging
 from dateutil.parser import parse
 from datetime import datetime
-import inspect
-# import resource                print('Memory usage: %s (kb)' % int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
-
 from meerkat_abacus import alerts as alert_functions
 from meerkat_abacus import model
 from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
+import inspect
+import csv
+import logging
+import boto3
+
+
 country_config = config.country_config
 
 
@@ -89,7 +89,8 @@ def add_fake_data(session, N=5000, append=False):
         if append:
             current_form = util.read_csv(file_name)
         if "deviceids" in country_config["fake_data"][form]:
-            # This is a special way to limit the deviceids for a form in the config file
+            # This is a special way to limit the deviceids for a form in
+            # the config file
             form_deviceids = country_config["fake_data"][form]["deviceids"]
         else:
             form_deviceids = deviceids
@@ -423,15 +424,15 @@ def import_clinics(csv_file, session, country_id):
                         pop_parent_location = r.parent_location
                         session.commit()
 
-                result = session.query(model.Locations)\
-                                .filter(model.Locations.name == row["clinic"],
-                                        model.Locations.parent_location == parent_location,
-                                        model.Locations.clinic_type != None)
+                result = session.query(model.Locations).filter(
+                    model.Locations.name == row["clinic"],
+                    model.Locations.parent_location == parent_location,
+                    model.Locations.clinic_type is not None
+                )
 
-                # If two clinics have the same name and the same parent_location,
-                # we are dealing with two tablets from the same clinic, so we
-                # combine them.
-
+                # If two clinics have the same name and the same
+                # parent_location, we are dealing with two tablets from the
+                # same clinic, so we combine them.
                 if len(result.all()) == 0:
                     if row["longitude"] and row["latitude"]:
                         geolocation = row["latitude"] + "," + row["longitude"]
@@ -449,6 +450,7 @@ def import_clinics(csv_file, session, country_id):
                             deviceid=row["deviceid"],
                             clinic_type=row["clinic_type"],
                             case_report=case_report,
+                            case_type=row.get("case_type", None),
                             level="clinic",
                             population=population,
                             start_date=start_date))
@@ -456,6 +458,8 @@ def import_clinics(csv_file, session, country_id):
                     location = result.first()
                     location.deviceid = location.deviceid + "," + row[
                         "deviceid"]
+                    if location.case_type != row.get("case_type", None):
+                        location.case_type = "multiple"
     session.commit()
 
 
@@ -735,6 +739,12 @@ def create_links(data_type, input_conditions, table, session, conn):
                     join_on = link_alias.data[link[
                         "to_column"]].astext == table.data[link[
                             "from_column"]].astext
+                elif link["method"] == "lower_match":
+                    join_on = func.replace(func.lower(link_alias.data[link[
+                        "to_column"]].astext), "-", "_") == func.replace(
+                            func.lower(table.data[link["from_column"]].astext),
+                            "-", "_")
+
                 elif link["method"] == "alert_match":
                     join_on = link_alias.data[link[
                         "to_column"]].astext == func.substring(
@@ -752,6 +762,7 @@ def create_links(data_type, input_conditions, table, session, conn):
 
                 link_query = session.query(*columns).join(
                     (link_alias, join_on)).filter(*conditions)
+                print(link_query)
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
                 conn.execute(insert)
@@ -857,9 +868,11 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                     data_dicts, disregarded_data_dicts, new_alerts = to_data(
                         data, link_names, links_by_name, data_type, locations,
                         variables)
-                    newly_added = data_to_db(conn2, data_dicts,
-                                             disregarded_data_dicts,
-                                             data_type["type"])
+                    newly_added = data_to_db(
+                        conn2, data_dicts,
+                        disregarded_data_dicts,
+                        data_type["type"]
+                    )
                     added += newly_added
                     alerts += new_alerts
                 data = {uuid: last_data}
@@ -969,7 +982,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
         if "alert" in variable_data:
             variable_data["alert_id"] = row[data_type["form"]][data_type[
                 "uuid"]][-country_config["alert_id_length"]:]
-            variable_data[data_type["var"]] = 1
+        variable_data[data_type["var"]] = 1
 
         new_data = {
             "date": date,
@@ -1001,6 +1014,12 @@ def send_alerts(alerts, session):
     """
     locations = util.get_locations(session)
     variables = util.get_variables(session)
+
+    # Sort the alerts by date, and only use the 10 most recent.
+    # To avoid accidental spamming - should never need to send more than 10.
+    alerts.sort(key=lambda alert: alert.date)
+    alerts = alerts[-10:]
+
     for alert in alerts:
         alert_id = alert.uuid[-country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations)

@@ -48,6 +48,7 @@ class Locations(Base):
     case_report = Column(Integer, index=True)
     level = Column(String, index=True)
     start_date = Column(DateTime)
+    case_type = Column(String, index=True)
     population = Column(Integer, default=0)
 
     def __repr__(self):
@@ -73,6 +74,7 @@ class Data(Base):
     district = Column(Integer, index=True)
     clinic = Column(Integer, index=True)
     clinic_type = Column(String)
+    case_type = Column(String)
     links = Column(JSONB)
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
@@ -100,6 +102,7 @@ class DisregardedData(Base):
     district = Column(Integer, index=True)
     clinic = Column(Integer, index=True)
     clinic_type = Column(String)
+    case_type = Column(String)
     links = Column(JSONB)
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)

@@ -1,34 +1,37 @@
 #!/usr/local/bin/python3
 
 from meerkat_abacus import task_queue
-import logging, argparse
+import argparse
 
-#Setup the argument parsing.
+# Setup the argument parsing.
 parser = argparse.ArgumentParser(
     "send_email",
-    description="Trigger the email sending process for the purposes of debugging."
+    description="Trigger the email sending process for debugging."
 )
 parser.add_argument(
-    'report',  
-    type=str, 
+    'report',
+    type=str,
     help='The id of the report email to send.'
 )
 parser.add_argument(
-    '--lang', 
-    metavar='en', 
-    type=str, 
-    default='en', 
+    '--lang',
+    metavar='en',
+    type=str,
+    default='en',
     help='The langauge the report should be sent in.'
 )
 parser.add_argument(
-    '--loc', 
-    metavar='1', 
-    type=int, 
-    default=1, 
+    '--loc',
+    metavar='1',
+    type=int,
+    default=1,
     help='The id of the location the report should be sent for.'
 )
 args = parser.parse_args()
 args_dict = vars(args)
-print( args_dict )
+print(args_dict)
 
-task_queue.send_report_email( args_dict['report'], args_dict['lang'], args_dict['loc'] )
+task_queue.send_report_email(
+    args_dict['report'], args_dict['lang'],
+    args_dict['loc']
+)
