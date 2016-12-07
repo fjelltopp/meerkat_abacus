@@ -23,12 +23,13 @@ START_CELERY: if we want to star the celery hourly tasks
 
 """
 import os
-import sys
 import importlib.util
+
+
 def from_env(env_var, default):
     """ Gets value from envrionment variable or uses default
 
-    Args: 
+    Args:
         env_var: name of envrionment variable
         default: the default value
     """
@@ -41,8 +42,10 @@ def from_env(env_var, default):
 
 # Application config
 current_directory = os.path.dirname(os.path.realpath(__file__))
-DATABASE_URL = from_env("MEERKAT_ABACUS_DB_URL",
-                        'postgresql+psycopg2://postgres:postgres@db/meerkat_db')
+DATABASE_URL = from_env(
+    "MEERKAT_ABACUS_DB_URL",
+    'postgresql+psycopg2://postgres:postgres@db/meerkat_db'
+)
 data_directory = from_env("DATA_DIRECTORY",
                           current_directory + "/data/")
 config_directory = from_env("COUNTRY_CONFIG_DIR",
@@ -54,17 +57,19 @@ interval = 3600  # Seconds
 hermes_api_key = from_env("HERMES_API_KEY", "")
 hermes_api_root = from_env("HERMES_API_ROOT", "")
 hermes_dev = int(from_env("HERMES_DEV", False))
-hermes_dev_topics = [] #['test-emails','error-reporting'] #To test emails from dev.
+hermes_dev_topics = []  # ['test-emails','error-reporting']
 mailing_key = from_env("MAILING_KEY", "")
 mailing_root = from_env("MAILING_ROOT", "")
-auth_root = from_env( 'MEERKAT_AUTH_ROOT', 'http://dev_nginx_1/auth' )
-send_test_emails = from_env( 'MEERKAT_TEST_EMAILS', True )
+auth_root = from_env('MEERKAT_AUTH_ROOT', 'http://dev_nginx_1/auth')
+send_test_emails = from_env('MEERKAT_TEST_EMAILS', False)
 
 # Country config
 country_config_file = from_env("COUNTRY_CONFIG", "demo_config.py")
 
-spec = importlib.util.spec_from_file_location("country_config_module",
-                                              config_directory + country_config_file)
+spec = importlib.util.spec_from_file_location(
+    "country_config_module",
+    config_directory + country_config_file
+)
 country_config_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(country_config_module)
 country_config = country_config_module.country_config
