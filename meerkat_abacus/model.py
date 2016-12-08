@@ -1,7 +1,7 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, DDL
+from sqlalchemy import Column, Integer, String, DateTime, DDL, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
@@ -24,7 +24,16 @@ for table in country_config["tables"]:
     listen(form_tables[table].__table__, 'after_create', create_index)
 
 
+class DownloadDataFiles(Base):
+    __tablename__ = 'download_data_files'
 
+    uuid = Column(String, primary_key=True)
+    generation_time = Column(DateTime)
+    type = Column(String)
+    status = Column(Float)
+    success = Column(Integer)
+    content = Column(String)
+    
     
 class Locations(Base):
     __tablename__ = 'locations'
@@ -69,6 +78,7 @@ class Data(Base):
     links = Column(JSONB)
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
+    categories = Column(JSONB, index=True)
     geolocation = Column(String)
     
     def __repr__(self):
@@ -77,6 +87,8 @@ class Data(Base):
 
 create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
 listen(Data.__table__, 'after_create', create_index)
+create_index2 = DDL("CREATE INDEX categories_gin ON data USING gin(categories);")
+listen(Data.__table__, 'after_create', create_index2)
 
 class DisregardedData(Base):
     __tablename__ = 'disregarded_data'
@@ -94,15 +106,17 @@ class DisregardedData(Base):
     links = Column(JSONB)
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
+    categories = Column(JSONB, index=True)
     geolocation = Column(String)
     
     def __repr__(self):
         return "<DisregardedData(uuid='%s', id='%s'>" % (
             self.uuid, self.id )
 
-create_index = DDL("CREATE INDEX disregarded_variables_gin ON disregarded_data USING gin(variables);")
-listen(DisregardedData.__table__, 'after_create', create_index)
-
+create_index3 = DDL("CREATE INDEX disregarded_variables_gin ON disregarded_data USING gin(variables);")
+listen(DisregardedData.__table__, 'after_create', create_index3)
+create_index4 = DDL("CREATE INDEX disregarded_category_gin ON disregarded_data USING gin(categories);")
+listen(DisregardedData.__table__, 'after_create', create_index4)
 
 class Links(Base):
     __tablename__ = 'links'

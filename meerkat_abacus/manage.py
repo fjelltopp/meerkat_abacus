@@ -4,7 +4,7 @@ Command line tool that can be used to run all database related tasks.
 """
 
 import argparse
-from data_management import *
+from meerkat_abacus.data_management import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
