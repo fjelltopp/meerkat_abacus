@@ -82,7 +82,7 @@ if config.mailing_root:
         # If the ENV variable is set, add the report to the testing schedule.
         # Send test reports 10 minutes after this moment (once setup finished).
         # Sent every year at this time, but deployments never last that long!
-        if config.send_test_emails:
+        if int(config.send_test_emails):
             task_name = 'send_test_' + report
             send_time = datetime.now() + timedelta(minutes=10)
             send_time = crontab(
