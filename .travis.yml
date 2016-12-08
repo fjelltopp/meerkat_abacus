@@ -19,6 +19,9 @@ install:
  - conda update -q conda
  - conda install pandas
  - pip install -r requirements.txt
+ - git clone https://github.com/meerkat-code/meerkat_api.git
+ - cd meerkat_api/api_background
+ - pip install .
 script: nosetests -v
 notifications:
   slack:
