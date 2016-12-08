@@ -26,23 +26,27 @@ districts = [4, 5]
 agg_variables = [
     model.AggregationVariables(
         id=1, method="not_null", db_column="index", condition="",
+        category=[],
         form="form1"),
     model.AggregationVariables(
         id=2,
         method="match",
         db_column="column1",
         alert=1,
+        category=[],
         alert_type="individual",
         condition="A",
         form="form1"),
     model.AggregationVariables(
         id=3,
+        category=[],
         method="sub_match",
         db_column="column2",
         condition="B",
         form="form1"),
     model.AggregationVariables(
         id=4,
+        category=[],
         method="between",
         calculation="column3",
         db_column="column3",
@@ -91,7 +95,7 @@ class ToCodeTest(unittest.TestCase):
                 "date": "2015-10-25",
                 "deviceid": 1,
                 "meta/instanceID": "a"}}
-        var, ret_location, disregarded = to_code(
+        var, category, ret_location, disregarded = to_code(
             row,
             (variables, variables_forms, variables_test, variables_groups),
             all_locations, "case", "form1", alert_data, mul_forms)
@@ -101,7 +105,7 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(ret_location["clinic"], 6)
 
         row["form1"]["deviceid"] = 2
-        var, ret_location, disregard = to_code(
+        var, category, ret_location, disregard = to_code(
             row,
             (variables, variables_forms, variables_test, variables_groups),
             all_locations, "case", "form1", alert_data, mul_forms)
@@ -110,7 +114,7 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(ret_location["district"], 5)
 
         row["form1"]["deviceid"] = 3
-        var, ret_location, disregard = to_code(
+        var, category, ret_location, disregard = to_code(
             row,
             (variables, variables_forms, variables_test, variables_groups),
             all_locations, "case", "form1", alert_data, mul_forms)
@@ -118,7 +122,7 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(ret_location["region"], 2)
         self.assertEqual(ret_location["district"], None)
         row["form1"]["deviceid"] = 99
-        var, ret_location, disregard = to_code(
+        var, category, ret_location, disregard = to_code(
             row,
             (variables, variables_forms, variables_test, variables_groups),
             all_locations, "case", "form1", alert_data, mul_forms)
@@ -149,7 +153,7 @@ class ToCodeTest(unittest.TestCase):
                           "date": "2015-10-25",
                           "deviceid": 2,
                           "meta/instanceID": "c"}}
-        var, ret_loc, disregard = to_code(
+        var, category, ret_loc, disregard = to_code(
             row1,
             (variables, variables_forms, variables_test, variables_groups),
             all_locations, "case", "form1", alert_data, mul_forms)
@@ -162,13 +166,13 @@ class ToCodeTest(unittest.TestCase):
                                'alert_type': "individual",
                                'alert_column1': 'A'})
         self.assertEqual(disregard, True)
-        var, ret_loc, disregard = to_code(
+        var, category, ret_loc, disregard = to_code(
             row2,
             (variables, variables_forms, variables_test, variables_groups),
             all_locations, "case", "form1", alert_data, mul_forms)
         self.assertEqual(var, {1: 1})
         self.assertEqual(disregard, False)
-        var, ret_loc, disregard = to_code(
+        var, category, ret_loc, disregard = to_code(
             row3,
             (variables, variables_forms, variables_test, variables_groups),
             all_locations, "case", "form1", alert_data, mul_forms)

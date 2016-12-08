@@ -3,12 +3,38 @@ Various utility functions for meerkat abacus
 """
 import csv, requests, json, itertools, logging
 from datetime import datetime, timedelta
-
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 from meerkat_abacus.model import Locations, AggregationVariables, Devices
 from meerkat_abacus.config import country_config
 import meerkat_abacus.config as config
 
 
+def epi_week(date):
+    """
+    calculate epi week
+
+    Args:
+        date
+    Returns epi_week
+    """
+    start_date = epi_week_start_date(date.year)
+    if date < start_date:
+        start_date = start_date.replace(year=start_date.year-1)
+    year = start_date.year
+    return year, (date - start_date).days // 7 + 1
+
+
+def get_db_engine():
+    """
+    Returns a db engine and session
+    
+    """
+    engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    return engine, session
+    
 def epi_week_start_date(year, epi_config=country_config["epi_week"]):
     """
     Get the first day of epi week 1

@@ -72,7 +72,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
     locations, locations_by_deviceid, regions, districts, devices = locations
     clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"], None)
     if not clinic_id:
-        return (None, None, None)
+        return (None, None, None, None)
     ret_location = {
         "clinic": clinic_id,
         "clinic_type": locations[clinic_id].clinic_type,
@@ -94,6 +94,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         ret_location["district"] = None
         ret_location["region"] = None
     variable_json = {}
+    categories = {}
     disregard = False
     for group in variables[data_type].keys():
         for v in variables_group[group]:
@@ -129,6 +130,8 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                     if test_outcome == 1:
                         test_outcome = 1
                     variable_json[v] = test_outcome
+                    for cat in variables[data_type][group][v].variable.category:
+                        categories[cat] = v
                     if variables[data_type][group][v].variable.alert:
                         if variables[data_type][group][
                                 v].variable.alert_type == "individual":
@@ -144,4 +147,4 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                     break  # We break out of the current group as all variables in a group are mutually exclusive
     if disregard and variable_json.get("alert_type", None) != "individual":
         disregard = False
-    return (variable_json, ret_location, disregard)
+    return (variable_json, categories, ret_location, disregard)
