@@ -260,20 +260,21 @@ class Variable():
         self. calc should be an expression with column names from
         the row and mathematical expression understood by python.
         We then replace all column names with their numerical values
-        and evalualte the resulting expression.  
+        and evalualte the resulting expression.
 
         If the column value is a date, we replace with the number of 
         seconds since epi week start after epoch (e.g the first 
-        sunday after epoch for Jordan). 
+        sunday after epoch for Jordan).
 
         """
-        #Copy row because we don't want to actually edit the row's data in to_date().
         for c in self.columns[0]:
                   
-            #Initialise non-existing variables to 0.
-            if not c in row or row[c] == '' or row[c] is None:
+            # Initialise non-existing variables to 0.
+            if c not in row:
                 return 0
 
+            if row[c] == '' or row[c] is None:
+                row[c] = 0
             #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
             try:
                 row[c] = float(row[c])

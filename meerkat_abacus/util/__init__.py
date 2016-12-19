@@ -179,10 +179,10 @@ def get_regions_districts(session):
     regions = []
     districts = []
     for l in locations.keys():
-        if locations[l].parent_location == 1:
+        if locations[l].parent_location == 1 and locations[l].level == "region":
             regions.append(l)
     for l in locations.keys():
-        if locations[l].parent_location in regions:
+        if locations[l].parent_location in regions and locations[l].level == "district":
             districts.append(l)
     return (regions, districts)
 
