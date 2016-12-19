@@ -50,7 +50,7 @@ def export_data(session):
     Helper function to export all the data in the database.
     Prints out all the objects
 
-    Args: 
+    Args:
        session: db_session
     """
     for name, obj in inspect.getmembers(model):
@@ -175,7 +175,7 @@ def table_data_from_csv(filename,
     to_check = []
     to_check_test = {} # For speed
     print(filename)
-    
+
     if quality_control:
         print("Doing Quality Control")
         (variables, variable_forms, variable_tests,
@@ -402,7 +402,7 @@ def import_clinics(csv_file, session, country_id):
                     model.Devices(
                         device_id=row["deviceid"], tags=tags))
                 deviceids.append(row["deviceid"])
-                
+
                 # If the clinic has a district we use that as
                 # the parent_location, otherwise we use the region
                 parent_location = 1
@@ -579,6 +579,12 @@ def set_up_everything(leave_if_data, drop_db, N):
         session = Session()
         print("Add alerts")
         add_alerts(session)
+        print("Notifying developer")
+        print(util.hermes('/notify', 'PUT', data={
+            'message': 'Abacus is set up and good to go for {}.'.format(
+                country_config['country_name']
+            )
+        }))
     return set_up
 
 
@@ -595,12 +601,12 @@ def add_alerts(session):
     We calculate which records should make up the alert.
     We then choose the earliest alert as the representative of the whole
     alert. All the others are linked to it.
-    
+
     TODO: We need to figure out a better way of dealing with the representative
     alert as there could be multiple alerts from the same day etc. Maybe we
     could generate alert_id from clinic name + week or date. Due to this
     issue we are currently not sending any threshold alert messages.
-    
+
     Args:
         session: db_session
 
@@ -610,7 +616,7 @@ def add_alerts(session):
         model.AggregationVariables.alert == 1)
     for a in alerts.all():
         new_alerts = []
-        
+
         if a.alert_type and "threshold:" in a.alert_type:
             var_id = a.id
             limits = [int(x) for x in a.alert_type.split(":")[1].split(",")]
@@ -734,7 +740,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                 columns.append(link_alias.uuid.label("uuid_to"))
                 columns.append(bindparam("type", link["name"]).label("type"))
                 columns.append(link_alias.data.label("data_to"))
-                
+
                 if link["method"] == "match":
                     join_on = link_alias.data[link[
                         "to_column"]].astext == table.data[link[
@@ -751,7 +757,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                             table.data[link["from_column"]].astext,
                             42 - country_config["alert_id_length"],
                             country_config["alert_id_length"])
-                
+
                 if link["to_condition"]:
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
@@ -787,7 +793,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             return True
     if not engine:
         engine = create_engine(config.DATABASE_URL)
-        
+
     Session = sessionmaker(bind=engine)
     session = Session()
     variables = to_codes.get_variables(session)
@@ -803,17 +809,17 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     conn2 = engine.connect()
     session.query(model.Links).delete()
     session.commit()
-    
+
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
         if not no_print:
             print(data_type["type"])
-            
+
         tables = [table]
         link_names = [None]
         conditions = []
         query_condtion = []
-        
+
         if data_type["db_column"]:
             query_condtion = [
                 table.data[data_type["db_column"]].astext ==
@@ -842,7 +848,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
         res = conn.execution_options(
             stream_results=True).execute(query.statement)
         # We stream the results to avoid using too much memory
-        
+
         added = 0
         while True:
             chunk = res.fetchmany(500)
@@ -899,12 +905,12 @@ def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
     Adds a list of data_dicts to the database. We make sure we do
     not add any duplicates by deleting any possible duplicates first
 
-    Args: 
+    Args:
         conn: Db connection
         data_dicts: List of data dictionaries
         disregarded_data_dicts: List of date for the disregard data table
         data_type: The data typer we are adding
-    Returns: 
+    Returns:
         Number of records added
     """
     if data_dicts:
@@ -965,7 +971,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                         sort_function = lambda x: x[column]
                     row[k] = sorted(row[k], key=sort_function)
                     links[k] = [x[links_by_name[k]["uuid"]] for x in row[k]]
-        
+
         variable_data, category_data, location_data, disregard = to_codes.to_code(
             row, variables, locations, data_type["type"], data_type["form"],
             country_config["alert_data"], multiple_forms)

@@ -150,10 +150,9 @@ def send_report_email(report, language, location):
 
         # Notify the developers that there has been a problem.
         data = {
-            "id": "failed-" + str(report) + "-" + datetime.now().isoformat(),
-            "topics": "error-reporting",
             "subject": "FAILED: " + str(report) + " email",
-            "message": (
+            "message": "The {} email has failed to send.".format(report),
+            "html-message": (
                 "<p>Hi <<first_name>> <<last_name>>,</p>" +
                 "<p>There's been a problem sending the " + str(report) +
                 " report email. " + "Here's the traceback...</p><p>" +
@@ -163,4 +162,4 @@ def send_report_email(report, language, location):
                 " with HERMES_DEV == " + str(config.hermes_dev) + ".</p>" +
                 "<p><b>Hope you can fix it soon!</b></p>")
         }
-        util.hermes('/publish', 'PUT', data)
+        util.hermes('/error', 'PUT', data)
