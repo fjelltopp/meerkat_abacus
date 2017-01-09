@@ -35,13 +35,15 @@ def get_db_engine():
     session = Session()
     return engine, session
 
+
 def epi_week_start_date(year, epi_config=country_config["epi_week"]):
     """
     Get the first day of epi week 1
 
     if epi_config==international epi_week 1 starts on the 1st of January
 
-    if epi_config== day:X then the first epi_week start on the first weekday X after 1st of January
+    if epi_config== day:X then the first epi_week start on the first weekday
+    X after 1st of January
     X=0 is Sunday
 
     Args:
@@ -52,7 +54,7 @@ def epi_week_start_date(year, epi_config=country_config["epi_week"]):
     """
     if epi_config == "international":
         return datetime(year, 1, 1)
-    else:
+    elif "day" in epi_config:
         day_of_week = int(epi_config.split(":")[1])
         first_of_year = datetime(year, 1, 1)
         f_day_of_week = first_of_year.weekday()
@@ -60,7 +62,9 @@ def epi_week_start_date(year, epi_config=country_config["epi_week"]):
         if adjustment < 0:
             adjustment = 7 + adjustment
         return first_of_year + timedelta(days=adjustment)
-
+    else:
+        return epi_config[year]
+    
 
 def get_link_definitions(session):
     """

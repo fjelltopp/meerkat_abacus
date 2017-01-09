@@ -32,7 +32,14 @@ class UtilTest(unittest.TestCase):
 
         first_wednesday = datetime(2016,1,6)
         assert first_wednesday == epi_week_start_date(2016, "day:2")
-    
+
+        test_config = {
+            2016: datetime(2016, 1, 2),
+            2017: datetime(2016, 12, 30)
+        }
+        assert datetime(2016, 1, 2)  == epi_week_start_date(2016, test_config)
+        assert datetime(2016, 12, 30)  == epi_week_start_date(2017, test_config)
+        
     def test_create_fake_data_get_value(self):
         """Test get value"""
         for i in range(100):
