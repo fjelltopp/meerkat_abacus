@@ -17,7 +17,6 @@ from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
 import inspect
 import csv
-import logging
 import boto3
 
 
@@ -406,10 +405,10 @@ def import_clinics(csv_file, session, country_id):
                 # If the clinic has a district we use that as
                 # the parent_location, otherwise we use the region
                 parent_location = 1
-                if row["district"]:
-                    parent_location = districts[row["district"]]
-                elif row["region"]:
-                    parent_location = regions[row["region"]]
+                if row["district"].strip():
+                    parent_location = districts[row["district"].strip()]
+                elif row["region"].strip():
+                    parent_location = regions[row["region"].strip()]
 
                 # Add population to the clinic and add it up through
                 # All the other locations

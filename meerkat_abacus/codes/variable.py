@@ -317,8 +317,11 @@ class Variable():
                 #We want to perform calcs on the number of seconds from the epi week start after epoch.
                 #Let's call this the epiepoch. Epoch was on a Thursday 1st Jan 1970, so...
                 #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
-                epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
-
+                if isinstance(country_config['epi_week'], str):
+                    epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
+                else:
+                    year = datetime.now().year
+                    epi_offset = (4 + country_config["epi_week"][year].weekday()) % 7
                 #Time since epiepoch = date - epiepoch, where epiepoch = epoch + epioffset.  
                 since_epi_epoch = date - (datetime(1970,1,1) + timedelta(days=epi_offset))
 
