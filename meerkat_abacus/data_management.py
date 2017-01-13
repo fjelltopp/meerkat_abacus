@@ -740,15 +740,16 @@ def create_links(data_type, input_conditions, table, session, conn):
                 columns.append(bindparam("type", link["name"]).label("type"))
                 columns.append(link_alias.data.label("data_to"))
 
+                #split the semicolon separated join parameters into lists
                 join_operators = link["method"].split(";")
                 join_operands_from = link["from_column"].split(";")
                 join_operands_to = link["to_column"].split(";")
 
-                #assert that the lists are equally long
+                #assert that the join parameter lists are equally long
                 assert len(join_operators) == len(join_operands_from)
                 assert len(join_operands_from) == len(join_operands_to)
                  
-                #handle the list of join conditions   
+                #loop through and handle the lists of join parameters 
                 join_on = []
                 for i in range(0,len(join_operators)):
                     if join_operators[i] == "match":
@@ -768,16 +769,19 @@ def create_links(data_type, input_conditions, table, session, conn):
                                 table.data[join_operands_from[i]].astext,
                                 42 - country_config["alert_id_length"],
                                 country_config["alert_id_length"]))
+
+                    #check that the column values used for join are not empty
+                    conditions.append(
+                        link_alias.data[join_operands_to[i]].astext != '')
+                    conditions.append(table.data[join_operands_from[i]].astext != '')
+
                 #handle the filter condition
                 if link["to_condition"]:
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
                         link_alias.data[column].astext == condition)
-                conditions.append(
-                    link_alias.data[link["to_column"]].astext != '')
-                conditions.append(table.data[link["from_column"]].astext != '')
 
-                #build query
+                #build query from join and filter conditions
                 link_query = session.query(*columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
 
