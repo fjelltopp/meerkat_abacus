@@ -1,4 +1,4 @@
 "name","type","to_form","from_form","from_column","to_column","method","order_by","uuid","to_condition"
 "alert_investigation","case","demo_alert","demo_case","meta/instanceID","pt./alert_id","alert_match","SubmissionDate;date","meta/instanceID",
 "return_visit","case","demo_case","demo_case","pt./pid","pt./pid","match","pt./visit_date;date","meta/instanceID","intro./visit:new"
-"return_visit","case","demo_case","demo_case","pt./pid;icd_code","pt./pid;icd_code","match;match","pt./visit_date;date","meta/instanceID","intro./visit:new"
+"return_visit_same_icd","case","demo_case","demo_case","pt./pid;icd_code","pt./pid;icd_code","match;match","pt./visit_date;date","meta/instanceID","intro./visit:new"
