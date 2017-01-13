@@ -2,7 +2,7 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, and_
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -740,23 +740,35 @@ def create_links(data_type, input_conditions, table, session, conn):
                 columns.append(bindparam("type", link["name"]).label("type"))
                 columns.append(link_alias.data.label("data_to"))
 
-                if link["method"] == "match":
-                    join_on = link_alias.data[link[
-                        "to_column"]].astext == table.data[link[
-                            "from_column"]].astext
-                elif link["method"] == "lower_match":
-                    join_on = func.replace(func.lower(link_alias.data[link[
-                        "to_column"]].astext), "-", "_") == func.replace(
-                            func.lower(table.data[link["from_column"]].astext),
-                            "-", "_")
+                join_operators = link["method"].split(";")
+                join_operands_from = link["from_column"].split(";")
+                join_operands_to = link["to_column"].split(";")
 
-                elif link["method"] == "alert_match":
-                    join_on = link_alias.data[link[
-                        "to_column"]].astext == func.substring(
-                            table.data[link["from_column"]].astext,
-                            42 - country_config["alert_id_length"],
-                            country_config["alert_id_length"])
+                #assert that the lists are equally long
+                assert len(join_operators) == len(join_operands_from)
+                assert len(join_operands_from) == len(join_operands_to)
+                 
+                #handle the list of join conditions   
+                join_on = []
+                for i in range(0,len(join_operators)):
+                    if join_operators[i] == "match":
+                        join_on.append(link_alias.data[join_operands_to[i]].astext == \
+                            table.data[join_operands_from[i]].astext)
 
+                    elif join_operators[i] == "lower_match":
+                        join_on.append(func.replace(func.lower(
+                            link_alias.data[join_operands_to[i]].astext), "-", "_") == \
+                                func.replace(
+                                    func.lower(table.data[join_operands_from[i]].astext),
+                                    "-", "_"))
+
+                    elif join_operators[i] == "alert_match":
+                        join_on.append(link_alias.data[join_operands_to[i]].astext == \
+                            func.substring(
+                                table.data[join_operands_from[i]].astext,
+                                42 - country_config["alert_id_length"],
+                                country_config["alert_id_length"]))
+                #handle the filter condition
                 if link["to_condition"]:
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
@@ -765,9 +777,11 @@ def create_links(data_type, input_conditions, table, session, conn):
                     link_alias.data[link["to_column"]].astext != '')
                 conditions.append(table.data[link["from_column"]].astext != '')
 
+                #build query
                 link_query = session.query(*columns).join(
-                    (link_alias, join_on)).filter(*conditions)
-                print(link_query)
+                    link_alias, and_(*join_on)).filter(*conditions)
+
+                #use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
                 conn.execute(insert)
@@ -786,6 +800,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                        uuids in this list
 
     """
+
     if restrict_uuids is not None:
         if restrict_uuids == []:
             print("No new data to add")
@@ -809,6 +824,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     session.query(model.Links).delete()
     session.commit()
 
+
+
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
         if not no_print:
@@ -827,6 +844,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             conditions.append(query_condtion[0])
 
         # Set up the links
+
         link_names += create_links(data_type, conditions, table, session, conn)
 
         # Main Query
@@ -896,6 +914,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     send_alerts(alerts, session)
     conn.close()
     conn2.close()
+
     return True
 
 
