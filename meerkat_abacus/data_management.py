@@ -733,6 +733,7 @@ def create_links(data_type, input_conditions, table, session, conn):
             conditions = list(input_conditions)
             columns = [table.uuid.label("uuid_from")]
             if link["from_form"] == data_type["form"]:
+                aggregate_condition = link['aggregate_condition']
                 to_form = model.form_tables[link["to_form"]]
                 link_names.append(link["name"])
                 link_alias = aliased(to_form)
@@ -788,7 +789,23 @@ def create_links(data_type, input_conditions, table, session, conn):
                 #use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
+
                 conn.execute(insert)
+
+                #split aggregate constraints into a list
+                aggregate_conditions = aggregate_condition.split(';')
+
+                #if the link type has uniqueness constraint, remove non-unique links
+                if 'unique' in aggregate_conditions:
+                    dupe_query = session.query(model.Links.uuid_from).\
+                                            filter(model.Links.type == link["type"]).\
+                                            group_by(model.Links.uuid_from).\
+                                            having(func.count() > 1)
+
+                    dupe_delete = session.query(model.Links.uuid_from).\
+                        filter(model.Links.uuid_from.in_(dupe_query)).\
+                        delete(synchronize_session='fetch')
+
     return link_names
 
 
@@ -850,6 +867,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
         # Set up the links
 
         link_names += create_links(data_type, conditions, table, session, conn)
+        print("LINK NAMES: " + str(link_names) + "\n")
 
         # Main Query
         if restrict_uuids is not None:
