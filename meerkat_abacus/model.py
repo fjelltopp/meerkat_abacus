@@ -144,6 +144,7 @@ class AggregationVariables(Base):
     calculation = Column(String)
     disregard = Column(Integer)
     calculation_group = Column(String)
+    calculation_priority = Column(String)
     classification = Column(String)
     classification_casedef = Column(String)
     source = Column(String)
