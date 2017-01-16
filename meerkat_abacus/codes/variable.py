@@ -283,7 +283,7 @@ class Variable():
                 except ValueError:
                     row[c] = old_row[c]
         try:
-3            return float(eval(self.calculation))
+            return float(eval(self.calculation))
         except ZeroDivisionError:
             return 0
 
