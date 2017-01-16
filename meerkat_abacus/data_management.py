@@ -447,7 +447,7 @@ def import_clinics(csv_file, session, country_id):
                             parent_location=parent_location,
                             geolocation=geolocation,
                             deviceid=row["deviceid"],
-                            clinic_type=row["clinic_type"],
+                            clinic_type=row["clinic_type"].strip(),
                             case_report=case_report,
                             case_type=row.get("case_type", None),
                             level="clinic",
@@ -749,7 +749,6 @@ def create_links(data_type, input_conditions, table, session, conn):
                         "to_column"]].astext), "-", "_") == func.replace(
                             func.lower(table.data[link["from_column"]].astext),
                             "-", "_")
-
                 elif link["method"] == "alert_match":
                     join_on = link_alias.data[link[
                         "to_column"]].astext == func.substring(
