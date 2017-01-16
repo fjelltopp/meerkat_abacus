@@ -129,7 +129,8 @@ class Links(Base):
 class AggregationVariables(Base):
     __tablename__ = 'aggregation_variables'
 
-    id = Column(String, primary_key=True)
+    id_pk = Column(Integer, primary_key = True)
+    id = Column(String)
     name = Column(String)
     type = Column(String)
     form = Column(String)
