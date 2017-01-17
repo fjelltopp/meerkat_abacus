@@ -226,7 +226,7 @@ class Variable():
                           columns,
                           condition,
                           calc,
-                          row, ):
+                          old_row):
         """
         self. calc should be an expression with column names
         from the row and mathematical expression  understood by python.
@@ -236,18 +236,19 @@ class Variable():
         """
 
         #Copy row because we don't want to actually edit the row's data in to_date().
+        row = {}
         for c in columns:
   
             #Initialise non-existing variables to 0.
-            if not c in row or row[c] == '' or row[c] is None:
-                    return 0
+            if not c in old_row or old_row[c] == '' or old_row[c] is None:
+                return 0
 
                 # If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
+            
             try:
-                row[c] = float(row[c])
+                row[c] = float(old_row[c])
             except ValueError:
-                pass
-                
+                row[c] = old_row[c]
         try:
             result = float(eval(calc))
             return (float(condition[0]) <= result) & (float(condition[1]) > result)
@@ -255,7 +256,7 @@ class Variable():
             return 0
 
 
-    def test_calc(self, row):
+    def test_calc(self, old_row):
         """
         self. calc should be an expression with column names from
         the row and mathematical expression understood by python.
@@ -267,19 +268,20 @@ class Variable():
         sunday after epoch for Jordan).
 
         """
+        row = {}
         for c in self.columns[0]:
                   
             # Initialise non-existing variables to 0.
-            if c not in row:
+            if c not in old_row:
                 return 0
 
-            if row[c] == '' or row[c] is None:
+            if old_row[c] == '' or old_row[c] is None:
                 row[c] = 0
-            #If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
-            try:
-                row[c] = float(row[c])
-            except ValueError:
-                pass
+            else:
+                try:
+                    row[c] = float(old_row[c])
+                except ValueError:
+                    row[c] = old_row[c]
         try:
             return float(eval(self.calculation))
         except ZeroDivisionError:

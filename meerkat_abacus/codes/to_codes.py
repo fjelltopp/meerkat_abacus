@@ -96,6 +96,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
     variable_json = {}
     categories = {}
     disregard = False
+    old_row = row.copy()
     for group in variables[data_type].keys():
         for v in variables_group[group]:
             form = variable_forms[v]

@@ -460,7 +460,7 @@ def import_clinics(csv_file, session, country_id):
                             parent_location=parent_location,
                             geolocation=geolocation,
                             deviceid=row["deviceid"],
-                            clinic_type=row["clinic_type"],
+                            clinic_type=row["clinic_type"].strip(),
                             case_report=case_report,
                             case_type=row.get("case_type", None),
                             level="clinic",
