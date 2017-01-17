@@ -205,8 +205,7 @@ class UtilTest(unittest.TestCase):
         self.session.bulk_save_objects(self.threshold)
         self.session.commit()
 
-        new_alerts = alerts.threshold("cmd_1", [3, 5], self.session)
-        print(new_alerts)
+        new_alerts = alerts.threshold("cmd_1", [3, 5], self.session))
         self.assertEqual(len(new_alerts), 2)
 
         self.assertEqual(new_alerts[0]["duration"], 1)

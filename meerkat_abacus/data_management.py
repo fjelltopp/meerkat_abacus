@@ -277,10 +277,9 @@ def import_variables(session):
     if 'coding_list' in country_config.keys():
         for coding_file_name in country_config['coding_list']:
             codes_file = config.config_directory + 'variable_codes/' + coding_file_name
-            print('CODES_FILE: ' + codes_file + '\n')
             for row in util.read_csv(codes_file):
-                print('ROW: ' + str(row) + '\n')
-                #row.pop("")
+                if '' in row.keys():
+                    row.pop('')
                 row = util.field_to_list(row, "category")
                 keys = model.AggregationVariables.__table__.columns._data.keys()
                 row = {key: row[key] for key in keys if key in row}
@@ -289,7 +288,8 @@ def import_variables(session):
     else:
         codes_file = config.config_directory + country_config['codes_file'] + '.csv'
         for row in util.read_csv(codes_file):
-            row.pop("")
+            if '' in row.keys():
+                row.pop('')
             row = util.field_to_list(row, "category")
             keys = model.AggregationVariables.__table__.columns._data.keys()
             row = {key: row[key] for key in keys if key in row}
@@ -808,8 +808,6 @@ def create_links(data_type, input_conditions, table, session, conn):
                 #split aggregate constraints into a list
                 aggregate_conditions = aggregate_condition.split(';')
 
-                print('AGGREGATE_CONDITION: ' + str(aggregate_conditions) + "\n")
-
                 #if the link type has uniqueness constraint, remove non-unique links
                 if 'unique' in aggregate_conditions:
                     dupe_query = session.query(model.Links.uuid_from).\
@@ -820,8 +818,6 @@ def create_links(data_type, input_conditions, table, session, conn):
                     dupe_delete = session.query(model.Links.uuid_from).\
                         filter(model.Links.uuid_from.in_(dupe_query)).\
                         delete(synchronize_session='fetch')
-
-                    print('DUPE_DELETE :' + str(dupe_delete) + "\n")
 
     return link_names
 

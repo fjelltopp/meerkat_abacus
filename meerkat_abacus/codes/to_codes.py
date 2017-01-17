@@ -126,9 +126,12 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                                 break
                 else:
                     test_outcome = variable_tests[v](datum)
+
+                #if there is no test outcome but there is another variable in the priority queue, test the variable next in prioritisation
+                #if not test_outcome:
+                #    test_outcome = variable_tests[v_backup](datum)
+
                 if test_outcome:
-                    if test_outcome == 1:
-                        test_outcome = 1
                     variable_json[v] = test_outcome
                     for cat in variables[data_type][group][v].variable.category:
                         categories[cat] = v
