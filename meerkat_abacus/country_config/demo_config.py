@@ -77,6 +77,10 @@ country_config = {
                                                       "contact_tracing",
                                                       "return_lab"]}},
     },
+    "manual_test_data": {
+      "demo_case":"demo_case_test_data"
+
+    },
     "alert_data": {"age": "pt1./age", "gender": "pt1./gender"},
     "alert_id_length": 6,
     "alert_text_content": [ 'reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id' ],

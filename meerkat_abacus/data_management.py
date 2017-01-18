@@ -18,6 +18,7 @@ from meerkat_abacus.util import create_fake_data
 import inspect
 import csv
 import boto3
+import logging
 
 
 country_config = config.country_config
@@ -60,7 +61,7 @@ def export_data(session):
                 print(name + "(**" + str(columns) + "),")
 
 
-def add_fake_data(session, N=5000, append=False):
+def add_fake_data(session, N=5000, append=False, from_files=False):
     """
     Creates a csv file with fake data for each form. We make
     sure that the forms have deviceids that match the imported locations.
@@ -93,16 +94,23 @@ def add_fake_data(session, N=5000, append=False):
             form_deviceids = country_config["fake_data"][form]["deviceids"]
         else:
             form_deviceids = deviceids
-        new_data = create_fake_data.create_form(
+
+        if from_files and form in country_config["manual_test_data"].keys():
+            manual_test_data = util.read_csv(config.config_directory + \
+                country_config["manual_test_data"][form] + ".csv")
+
+
+        generated_data = create_fake_data.create_form(
             country_config["fake_data"][form], data={"deviceids":
                                                      form_deviceids,
                                                      "uuids": alert_ids}, N=N)
+
         if "case" in form:
             alert_ids = []
-            for row in new_data:
+            for row in generated_data:
                 alert_ids.append(row["meta/instanceID"][-country_config[
                     "alert_id_length"]:])
-        util.write_csv(list(current_form) + new_data, file_name)
+        util.write_csv(list(current_form) + list(manual_test_data) + generated_data, file_name)
 
 
 def get_data_from_s3(bucket):
@@ -573,7 +581,7 @@ def set_up_everything(leave_if_data, drop_db, N):
         import_locations(engine, session)
         if config.fake_data:
             print("Generate fake data")
-            add_fake_data(session, N=N, append=False)
+            add_fake_data(session, N=N, append=False, from_files=True)
         if config.get_data_from_s3:
             print("Get data from s3")
             get_data_from_s3(config.s3_bucket)
