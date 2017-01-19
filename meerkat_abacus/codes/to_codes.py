@@ -69,6 +69,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
     """
+
     locations, locations_by_deviceid, regions, districts, devices = locations
     clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"], None)
     if not clinic_id:
@@ -105,9 +106,10 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         priority_flag = False
         for v in variables[data_type][group]:
             if hasattr(variables[data_type][group][v],"calculation_priority") and \
-            variables[data_type][group][v].calculation_priority is not '':
+            variables[data_type][group][v].calculation_priority != '':
                 priority_flag = True
-                intragroup_priority = None 
+
+                intragroup_priority = 0 # Initialize the current priority level at zero 
                 current_group_variable = None
 
         # v is the primary key for the AggregationVariables table, not the string format id the data table refers the variables with
@@ -152,15 +154,22 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                     # fetch the string key for the current variable
                     variable_string_key = variables[data_type][group][v].variable.id
 
-                    #check whether there are is an existing value of lower priority order and replace it if there is
+                    # Check whether the variable group uses a priority system
                     if priority_flag:
-                        if intragroup_priority and intragroup_priority > int(variables[data_type][group][v].calculation_priority) :
-                            del variable_json[current_group_variable] # remove existing group value of lower priority order
+                        # This is the initial state
+                        if intragroup_priority == 0:
                             variable_json[variables[data_type][group][v].variable.id] = test_outcome #insert new value
-                            intragroup_priority = int(variables[data_type][group][v].calculation_priority) #store current intragroup priority
-                        else:
-                            current_group_variable = variables[data_type][group][v].variable.id
-                            intragroup_priority = int(variables[data_type][group][v].calculation_priority) #insert new value
+                            intragroup_priority = int(variables[data_type][group][v].calculation_priority) # store current intragroup priority
+                            current_group_variable = variables[data_type][group][v].variable.id # store the variable id
+
+                        # A higher priority order value is encountered
+                        elif intragroup_priority > int(variables[data_type][group][v].calculation_priority): 
+                            del variable_json[current_group_variable] # remove existing group value of lower priority order
+                            variable_json[variables[data_type][group][v].variable.id] = test_outcome # insert new value
+                            intragroup_priority = int(variables[data_type][group][v].calculation_priority) # store current intragroup priority
+                            current_group_variable = variables[data_type][group][v].variable.id # store the variable id
+
+                        # Otherwise, do nothing
                     else:
                         #allocate the test outcome to the json object using the variable string id as key
                         variable_json[variables[data_type][group][v].variable.id] = test_outcome
