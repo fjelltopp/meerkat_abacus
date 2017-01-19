@@ -1,3 +1,4 @@
-type,form,db_column,condition,date,var,uuid
-case,demo_case,intro./visit,new,pt./visit_date,tot_1,meta/instanceID
-register,demo_register,,,SubmissionDate,reg_1,meta/instanceID
+"type","form","db_column","condition","date","var","uuid"
+"case","demo_case","intro./visit","new","pt./visit_date","tot_1","meta/instanceID"
+"register","demo_register",,,"SubmissionDate","reg_1","meta/instanceID"
+"visit","demo_case",,,"pt./visit_date","vis_1","meta/instanceID"
