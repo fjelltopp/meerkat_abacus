@@ -756,6 +756,7 @@ def create_links(data_type, input_conditions, table, session, conn):
             if link["from_form"] == data_type["form"]:
                 aggregate_condition = link['aggregate_condition']
                 to_form = model.form_tables[link["to_form"]]
+                from_form = model.form_tables[link["from_form"]]
                 link_names.append(link["name"])
                 link_alias = aliased(to_form)
                 columns.append(link_alias.uuid.label("uuid_to"))
@@ -803,6 +804,9 @@ def create_links(data_type, input_conditions, table, session, conn):
                     conditions.append(
                         link_alias.data[column].astext == condition)
 
+                #make sure that the link is not referring to itself
+                conditions.append(from_form.uuid != link_alias.uuid)    
+
                 #build query from join and filter conditions
                 link_query = session.query(*columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
@@ -827,6 +831,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                         filter(model.Links.uuid_from.in_(dupe_query)).\
                         delete(synchronize_session='fetch')
 
+                session.commit()
     return link_names
 
 
