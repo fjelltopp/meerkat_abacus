@@ -547,8 +547,8 @@ def send_alert(alert_id, alert, variables, locations):
             "medium": ['email', 'sms']
         }
 
-        logging.warning("CREATED ALERT: " + data['subject'])
-        #logging.warning(data)
+        logging.warning("CREATED ALERT")
+        logging.warning(data)
 
         hermes('publish', 'PUT', data)
         # TODO: Add some error handling here!

@@ -827,7 +827,6 @@ def create_links(data_type, input_conditions, table, session, conn):
                                             group_by(model.Links.uuid_from).\
                                             having(func.count() > 1)
 
-                    print("DEBUG DUPE_QUERY:" + str(dupe_query) + '\n')
 
                     dupe_delete = session.query(model.Links.uuid_from).\
                         filter(model.Links.uuid_from.in_(dupe_query)).\
@@ -840,8 +839,6 @@ def create_links(data_type, input_conditions, table, session, conn):
                                                 model.Links.uuid_to == aliased_link_table.uuid_from)).\
                                             filter(model.Links.type == link["name"]).\
                                             filter(aliased_link_table.type == link["name"])
-
-                    print("DEBUG CIRCULAR_QUERY:" + str(circular_query) + '\n')
 
                     circular_delete = session.query(model.Links).\
                         filter(model.Links.id.in_(circular_query)).\
