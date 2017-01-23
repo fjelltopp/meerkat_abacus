@@ -11,6 +11,11 @@ country_config = {
     ],
     "require_case_report": ["demo_case", "demo_register"],
     "codes_file": "demo_codes",
+    "coding_list":[
+        "demo_codes.csv",
+        "demographic_codes.csv",
+        "icd_codes.csv"
+    ],
     "links_file": "demo_links.csv",
     "types_file": "data_types.csv",
     "country_tests": "demo_test.py",
@@ -71,6 +76,10 @@ country_config = {
                                                       "case_management",
                                                       "contact_tracing",
                                                       "return_lab"]}},
+    },
+    "manual_test_data": {
+      "demo_case":"demo_case_test_data"
+
     },
     "alert_data": {"age": "pt1./age", "gender": "pt1./gender"},
     "alert_id_length": 6,

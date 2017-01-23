@@ -2,7 +2,7 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, and_
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -18,6 +18,7 @@ from meerkat_abacus.util import create_fake_data
 import inspect
 import csv
 import boto3
+import logging
 
 
 country_config = config.country_config
@@ -60,7 +61,7 @@ def export_data(session):
                 print(name + "(**" + str(columns) + "),")
 
 
-def add_fake_data(session, N=5000, append=False):
+def add_fake_data(session, N=5000, append=False, from_files=False):
     """
     Creates a csv file with fake data for each form. We make
     sure that the forms have deviceids that match the imported locations.
@@ -93,16 +94,23 @@ def add_fake_data(session, N=5000, append=False):
             form_deviceids = country_config["fake_data"][form]["deviceids"]
         else:
             form_deviceids = deviceids
-        new_data = create_fake_data.create_form(
+
+        if from_files and form in country_config["manual_test_data"].keys():
+            manual_test_data = util.read_csv(config.config_directory + \
+                country_config["manual_test_data"][form] + ".csv")
+
+
+        generated_data = create_fake_data.create_form(
             country_config["fake_data"][form], data={"deviceids":
                                                      form_deviceids,
                                                      "uuids": alert_ids}, N=N)
+
         if "case" in form:
             alert_ids = []
-            for row in new_data:
+            for row in generated_data:
                 alert_ids.append(row["meta/instanceID"][-country_config[
                     "alert_id_length"]:])
-        util.write_csv(list(current_form) + new_data, file_name)
+        util.write_csv(list(current_form) + list(manual_test_data) + generated_data, file_name)
 
 
 def get_data_from_s3(bucket):
@@ -273,15 +281,28 @@ def import_variables(session):
     """
     session.query(model.AggregationVariables).delete()
     session.commit()
-    codes_file = config.config_directory + country_config[
-        "codes_file"] + ".csv"
-    for row in util.read_csv(codes_file):
-        row.pop("")
-        row = util.field_to_list(row, "category")
-        keys = model.AggregationVariables.__table__.columns._data.keys()
-        row = {key: row[key] for key in keys if key in row}
-        session.add(model.AggregationVariables(**row))
-    session.commit()
+    #check if the coding_list parameter exists. If not, use the legacy parameter codes_file instead
+    if 'coding_list' in country_config.keys():
+        for coding_file_name in country_config['coding_list']:
+            codes_file = config.config_directory + 'variable_codes/' + coding_file_name
+            for row in util.read_csv(codes_file):
+                if '' in row.keys():
+                    row.pop('')
+                row = util.field_to_list(row, "category")
+                keys = model.AggregationVariables.__table__.columns._data.keys()
+                row = {key: row[key] for key in keys if key in row}
+                session.add(model.AggregationVariables(**row))
+            session.commit()
+    else:
+        codes_file = config.config_directory + country_config['codes_file'] + '.csv'
+        for row in util.read_csv(codes_file):
+            if '' in row.keys():
+                row.pop('')
+            row = util.field_to_list(row, "category")
+            keys = model.AggregationVariables.__table__.columns._data.keys()
+            row = {key: row[key] for key in keys if key in row}
+            session.add(model.AggregationVariables(**row))
+        session.commit()
 
 
 def import_data(engine, session):
@@ -560,7 +581,7 @@ def set_up_everything(leave_if_data, drop_db, N):
         import_locations(engine, session)
         if config.fake_data:
             print("Generate fake data")
-            add_fake_data(session, N=N, append=False)
+            add_fake_data(session, N=N, append=False, from_files=True)
         if config.get_data_from_s3:
             print("Get data from s3")
             get_data_from_s3(config.s3_bucket)
@@ -738,43 +759,98 @@ def create_links(data_type, input_conditions, table, session, conn):
             conditions = list(input_conditions)
             columns = [table.uuid.label("uuid_from")]
             if link["from_form"] == data_type["form"]:
+                aggregate_condition = link['aggregate_condition']
                 to_form = model.form_tables[link["to_form"]]
+                from_form = model.form_tables[link["from_form"]]
                 link_names.append(link["name"])
                 link_alias = aliased(to_form)
                 columns.append(link_alias.uuid.label("uuid_to"))
                 columns.append(bindparam("type", link["name"]).label("type"))
                 columns.append(link_alias.data.label("data_to"))
 
-                if link["method"] == "match":
-                    join_on = link_alias.data[link[
-                        "to_column"]].astext == table.data[link[
-                            "from_column"]].astext
-                elif link["method"] == "lower_match":
-                    join_on = func.replace(func.lower(link_alias.data[link[
-                        "to_column"]].astext), "-", "_") == func.replace(
-                            func.lower(table.data[link["from_column"]].astext),
-                            "-", "_")
-                elif link["method"] == "alert_match":
-                    join_on = link_alias.data[link[
-                        "to_column"]].astext == func.substring(
-                            table.data[link["from_column"]].astext,
-                            42 - country_config["alert_id_length"],
-                            country_config["alert_id_length"])
+                #split the semicolon separated join parameters into lists
+                join_operators = link["method"].split(";")
+                join_operands_from = link["from_column"].split(";")
+                join_operands_to = link["to_column"].split(";")
 
+                #assert that the join parameter lists are equally long
+                assert len(join_operators) == len(join_operands_from)
+                assert len(join_operands_from) == len(join_operands_to)
+                 
+                #loop through and handle the lists of join parameters 
+                join_on = []
+                for i in range(0,len(join_operators)):
+                    if join_operators[i] == "match":
+                        join_on.append(link_alias.data[join_operands_to[i]].astext == \
+                            table.data[join_operands_from[i]].astext)
+
+                    elif join_operators[i] == "lower_match":
+                        join_on.append(func.replace(func.lower(
+                            link_alias.data[join_operands_to[i]].astext), "-", "_") == \
+                                func.replace(
+                                    func.lower(table.data[join_operands_from[i]].astext),
+                                    "-", "_"))
+
+                    elif join_operators[i] == "alert_match":
+                        join_on.append(link_alias.data[join_operands_to[i]].astext == \
+                            func.substring(
+                                table.data[join_operands_from[i]].astext,
+                                42 - country_config["alert_id_length"],
+                                country_config["alert_id_length"]))
+
+                    #check that the column values used for join are not empty
+                    conditions.append(
+                        link_alias.data[join_operands_to[i]].astext != '')
+                    conditions.append(table.data[join_operands_from[i]].astext != '')
+
+                #handle the filter condition
                 if link["to_condition"]:
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
                         link_alias.data[column].astext == condition)
-                conditions.append(
-                    link_alias.data[link["to_column"]].astext != '')
-                conditions.append(table.data[link["from_column"]].astext != '')
 
+                #make sure that the link is not referring to itself
+                conditions.append(from_form.uuid != link_alias.uuid)    
+
+                #build query from join and filter conditions
                 link_query = session.query(*columns).join(
-                    (link_alias, join_on)).filter(*conditions)
-                print(link_query)
+                    link_alias, and_(*join_on)).filter(*conditions)
+
+                #use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
+
                 conn.execute(insert)
+
+                #split aggregate constraints into a list
+                aggregate_conditions = aggregate_condition.split(';')
+
+                #if the link type has uniqueness constraint, remove non-unique links and circular links
+                if 'unique' in aggregate_conditions:
+                    dupe_query = session.query(model.Links.uuid_from).\
+                                            filter(model.Links.type == link["name"]).\
+                                            group_by(model.Links.uuid_from).\
+                                            having(func.count() > 1)
+
+
+                    dupe_delete = session.query(model.Links.uuid_from).\
+                        filter(model.Links.uuid_from.in_(dupe_query)).\
+                        delete(synchronize_session='fetch')
+
+                    aliased_link_table = aliased(model.Links)
+                    circular_query = session.query(model.Links.id).\
+                                            join(aliased_link_table,and_(\
+                                                model.Links.uuid_from == aliased_link_table.uuid_to,\
+                                                model.Links.uuid_to == aliased_link_table.uuid_from)).\
+                                            filter(model.Links.type == link["name"]).\
+                                            filter(aliased_link_table.type == link["name"])
+
+                    circular_delete = session.query(model.Links).\
+                        filter(model.Links.id.in_(circular_query)).\
+                        delete(synchronize_session='fetch')
+
+
+                session.commit()
     return link_names
 
 
@@ -790,6 +866,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                        uuids in this list
 
     """
+
     if restrict_uuids is not None:
         if restrict_uuids == []:
             print("No new data to add")
@@ -813,6 +890,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     session.query(model.Links).delete()
     session.commit()
 
+
+
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
         if not no_print:
@@ -831,6 +910,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             conditions.append(query_condtion[0])
 
         # Set up the links
+
         link_names += create_links(data_type, conditions, table, session, conn)
 
         # Main Query
@@ -900,6 +980,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     send_alerts(alerts, session)
     conn.close()
     conn2.close()
+
     return True
 
 

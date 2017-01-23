@@ -138,6 +138,9 @@ class Variable():
                         self.calculation[i] = calc
 
             self.test_type = self.test_many
+
+        if hasattr(variable, "calculation_priority"):
+            self.calculation_priority = variable.calculation_priority
     
     def test(self, row):
         """
@@ -283,7 +286,7 @@ class Variable():
                 except ValueError:
                     row[c] = old_row[c]
         try:
-3            return float(eval(self.calculation))
+            return float(eval(self.calculation))
         except ZeroDivisionError:
             return 0
 

@@ -1,0 +1,722 @@
+"id","name","type","form","multiple_link","db_column","alert","alert_type","method","condition","category","calculation","disregard","calculation_group","calculation_priority","classification_casedef","source","source_link","alert_desc","case_def","risk_factors","symptoms","labs_diagnostics",,
+"nat_1","Null Island","case","demo_case",,"nationality",,,"match","null_island","nationality",,,"nationality",,,,,,,,,,,
+"nat_2","Demo","case","demo_case",,"nationality",,,"match","demo","nationality",,,"nationality",,,,,,,,,,,
+"nat_3","Other Nationality","case","demo_case",,"nationality",,,"match","other","nationality",,,"nationality",,,,,,,,,,,
+"sta_1","Jordanian","case","demo_case",,"pt1./status",,,"match","national","status",,,"status",,,,,,,,,,,
+"sta_2","Refugee","case","demo_case",,"pt1./status",,,"match","refugee,unreg_refugee","status",,,"status",,,,,,,,,,,
+"sta_3","Other","case","demo_case",,"pt1./status",,,"match","other,dnk_status","status",,,"status",,,,,,,,,,,
+"prc_1","Communicable disease","case","demo_case",,"icd_code",,,"sub_match","A00,A01,A02,A03,A04,A05,A06,A07,A08,A09,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95,A96,A97,A98,A99,B00,B01,B02,B03,B04,B05,B06,B07,B08,B09,B15,B16,B17,B18,B19,B20,B21,B22,B23,B24,B25,B26,B27,B28,B29,B30,B31,B32,B33,B34,B35,B36,B37,B38,B39,B40,B41,B42,B43,B44,B45,B46,B47,B48,B49,B50,B51,B52,B53,B54,B55,B56,B57,B58,B59,B60,B61,B62,B63,B64,B65,B66,B67,B68,B69,B70,B71,B72,B73,B74,B75,B76,B77,B78,B79,B80,B81,B82,B83,B85,B86,B87,B88,B89,B90,B91,B92,B93,B94,B95,B96,B97,B98,B99,G00,G01,G02,G03,G04,G05,H62,H65,H66,H67,I00,I01,I05,I06,I07,I08,I09,I30,I31,I32,I33,J00,J01,J02,J03,J04,J05,J06,J09,J10,J11,J12,J13,J14,J15,J16,J17,J18,J20,J21,J22,N70,N71,N72,N73,N74","pc",,,"pc",,,,,,,,,,,
+"prc_2","Non-communicable disease","case","demo_case",,"icd_code",,,"sub_match","C00,C01,C02,C03,C04,C05,C06,C07,C08,C09,C10,C11,C12,C13,C14,C15,C16,C17,C18,C19,C20,C21,C22,C23,C24,C25,C26,C30,C31,C32,C33,C34,C35,C36,C37,C38,C39,C40,C41,C43,C44,C45,C46,C47,C48,C49,C50,C51,C52,C53,C54,C55,C56,C57,C58,C60,C61,C62,C63,C64,C65,C66,C67,C68,C69,C70,C71,C72,C73,C74,C75,C76,C77,C78,C79,C80,C81,C82,C83,C84,C85,C86,C87,C88,C89,C90,C91,C92,C93,C94,C95,C96,C97,D00,D01,D02,D03,D04,D05,D06,D07,D08,D09,D10,D11,D12,D13,D14,D15,D16,D17,D18,D19,D20,D21,D22,D23,D24,D25,D26,D27,D28,D29,D30,D31,D32,D33,D34,D35,D36,D37,D38,D39,D40,D41,D42,D43,D44,D45,D46,D47,D48,D50,D51,D52,D53,D55,D56,D57,D58,D59,D60,D61,D62,D63,D64,D65,D66,D67,D68,D69,D70,D71,D72,D73,D74,D75,D76,D77,D80,D81,D82,D83,D84,D85,D86,D87,D88,D89,E00,E01,E02,E03,E04,E05,E06,E07,E10,E11,E12,E13,E14,E15,E16,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,E31,E32,E33,E34,E35,E40,E41,E42,E43,E44,E45,E46,E50,E51,E52,E53,E54,E55,E56,E57,E58,E59,E60,E61,E62,E63,E64,E65,E66,E67,E68,E70,E71,E72,E73,E74,E75,E76,E77,E78,E79,E80,E81,E82,E83,E84,E85,E86,E87,E88,E89,E90,G06,G07,G08,G09,G10,G11,G12,G13,G14,G20,G21,G22,G23,G24,G25,G26,G30,G31,G32,G35,G36,G37,G40,G41,G42,G43,G44,G45,G46,G47,G50,G51,G52,G53,G54,G55,G56,G57,G58,G59,G60,G61,G62,G63,G64,G70,G71,G72,G73,G80,G81,G82,G83,G90,G91,G92,G93,G94,G95,G96,G97,G98,G99,H00,H01,H02,H03,H04,H05,H06,H10,H11,H12,H13,H15,H16,H17,H18,H19,H20,H21,H22,H25,H26,H27,H28,H30,H31,H32,H33,H34,H35,H36,H40,H41,H42,H43,H44,H45,H46,H47,H48,H49,H50,H51,H52,H53,H54,H55,H56,H57,H58,H59,H60,H61,H68,H69,H70,H71,H72,H73,H74,H75,H80,H81,H82,H83,H90,H91,H92,H93,H94,H95,I10,I11,I12,I13,I14,I15,I20,I21,I22,I23,I24,I25,I26,I27,I28,I34,I35,I36,I37,I38,I39,I40,I41,I42,I43,I44,I45,I46,I47,I48,I49,I50,I51,I52,I60,I61,I62,I63,I64,I65,I66,I67,I68,I69,I70,I71,I72,I73,I74,I75,I76,I77,I78,I79,I80,I81,I82,I83,I84,I85,I86,I87,I88,I89,I95,I96,I97,I98,I99,J30,J31,J32,J33,J34,J35,J36,J37,J38,J39,J40,J41,J42,J43,J44,J45,J46,J47,J60,J61,J62,J63,J64,J65,J66,J67,J68,J69,J70,J80,J81,J82,J83,J84,J85,J86,J90,J91,J92,J93,J94,J95,J96,J97,J98,J99,K00,K01,K02,K03,K04,K05,K06,K07,K08,K09,K10,K11,K12,K13,K14,K20,K21,K22,K23,K24,K25,K26,K27,K28,K29,K30,K31,K35,K36,K37,K38,K40,K41,K42,K43,K44,K45,K46,K50,K51,K52,K55,K56,K57,K58,K59,K60,K61,K62,K63,K65,K66,K67,K70,K71,K72,K73,K74,K75,K76,K77,K80,K81,K82,K83,K84,K85,K86,K87,K90,K91,K92,K93,L00,L01,L02,L03,L04,L05,L06,L07,L08,L10,L11,L12,L13,L14,L20,L21,L22,L23,L24,L25,L26,L27,L28,L29,L30,L40,L41,L42,L43,L44,L45,L50,L51,L52,L53,L54,L55,L56,L57,L58,L59,L60,L61,L62,L63,L64,L65,L66,L67,L68,L69,L70,L71,L72,L73,L74,L75,L80,L81,L82,L83,L84,L85,L86,L87,L88,L89,L90,L91,L92,L93,L94,L95,L96,L97,L98,L99,M00,M01,M02,M03,M05,M06,M07,M08,M09,M10,M11,M12,M13,M14,M15,M16,M17,M18,M19,M20,M21,M22,M23,M24,M25,M30,M31,M32,M33,M34,M35,M36,M40,M41,M42,M43,M45,M46,M47,M48,M49,M50,M51,M52,M53,M54,M60,M61,M62,M63,M65,M66,M67,M68,M70,M71,M72,M73,M74,M75,M76,M77,M78,M79,M80,M81,M82,M83,M84,M85,M86,M87,M88,M89,M90,M91,M92,M93,M94,M95,M96,M97,M98,M99,N00,N01,N02,N03,N04,N05,N06,N07,N08,N10,N11,N12,N13,N14,N15,N16,N17,N18,N19,N20,N21,N22,N23,N25,N26,N27,N28,N29,N30,N31,N32,N33,N34,N35,N36,N37,N38,N39,N40,N41,N42,N43,N44,N45,N46,N47,N48,N49,N50,N51,N60,N61,N62,N63,N64,N75,N76,N77,N80,N81,N82,N83,N84,N85,N86,N87,N88,N89,N90,N91,N92,N93,N94,N95,N96,N97,N98,N99,R00,R01,R02,R03,R04,R05,R06,R07,R08,R09,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R25,R26,R27,R28,R29,R30,R31,R32,R33,R34,R35,R36,R37,R38,R39,R40,R41,R42,R43,R44,R45,R46,R47,R48,R49,R50,R51,R52,R53,R54,R55,R56,R57,R58,R59,R60,R61,R62,R63,R64,R65,R66,R67,R68,R69,R70,R71,R72,R73,R74,R75,R76,R77,R78,R79,R80,R81,R82,R83,R84,R85,R86,R87,R88,R89,R90,R91,R92,R93,R94,R95,R96,R97,R98,R99","pc",,,"pc",,,,,,,,,,,
+"prc_3","Mental Health","case","demo_case",,"icd_code",,,"sub_match","F00,F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19,F20,F21,F22,F23,F24,F25,F26,F27,F28,F29,F30,F31,F32,F33,F34,F35,F36,F37,F38,F39,F40,F41,F42,F43,F44,F45,F46,F47,F48,F50,F51,F52,F53,F54,F55,F56,F57,F58,F59,F60,F61,F62,F63,F64,F65,F66,F67,F68,F69,F70,F71,F72,F73,F74,F75,F76,F77,F78,F79,F80,F81,F82,F83,F84,F85,F86,F87,F88,F89,F90,F91,F92,F93,F94,F95,F96,F97,F98,F99","pc",,,"pc",,,,,,,,,,,
+"prc_4","Reproductive Health","case","demo_case",,"icd_code",,,"sub_match","O00,O01,O02,O03,O04,O05,O06,O07,O08,O10,O11,O12,O13,O14,O15,O16,O20,O21,O22,O23,O24,O25,O26,O27,O28,O29,O30,O31,O32,O33,O34,O35,O36,O37,O38,O39,O40,O41,O42,O43,O44,O45,O46,O47,O48,O60,O61,O62,O63,O64,O65,O66,O67,O68,O69,O70,O71,O72,O73,O74,O75,O80,O81,O82,O83,O84,O85,O86,O87,O88,O89,O90,O91,O92,O94,O95,O96,O97,O98,O99:5,200","pc",,,"pc",,,,,,,,,,,
+"prc_6","Injury","case","demo_case",,"icd_code",,,"sub_match","S00,S01,S02,S03,S04,S05,S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S27,S28,S29,S30,S31,S32,S33,S34,S35,S36,S37,S38,S39,S40,S41,S42,S43,S44,S45,S46,S47,S48,S49,S50,S51,S52,S53,S54,S55,S56,S57,S58,S59,S60,S61,S62,S63,S64,S65,S66,S67,S68,S69,S70,S71,S72,S73,S74,S75,S76,S77,S78,S79,S80,S81,S82,S83,S84,S85,S86,S87,S88,S89,S90,S91,S92,S93,S94,S95,S96,S97,S98,S99,T00,T01,T02,T03,T04,T05,T06,T07,T08,T09,T10,T11,T12,T13,T14,T15,T16,T17,T18,T19,T20,T21,T22,T23,T24,T25,T26,T27,T28,T29,T30,T31,T32,T33,T34,T35,T36,T37,T38,T39,T40,T41,T42,T43,T44,T45,T46,T47,T48,T49,T50,T51,T52,T53,T54,T55,T56,T57,T58,T59,T60,T61,T62,T63,T64,T65,T66,T67,T68,T69,T70,T71,T72,T73,T74,T75,T76,T77,T78,T79,T80,T81,T82,T83,T84,T85,T86,T87,T88,T90,T91,T92,T93,T94,T95,T96,T97,T98,V00,V01,V02,V03,V04,V05,V06,V07,V08,V09,V10,V11,V12,V13,V14,V15,V16,V17,V18,V19,V20,V21,V22,V23,V24,V25,V26,V27,V28,V29,V30,V31,V32,V33,V34,V35,V36,V37,V38,V39,V40,V41,V42,V43,V44,V45,V46,V47,V48,V49,V50,V51,V52,V53,V54,V55,V56,V57,V58,V59,V60,V61,V62,V63,V64,V65,V66,V67,V68,V69,V70,V71,V72,V73,V74,V75,V76,V77,V78,V79,V80,V81,V82,V83,V84,V85,V86,V87,V88,V89,V90,V91,V92,V93,V94,V95,V96,V97,V98,V99,W00,W01,W02,W03,W04,W05,W06,W07,W08,W09,W10,W11,W12,W13,W14,W15,W16,W17,W18,W19,W20,W21,W22,W23,W24,W25,W26,W27,W28,W29,W30,W31,W32,W33,W34,W35,W36,W37,W38,W39,W40,W41,W42,W43,W44,W45,W46,W47,W48,W49,W50,W51,W52,W53,W54,W55,W56,W57,W58,W59,W60,W61,W62,W63,W64,W65,W66,W67,W68,W69,W70,W71,W72,W73,W74,W75,W76,W77,W78,W79,W80,W81,W82,W83,W84,W85,W86,W87,W88,W89,W90,W91,W92,W93,W94,W95,W96,W97,W98,W99,X00,X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,X22,X23,X24,X25,X26,X27,X28,X29,X30,X31,X32,X33,X34,X35,X36,X37,X38,X39,X40,X41,X42,X43,X44,X45,X46,X47,X48,X49,X50,X51,X52,X53,X54,X55,X56,X57,X58,X59,X60,X61,X62,X63,X64,X65,X66,X67,X68,X69,X70,X71,X72,X73,X74,X75,X76,X77,X78,X79,X80,X81,X82,X83,X84,X85,X86,X87,X88,X89,X90,X91,X92,X93,X94,X95,X96,X97,X98,X99,Y00,Y01,Y02,Y03,Y04,Y05,Y06,Y07,Y08,Y09,Y10,Y11,Y12,Y13,Y14,Y15,Y16,Y17,Y18,Y19,Y20,Y21,Y22,Y23,Y24,Y25,Y26,Y27,Y28,Y29,Y30,Y31,Y32,Y33,Y34,Y35,Y36,Y40,Y41,Y42,Y43,Y44,Y45,Y46,Y47,Y48,Y49,Y50,Y51,Y52,Y53,Y54,Y55,Y56,Y57,Y58,Y59,Y60,Y61,Y62,Y63,Y64,Y65,Y66,Y67,Y68,Y69,Y70,Y71,Y72,Y73,Y74,Y75,Y76,Y77,Y78,Y79,Y80,Y81,Y82,Y83,Y84,Y85,Y86,Y87,Y88,Y89,Y90,Y91,Y92,Y93,Y94,Y95,Y96,Y97,Y98,S00,S01,S02,S03,S04,S05,S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S27,S28,S29,S30,S31,S32,S33,S34,S35,S36,S37,S38,S39,S40,S41,S42,S43,S44,S45,S46,S47,S48,S49,S50,S51,S52,S53,S54,S55,S56,S57,S58,S59,S60,S61,S62,S63,S64,S65,S66,S67,S68,S69,S70,S71,S72,S73,S74,S75,S76,S77,S78,S79,S80,S81,S82,S83,S84,S85,S86,S87,S88,S89,S90,S91,S92,S93,S94,S95,S96,S97,S98,S99,T00,T01,T02,T03,T04,T05,T06,T07,T08,T09,T10,T11,T12,T13,T14,T15,T16,T17,T18,T19,T20,T21,T22,T23,T24,T25,T26,T27,T28,T29,T30,T31,T32,T33,T34,T35,T36,T37,T38,T39,T40,T41,T42,T43,T44,T45,T46,T47,T48,T49,T50,T51,T52,T53,T54,T55,T56,T57,T58,T59,T60,T61,T62,T63,T64,T65,T66,T67,T68,T69,T70,T71,T72,T73,T74,T75,T76,T77,T78,T79,T80,T81,T82,T83,T84,T85,T86,T87,T88,T90,T91,T92,T93,T94,T95,T96,T97,T98,V00,V01,V02,V03,V04,V05,V06,V07,V08,V09,V10,V11,V12,V13,V14,V15,V16,V17,V18,V19,V20,V21,V22,V23,V24,V25,V26,V27,V28,V29,V30,V31,V32,V33,V34,V35,V36,V37,V38,V39,V40,V41,V42,V43,V44,V45,V46,V47,V48,V49,V50,V51,V52,V53,V54,V55,V56,V57,V58,V59,V60,V61,V62,V63,V64,V65,V66,V67,V68,V69,V70,V71,V72,V73,V74,V75,V76,V77,V78,V79,V80,V81,V82,V83,V84,V85,V86,V87,V88,V89,V90,V91,V92,V93,V94,V95,V96,V97,V98,V99,W00,W01,W02,W03,W04,W05,W06,W07,W08,W09,W10,W11,W12,W13,W14,W15,W16,W17,W18,W19,W20,W21,W22,W23,W24,W25,W26,W27,W28,W29,W30,W31,W32,W33,W34,W35,W36,W37,W38,W39,W40,W41,W42,W43,W44,W45,W46,W47,W48,W49,W50,W51,W52,W53,W54,W55,W56,W57,W58,W59,W60,W61,W62,W63,W64,W65,W66,W67,W68,W69,W70,W71,W72,W73,W74,W75,W76,W77,W78,W79,W80,W81,W82,W83,W84,W85,W86,W87,W88,W89,W90,W91,W92,W93,W94,W95,W96,W97,W98,W99,X00,X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,X22,X23,X24,X25,X26,X27,X28,X29,X30,X31,X32,X33,X34,X35,X36,X37,X38,X39,X40,X41,X42,X43,X44,X45,X46,X47,X48,X49,X50,X51,X52,X53,X54,X55,X56,X57,X58,X59,X60,X61,X62,X63,X64,X65,X66,X67,X68,X69,X70,X71,X72,X73,X74,X75,X76,X77,X78,X79,X80,X81,X82,X83,X84,X85,X86,X87,X88,X89,X90,X91,X92,X93,X94,X95,X96,X97,X98,X99,Y00,Y01,Y02,Y03,Y04,Y05,Y06,Y07,Y08,Y09,Y10,Y11,Y12,Y13,Y14,Y15,Y16,Y17,Y18,Y19,Y20,Y21,Y22,Y23,Y24,Y25,Y26,Y27,Y28,Y29,Y30,Y31,Y32,Y33,Y34,Y35,Y36,Y40,Y41,Y42,Y43,Y44,Y45,Y46,Y47,Y48,Y49,Y50,Y51,Y52,Y53,Y54,Y55,Y56,Y57,Y58,Y59,Y60,Y61,Y62,Y63,Y64,Y65,Y66,Y67,Y68,Y69,Y70,Y71,Y72,Y73,Y74,Y75,Y76,Y77,Y78,Y79,Y80,Y81,Y82,Y83,Y84,Y85,Y86,Y87,Y88,Y89,Y90,Y91,Y92,Y93,Y94,Y95,Y96,Y97,Y98","pc",,,"pc",,,,,,,,,,,
+"prc_7","Other","case","demo_case",,"icd_code",,,"sub_match","!0,other,U00,U01,U02,U03,U04,U05,U06,U07,U08,U09,U10,U11,U12,U13,U14,U15,U16,U17,U18,U19,U20,U21,U22,U23,U24,U25,U26,U27,U28,U29,U30,U31,U32,U33,U34,U35,U36,U37,U38,U39,U40,U41,U42,U43,U44,U45,U46,U47,U48,U49,U80,U81,U82,U83,U84,U85,U86,U87,U88,U89,Z00,Z01,Z02,Z03,Z04,Z05,Z06,Z07,Z08,Z09,Z10,Z11,Z12,Z13,Z20,Z21,Z22,Z23,Z24,Z25,Z26,Z27,Z28,Z29,Z30,Z31,Z32,Z33,Z34,Z35,Z36,Z37,Z38,Z39,Z40,Z41,Z42,Z43,Z44,Z45,Z46,Z47,Z48,Z49,Z50,Z51,Z52,Z53,Z54,Z55,Z56,Z57,Z58,Z59,Z60,Z61,Z62,Z63,Z64,Z65,Z70,Z71,Z72,Z73,Z74,Z75,Z76,Z80,Z81,Z82,Z83,Z84,Z85,Z86,Z87,Z88,Z89,Z90,Z91,Z92,Z93,Z94,Z95,Z96,Z97,Z98,Z99:5,200","pc",,,"pc",,,,,,,,,,,
+"cmd_1","Cholera","case","demo_case",,"icd_code",1,"threshold:3,5","match","A00,A00.0,A00.1,A00.9","cd_tab,Intestinal infectious diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+An illness that is characterized by acute painless watery diarrhoea with or without vomiting. 
+
+Probable case
+Any person 5 years or older with severe dehydration or death caused by acute diarrhoea (3 or more abnormally loose or fluid stools in the past 24 hours). Any person 2 years or older with acute diarrhoea (3 or more abnormally loose or fluid stools in the past 24 hours), with or without dehydration in an area where there is a cholera outbreak.
+
+Confirmed case 
+A clinically compatible illness fulfilling the laboratory criterion. ","Contaminated water sources, contaminated food sources, cholera outbreak, low environmental sanitation","Watery diarrhea (3 or more abnormally loose or fluid stools in the past 24 hours, ""rice-water"" stool with or without vomiting), severe dehydration (including any of the following loss of skin turgor, malaise, tachypnoea, hypotension), fever (more cdon in children)","Isolation of vibrio cholera 01 or 0139 from stool sample (at least 5 grams or pea sized) or rectal swab",,
+"cmd_2","Typhoid fever","case","demo_case",,"icd_code",1,"individual","match","A01,A01.0,A01.1,A01.2,A01.3,A01.4","cd_tab,Intestinal infectious diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+An illness characterized by insidious onset of sustained fever, headache, malaise, cough, bradycardia, splenomegaly or rose spot on the trunk with or without gastrointestinal symptoms. 
+ 
+Probable case 
+A clinically compatible case that EITHER  
+• Has Widal test result of titre of Salmonella Typhi O antibody of 200 or greater OR 
+• Epidemiologically linked to a confirmed case. 
+
+Confirmed case  
+A clinically compatible case with laboratory confirmation.   
+","Work in or travel to areas where typhoid fever is endemic, close contact with someone who is infected or has recently been infected with typhoid fever, drink water contaminated by sewage that contains S. typhi","Fever, headache, malaise, cough, bradycardia, splenomegaly, rose spot on the trunk, gastrointestinal symptoms","• Salmonella Typhi isolated from any clinical specimen 
+• Widal test result of a four-fold or greater rise in the titre of Salmonella Typhi O antibody in paired sera ",,
+"cmd_3","Bloody diarrhoea","case","demo_case",,"icd_code",1,"individual","match","A03,A03.0,A03.1,A03.2,A03.3,A03.8,A03.9","cd_tab,Intestinal infectious diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+An illness of variable severity characterized by diarrhoea (with blood, mucus or pus), fever, nausea, vomiting, abdominal cramps and tenesmus. 
+
+Probable case
+A clinically compatible case without laboratory confirmation, but is epidemiologically linked to a confirmed case.  
+
+Confirmed case 
+A clinically compatible case with laboratory confirmation. ","Contaminated water, contaminated food, malnourished, age (children under 5, older adults), children who have had measles in past 6 weeks, shigellosis outbreak","Malnourished, bloody diarrhea (3 or more abnormally loose or fluid stools in past 24 hours with visible blood), fever, abdominal cramps, rectal pain, seizures, sepsis, rectal prolapsed, toxic megacolon, hemolytic uraemic syndrome","Isolation of Shigella dysenteriae type 1 from stool samples (at least 5 grams or pea sized)",,
+"cmd_4","Food Poisoning","case","demo_case",,"icd_code",1,"individual","match","A05,A05.0,A05.1,A05.2,A05.3,A05.4,A05.8,A05.9","cd_tab,Intestinal infectious diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+A person who ingests food or other agents that causes an infectious or toxic nature primarily of the gastrointestinal tract, but can include other systems (e.g. neurological, immunological). Probable cases have typical clinical symptoms of the illness without laboratory confirmation. Suspected cases have fewer or atypical clinical symptoms.
+
+Exclusion: acute watery diarrhea (suspected shigellosis), bloody diarrhea (suspected cholera), acute jaundice syndrome (suspected Hepatitis)
+
+Probable outbreak 
+A clinically and epidemiologically compatible illness without laboratory confirmation. 
+ 
+Confirmed outbreak 
+ A clinically and epidemiologically compatible illness with EITHER  
+•  Laboratory criteria of causative agent; OR 
+• •Epidemiological linkage to another confirmed outbreak ","Consumption of contaminated food, Consumption of contaminated water","Nausea, Vomiting, Mucoid diarrhoea (fatty stools), Other diarrhoea (non-watery and non-bloody type), Abdominal pain, Headache, Dizziness, Loss of consciousness, Coma, Thirst, Dehydration, Dyspnoea, Weakness, Malaise, Sore throat, Fever, Chills, Gastroenteritis, Blurred vision, Twitching/convulsions, Tingling/numbness, Dilated pupils, Constricted pupils, Difficulty swallowing/speaking/breathing, Rash, Itching of skin","Isolation of suspected causative agent/s (refer to MOH guidelines) AND detailed risk assessment",,
+"cmd_5","Tuberculosis","case","demo_case",,"icd_code",1,"individual","match","A15,A15.0,A15.1,A15.2,A15.3,A15.4,A15.5,A15.6,A15.7,A15.8,A15.9,A16,A16.0,A16.1,A16.2,A16.3,A16.4,A16.5,A16.7,A16.8,A16.9,A17,A17.0,A17.1,A17.8,A17.9,A18,A18.0,A18.1,A18.2,A18.3,A18.4,A18.5,A18.6,A18.7,A18.8,A19,A19.0,A19.1,A19.2,A19.8,A19.9","cd_tab,Tuberculosis",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical description  
+Tuberculosis (TB) is a chronic bacterial infection characterized pathologically by the formation of granulomas, most common site of infection is the lungs, but other organs may be involved:  
+• Pulmonary tuberculosis:  Classical symptoms including persistent cough, haemoptysis, afternoon fever, night sweating and weight loss. 
+• Extrapulmonary tuberculosis: Clinical features referable to the respective organ/ system and general well-being affected. 
+
+Probable case
+All cases meeting either the clinical case definition or laboratory criteria, but not the full set of criteria for a confirmed case.   A case meets the following criteria: 
+• Signs and symptoms compatible with active tuberculosis; AND 
+• Supporting evidence from relevant and clinically indicated diagnostic evaluation (e.g., abnormal, unstable [i.e., worsening or improving] chest radiographs); AND 
+• The attending physician forms the opinion that treatment for active tuberculosis with a combination of anti-tuberculosis medications is required  
+
+Confirmed case 
+A clinically compatible illness that is laboratory confirmed, or in the absence of laboratory confirmation, a case meeting the clinical case definition and showing an appropriate response to treatment   ","Crowded living conditions, exposure to someone with known TB, exposure to high prevalence area with TB, HIV-positive","Cough of long duration (>2 weeks), coughing blood, chest pain, shortness of breath, fever/night sweats, tiredness, loss of appetite, weight loss","3 sputum examined by light microscopic (early morning sample are more likely to contain TB organism)
+OR Chest X-ray",,
+"cmd_6","Plague","case","demo_case",,"icd_code",1,"individual","match","A20,A20.0,A20.1,A20.2,A20.3,A20.7,A20.8,A20.9","cd_tab,Certain zoonotic bacterial diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+A probable case is characterized by fever, chills, headache, malaise, prostration, and leukocytosis that manifests in one or more of the following clinical forms: 
+• Bubonic plague: Regional lymphadenitis 
+• Septicemic plague: Septicemia without an evident bubo  
+• Pneumonic plague: Primary pneumonic plague:  resulting from inhalation of infectious droplets; Secondary pneumonic plague:  Plague pneumonia, resulting from hematogenous spread in bubonic or septicemic cases       
+• Pharyngeal plague: Pharyngitis and cervical lymphadenitis resulting from exposure to larger infectious droplets or ingestion of infected tissues 
+
+Probable case 
+ A clinically compatible illness with presumptive laboratory results: 
+• Elevated serum antibody titre to Y. pestis F1 antigen in a patient with no history of plague vaccination; OR  
+• Detection of Y. pestis F1 antigen in a clinical specimen by fluorescent assay 
+
+Confirmed case 
+ A clinically compatible illness with confirmatory laboratory results. ","Location (endemic rural areas and in urban areas characterized by overcrowding, poor sanitation and a high rat population), occupation (veterinarians)","High fever, a painful inflammation and suppuration in the lymph nodes in the area of the bite, headache, vomiting, delirium, shortness of breath, cough, bloody sputum","Any one of the following:  
+• Isolation of Yersinia pestis from a clinical specimen 
+• Four-fold or greater change in serum antibody titre to Y. pestis fraction 1 (F1) antigen",,
+"cmd_7","Anthrax","case","demo_case",,"icd_code",1,"individual","match","A22,A22.0,A22.1,A22.2,A22.7,A22.8,A22.9","cd_tab,Certain zoonotic bacterial diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+Localised form:
+• Cutaneous: skin lesion evolving over 2 to 6 days from a popular through a vesicular stage, to a depressed black eschar invariably accompanied by oedema that may be mild to extensive.
+
+Systemic form:
+• Gastrointestinal: abdominal distress characterized by nausea, vomiting, anorexia and followed by fever
+• Pulmonary: brief prodrome resembling acute viral respiratory illness, followed by rapid onset of hypoxia, dyspnea and high temperature, with X-ray evidence of mediastinal widening
+• Meningeal: acute onset of high fever possibly with convulsions and loss of consciousness, meningeal signs and symptoms
+
+Probable case
+A person whose case is compatible with the clinical description and has an epidemiological link to confirmed or suspected animal cases or contaminated animal products. 
+
+Confirmed case 
+A clinically compatible case that is laboratory confirmed. ","Skin lesion (cut, abrasion, bite, etc.) that could allow anthrax spore to penetrate, ingestion of contaminated meat, suspected inhalation of anthrax spores","Cutaneous anthrax: pimple/papule with or without surrounding vesicles, oedema, eschar
+
+Gastrointestinal anthrax: nausea, vomiting, fever, abdominal pain, haematemesis, bloody diarrhea, massive ascites, toxaemia and shock, sore throat, dysphagia, fever, regional lymphadenopathy in the neck and toxaemia
+
+Pulmonary (inhalation) anthrax: mild fever, fatigue, malaise, headache, muscle ache, chills and fever, dyspnea, cyanosis, disorientation with coma","Any one of the following: 
+• Demonstration of Bacillus anthracis in a clinical specimen by microscopic examination of stained smears of vesicular fluid, blood, cerebrospinal fluid, etc 
+• Isolation of Bacillus anthracis from a clinical specimen (e.g. blood, lesions, discharges) 
+• Detection of Bacillus anthracis by nucleic acid testing of a clinical specimen ",,
+"cmd_8","Brucellosis","case","demo_case",,"icd_code",1,"individual","match","A23,A23.0,A23.1,A23.2,A23.3,A23.8,A23.9","cd_tab,Certain zoonotic bacterial diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description  
+An illness characterized by acute or insidious onset, with continued, intermittent or irregular fever of variable duration, profuse sweating particularly at night, fatigue, anorexia, weight loss, headache, arthralgia and generalized aching.  Local infection of various organs may occur. 
+
+Probable case
+• the person who experienced a continuous or intermittent or irregular fever and last for variable periods
+• the following symptoms: headache, general weakness, profuse perspiration, chills, pain in the joints, depression, weight loss
+
+Confirmed case 
+A clinically compatible case that is laboratory confirmed. ","consumption of unpasteurised goat cheese, occupations who work with animals or come into contact with infected blood  e.g. dairy farmers, slaughterhouse workers","Headache, general weakness, profuse perspiration, chills, pain in the joints, depression, weight loss","Any one of the following: 
+• Isolation of Brucella species from a clinical specimen  
+• Four-fold or greater rise in Brucella agglutination titre between acute- and convalescent-phase serum specimens ",,
+"cmd_9","Leprosy","case","demo_case",,"icd_code",1,"individual","match","A30,A30.0,A30.1,A30.2,A30.3,A30.4,A30.5,A30.8,A30.9","cd_tab,Other bacterial diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+Leprosy is a chronic granulomatous infection, primarily affecting skin and peripheral nerves, caused by Mycobacterium leprae.  Clinical forms of leprosy represent a spectrum reflecting the cellular immune response and reaction to M. leprae.  The clinical diagnosis of leprosy is based on the following cardinal signs: anaesthesia, thickened nerves and typical skin lesions. 
+ 
+Probable case 
+• Tuberculoid: one or a few well-demarcated, hypopigmented, and anesthetic skin lesions, frequently with active, spreading edges and a clearing center; peripheral nerve swelling or thickening may also occur 
+• Lepromatous: a number of erythematous papules and nodules or an infiltration of the face, hands, and feet with lesions in a bilateral and symmetrical distribution that progress to thickening of the skin 
+• Borderline (dimorphous): pink lesions characteristic of both the tuberculoid and lepromatous forms 
+• Indeterminate: early lesions, usually hypopigmented macules, without developed tuberculoid or lepromatous features 
+
+Confirmed case 
+A person with at least two cardinal signs and laboratory confirmed. ","Close contact with someone with leprosy, Displacement, Overcrowding conditions","Leprosy patches (can be pale or reddish or copper colored; flat or raised; do not itch; usually do not hurt; lack sensation to heat, touch or pain; can appear anywhere), Reddish or skin-colored nodules, Smooth and shiny diffuse thickening of skin without a loss of sensation, Numbness or tingling of the hands or feet, Weakness of the hands, feet or eyelids, Painful or tender nerves, Swelling of or lumps in the face or earlobes, Painless wounds or burns on the hands or feet","• Multibacillary leprosy: demonstration of acid-fast bacilli in skin or dermal nerve, obtained either by skin biopsy, slit skin smear examination or nerve biopsy of a lepromatous lesion.
+• Paucibacillary leprosy: characteristic presence of epithelioid cell granulomas within or around peripheral nerves.",,
+"cmd_10","Tetanus","case","demo_case",,"icd_code",1,"individual","match","A33,A34,A35","cd_tab,Other bacterial diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description  
+Tetanus is characterized by acute onset of hypertonia and/or painful muscular contractions, usually of the muscles of the jaw and neck, and generalized muscle spasms without other apparent medical cause.  
+
+Probable case
+A person with at least one of the following signs: inability to open the mouth or sustained spasm of the facial muscles; OR painful muscular contractions. Tetanus requires an injury or wound, but patients may be unable to recall a specific event.
+  
+Confirmed case 
+A clinically compatible case as reported by a healthcare professional. ","Injury or wound, potential unsterile cord cutting (pregnant women during delivery)","Inability to open mouth, sustained spasm of the facial muscles including the jaw, painful muscular contractions, inability to breastfeed (newborn), stiff body or arch (newborn), inability to breathe","Not applicable.  The organism is rarely recovered from the site of infection and usually there is no detectable antibody response.",,
+"cmd_11","Diphtheria","case","demo_case",,"icd_code",1,"individual","match","A36,A36.0,A36.1,A36.2,A36.3,A36.8,A36.9","cd_tab,Other bacterial diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+An upper respiratory tract illness characterized by sore throat, low-grade fever, and adherent membrane of the tonsil(s), pharynx, and/or nose without other apparent cause
+
+Probable case
+A clinically compatible illness.
+
+Confirmed case 
+A clinically compatible illness that is EITHER  
+• Laboratory confirmed; OR 
+• Epidemiologically linked to a confirmed case ","Exposure to a case of diphtheria","Fever, Running nose, Cough, Adherent membrane (tough, grayish-white color) of the nose, pharynx, tonsils or larynx, Inflammation of cervical lymph nodes and surrounding tissue",,,"Isolation of Corynebacterium diphtheria from the nose or throat OR histopathologic diagnosis of diphtheria OR an epidemiologic linkage to a laboratory-confirmed case of diphtheria"
+"cmd_12","Whooping cough","case","demo_case",,"icd_code",1,"individual","match","A37,A37.0,A37.1,A37.8,A37.9","cd_tab,Other bacterial diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+A cough illness lasting at least 2 weeks with one of the following: paroxysms of coughing, inspiratory “whoop”, or post-tussive vomiting, and without other apparent causes. 
+
+Probable case
+A case that meets the clinical description, but is not laboratory confirmed, and is not epidemiologically-linked to a laboratory confirmed case. 
+
+Confirmed case 
+Any one of the following: 
+• An acute cough illness of any duration associated with B. pertussis isolation or positive PCR for B. pertussis  
+• A case that meets the clinical description and is epidemiologically-linked to a case confirmed by either culture or PCR. ","Exposure to a case of pertussis","Cough lasting at least 2 weeks, paroxysms of coughing, inspiratory whoop,posttussive vomiting","• Isolation of Bordetella pertussis from a clinical specimen, or  
+• Positive polymerase chain reaction (PCR) assay for B. pertussis ",,
+"cmd_13","Scarlet fever","case","demo_case",,"icd_code",1,"individual","match","A38","cd_tab,Other bacterial diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","International Classification of Disease (ICD-10)",,,,,
+"cmd_14","Meningitis","case","demo_case",,"icd_code",1,"individual","match","A39,A39.0,A39.1,A39.2,A39.3,A39.4,A39.5,A39.8,A39.9","cd_tab,Other bacterial diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description  
+An acute bacterial disease, characterized by sudden onset of fever (>38.0 degrees Celsius axillary or >38.5 degrees Celsius rectal) AND ONE of the following signs: neck stiffness; altered consciousness; petechial or purpural rash, or other meningeal signs. In children <1 year, meningitis is suspected when fever is accompanied by a bulging fontanelle.
+
+Probable case  
+A clinically compatible illness with Gram-negative diplococci identified in any sterile fluids such as CSF.
+
+Confirmed case 
+ A clinically compatible case that is laboratory confirmed ","Close and prolonged contact with individual suspected of having meningitis, High rates of acute respiratory infection (ARI), Overcrowding conditions, Other","Sudden onset of intense headache, Suddepn onset of fever, Sudden onset of nausea, Sudden onset of vomiting, Sudden onset of photophobia, Sudden onset of stiff neck, Lethargy, Delirium, Coma, Purpura, Shock symptoms, Other","Conduct lumbar puncture of first 25 cases during an epidemic to confirm diagnosis and serogroup",,
+"cmd_15","Syphilis","case","demo_case",,"icd_code",1,"individual","match","A53,A53.0,A53.9","cd_tab,Infections with a predominantly sexual mode of transmission",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","International Classification of Disease (ICD-10)",,,,,
+"cmd_16","Gonorrhoea","case","demo_case",,"icd_code",1,"individual","match","A54,A54.0,A54.1,A54.2,A54.3,A54.4,A54.5,A54.6,A54.8,A54.9","cd_tab,Infections with a predominantly sexual mode of transmission",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","International Classification of Disease (ICD-10)",,,,,
+"cmd_17","Relapsing fevers","case","demo_case",,"icd_code",1,"individual","match","A68,A68.0,A68.1,A68.9","cd_tab,Other spirochaetal diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","International Classification of Disease (ICD-10)",,,,,
+"cmd_18","Typhus fever","case","demo_case",,"icd_code",1,"individual","match","A75,A75.0,A75.1,A75.2,A75.3,A75.9","cd_tab,Rickettsioses",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+Rickettsial diseases are caused by a group of Gram-negative obligate intracellular bacteria in the family Rickettsiaceae. They are primarily vector-borne diseases – transmitted by the bite or faeces of infected arthropod vectors.  
+
+The affected patients usually presents sudden headache, chills, high fever, prostration, coughing and severe muscular pain. After 5 to 6 days, a macular skin eruption (dark spots) develop on the upper trunk and spreads to the rest of the body.
+
+Probable case 
+A clinically compatible case with supportive laboratory findings: 
+Immunofluorescence test demonstrating a single antibody titre against Typhus group ≥ 512 
+
+Confirmed case 
+ A clinically compatible case that is laboratory confirmed.  ","Cold, mountainous conditions, Overcrowded living conditions, Displacement, Exposure to lice","Headache, Chills, High fever , Prostration, Coughing, Severe muscular pain, Macular skin eruption (dark spots) on upper trunk or other areas of the body)","Any one of the following:  
+• Immunofluorescence test demonstrating a four-fold or greater increase in antibody titre against typhus group 
+• Polymerase chain reaction assay demonstrating the presence of the genome of Rickettsia in the blood specimen",,
+"cmd_19","Polio","case","demo_case",,"icd_code",1,"individual","match","A80,A80.0,A80.1,A80.2,A80.3,A80.4,A80.9","cd_tab,Viral infections of the central nervous system",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+Acute flaccid paralysis (AFP) is defined as acute onset of focal weakness or paralysis characterized as flaccid (reduced muscle tone).  The AFP surveillance has been set up primarily for detecting acute poliomyelitis among children under 15 years of age. 
+
+Probable case
+Any child <15 years with acute flaccid paralysis including Guillain-Barre syndrome OR any paralytic illness in a person of any age OR a person of any age in whom the clinician suspects polio.","Age (children under 5), contaminated water sources, another case of AFP reported in the same area","Asymptomatic, fever, fatigue, headache, vomiting, stiffness in the neck, pain in limbs","Stool sample taken 24 hours apart within 14 days of onset of paralysis",,
+"cmd_20","Rabies","case","demo_case",,"icd_code",1,"individual","match","A82,A82.0,A82.1,A82.9","cd_tab,Viral infections of the central nervous system",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+Rabies is an acute encephalomyelitis that almost always progresses to coma or death within 10 days of the first symptoms.  Onset with headache, fever, malaise and sensory changes referred to the bite wound.  The disease progresses to paresis or paralysis, spasm of muscles of deglutition on attempts to swallow leads to fear of water (hydrophobia), delirium and convulsion.  Death is often due to respiratory paralysis.  
+
+Probable case 
+A clinically compatible illness plus history of contact with a suspected rabid animal or epidemiologically linked to a confirmed case. 
+
+Confirmed case 
+ A clinically compatible illness that is laboratory confirmed.   ","Exposure to rabies-carrying vectors (e.g. bats, etc.)","Spasms in response to tactile, auditory, visual or olfactory stimuli, Paralysis or Guillan-Barre-like syndrome, Myoedema at percussion sites, Encephalitis","Antigen detection using the FA test on skin biopsies from patients with clinical rabies, virus isolation using neuroblastoma cells (preferably performed on saliva samples or other biological fluids such as tears or cerebrospinal fluid), RFFIT or FAVN test antibody tests for non-vaccinated patients",,
+"cmd_21","Viral meningitis","case","demo_case",,"icd_code",1,"individual","match","A87,A87.0,A87.1,A87.2,A87.8,A87.9","cd_tab,Viral infections of the central nervous system",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description  
+An acute bacterial disease, characterized by sudden onset of fever (>38.0 degrees Celsius axillary or >38.5 degrees Celsius rectal) AND ONE of the following signs: neck stiffness; altered consciousness; petechial or purpural rash, or other meningeal signs. In children <1 year, meningitis is suspected when fever is accompanied by a bulging fontanelle.
+
+Probable case  
+A clinically compatible illness with Gram-negative diplococci identified in any sterile fluids such as CSF.
+
+Confirmed case 
+ A clinically compatible case that is laboratory confirmed ","Close and prolonged contact with individual suspected of having meningitis, High rates of acute respiratory infection (ARI), Overcrowding conditions, Other","Sudden onset of intense headache, Suddepn onset of fever, Sudden onset of nausea, Sudden onset of vomiting, Sudden onset of photophobia, Sudden onset of stiff neck, Lethargy, Delirium, Coma, Purpura, Shock symptoms, Other","Conduct lumbar puncture of first 25 cases during an epidemic to confirm diagnosis and serogroup",,
+"cmd_22","Dengue Fever","case","demo_case",,"icd_code",1,"individual","match","A90,A91","cd_tab,Arthropod-borne viral fevers and viral haemorrhagic fevers",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+Dengue fever is an acute febrile illness with two or more of the following symptoms: headache, retro-orbital pain, myalgia, arthralgia, rash, haemorrhagic manifestations, leukopenia or thrombocytopenia
+
+Probable case
+A clinically compatible case with supportive serology: 
+• A positive IgM antibody test on a single serum specimen to dengue virus antigens; OR 
+• Antibody titre of ≥ 1280 on a single serum specimen to one or more dengue virus antigens 
+
+Confirmed case
+A clinically compatible case with laboratory confirmation.","Living or travelling in tropical areas, prior infection with a dengue fever virus","Headache, retro-orbital pain, myalgia, arthralgia, rash, haemorrhagic manifestations, leukopenia or thrombocytopenia","Any one of the following:  
+• Isolation of dengue virus from serum and/or autopsy samples 
+• Demonstration of a four-fold or greater change in antibody titres to one or more dengue virus antigens in paired serum samples 
+• Detection of dengue virus genomic sequences in autopsy tissue or serum samples by polymerase chain reaction (PCR) 
+• Demonstration of dengue virus antigen in serum samples ",,
+"cmd_23","Yellow fever","case","demo_case",,"icd_code",1,"individual","match","A95,A95.0,A95.1,A95.9","cd_tab,Arthropod-borne viral fevers and viral haemorrhagic fevers",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+A mosquito-borne viral illness characterized by acute onset and constitutional symptoms followed by brief remission and recurrence of fever, hepatitis, albuminuria, and in some instances, renal failure, shock, and generalized haemorrhages. 
+
+Probable case 
+A clinically compatible illness with supportive serology. (Stable elevated antibody titre to yellow fever virus, or a positive IgM result.  Cross-reactive serologic reactions to other flaviviruses must be ruled out, and there must be no history of yellow fever immunization.) 
+
+Confirmed case
+A clinically compatible illness that is laboratory confirmed.  ","Travel to an area where mosquitoes continue to carry the yellow fever virus","Fever, hepatitis, albuminuria, renal failure, shock, haemorrhage","• Four-fold or greater rise in yellow fever antibody titre with no history of recent yellow fever immunization, and cross-reactions to other flaviviruses ruled out; OR  
+• Demonstration of yellow fever virus, antigen, or genome in tissue, blood, or other body fluid  ",,
+"cmd_24","Viral haemorrhagic fever","case","demo_case",,"icd_code",1,"individual","match","A98,A98.0,A98.1,A98.2,A98.3,A98.5,A98.8,A99","cd_tab,Arthropod-borne viral fevers and viral haemorrhagic fevers",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+Viral haemorrhagic fever (VHF) refers to a group of systemic mild to life-threatening viral infection often complicated by haemorrhagic syndromes. Initial symptoms include marked fever, malaise, dizziness, myalgia, loss of strength, and exhaustion. Severe cases may show signs of bleeding under the skin, in internal organs, or from body orifices like the mouth, eyes, or ears. Some cases may even show shock, nervous system malfunction, coma, delirium, and seizures.  
+
+Probable case 
+A clinically compatible case with any one of the following epidemiological evidence: 
+• History of travel to an endemic/epidemic area within the incubation period of illness onset, or 
+• Contact with a confirmed case, or 
+• Exposure to viral haemorrhagic fever infected blood or tissues 
+
+Confirmed case 
+A case that is laboratory confirmed. ","Acute onset of fever, haemorrhagic or purpuric rash, bleeding from the nose, vomiting blood, coughing up blood, blood in stools, other haemorrhagic symptoms","Reside in or move to an endemic area, exposure to vectors (ticks, rodents, livestock, mosquitoes, camels, horses etc.)","Any one of the following: 
+• Isolation of a viral haemorrhagic fever virus from a clinical specimen 
+• Detection of specific virus by nucleic acid testing (e.g. PCR), antigen detection assay, or electronic microscopy from a clinical specimen 
+• IgG seroconversion or a fourfold or greater rise in titre to specific virus",,
+"cmd_25","Ebola virus disease","case","demo_case",,"icd_code",1,"individual","match","A98.4","cd_tab,Arthropod-borne viral fevers and viral haemorrhagic fevers",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+Viral haemorrhagic fever (VHF) refers to a group of systemic mild to life-threatening viral infection often complicated by haemorrhagic syndromes. Initial symptoms include marked fever, malaise, dizziness, myalgia, loss of strength, and exhaustion. Severe cases may show signs of bleeding under the skin, in internal organs, or from body orifices like the mouth, eyes, or ears. Some cases may even show shock, nervous system malfunction, coma, delirium, and seizures.  
+
+Probable case 
+A clinically compatible case with any one of the following epidemiological evidence: 
+• History of travel to an endemic/epidemic area within the incubation period of illness onset, or 
+• Contact with a confirmed case, or 
+• Exposure to viral haemorrhagic fever infected blood or tissues 
+
+Confirmed case 
+A case that is laboratory confirmed. ","Acute onset of fever, haemorrhagic or purpuric rash, bleeding from the nose, vomiting blood, coughing up blood, blood in stools, other haemorrhagic symptoms","Reside in or move to an endemic area, exposure to vectors (ticks, rodents, livestock, mosquitoes, camels, horses etc.)","Any one of the following: 
+• Isolation of a viral haemorrhagic fever virus from a clinical specimen 
+• Detection of specific virus by nucleic acid testing (e.g. PCR), antigen detection assay, or electronic microscopy from a clinical specimen 
+• IgG seroconversion or a fourfold or greater rise in titre to specific virus",,
+"cmd_26","Chicken pox","case","demo_case",,"icd_code",,"individual","match","B01,B01.0,B01.1,B01.2,B01.8,B01.9","cd_tab,Viral infections characterized by skin and mucous membrane lesions",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+An illness with acute onset of diffuse (generalized) papulovesicular rash without other apparent cause. In vaccinated persons who develop chickenpox more than 42 days after vaccination (breakthrough disease), the disease is usually mild with fewer than 50 skin lesions and shorter duration of illness. The rash may also be atypical in appearance (maculopapular with few or no vesicles). 
+
+Probable case 
+A case that meets the typical clinical description, is not laboratory confirmed and is not epidemiologically linked to a confirmed case; OR 
+
+Confirmed case 
+A clinically compatible illness that is EITHER  
+• Laboratory confirmed; OR 
+• Epidemiologically linked to a confirmed case ","Direct contact with the symptomatic person with rash or by droplets dispersed into the air by coughing or sneezing","acute onset, diffuse (generalized) papulovesicular rash without other apparent cause","Any one of the following:  
+• Isolation of varicella zoster virus from a clinical specimen 
+• Demonstration of four-fold or greater rise in antibody titre 
+• Demonstration of viral antigen in vesicular scrapings using fluorescent-antibody staining 
+• Positive PCR for varicella zoster virus in clinical specimen ",,
+"cmd_27","Measles","case","demo_case",,"icd_code",1,"individual","match","B05,B05.0,B05.1,B05.2,B05.3,B05.4,B05.8,B05.9","cd_tab,Viral infections characterized by skin and mucous membrane lesions",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description  
+An illness characterised by all the following: 
+• a generalized rash lasting ≥ 3 days, 
+• a temperature ≥ 38.3oC and  
+• cough, coryza or conjunctivitis 
+ 
+Probable case
+Any person with fever AND maculopapular (non-vesicular) rash AND ONE of the following: cough, runny nose or red eyes; OR any person in whom a clinician suspects measles. A measles death is a death occurring within 30 days of onset of the rash.
+
+Confirmed case 
+• A case that is laboratory confirmed. A laboratory confirmed case does not need to meet the clinical case definition; OR 
+• A clinically compatible case that is epidemiologically linked to a confirmed case ","Age (children between 9 months and 5 years), overcrowding conditions, measles immunization coverage rate known to be <80% in area of origin/residence, malnutrition","High fever, rash, runny nose, cough, conjunctivitis, Koplik spots (small white spots on buccal mucosa), red maculopapular (blotchy) rash 3 to 7 days after onset starting behind the ears and hairline","Any one of the following: 
+• Positive serologic test for measles IgM antibody  
+• ≥ four-fold increase in measles antibody titre  
+• Isolation of measles virus from a clinical specimen 
+• PCR positive for measles virus in clinical specimen ",,
+"cmd_28","Rubella","case","demo_case",,"icd_code",1,"individual","match","B06,B06.0,B06.8,B06.9","cd_tab,Viral infections characterized by skin and mucous membrane lesions",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+In the absence of a more likely diagnosis, an illness characterized by all of the following:
+• Acute onset of generalized maculopapular rash; and
+• Temperature greater than 37.2° C, if measures; and
+• Anthralgia, arthritis, lymphadenopathy, or conjunctivitis; and
+• Lack of epidemiologic linkage to a laboratory-confirmed case of rubella; and noncontributory or no serologic or virologic testing.
+ 
+Probable case  
+A probable case of rubella is a case that meets the clinical description, and has no or non-contributory serologic or virologic testing, and is not epidemiologically linked to a laboratory confirmed case. 
+
+ Confirmed case 
+A confirmed case of rubella is: 
+• A case that is laboratory confirmed; OR  
+• A case that meets the clinical description and is epidemiologically linked to a confirmed case ","Exposure to individual with suspected rubella or cold-like symptoms and rash","Low-grade fever, Headache, Malaise, Mild coryza, Conjunctivitis, Postauricular, occipital and posterior cervical lymphadenopathy, Rash, Arthralgia, Arthritis, Thrombocytopenic purpura, Encephalitis","Any of the following: 
+• Isolation of rubella virus  
+• Positive serological test for rubella IgM antibody  
+• Positive PCR for rubella virus in clinical specimen 
+• Four-fold increase between acute and convalescent phase titres in rubella antibody level by any standard serological assay; OR, for Congenital Rubella Syndrome, infant rubella antibody level that persists longer than expected from passive transfer of maternal antibody ",,
+"cmd_29","Hepatitis","case","demo_case",,"icd_code",1,"individual","match","B15,B15.0,B15.9,B16,B16.0,B16.1,B16.2,B16.9,B17,B17.0,B17.1,B17.2,B17.8,B17.9,B18,B18.0,B18.1,B18.2,B18.8,B18.9,B19,B19.0,B19.9","cd_tab,Viral hepatitis",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description 
+Viral hepatitis is characterized by features of an acute infectious hepatitis including fever, malaise, anorexia, nausea, abdominal discomfort, dark urine, and jaundice. 
+ 
+Probable case
+Any person with acute onset of jaundice (yellowing of whites of eyes or skin or dark/brown urine) AND severe illness with or without fever AND the absence of any known precipitating factors. Acute hepatitis often presents as acute jaundice syndrome.
+
+Confirmed case 
+A clinically compatible illness with laboratory confirmation","Endemic Hepatitis A, contaminated water sources, contaminated food sources","Asymptomatic, jaundice, dark urine, anorexia, malaise, extreme fatigue, pain in upper right quadrant","Hepatitis A   anti-HAV IgM positive 
+Hepatitis B   IgM anti-HBc positive 
+Hepatitis C   anti-HCV or HCV-RNA PCR positive  
+Hepatitis D   anti-HDV positive  
+Hepatitis E  anti-HEV and anti-HEV IgM positive or HEV PCR positive ",,
+"cmd_30","HIV","case","demo_case",,"icd_code",1,"individual","match","B20,B20.0,B20.1,B20.2,B20.3,B20.4,B20.5,B20.6,B20.7,B20.8,B20.9,B21,B21.0,B21.1,B21.2,B21.3,B21.7,B21.8,B21.9,B22,B22.0,B22.1,B22.2,B22.7,B23,B23.0,B23.1,B23.2,B23.8,B24","cd_tab,Human immunodeficiency virus [HIV] disease",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description: 
+• For adults and children 18 months and older, persons have a positive HIV antibody test (rapid or laboratory-based enzyme immunoassay) confirmed by a second HIV antibody test (rapid or laboratory-based enzyme immunoassay) relying on different antigens or of different operating characteristics. 
+
+• For children younger than 18 months, a positive virological test for HIV or its components (HIV-RNA or HIV-DNA or ultrasensitive HIV p24 antigen) confirmed by a second virological test obtained from a separate determination taken more than 4 weeks after birth. Clinical staging is utilized to establish stage of HIV infection.
+","Unprotected vaginal and/or anal sex, sharing of drug injection equipment, breastfeeding with unknown or HIV-positive status","Stage 1: 
+Clinical: Asymptomatic, persistent generalized lymphadenopathy (PGL)
+
+Stage 2:
+Clinical: Moderate unexplained weight loss (<10% of presumed or measured body weight), recurrent respiratory tract infections (RTIs, sinusitis, bronchitis, otitis media, pharyngitis), herpes zoster, angular cheilitis, recurrent oral ulcerations, papular pruritic eruptions, seborrhoeic dermatitis, fungal nail infections of fingers
+
+Stage 3: 
+Clinical: Severe weight loss (>10% of presumed or measured body weight), unexplained chronic diarrhoea for longer than one month, unexplained persistent fever (intermittent or constant for longer than one month), oral candidiasis, oral hairy leukoplakia, pulmonary tuberculosis diagnosed in last 2 years, severe presumed bacterial infections (e.g. pneumonia, empyema, pyomyositis, bone or joint infection, meningitis, bacteraemia), acute necrotizing ulcerative stomatitis/gingivitis/periodontitis
+
+Lab: Unexplained anaemia (<8 g/dl), and/or neutropenia (<500/mm3) and/or thrombocytopenia (<500,000/mm3) for more than one month
+
+Stage 4:
+Clinical: HIV wasting syndrome, pneumocystis pneumonia, recurrent severe or radiological bacterial pneumonia, chronic herpes simplex infection (orolabial, genital or anorectal of more than one month's duration), oesophageal candidiasis, extrapulmonary TB, kaposi's sarcoma, central nervous system toxoplasmosis, HIV encephalopathy
+
+Lab: Extrapulmonary cryptococcosis including meningitis, disseminated non-tuberculous mycobacteria infection, progressive multifocal leukoencephalopathy (PML), candida of trachea/bronchi/lungs, cryptosporidiosis, isosporiasis, visceral herpes simplex infection, cytomegalovirus (CMV) infection (retinitis or of an organ other than liver, spleen or lymph nodes), any disseminated mycosis (e.g. histoplasmosis, coccidiomycosis, penicilliosis), recurrent non-typhoidal salmonella septicaemia, lymphoma (cerebral or B cell non-Hodgkin), invasive cervica carcinoma, visceral leishmaniasis","For adults and children 18 months and older, persons have a positive HIV antibody test (rapid or laboratory-based enzyme immunoassay) confirmed by a second HIV antibody test (rapid or laboratory-based enzyme immunoassay) relying on different antigens or of different operating characteristics. For children younger than 18 months, a positive virological test for HIV or its components (HIV-RNA or HIV-DNA or ultrasensitive HIV p24 antigen) confirmed by a second virological test obtained from a separate determination taken more than 4 weeks after birth.",,
+"cmd_31","Mumps","case","demo_case",,"icd_code",1,"individual","match","B26,B26.0,B26.1,B26.2,B26.3,B26.8,B26.9","cd_tab,Other viral diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+An illness with acute onset of unilateral or bilateral tender, self-limited swelling of the parotid or other salivary gland, lasting 2 days or more, and without other apparent cause. 
+
+Probable case  
+A case that meets the clinical description AND has no or non-contributory serologic or virologic testing AND is not epidemiologically linked to a confirmed case. 
+
+Confirmed case
+A clinically compatible illness that is EITHER  
+• Laboratory confirmed; OR 
+• Epidemiologically linked to a confirmed case ","Proximity to an infected individual","Acute onset, unilateral or bilateral tender, self-limited swelling of the parotid or other salivary gland","Any one of the following:  
+• Positive serologic test for mumps IgM antibody 
+• ≥ four-fold increase in mumps antibody titre 
+• Isolation of mumps virus from a clinical specimen, including throat washings, saliva, urine and cerebrospinal fluid  
+• PCR positive for mumps virus in clinical specimen ",,
+"cmd_32","Ringworm","case","demo_case",,"icd_code",,"individual","match","B35,B35.0,B35.1,B35.2,B35.3,B35.4,B35.5,B35.6,B35.8,B35.9","cd_tab,Mycoses",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","None","International Classification of Disease (ICD-10)",,,,,
+"cmd_33","Malaria","case","demo_case",,"icd_code",1,"individual","match","B50,B50.0,B50.8,B50.9,B51,B51.0,B51.8,B51.9,B52,B52.0,B52.8,B52.9,B53,B53.0,B53.1,B53.8,B54","cd_tab,Protozoal diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description and Probable case
+An illness with variable signs and symptoms, but most patients experience fever. Other common symptoms include headache, back pain, chills, sweat, myalgia, nausea, vomiting. 
+
+Confirmed case  
+A clinically compatible illness with positive laboratory confirmation by blood smear or rapid diagnostic test for malaria","Exposure to areas where mosquito vector is present, Stagnant water sources, Movement to/from malaria endemic areas, Children, Pregnant woman, Immune compromised individuals, Malnutrition","Fever, Anaemia, Single organ failure, Multiple organ failure, Respiratory distress, Chest pain, Severe abdominal pain, Neck pain, Severe headache, Unconscious or repeated convulsions, Compromised circulation","Blood smear or rapid diagnostic malaria test",,
+"cmd_34","Leishmaniasis","case","demo_case",,"icd_code",1,"individual","match","B55,B55.0,B55.1,B55.2,B55.9","cd_tab,Protozoal diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+Visceral: A person with an illness with prolonged irregular fever, splenomegaly and weight loss as its main symptoms. 
+
+Cutaneous: A person with the appearance of one or more lesions, typically on uncovered parts of the body such as the face, neck, arms and legs. At the site of inoculation, a nodule appears, which may enlarge to become an indolent ulcer and eventually a depressed scar. In some individuals, certain strains can disseminate and cause mucosal lesions in the nose, throat and mouth cavities (and surrounding tissues).
+
+Probable case  
+A clinically compatible illness.
+
+Confirmed case 
+ A clinically compatible case that is laboratory confirmed ","Exposure to sand flies, Malnutrition, Poor housing and sanitation facilities, Population movement","Lesions on mucous membranes in the nose, mouth, throat cavities and surrounding tissues","Sample take directly from the skin, cultivation by PCR Laboratory test",,
+"cmd_35","Schistosomiasis","case","demo_case",,"icd_code",,"threshold:3,5","match","B65,B65.0,B65.1,B65.2,B65.3,B65.8,B65.9","cd_tab,Helminthiases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","None","International Classification of Disease (ICD-10)",,,,,
+"cmd_36","Scabies","case","demo_case",,"icd_code",,"threshold:3,5","match","B86","cd_tab,Pediculosis, acariasis and other infestations",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","None","International Classification of Disease (ICD-10)",,,,,
+"cmd_37","Influenza-like illness ","case","demo_case",,"icd_code",1,"individual","match","J09,J10,J10.0,J10.1,J10.8,J11,J11.0,J11.1,J11.8","cd_tab,Influenza and pneumonia",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description
+A person with an acute respiratory infection with:
+• Measured fever >= 38°C; and
+• Cough; with
+• Onset within the last 10 days.
+
+Probable case  
+A clinically compatible illness.
+
+Confirmed case 
+ A clinically compatible case that is laboratory confirmed ","Person living with HIV, person with active TB, person with other chronic illness, influenza outbreak/seasonal influenza","Fever, cough, sore throat, runny/stuffy nose, body ache, headache, fatigue, vomiting, diarrhea","Conventional or RT •  PCR OR viral antigen detection by immunofluorescence or enzyme immunoassay 
+OR viral culture with second identification step to identify influenza viruses 
+OR four-fold rise in antibody titre in paired acute and convalescent sera",,
+"cmd_38","Bacterial meningitis, not elsewhere classified","case","demo_case",,"icd_code",1,"individual","match","G00","cd_tab,Inflammatory diseases of the central nervous system",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description  
+An acute bacterial disease, characterized by sudden onset of fever (>38.0 degrees Celsius axillary or >38.5 degrees Celsius rectal) AND ONE of the following signs: neck stiffness; altered consciousness; petechial or purpural rash, or other meningeal signs. In children <1 year, meningitis is suspected when fever is accompanied by a bulging fontanelle.
+
+Probable case  
+A clinically compatible illness with Gram-negative diplococci identified in any sterile fluids such as CSF.
+
+Confirmed case 
+ A clinically compatible case that is laboratory confirmed ","Close and prolonged contact with individual suspected of having meningitis, High rates of acute respiratory infection (ARI), Overcrowding conditions, Other","Sudden onset of intense headache, Suddepn onset of fever, Sudden onset of nausea, Sudden onset of vomiting, Sudden onset of photophobia, Sudden onset of stiff neck, Lethargy, Delirium, Coma, Purpura, Shock symptoms, Other","Conduct lumbar puncture of first 25 cases during an epidemic to confirm diagnosis and serogroup",,
+"cmd_39","Haemophilus meningitis","case","demo_case",,"icd_code",1,"individual","match","G00.0","cd_tab,Inflammatory diseases of the central nervous system",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description  
+An acute bacterial disease, characterized by sudden onset of fever (>38.0 degrees Celsius axillary or >38.5 degrees Celsius rectal) AND ONE of the following signs: neck stiffness; altered consciousness; petechial or purpural rash, or other meningeal signs. In children <1 year, meningitis is suspected when fever is accompanied by a bulging fontanelle.
+
+Probable case  
+A clinically compatible illness with Gram-negative diplococci identified in any sterile fluids such as CSF.
+
+Confirmed case 
+ A clinically compatible case that is laboratory confirmed ","Close and prolonged contact with individual suspected of having meningitis, High rates of acute respiratory infection (ARI), Overcrowding conditions, Other","Sudden onset of intense headache, Suddepn onset of fever, Sudden onset of nausea, Sudden onset of vomiting, Sudden onset of photophobia, Sudden onset of stiff neck, Lethargy, Delirium, Coma, Purpura, Shock symptoms, Other","Conduct lumbar puncture of first 25 cases during an epidemic to confirm diagnosis and serogroup",,
+"cmd_40","Non-meningicoccal meningitis","case","demo_case",,"icd_code",1,"individual","match","G00.1,G00.2,G00.3,G00.8,G00.9,G01,G02,G02.0,G02.1,G02.8,G03,G03.0,G03.1,G03.2,G03.8,G03.9","cd_tab,Inflammatory diseases of the central nervous system",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","1 case","Clinical Description  
+An acute bacterial disease, characterized by sudden onset of fever (>38.0 degrees Celsius axillary or >38.5 degrees Celsius rectal) AND ONE of the following signs: neck stiffness; altered consciousness; petechial or purpural rash, or other meningeal signs. In children <1 year, meningitis is suspected when fever is accompanied by a bulging fontanelle.
+
+Probable case  
+A clinically compatible illness with Gram-negative diplococci identified in any sterile fluids such as CSF.
+
+Confirmed case 
+ A clinically compatible case that is laboratory confirmed ","Close and prolonged contact with individual suspected of having meningitis, High rates of acute respiratory infection (ARI), Overcrowding conditions, Other","Sudden onset of intense headache, Suddepn onset of fever, Sudden onset of nausea, Sudden onset of vomiting, Sudden onset of photophobia, Sudden onset of stiff neck, Lethargy, Delirium, Coma, Purpura, Shock symptoms, Other","Conduct lumbar puncture of first 25 cases during an epidemic to confirm diagnosis and serogroup",,
+"ncd_1","Diabetes mellitus","case","demo_case",,"icd_code",,,"match","E10,E10.0,E10.1,E10.2,E10.3,E10.4,E10.5,E10.6,E10.7,E10.8,E10.9,E11,E11.0,E11.1,E11.2,E11.3,E11.4,E11.5,E11.6,E11.7,E11.8,E11.9,E12,E12.0,E12.1,E12.2,E12.3,E12.4,E12.5,E12.6,E12.7,E12.8,E12.9,E13,E13.0,E13.1,E13.2,E13.3,E13.4,E13.5,E13.6,E13.7,E13.8,E13.9,E14,E14.0,E14.1,E14.2,E14.3,E14.4,E14.5,E14.6,E14.7,E14.8,E14.9","ncd_tab,Diabetes mellitus",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","None","Clinical Description
+Any person with a suspected metabolic disorder that may impact insulin secretion, insulin use or a combination of both with risk factors such as overweight/obese, family history of diabetes, high blood pressure and/or physical inactivity.","Overweight (BMI 25-29.9), obese (BMI 30+), physical inactivity, family history of diabetes type 2, high blood pressure (over 140/90 mmHg), HDL cholesterol levels below 35 mg/dl, Family history of diabetes type 1, viral exposure (Epstein-Barr, coxsackievirus, mumps, cytomegalovirus), age (more common among children and adolescents)","Increased urinary frequency, thirst, hunger, unexplained weight loss, numbness in extremities, pain in feet, fatigue, blurred vision, recurrent or severe infections, loss of consciousness, severe nausea/vomiting, coma","Fasting plasma glucose (FPG) lab test and 2-h plasma glucose lab test",,
+"ncd_2","Hypertension","case","demo_case",,"icd_code",,,"match","I10,I11,I11.0,I11.9,I12,I12.0,I12.9,I13,I13.0,I13.1,I13.2,I13.9,I15,I15.0,I15.1,I15.2,I15.8,I15.9","ncd_tab,Hypertensive diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","None","Clinical Description
+Any person, usually 18 years or older, with systolic and/or diastolic blood pressure measurement higher than 139/89 mmHg on at least 2 consecutive visits and taking into consideration obesity, physical inactivity, family history of cardiovascular disease and age risk factors.","Overweight (BMI 25-29.9), obese (BMI 30+), physical inactivity, smoking/tobacco use, family history of cardiovascular disease, age (male over 55 years, female over 65 years), diabetes diagnosis","Blurred vision, Headache, Shortness of breath, Nose bleeds","Measure blood pressure with a validated, maintained and regularly recalibrated blood pressure machine and appropriate cuff size",,
+"ncd_3","Bronchitis, not specified as acute or chronic","case","demo_case",,"icd_code",,,"match","J40,J41,J41.0,J41.1,J41.8,J42,J43,J43.0,J43.1,J43.2,J43.8,J43.9,J44,J44.0,J44.1,J44.8,J44.9","ncd_tab,Chronic lower respiratory diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","None","Clinical Description
+Any person with a lung-related condition that cause limited and irreversible respiratory airflow, cough, dyspnea and sometimes sputum development on most days of the week AND presence of symptoms for at least 3 months in the previous 2 successive years.","Exposure to noxious agents including air pollution, occupational agents and cigarette smoke/other smoking. ","Cough, difficulty breathing, tight chest, wheezing, history of heavy smoking, symptoms started in middle age or later, symptoms worsened slowly over time, history of exposure to indoor pollution/occupational agents","Post-bronchodilator forced expiratory volume in one second (FEV1) and its ratio to the forced vital capacity (FVC)",,
+"ncd_4","Asthma","case","demo_case",,"icd_code",,,"match","J45,J45.0,J45.1,J45.8,J45.9,J46","ncd_tab,Chronic lower respiratory diseases",,,"tab",,"Suspected","International Classification of Disease (ICD-10)","http://apps.who.int/classifications/icd10/browse/2015/en","None","Clinical Description
+Any person with a chronic inflammatory disorder of the airways characterized by recurrent attacks of breathlessness and wheezing, which can vary in severity for each person. ","Smoking/tobacco use, Family history of Asthma, Exposure to allergens, Occupational exposure e.g. chemicals, Environmental exposure e.g. smoking, air pollution","Cough, difficulty breathing, tight chest, wheezing, symptoms triggered by respiratory infection/exercise/weather changes/stress, symptoms worse at night or in the morning, symptoms since childhood or early adulthood, history of hayfever/eczema","FEV/spirometry",,
+"mhg_1","Moderate To Severe Depression","case","demo_case",,"icd_code",,,"match","F32","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Depressed mood, Loss of interest or pleasure in activities that are normally pleasurable, Decreased energy or easily fatigued, None of the above, Reduced concentration and attention, Reduced self-esteem and self-confidence, Ideas of guilt and unworthiness, Bleak and pessimistic view of the future, Ideas or acts of self-harm or suicide, Disturbed sleep, Diminished appetite","•  Psychoeducation
+•  Address current psychosocial stressors
+•  Reactivate social networks
+•  Consider antidepressants
+•  If available, consider interpersonal therapy, behavioural activation or cognitive behavioural therapy
+•  If available, consider adjunct treatments: structured physical activity programme, relaxation training or problem-solving treatment
+•  DO NOT manage the complaint with injections or other ineffective treatments (e.g. vitamins).
+•  Offer regular follow-up",,
+"mhg_2","Acute Psychosis","case","demo_case",,"icd_code",,,"match","F23","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Incoherent or irrelevant speech, Delusions (a false firmly held belief or suspicion), Hallucinations (hearing voices or seeing things that are not there), Withdrawal, agitation, disorganized behaviour, Beliefs that thoughts are being inserted or broadcast from one's mind, Social withdrawal and neglect of usual responsibilities","•  Provide education to the person and carers about psychosis and its treatment
+•  Begin antipsychotic medication
+•  If available, provide psychological and social interventions, such as family therapy or social skills therapy
+•  Facilitate rehabilitation
+•  Provide regular follow-up
+•  Maintain realistic hope and optimism
+
+DO NOT prescribe anticholinergic medication routinely to prevent antipsychotic side-effects",,
+"mhg_3","Chronic Psychosis","case","demo_case",,"icd_code",,,"match","F28","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Incoherent or irrelevant speech, Delusions (a false firmly held belief or suspicion), Hallucinations (hearing voices or seeing things that are not there), Withdrawal, agitation, disorganized behaviour, Beliefs that thoughts are being inserted or broadcast from one's mind, Social withdrawal and neglect of usual responsibilities","•  Provide education to the person and carers
+
+IF THE PERSON IS NOT ON ANY TREATMENT, START TREATMENT AS FOR ACUTE PSYCHOTIC EPISODE
+
+•  Review and ensure treatment adherence
+•  If the person is not responding adequately, consider increasing current medication or changing it.
+•  If available, provide psychological and social interventions such as family therapy or social skills therapy. Consider adding a psychosocial intervention not offered earlier, e.g. cognitive behavioural therapy if available
+•  Provide regular follow-up
+•  Maintain realistic hope and optimism
+•  Facilitate rehabilitation",,
+"mhg_4","Mania","case","demo_case",,"icd_code",,,"match","F30","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Elevated, expansive or irritable mood, Increased activity, restlessness, excitement, Increased talkativeness, Loss of normal social inhibitions, Decreased need for sleep, Inflated self-esteem, Distractibility, Elevated sexual energy or sexual indiscretion, None of the above, Loss of or impaired consciousness","•  Begin treatment of acute mania with lithium, valproate, carbamazepine or with antipsychotics
+•  Consider a short-term benzodiazepine (such as diazepam) for behavioural disturbance or agitation
+•  Discontinue any antidepressants
+•  Advise the person to modify lifestyle; provide information about bipolar disorder and its treatment
+•  Provide regular follow-up",,
+"mhg_5","Bipolar Depression","case","demo_case",,"icd_code",,,"match","F31.9","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Elevated, expansive or irritable mood, Increased activity, restlessness, excitement, Increased talkativeness, Loss of normal social inhibitions, Decreased need for sleep, Inflated self-esteem, Distractibility, Elevated sexual energy or sexual indiscretion, None of the above, Loss of or impaired consciousness","•  Begin treatment with a mood-stabilizer
+•  Consider antidepressant combined with mood stabilizer for moderate / severe depression
+•  Inform the person about the risk of switching to mania before starting antidepressant medication
+•  Advise the person to modify lifestyle; provide information about bipolar disorder and its treatment
+•  Reactivate social networks
+•  If available, consider psychological interventions
+•  Pursue rehabilitation, including appropriate economic and educational activities, using formal and informal systems
+•  Provide regular follow-up",,
+"mhg_6","Bipolar Depression Between Episodes","case","demo_case",,"icd_code",,,"match","F31.7","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Elevated, expansive or irritable mood, Increased activity, restlessness, excitement, Increased talkativeness, Loss of normal social inhibitions, Decreased need for sleep, Inflated self-esteem, Distractibility, Elevated sexual energy or sexual indiscretion, None of the above, Loss of or impaired consciousness","•  If the person is not on a mood stabilizer then begin one
+•  Advise person to modify lifestyle; provide information about bipolar disorder and its treatment
+•  Reactivate social networks
+•  Pursue rehabilitation, including appropriate economic and educational activities, using formal and informal systems
+•  Provide regular follow-up; monitor side-effects and adherence",,
+"mhg_7","Non-Convulsive Seizures Or Other Medical Condition","case","demo_case",,"icd_code",,,"match","G40.3","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Stiffness, rigidity lasting longer than 1 - 2 minute, Convulsive movements lasting longer than 1 - 2 minute, Tongue bite or self-injury, Incontinence of urine and / or faeces, After the abnormal movement: any fatigue, sleepiness, headache or muscles aches, Focal - starts in one part of the body, Prolonged - more than 15 minutes, Repetitive - more than 1 episode during the current illness","•  In case of recurrent episodes, CONSULT A SPECIALIST
+•  Follow up after 3 months",,
+"mhg_8","Acute Aetiology","case","demo_case",,"icd_code",,,"match","G40.9","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Stiffness, rigidity lasting longer than 1 - 2 minute, Convulsive movements lasting longer than 1 - 2 minute, Tongue bite or self-injury, Incontinence of urine and / or faeces, After the abnormal movement: any fatigue, sleepiness, headache or muscles aches, Focal - starts in one part of the body, Prolonged - more than 15 minutes, Repetitive - more than 1 episode during the current illness","•  Treat the medical condition
+•  Antiepileptic maintenance treatment is not required
+•  Follow up after 3 months to assess if the person has epilepsy",,
+"mhg_9","Complex Febrile Disease","case","demo_case",,"icd_code",,,"match","R56.0","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Stiffness, rigidity lasting longer than 1 - 2 minute, Convulsive movements lasting longer than 1 - 2 minute, Tongue bite or self-injury, Incontinence of urine and / or faeces, After the abnormal movement: any fatigue, sleepiness, headache or muscles aches, Focal - starts in one part of the body, Prolonged - more than 15 minutes, Repetitive - more than 1 episode during the current illness","•  Refer for hospital admission.
+•  Look for neuroinfection (suspect cerebral malaria in high endemic settings)
+•  Follow up",,
+"mhg_10","Simple Febrile Seizure","case","demo_case",,"icd_code",,,"match","R56.8","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Stiffness, rigidity lasting longer than 1 - 2 minute, Convulsive movements lasting longer than 1 - 2 minute, Tongue bite or self-injury, Incontinence of urine and / or faeces, After the abnormal movement: any fatigue, sleepiness, headache or muscles aches, Focal - starts in one part of the body, Prolonged - more than 15 minutes, Repetitive - more than 1 episode during the current illness","•  Manage fever and look for its cause according to the local IMCI guidelines
+•  Observe for 24 hours
+•  Follow up",,
+"mhg_11","Epilepsy","case","demo_case",,"icd_code",,,"match","G40","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Stiffness, rigidity lasting longer than 1 - 2 minute, Convulsive movements lasting longer than 1 - 2 minute, Tongue bite or self-injury, Incontinence of urine and / or faeces, After the abnormal movement: any fatigue, sleepiness, headache or muscles aches, Focal - starts in one part of the body, Prolonged - more than 15 minutes, Repetitive - more than 1 episode during the current illness","•  Initiate antiepileptic drug phenobarbital, phenytoin, carbamazepine or valproate
+•  Educate about condition, lifestyle and safety issues, and importance of adherence and regular follow-up
+•  Follow up regularly",,
+"mhg_12","Delerium","case","demo_case",,"icd_code",,,"match","R56.0","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Problems with memory and orientation, Mood or behavioural problems , Loss of emotional control, Difficulties in carrying out usual activities","•  CONSULT A SPECIALIST",,
+"mhg_13","Dementia","case","demo_case",,"icd_code",,,"match","F03","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Problems with memory and orientation, Mood or behavioural problems , Loss of emotional control, Difficulties in carrying out usual activities","•  CONSULT A SPECIALIST",,
+"mhg_14","Alcohol Intoxication","case","demo_case",,"icd_code",,,"match","F10.0","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"A strong desire or sense of compulsion to take alcohol, Difficulties in controlling alcohol use in terms of its onset, termination or levels of use, A physiological withdrawal state when alcohol use has ceased or been reduced, as shown by the characteristic withdrawal syndrome for alcohol; or use of the same (or a closely related) substance with the intention of relieving or avoiding withdrawal symptoms, Evidence of tolerance, such that increased doses of alcohol are required in order to achieve effects originally produced by lower doses, Progressive neglect of alternative pleasures or interests because of alcohol use, increased amount of time necessary to obtain or take alcohol or to recover from its effects, Alcohol use persisting despite clear evidence of overtly harmful consequences, such as harm to the liver, depressive mood states, or impairment of cognitive functioning","•  State clearly the results of alcohol use assessment and explain the links between this level of alcohol use, the person's health problems, and the short-term and long-term risks of continuing use at the current level
+•  Ask about other substance use
+•  Have a short discussion about the person's reasons for their alcohol use
+•  State clearly the recommendation to either cut down to safer levels or stop using alcohol completely and your willingness to help the person to do so
+•  If the person is willing to try to cut down or stop using alcohol, then discuss ways of
+achieving this objective
+•  If not, communicate confidently that it is possible to stop or reduce hazardous or harmful alcohol use and encourage the person to come back if he or she wants to discuss the issue further
+•  Follow up at the next opportunity
+•  Seek specialist advice as needed for people with ongoing harmful use of alcohol MOH have failed to respond to brief interventions",,
+"mhg_15","Alcohol Withdrawal","case","demo_case",,"icd_code",,,"match","F10.3","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"A strong desire or sense of compulsion to take alcohol, Difficulties in controlling alcohol use in terms of its onset, termination or levels of use, A physiological withdrawal state when alcohol use has ceased or been reduced, as shown by the characteristic withdrawal syndrome for alcohol; or use of the same (or a closely related) substance with the intention of relieving or avoiding withdrawal symptoms, Evidence of tolerance, such that increased doses of alcohol are required in order to achieve effects originally produced by lower doses, Progressive neglect of alternative pleasures or interests because of alcohol use, increased amount of time necessary to obtain or take alcohol or to recover from its effects, Alcohol use persisting despite clear evidence of overtly harmful consequences, such as harm to the liver, depressive mood states, or impairment of cognitive functioning","•  Treat immediately with diazepam
+•  Treat in hospital or detoxification centre if available
+
+If withdrawal is complicated by delirium:
+•  Treat the withdrawal with diazepam
+•  Manage in a safe environment
+•  Keep well hydrated
+•  If delirium or hallucinations persist despite treatment of other withdrawal symptoms, then consider using antipsychotics such as haloperidol 2.5 •  5 mg orally up to 3 times daily
+
+If withdrawal is complicated by a seizure, treat with diazepam in the first instance and do not use anticonvulsants to prevent further seizures",,
+"mhg_16","Harmful Use Of Alcohol","case","demo_case",,"icd_code",,,"match","F10.1","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"A strong desire or sense of compulsion to take alcohol, Difficulties in controlling alcohol use in terms of its onset, termination or levels of use, A physiological withdrawal state when alcohol use has ceased or been reduced, as shown by the characteristic withdrawal syndrome for alcohol; or use of the same (or a closely related) substance with the intention of relieving or avoiding withdrawal symptoms, Evidence of tolerance, such that increased doses of alcohol are required in order to achieve effects originally produced by lower doses, Progressive neglect of alternative pleasures or interests because of alcohol use, increased amount of time necessary to obtain or take alcohol or to recover from its effects, Alcohol use persisting despite clear evidence of overtly harmful consequences, such as harm to the liver, depressive mood states, or impairment of cognitive functioning","•  State clearly the results of alcohol use assessment and explain the links between this level of alcohol use, the person's health problems, and the short-term and long-term risks of continuing use at the current level
+•  Ask about other substance use
+•  Have a short discussion about the person's reasons for their alcohol use
+•  State clearly the recommendation to either cut down to safer levels or stop using alcohol completely and your willingness to help the person to do so
+•  If the person is willing to try to cut down or stop using alcohol, then discuss ways of
+achieving this objective
+•  If not, communicate confidently that it is possible to stop or reduce hazardous or harmful alcohol use and encourage the person to come back if he or she wants to discuss the issue further
+•  Follow up at the next opportunity
+•  Seek specialist advice as needed for people with ongoing harmful use of alcohol MOH have failed to respond to brief interventions",,
+"mhg_17","Alcohol Dependence","case","demo_case",,"icd_code",,,"match","F10.2","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"A strong desire or sense of compulsion to take alcohol, Difficulties in controlling alcohol use in terms of its onset, termination or levels of use, A physiological withdrawal state when alcohol use has ceased or been reduced, as shown by the characteristic withdrawal syndrome for alcohol; or use of the same (or a closely related) substance with the intention of relieving or avoiding withdrawal symptoms, Evidence of tolerance, such that increased doses of alcohol are required in order to achieve effects originally produced by lower doses, Progressive neglect of alternative pleasures or interests because of alcohol use, increased amount of time necessary to obtain or take alcohol or to recover from its effects, Alcohol use persisting despite clear evidence of overtly harmful consequences, such as harm to the liver, depressive mood states, or impairment of cognitive functioning","•  State clearly the results of the assessment, and explain both the short-term and long-term risks of continuing use at the current level
+•  Have a short discussion about the person's motivations for their alcohol use
+•  Advise complete cessation of alcohol
+•  Advise daily consumption of thiamine 100 mg
+•  If the person is willing to try to stop using alcohol, facilitate alcohol cessation.
+•  Determine the appropriate setting to cease alcohol
+•  Plan the cessation of alcohol
+•  Arrange detoxification if necessary
+•  During detoxification, treat withdrawal symptoms with diazepam
+•  After detoxification, prevent relapse with medication (naltrexone, acamprosate or disulfiram), if available
+•  Assess and treat any medical or psychiatric co-morbidity, ideally after 2 •  3 weeks of abstinence as some problems will resolve with abstinence.
+•  Consider referral to a self-help group (such as Alcoholics Anonymous), or a residential therapeutic community
+•  DO NOT administer punishment in the name of treatment
+•  Address housing and employment needs
+•  Provide information and support to person, carers and family members
+•  If available, provide psychosocial interventions such as family counselling or therapy, problem-solving counselling or therapy, cognitive behavioural therapy, motivational enhancement therapy, or contingency management therapy
+•  Consider referral to a specialized treatment facility
+•  Follow up as needed, frequently initially
+•  Seek specialist support as needed",,
+"mhg_18","Opioid Or Other Sedative Overdose","case","demo_case",,"icd_code",,,"match","X61","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Strong desire or sense of compulsion to take drugs, Difficulties in controlling drug use in terms of its onset, termination or levels of use, A physiological withdrawal state when drug use has ceased or been reduced, as shown by the characteristic drug-withdrawal syndrome; or use of the same (or a closely related) substance with the intention of relieving or avoiding withdrawal symptoms, Evidence of tolerance, such that increased doses of the substance are required in order to achieve effects originally produced by lower doses, Progressive neglect of alternative pleasures or interests because of drug use, increased amount of time necessary to obtain or take drug or to recover from its effects, Drug use persisting, despite clear evidence of overtly harmful consequences","If:
+•  Respiratory rate< 10 OR
+•  Oxygen saturation< 92 %
+
+Then:
+•  Treat airway, breathing and circulation
+•  Naloxone 0.4 mg subcutaneous, i.m. or i.v. (for opioid overdose •  but ineffective for other sedative overdose),repeat if necessary
+•  Observe for 1 •  2 hours after naloxone administration
+•  For overdoses due to long acting opioids •  transport to hospital for naloxone infusion or ventilatory support
+
+If unresponsive to naloxone
+•  Provide airway and ventilatory support and transport to hospital",,
+"mhg_19","Cocaine Or Amphetamine-Type Stimulant Intoxication Or Overdose","case","demo_case",,"icd_code",,,"match","X62","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Strong desire or sense of compulsion to take drugs, Difficulties in controlling drug use in terms of its onset, termination or levels of use, A physiological withdrawal state when drug use has ceased or been reduced, as shown by the characteristic drug-withdrawal syndrome; or use of the same (or a closely related) substance with the intention of relieving or avoiding withdrawal symptoms, Evidence of tolerance, such that increased doses of the substance are required in order to achieve effects originally produced by lower doses, Progressive neglect of alternative pleasures or interests because of drug use, increased amount of time necessary to obtain or take drug or to recover from its effects, Drug use persisting, despite clear evidence of overtly harmful consequences","•  Give diazepam in titrated doses until the person is calm and lightly sedated
+•  If psychotic symptoms do not respond to benzodiazepines, then consider using short-term •  antipsychotics
+•  DO NOT commence long-term antipsychotics.loading
+•  Monitor blood pressure, pulse rate, respiratory rate, temperature every 2 •  4 hours
+•  If the person complains of chest pain, if tachyarrhythmias are present or if the person becomes violent or unmanageable, transfer the person to hospital
+•  During the post-intoxication phase •  be alert for suicidal thoughts or actions",,
+"mhg_20","Opioid Withdrawal","case","demo_case",,"icd_code",,,"match","F11.3","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Strong desire or sense of compulsion to take drugs, Difficulties in controlling drug use in terms of its onset, termination or levels of use, A physiological withdrawal state when drug use has ceased or been reduced, as shown by the characteristic drug-withdrawal syndrome; or use of the same (or a closely related) substance with the intention of relieving or avoiding withdrawal symptoms, Evidence of tolerance, such that increased doses of the substance are required in order to achieve effects originally produced by lower doses, Progressive neglect of alternative pleasures or interests because of drug use, increased amount of time necessary to obtain or take drug or to recover from its effects, Drug use persisting, despite clear evidence of overtly harmful consequences","•  Treat with reducing doses of opioids (methadone, buprenorphine) or alpha-adrenergic agents (clonidine, lofexidine) using either supervised dosing or daily dispensing
+•  Treat specifi c symptoms as needed (diarrhoea, vomiting, muscle pain, insomnia)
+•  Consider starting opioid agonist maintenance treatment
+•  Oral or i.v. rehydration, if necessary",,
+"mhg_21","Drug Dependence","case","demo_case",,"icd_code",,,"match","F11.2","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Strong desire or sense of compulsion to take drugs, Difficulties in controlling drug use in terms of its onset, termination or levels of use, A physiological withdrawal state when drug use has ceased or been reduced, as shown by the characteristic drug-withdrawal syndrome; or use of the same (or a closely related) substance with the intention of relieving or avoiding withdrawal symptoms, Evidence of tolerance, such that increased doses of the substance are required in order to achieve effects originally produced by lower doses, Progressive neglect of alternative pleasures or interests because of drug use, increased amount of time necessary to obtain or take drug or to recover from its effects, Drug use persisting, despite clear evidence of overtly harmful consequences","•  State clearly the diagnosis and inform about the risks of short-term and long-term harm.
+•  Explore the person's reasons for their drug use, using brief intervention techniques
+•  Advise the person to stop using the substance completely and indicate the intention to support the person in doing so
+•  Ask the person if they are ready to try to stop using the substance
+
+Cannabis or Stimulant Dependence
+•  Provide a more intensive brief intervention (i.e., up to 3 sessions, each lasting up to 45 minutes)
+•  Treat withdrawal symptoms
+•  Arrange detoxification service if necessary
+
+Opioid dependence
+•  Assess severity of dependence
+•  In most cases, advise opioid agonist maintenance treatment (also known as opioid-substitutiontherapy, OST). Provide or refer for OST, if available
+•  Arrange planned detoxification if requested
+
+Benzodiazepine dependence
+•  Gradual reduction of benzodiazepines with supervised dispensing or more rapid reduction ofbenzodiazepines in an in-patient setting
+
+IN ALL CASES
+•  Consider referral to self-help groups, and rehabilitation / therapeutic communities
+•  Address housing and employment needs
+•  Provide information and support to person, carers and family members
+•  If available, provide psychosocial interventions, such as family counselling or therapy, problem-solving counselling or therapy, cognitive behavioural therapy, motivational enhancement therapy, contingency management therapy",,
+"mhg_22","Risk Of Self-Harm Or Suicide","case","demo_case",,"icd_code",,,"match","R45.8","mhgap",,,"mhgap",,"Suspected","mhGAP Guidelines","http://www.paho.org/mhgap/en/","None","mhGAP Guidelines",,"Strong desire or sense of compulsion to take drugs, Difficulties in controlling drug use in terms of its onset, termination or levels of use, A physiological withdrawal state when drug use has ceased or been reduced, as shown by the characteristic drug-withdrawal syndrome; or use of the same (or a closely related) substance with the intention of relieving or avoiding withdrawal symptoms, Evidence of tolerance, such that increased doses of the substance are required in order to achieve effects originally produced by lower doses, Progressive neglect of alternative pleasures or interests because of drug use, increased amount of time necessary to obtain or take drug or to recover from its effects, Drug use persisting, despite clear evidence of overtly harmful consequences","If person requires urgent medical treatment for act of self-harm
+•  Medically treat injury or poisoning.loading
+•  If Acute Pesticide Intoxication, follow Pesticide Intoxication Management
+
+In all cases:
+•  Place the person in a secure and supportive environment at the health facility while being assessed (do not leave them alone)
+•  Care for the person with self-harm
+•  Offer and activate psychosocial support
+•  Consult mental health specialist if available
+•  Maintain regular contact and follow-up",,
+"mhg_23","Severe Pneumonia Or Very Severe Disease","case","demo_case",,"icd_code",,,"match","J18.8","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Chest indrawing, Stridor, Wheezing, None of the above","•  Give first dose of an appropriate antibiotic 
+•  Refer URGENTLY to hospital",,
+"imc_1","Pneumonia","case","demo_case",,"icd_code",,,"match","J18.9","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Chest indrawing, Stridor, Wheezing, None of the above"," •  Give oral Amoxicillin for 5 days
+•  If wheezing (or disappeared after rapidly acting bronchodilator) give an inhaled bronchodilator for 5 days
+•  If chest indrawing in HIV exposed/infected child, give first dose of amoxicillin and refer.
+•  Soothe the throat and relieve the cough with a safe remedy
+•  If coughing for more than 14 days or recurrent wheeze, refer for possible TB or asthma assessment
+•  Advise mother when to return immediately Follow-up in 3 days 
+•  Refer URGENTLY to hospital",,
+"imc_2","Cough Or Cold","case","demo_case",,"icd_code",,,"match","J00","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Chest indrawing, Stridor, Wheezing, None of the above","•  If wheezing (or disappeared after rapidly acting bronchodilator) give an inhaled bronchodilator for 5 days
+•  Soothe the throat and relieve the cough with a safe remedy
+•  If coughing for more than 14 days or recurrent wheezing, refer for possible TB or asthma assessment
+•  Advise mother when to return immediately Follow-up in 5 days if not improving",,
+"imc_3","Severe Dehydration","case","demo_case",,"icd_code",,,"match","R57.1","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Duration, Skin pinch, is lethargic or unconscious, is restless and irritable, is not able to drink or drinking poorly, is drinking eagerly, thirsty","•  If child has no other severe classification:
+•  Give fluid for severe dehydration (Plan C)
+
+OR
+
+•  If child also has another severe classification:
+•  Refer URGENTLY to hospital with mother giving frequent sips of ORS on the way Advise the mother to continue breastfeeding
+•  If child is 2 years or older and there is cholera in your area, give antibiotic for cholera",,
+"imc_4","Some Dehydration","case","demo_case",,"icd_code",,,"match","E86","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Duration, Skin pinch, is lethargic or unconscious, is restless and irritable, is not able to drink or drinking poorly, is drinking eagerly, thirsty","•  Give fluid, zinc supplements, and food for some dehydration (Plan B)
+•  If child also has a severe classification:
+•  Refer URGENTLY to hospital with mother giving frequent sips of ORS on the way  
+•  Advise the mother to continue breastfeeding
+•  Advise mother when to return immediately 
+•  Follow-up in 5 days if not improving",,
+"imc_5","Severe Persistent Diarrhoea","case","demo_case",,"icd_code",,,"match","K52","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Duration, Skin pinch, is lethargic or unconscious, is restless and irritable, is not able to drink or drinking poorly, is drinking eagerly, thirsty","•  Treat dehydration before referral unless the child has another severe classification
+•  Refer to hospital",,
+"imc_6","Persistent Diarrhoea","case","demo_case",,"icd_code",,,"match","K52.9","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Duration, Skin pinch, is lethargic or unconscious, is restless and irritable, is not able to drink or drinking poorly, is drinking eagerly, thirsty","•   Advise the mother on feeding a child MOH has PERSISTENT DIARRHOEA
+•   Give multivitamins and minerals (including zinc) for 14 days 
+•   Follow-up in 5 days",,
+"imc_7","Dysentery","case","demo_case",,"icd_code",,,"match","A09.0","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"blood in the stool","•  Give ciprofloxacin for 3 days
+•  Follow-up in 3 days",,
+"imc_8","Very Severe Febrile Disease","case","demo_case",,"icd_code",,,"match","R50.9","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Duration (Less than seven days, More than seven days), Has a stiff neck, Has a runny nose, Has any bacterial cause of infection, Has a generalised rash, Has cough, runny nose or red eyes","•  Give first dose of an appropriate antibiotic
+•  Treat the child to prevent low blood sugar
+•  Give one dose of paracetamol in clinic for high fever (38.5 oC or above)
+•  Refer URGENTLY to hospital",,
+"imc_9","Severe Complicated Measles","case","demo_case",,"icd_code",,,"match","B05.8","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Duration (Less than seven days, More than seven days), Has a stiff neck, Has a runny nose, Has any bacterial cause of infection, Has a generalised rash, Has cough, runny nose or red eyes","•  Give one dose of paracetamol in clinic for high fever (38.5 oC or above)
+•  Give appropriate antibiotic treatment for any identified bacterial cause of fever
+•  Advise mother when to return immediately
+•  Follow-up in 2 days if fever persists
+•  If fever is present every day for more than 7 days, refer for assessment",,
+"imc_10","Measles With Eye Or Mouth Complications","case","demo_case",,"icd_code",,,"match","B05.3","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,,,,
+"imc_11","Measles","case","demo_case",,"icd_code",,,"match","B05.9","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","1 case","IMCI Guidelines",,"Deep and extensive mouth ulcers, Mouth ulcers, Pus draining from the eye, Clouding of the cornea","•  Give Vitamin A treatment",,
+"imc_12","Mastoiditis","case","demo_case",,"icd_code",,,"match","H70","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Duration (Less than two weeks, More than two weeks), Pus draining from the ear, Tender swelling behind the ear","•  Give first dose of an appropriate antibiotic 
+•  Give first dose of paracetamol for pain 
+•  Refer URGENTLY to hospital",,
+"imc_13","Acute Ear Infection","case","demo_case",,"icd_code",,,"match","H66.9","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Duration (Less than two weeks, More than two weeks), Pus draining from the ear, Tender swelling behind the ear","•  Give an antibiotic for 5 days 
+•  Give paracetamol for pain 
+•  Dry the ear by wicking 
+•  Follow-up in 5 days",,
+"imc_14","Chronic Ear Infection","case","demo_case",,"icd_code",,,"match","H67","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Duration (Less than two weeks, More than two weeks), Pus draining from the ear, Tender swelling behind the ear","•  Dry the ear by wicking
+•  Treat with topical quinolone eardrops for 14 days 
+•  Follow-up in 5 days",,
+"imc_15","Complicated Severe Acute Malnutrition","case","demo_case",,"icd_code",,,"match","E46","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,,"•  Give first dose appropriate antibiotic 
+•  Treat the child to prevent low blood sugar
+•  Keep the child warm
+•  Refer URGENTLY to hospital",,
+"imc_16","Severe Acute Malnutrition","case","demo_case",,"icd_code",,,"match","E43","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,,"•   Give oral antibiotics for 5 days
+•  Give ready-to-use therapeutic food for a child aged 6 months or more
+•  Counsel the mother on how to feed the child. 
+•  Assess for possible TB infection
+•  Advise mother when to return immediately 
+•  Follow up in 7 days",,
+"imc_17","Moderate Acute Malnutrition","case","demo_case",,"icd_code",,,"match","E44","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,,"•   Assess the child's feeding and counsel the mother on the feeding recommendations
+•  If feeding problem, follow up in 7 days 
+•  Assess for possible TB infection.
+•  Advise mother when to return immediately 
+•  Follow-up in 30 days",,
+"imc_18","Severe Anaemia","case","demo_case",,"icd_code",,,"match","D64.9","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Severe pallor, Some pallor","•  Refer URGENTLY to hopsital",,
+"imc_19","Anaemia","case","demo_case",,"icd_code",,,"match","D53.9","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,"Severe pallor, Some pallor"," •  Give iron
+ •  Give mebendazole if child is 1 year or older and has not had a dose in the previous 6 months 
+ •  Advise mother when to return immediately 
+ •  Follow-up in 14 days",,
+"imc_20","Confirmed HIV Infection","case","demo_case",,"icd_code",,,"match","B24","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","1 case","IMCI Guidelines",,," •  Initiate ART treatment and HIV care
+ •  Give cotrimoxazole prophylaxis 
+ •  Assess the child's feeding and provide appropriate counselling to the mother
+ •  Advise the mother on home care
+ •  Asess or refer for TB assessment and INH preventive therapy
+ •  Follow-up regularly as per national guidelines",,
+"imc_21","HIV Exposed","case","demo_case",,"icd_code",,,"match","O98.7","imci",,,"imci",,"Suspected","IMCI Guidelines","http://apps.who.int/iris/bitstream/10665/104772/16/9789241506823_Chartbook_eng.pdf","None","IMCI Guidelines",,," •  Give cotrimoxazole prophylaxis
+ •  Start or continue ARV prophylaxis as recommended
+ •  Do virological test to confirm HIV status
+ •  Assess the child's feeding and provide appropriate counselling to the mother
+ •  Advise the mother on home care
+ •  Follow-up regularly as per national guidelines",,
+"vac_1","Vaccinated","case","demo_case",,"vaccination",,,"match","yes","vaccinated",,,,,,,,,,,,,,
+"vac_2","BCG","case","demo_case",,"vaccination_type",,,"sub_match","bcg","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"vac_3","Hepatitis B","case","demo_case",,"vaccination_type",,,"sub_match","hepb","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"vac_4","Diptheria","case","demo_case",,"vaccination_type",,,"sub_match","diptheria","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"vac_5","Tetanus","case","demo_case",,"vaccination_type",,,"sub_match","tetanus","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"vac_6","Pertussis","case","demo_case",,"vaccination_type",,,"sub_match","pertussis","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"vac_7","Polio","case","demo_case",,"vaccination_type",,,"sub_match","polio","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"vac_8","Haemophilus influenzae type B (HiB)","case","demo_case",,"vaccination_type",,,"sub_match","hib","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"vac_9","Measles","case","demo_case",,"vaccination_type",,,"sub_match","measles","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"vac_10","Mumps","case","demo_case",,"vaccination_type",,,"sub_match","mumps","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"vac_11","Rubella","case","demo_case",,"vaccination_type",,,"sub_match","rubella","epi",,,,,,"MOH Guidelines",,"None",,,,,,
+"smo_1","Smoking prevalence (ever)","case","demo_case",,"smoke_ever",,,"match","yes","public",,,,,,,,,,,,,,
+"smo_2","Smoking prevalence (current)","case","demo_case",,"smoke_now",,,"match","yes","public",,,,,,,,,,,,,,
+"smo_3","Smoking non-prevalence (ever)","case","demo_case",,"smoke_ever",,,"match","no","public",,,,,,,,,,,,,,
+"mod_1","Mental Health (mhGAP)","case","demo_case",,"intro_module",,,"sub_match","mh","module",,,,,,,,,,,,,,
+"mod_2","Child Health (IMCI)","case","demo_case",,"intro_module",,,"sub_match","imci","module",,,,,,,,,,,,,,
+"mod_3","Reproductive Health","case","demo_case",,"intro_module",,,"sub_match","rh","module",,,,,,,,,,,,,,
+"mod_4","Laboratory Results","case","demo_case",,"intro_module",,,"sub_match","labs","module",,,,,,,,,,,,,,
+"mod_5","Prescribing","case","demo_case",,"intro_module",,,"sub_match","px","module",,,,,,,,,,,,,,
+"pre_1","Pregnant women","case","demo_case",,"pregnant",,,"match","yes","pregnancy",,,,,,,,,,,,,,
+"pre_2","Complications in pregnancy","case","demo_case",,"pregnancy_complications",,,"match","yes","pregnancy",,,,,,,,,,,,,,
+"nut_1","Child is breastfed","case","demo_case",,"breastfeed",,,"match","yes","nutrition,nutrition_breastfeed",,,,,,,,,,,,,,
+"nut_2","Child is exclusively breastfed","case","demo_case",,"exclusive_breastfeed",,,"match","yes","nutrition,nutrition_ex_breastfeed",,,,,,,,,,,,,,
+"nut_3","Child is provided an infant formula","case","demo_case",,"formula",,,"match","yes","nutrition,nutrition_formula",,,,,,,,,,,,,,
+"nut_4","Child Age < 6 and Breastfed","case","demo_case",,"breastfeed;child_age",,,"match and between","yes;0,6","nutrition","None;child_age",,,,,,,,,,,,,
+"nut_5","Not Exclusively Breastfed","case","demo_case",,"exclusive_breastfeed",,,"match","no","nutrition",,,,,,,,,,,,,,
+"vis_1","New Visit","case","demo_case",,"intro./visit",,,"match","new","visit,new_visit",,,,,,,,,,,,,,
+"vis_2","Return Visit","case","demo_case",,"intro./visit",,,"match","return","visit",,,,,,,,,,,,,,
+"vis_3","Referral","case","demo_case",,"intro./visit",,,"match","referral","visit",,,,,,,,,,,,,,
+"pip_1","PIP","case","demo_case",,"pip./namru",,,"not_null",,"pip",,,,,,,,,,,,,,
+"pip_2","Severe Acute Respiratory Illness","case","demo_case",,"sari",,,"match","yes","pip,pip_exists",,,,,,,,,,,,,,
+"pip_3","Has Chronic Illness","case","demo_case",,"pip5./chronic",,,"not_null",,"pip",,,,,,,,,,,,,,
+"pip_4","SARI Not Null","case","demo_case",,"sari",,,"not_null",,"pip",,,,,,,,,,,,,,
+"lab_1","Measured BP","case","demo_case",,"results./bp_systolic;results./bp_diastolic",,,"between and between","1,300;1,200","lab","results./bp_systolic;results./bp_diastolic",,,,,,,,,,,,,
+"lab_2","Controlled BP (Sys < 140, Dia < 90)","case","demo_case",,"results./bp_systolic;results./bp_diastolic",,,"between and between","1,140;1,90","lab","results./bp_systolic;results./bp_diastolic",,,,,,,,,,,,,
+"lab_3","Measured BMI","case","demo_case",,"results./bmi_weight,results./bmi_height",,,"between","0,50","lab","results./bmi_weight / ((results./bmi_height/100) * (results./bmi_height/100))",,,,,,,,,,,,,
+"lab_4","Overweight (BMI > 25)","case","demo_case",,"results./bmi_weight,results./bmi_height;results./bmi_weight / ((results./bmi_height/100) * (results./bmi_height/100))",,,"between","25,50","lab","results./bmi_weight / ((results./bmi_height/100) * (results./bmi_height/100))",,,,,,,,,,,,,
+"lab_5","Obese (BMI > 30)","case","demo_case",,"results./bmi_weight,results./bmi_height;results./bmi_weight / ((results./bmi_height/100) * (results./bmi_height/100))",,,"between","30,50","lab","results./bmi_weight / ((results./bmi_height/100) * (results./bmi_height/100))",,,,,,,,,,,,,
+"lab_6","Measured Fasting Glucose","case","demo_case",,"results./glucose_fasting",,,"not_null",,"lab",,,,,,,,,,,,,,
+"lab_7","Fasting Glucose < 126","case","demo_case",,"results./glucose_fasting",,,"between","1, 126","lab","results./glucose_fasting",,,,,,,,,,,,,
+"lab_8","Measured HbA1c","case","demo_case",,"results./hba1c",,,"not_null",,"lab",,,,,,,,,,,,,,
+"lab_9","HbA1c < 7%","case","demo_case",,"results./hba1c",,,"between","0, 7","lab","results./hba1c",,,,,,,,,,,,,
+"lab_10","Complications recorded","case","demo_case",,"ncd_comlications",,,"not_null",,"lab",,,,,,,,,,,,,,
+"lab_11","Complications","case","demo_case",,"ncd_comlications",,,"match","yes","lab",,,,,,,,,,,,,,
+"com_1","Co-morbidity Diabetes","case","demo_case",,"cd./comorbidity",,,"sub_match","diabetes","lab",,,,,,,,,,,,,,
+"com_2","Co-morbidity Hypertension","case","demo_case",,"cd./comorbidity",,,"sub_match","hypertension","lab",,,,,,,,,,,,,,
+"ale_1","Date Investigated","case","alert_investigation","last","SubmissionDate",,,"value",,"alert",,,,,,,,,,,,,,
+"ale_2","Confirmed Status","case","alert_investigation","last","alert_labs./return_lab",,,"match","yes","alert",,,,,,,,,,,,,,
+"ale_3","Disregarded Status","case","alert_investigation","last","alert_labs./return_lab",,,"match","no","alert",,1,,,,,,,,,,,,
+"ale_4","Ongoing Status","case","alert_investigation","last","alert_labs./return_lab",,,"match",",unsure","alert",,,,,,,,,,,,,,
+"ale_5","Referral","case","alert_investigation","last","pt./checklist",,,"sub_match","referral","alert",,,,,,,,,,,,,,
+"ale_6","Case Management","case","alert_investigation","last","pt./checklist",,,"sub_match","case_management","alert",,,,,,,,,,,,,,
+"ale_7","Contact Tracing","case","alert_investigation","last","pt./checklist",,,"sub_match","contract_tracing","alert",,,,,,,,,,,,,,
+"ale_8","Laboratory Diagnosis","case","alert_investigation","last","pt./checklist",,,"sub_match","return_lab","alert",,,,,,,,,,,,,,
+"ale_9","Number of Investigation Forms","case","alert_investigation","count",,,,"value",,,,,,,,,,,,,,,,
+"Tot_1","Number of Return Visits","case","return_visit","count",,,,"value",,,,,,,,,,,,,,,,
+"Ret_2","Return Measured BP","case","return_visit","any","results./bp_systolic;results./bp_diastolic",,,"between and between","1,300;1,200","lab","results./bp_systolic;results./bp_diastolic",,,,,,,,,,,,,
+"reg_2","Total Consultations","register","demo_register",,"consult./consultations, consult./ncd_consultations",,,"calc",,"key_indicators,use","consult./consultations + consult./ncd_consultations",,,,,,,,,,,,,
+"reg_3","CD Consultations","register","demo_register",,"consult./consultations",,,"calc",,"key_indicators,use","consult./consultations",,,,,,,,,,,,,
+"reg_4","NCD Consultations","register","demo_register",,"consult./ncd_consultations",,,"calc",,,"consult./ncd_consultations",,,,,,,,,,,,,
+"reg_5","Refugee Consultations","register","demo_register",,"consult./consultations_refugee",,,"calc",,,"consult./consultations_refugee",,,,,,,,,,,,,
+"reg_6","Active Surveillence AFP","register","demo_register",,"surveillance./afp",,,"calc",,,"surveillance./afp",,,,,,,,,,,,,
+"reg_7","Active Surveillence Measles","register","demo_register",,"surveillance./measles",,,"calc",,,"surveillance./measles",,,,,,,,,,,,,
+"reg_8","Timely","register","demo_register",,"SubmissionDate,intro./visit_date",,,"calc",,,"abs(int(Variable.to_date(SubmissionDate)/604800)-int(Variable.to_date(intro./visit_date)/604800))<=1",,,,,,,,,,,,,

@@ -30,14 +30,14 @@ def get_variables(session, restrict=None):
     for row in result:
         group = row.calculation_group
         if not group:
-            group = row.id
+            group = row.id_pk
         variables.setdefault(row.type, {})
         variables[row.type].setdefault(group, {})
-        variables[row.type][group][row.id] = Variable(row)
-        variable_forms[row.id] = row.form
-        variable_tests[row.id] = variables[row.type][group][row.id].test_type
+        variables[row.type][group][row.id_pk] = Variable(row)
+        variable_forms[row.id_pk] = row.form
+        variable_tests[row.id_pk] = variables[row.type][group][row.id_pk].test_type
         variables_group.setdefault(group, [])
-        variables_group[group].append(row.id)
+        variables_group[group].append(row.id_pk)
 
     return variables, variable_forms, variable_tests, variables_group
 
@@ -69,6 +69,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
     """
+
     locations, locations_by_deviceid, regions, districts, devices = locations
     clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"], None)
     if not clinic_id:
@@ -98,6 +99,20 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
     disregard = False
     old_row = row.copy()
     for group in variables[data_type].keys():
+
+        #Flag for whether the variable uses a priority system. A priority system allows variable values
+        #with higher priority order to overwrite values with lower priority order.
+        #Any variable in the group with priority data will set the flag to True
+        priority_flag = False
+        for v in variables[data_type][group]:
+            if hasattr(variables[data_type][group][v],"calculation_priority") and \
+            variables[data_type][group][v].calculation_priority != '':
+                priority_flag = True
+
+                intragroup_priority = 0 # Initialize the current priority level at zero 
+                current_group_variable = None
+
+        # v is the primary key for the AggregationVariables table, not the string format id the data table refers the variables with
         for v in variables_group[group]:
             form = variable_forms[v]
             datum = row.get(form, None)
@@ -127,12 +142,42 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                                 break
                 else:
                     test_outcome = variable_tests[v](datum)
+
+                #if there is no test outcome but there is another variable in the priority queue, test the variable next in prioritisation
+                #if not test_outcome:
+                #    test_outcome = variable_tests[v_backup](datum)
+
                 if test_outcome:
-                    if test_outcome == 1:
+                    if test_outcome == 1: # This is done to allocate an integer into the test_outcome instead of a boolean value
                         test_outcome = 1
-                    variable_json[v] = test_outcome
+
+                    # fetch the string key for the current variable
+                    variable_string_key = variables[data_type][group][v].variable.id
+
+                    # Check whether the variable group uses a priority system
+                    if priority_flag:
+                        # This is the initial state
+                        if intragroup_priority == 0:
+                            variable_json[variables[data_type][group][v].variable.id] = test_outcome #insert new value
+                            intragroup_priority = int(variables[data_type][group][v].calculation_priority) # store current intragroup priority
+                            current_group_variable = variables[data_type][group][v].variable.id # store the variable id
+
+                        # A higher priority order value is encountered
+                        elif intragroup_priority > int(variables[data_type][group][v].calculation_priority): 
+                            del variable_json[current_group_variable] # remove existing group value of lower priority order
+                            variable_json[variables[data_type][group][v].variable.id] = test_outcome # insert new value
+                            intragroup_priority = int(variables[data_type][group][v].calculation_priority) # store current intragroup priority
+                            current_group_variable = variables[data_type][group][v].variable.id # store the variable id
+
+                        # Otherwise, do nothing
+                    else:
+                        #allocate the test outcome to the json object using the variable string id as key
+                        variable_json[variables[data_type][group][v].variable.id] = test_outcome
+
+
                     for cat in variables[data_type][group][v].variable.category:
-                        categories[cat] = v
+                        categories[cat] = variables[ data_type][group][v].variable.id
+                    
                     if variables[data_type][group][v].variable.alert:
                         if variables[data_type][group][
                                 v].variable.alert_type == "individual":
@@ -145,7 +190,10 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                                     location_form][alert_data[data_var]]
                     if variables[data_type][group][v].variable.disregard:
                         disregard = True
-                    break  # We break out of the current group as all variables in a group are mutually exclusive
+
+                    if not priority_flag: # When handling groups with priority order, loop through every variable
+                        break  # We break out of the current group as all variables in a group are mutually exclusive
+
     if disregard and variable_json.get("alert_type", None) != "individual":
         disregard = False
     return (variable_json, categories, ret_location, disregard)

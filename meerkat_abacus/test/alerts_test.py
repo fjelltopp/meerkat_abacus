@@ -207,6 +207,7 @@ class UtilTest(unittest.TestCase):
 
         new_alerts = alerts.threshold("cmd_1", [3, 5], self.session)
         print(new_alerts)
+
         self.assertEqual(len(new_alerts), 2)
 
         self.assertEqual(new_alerts[0]["duration"], 1)
