@@ -10,7 +10,7 @@ from meerkat_abacus.model import Data
 from meerkat_abacus.util import epi_week_start_date
 
 
-def threshold(var_id, limits, session):
+def threshold(var_id, limits, session, hospital_limits=None):
     """
     Calculate threshold alerts based on daily and weekly limits
 
@@ -29,12 +29,13 @@ def threshold(var_id, limits, session):
 
     conditions = [Data.variables.has_key(var_id)]
     data = pd.read_sql(
-        session.query(Data.region, Data.district, Data.clinic, Data.date,
+        session.query(Data.region, Data.district, Data.clinic, Data.date, Data.clinic_type,
                       Data.uuid, Data.variables[var_id].label(var_id)).filter(
                           *conditions).statement, session.bind)
     if len(data) == 0:
         return None
     # Group by clinic and day
+    
     daily = data.groupby(["clinic", pd.TimeGrouper(
         key="date", freq="1D")]).sum()[var_id]
 
@@ -42,9 +43,18 @@ def threshold(var_id, limits, session):
     alerts = []
     for clinic_date in daily_over_threshold.index:
         clinic, date = clinic_date
-        uuids = list(data[(data["clinic"] == clinic) & (data["date"] == date)][
-            "uuid"])
-        if len(uuids) >= limits[0]:
+        data_row = data[(data["clinic"] == clinic) & (data["date"] == date)]
+        clinic_type = data_row["clinic_type"].iloc[0]
+        uuids = list(data_row["uuid"])
+
+        add = False
+        if hospital_limits and clinic_type == "Hospital":
+            if len(uuids) >= hospital_limits[0]:
+                add = True
+        else: 
+            if len(uuids) >= limits[0]:
+                add = True
+        if add:
             alerts.append({
                 "clinic": clinic,
                 "reason": var_id,
@@ -66,9 +76,19 @@ def threshold(var_id, limits, session):
         clinic, date = clinic_date
         cases = data[(data["clinic"] == clinic) & (data["date"] >= date) & (
             data["date"] < date + timedelta(days=7))]
-
+        if len(cases) == 0:
+            next
+        clinic_type = cases["clinic_type"].iloc[0]
         uuids = list(cases.sort(columns=["date"])["uuid"])
-        if len(uuids) >= limits[1]:
+
+        add = False
+        if hospital_limits and clinic_type == "Hospital":
+            if len(uuids) >= hospital_limits[1]:
+                add = True
+        else:
+            if len(uuids) >= limits[1]:
+                add = True
+        if add:
             alerts.append({
                 "clinic": clinic,
                 "reason": var_id,

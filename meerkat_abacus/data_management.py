@@ -619,7 +619,12 @@ def add_alerts(session):
         if a.alert_type and "threshold:" in a.alert_type:
             var_id = a.id
             limits = [int(x) for x in a.alert_type.split(":")[1].split(",")]
-            new_alerts = alert_functions.threshold(var_id, limits, session)
+            hospital_limits = None
+            if len(limits) ==4:
+                hospital_limits = limits[2:]
+                limits = limits[:2]
+            new_alerts = alert_functions.threshold(var_id, limits, session,
+                                                   hospital_limits=hospital_limits)
             type_name = "threshold"
         if a.alert_type == "double":
             new_alerts = alert_functions.double_double(a.id, session)
@@ -674,7 +679,7 @@ def add_alerts(session):
                     flag_modified(data_records_by_uuid[o], "variables")
                 session.commit()
                 session.flush()
-                # send_alerts([data_records_by_uuid[representative]], session)
+                # #send_alerts([data_records_by_uuid[representative]], session)
 
             new_alerts = []
 
