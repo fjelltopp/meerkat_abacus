@@ -309,7 +309,8 @@ class Variable():
             '%d-%b-%Y',
             '%d-%b-%Y %I:%M:%S',
             '%b %d, %Y %I:%M:%S %p',
-            '%Y-%m-%dT%H:%M:%S.%f'
+            '%Y-%m-%dT%H:%M:%S.%f',
+            '%Y-%m-%dT%H:%M:%S'
         ]  
 
         #For each format, try to parse and convert a date from the given element.
@@ -327,6 +328,7 @@ class Variable():
                 else:
                     year = datetime.now().year
                     epi_offset = (4 + country_config["epi_week"][year].weekday()) % 7
+                    
                 #Time since epiepoch = date - epiepoch, where epiepoch = epoch + epioffset.  
                 since_epi_epoch = date - (datetime(1970,1,1) + timedelta(days=epi_offset))
 
