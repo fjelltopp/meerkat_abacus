@@ -140,7 +140,7 @@ class DbTest(unittest.TestCase):
             
     @mock.patch('meerkat_abacus.util.requests')
     def test_db_setup(self, requests):
-
+        task_queue.config.country_config["manual_test_data"] = {}
         task_queue.set_up_db.apply().get()
         self.assertTrue(database_exists(config.DATABASE_URL))
         engine = self.engine
@@ -148,7 +148,7 @@ class DbTest(unittest.TestCase):
         #Locations
         results = session.query(model.Locations)
         country_test.test_locations(results)
-
+        
         if config.fake_data:
             for table in model.form_tables:
                 results = session.query(model.form_tables[table])
@@ -207,6 +207,7 @@ class DbTest(unittest.TestCase):
         old_s3 = task_queue.config.get_data_from_s3
         task_queue.config.fake_data = True
         task_queue.config.get_data_from_s3 = False
+        task_queue.config.country_config["manual_test_data"] = {}
         manage.create_db(config.DATABASE_URL, model.Base, drop=True)
 
         numbers = {}

@@ -95,7 +95,8 @@ def add_fake_data(session, N=5000, append=False, from_files=False):
         else:
             form_deviceids = deviceids
 
-        if from_files and form in country_config["manual_test_data"].keys():
+        manual_test_data = []
+        if from_files and form in country_config.get("manual_test_data", {}).keys():
             manual_test_data = util.read_csv(config.config_directory + \
                 country_config["manual_test_data"][form] + ".csv")
 
@@ -211,12 +212,13 @@ def table_data_from_csv(filename,
                     if variable.variable.category == ["discard"]:
                         remove = True
                     else:
-                        if insert_row[variable.column]:
-                            insert_row[variable.column] = None
-                            if variable.column in removed:
-                                removed[variable.column] += 1
-                            else:
-                                removed[variable.column] = 1
+                        if variable.column in insert_row:
+                            if insert_row[variable.column]:
+                                insert_row[variable.column] = None
+                                if variable.column in removed:
+                                    removed[variable.column] += 1
+                                else:
+                                    removed[variable.column] = 1
 
                         # Set the
         if remove:
@@ -819,7 +821,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                 #use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
-
+                print(link_query)
                 conn.execute(insert)
 
                 #split aggregate constraints into a list
