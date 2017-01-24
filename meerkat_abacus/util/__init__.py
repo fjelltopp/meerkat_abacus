@@ -64,7 +64,7 @@ def epi_week_start_date(year, epi_config=country_config["epi_week"]):
         return first_of_year + timedelta(days=adjustment)
     else:
         return epi_config[year]
-    
+
 
 def get_link_definitions(session):
     """
