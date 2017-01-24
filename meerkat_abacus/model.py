@@ -33,8 +33,8 @@ class DownloadDataFiles(Base):
     status = Column(Float)
     success = Column(Integer)
     content = Column(String)
-    
-    
+
+
 class Locations(Base):
     __tablename__ = 'locations'
 
@@ -61,7 +61,7 @@ class Devices(Base):
     device_id = Column(String, primary_key=True)
     tags = Column(JSONB)
 
-    
+
 class Data(Base):
     __tablename__ = 'data'
 
@@ -80,7 +80,7 @@ class Data(Base):
     variables = Column(JSONB, index=True)
     categories = Column(JSONB, index=True)
     geolocation = Column(String)
-    
+
     def __repr__(self):
         return "<Data(uuid='%s', id='%s'>" % (
             self.uuid, self.id )
@@ -108,10 +108,11 @@ class DisregardedData(Base):
     variables = Column(JSONB, index=True)
     categories = Column(JSONB, index=True)
     geolocation = Column(String)
-    
+
     def __repr__(self):
         return "<DisregardedData(uuid='%s', id='%s'>" % (
-            self.uuid, self.id )
+            self.uuid, self.id
+        )
 
 create_index3 = DDL("CREATE INDEX disregarded_variables_gin ON disregarded_data USING gin(variables);")
 listen(DisregardedData.__table__, 'after_create', create_index3)
@@ -154,7 +155,7 @@ class AggregationVariables(Base):
     risk_factors = Column(String)
     symptoms = Column(String)
     labs_diagnostics = Column(String)
-    
+
     def __repr__(self):
         return "<AggregationVariable(name='%s', id='%s'>" % (
             self.name, self.id)
@@ -172,7 +173,7 @@ class AggregationVariables(Base):
             return 0
         else:
             return daily
-        
+
     @validates("disregard")
     def disregard_setter(self, key, disregard):
         if disregard == "":

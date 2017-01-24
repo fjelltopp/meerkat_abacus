@@ -7,10 +7,7 @@ from dateutil.parser import parse
 from functools import partial
 from datetime import datetime, timedelta
 from meerkat_abacus import config
-from copy import deepcopy
-import logging
 country_config = config.country_config
-# from sympy import sympify
 
 
 class Variable():
@@ -40,7 +37,9 @@ class Variable():
                             "not_null", "calc"]:
                     self.test_types.append(term)
                 else:
-                    raise NameError("{} has wrong test type".format(variable.id))
+                    raise NameError(
+                        "{} has wrong test type".format(variable.id)
+                    )
                 var = chr(97 + i)
                 self.bool_expression += 'res_dict["' + var + '"]'
                 self.bool_variables.append(var)
@@ -84,7 +83,7 @@ class Variable():
                 raise NameError("Value must be only test type")
             self.test_type = self.test_value
             self.calculation = variable.calculation
-            
+
         elif "calc" in self.test_types:
             if len(self.test_types) > 1:
                 raise NameError("calc must be only test_type")
@@ -108,13 +107,16 @@ class Variable():
             elif tt == "between":
                 if not isinstance(self.columns[0], list):
                     self.columns[0] = [self.columns[0]]
-                
+
                 self.calculation = variable.calculation
 
                 for c in self.columns[0]:
                     self.calculation = self.calculation.replace(
-                        c, 'row["' + c + '"]')
-                self.calculation = compile(self.calculation, "<string>", "eval")
+                        c, 'row["' + c + '"]'
+                    )
+                self.calculation = compile(
+                    self.calculation, "<string>", "eval"
+                )
                 self.test_type = partial(self.test_calc_between,
                                          self.columns[0], self.conditions[0],
                                          self.calculation)
@@ -141,7 +143,7 @@ class Variable():
 
         if hasattr(variable, "calculation_priority"):
             self.calculation_priority = variable.calculation_priority
-    
+
     def test(self, row):
         """
         Tests if current variable is true for row
@@ -153,7 +155,7 @@ class Variable():
             id(int): 0 if false and 1 (or sum) if true
         """
         return self.test_type(row)
-    
+
     def test_many(self, row):
 
         res_dict = {}
@@ -178,14 +180,14 @@ class Variable():
                 res = self.test_functions[self.test_types[i]](row)
             res_dict[self.bool_variables[i]] = res
         return eval(self.bool_expression)
-        
+
     def test_match(self, column, condition, row):
         """Test if value is in condition list"""
         try:
             return row[column] in condition
         except:
             return 0
-        
+
     def test_sub_match(self, column, condition, row):
         """
         We first test if value is in the list, if not we check
@@ -238,26 +240,25 @@ class Variable():
 
         """
 
-        #Copy row because we don't want to actually edit the row's data in to_date().
         row = {}
         for c in columns:
-  
-            #Initialise non-existing variables to 0.
-            if not c in old_row or old_row[c] == '' or old_row[c] is None:
+            # Initialise non-existing variables to 0.
+            if c not in old_row or old_row[c] == '' or old_row[c] is None:
                 return 0
 
-                # If row[c] is a datestring convert to #seconds from epi week start day after 1-1-70.
-            
+            # If row[c] is a datestring convert to #seconds.
             try:
                 row[c] = float(old_row[c])
             except ValueError:
                 row[c] = old_row[c]
+
         try:
             result = float(eval(calc))
-            return (float(condition[0]) <= result) & (float(condition[1]) > result)
+            greater = float(condition[0]) <= result
+            less = float(condition[1]) > result
+            return greater & less
         except ZeroDivisionError:
             return 0
-
 
     def test_calc(self, old_row):
         """
@@ -266,14 +267,14 @@ class Variable():
         We then replace all column names with their numerical values
         and evalualte the resulting expression.
 
-        If the column value is a date, we replace with the number of 
-        seconds since epi week start after epoch (e.g the first 
+        If the column value is a date, we replace with the number of
+        seconds since epi week start after epoch (e.g the first
         sunday after epoch for Jordan).
 
         """
         row = {}
         for c in self.columns[0]:
-                  
+
             # Initialise non-existing variables to 0.
             if c not in old_row:
                 return 0
@@ -285,6 +286,7 @@ class Variable():
                     row[c] = float(old_row[c])
                 except ValueError:
                     row[c] = old_row[c]
+
         try:
             return float(eval(self.calculation))
         except ZeroDivisionError:
@@ -293,50 +295,55 @@ class Variable():
     @staticmethod
     def to_date(element):
         """
-        Converts a row element date string to a number, if the element conforms to one of the specified
-        date formats. If the specified row element is a datestring, this function calulates the number of 
-        seconds between that datetime and the epi week start after the epoch i.e. in Jordan, the first 
-        Sunday after 1st January 1970. If the specified row element doesn't conform to an acceptable
-        date string form, it just returns the element instead.  
+        Converts a row element date string to a number, if the element conforms
+        to one of the specified date formats. If the specified row element is a
+        datestring, this function calulates the number of seconds between that
+        datetime and the epi week start after the epoch i.e. in Jordan, the
+        first Sunday after 1st January 1970. If the specified row element
+        doesn't conform to an acceptable date string form, it just returns the
+        element instead.
         """
-        #If element isn't even a string, just return the element instantly.
+        # If element isn't even a string, just return the element instantly.
         if type(element) is not str:
             return element
 
-        #A list of the valid datestring formats
+        # A list of the valid datestring formats
         allowed_formats = [
             '%b %d, %Y',
             '%d-%b-%Y',
             '%d-%b-%Y %I:%M:%S',
             '%b %d, %Y %I:%M:%S %p',
             '%Y-%m-%dT%H:%M:%S.%f'
-        ]  
+        ]
 
-        #For each format, try to parse and convert a date from the given element.
-        #If parsing fails, try the next format.
-        #If success, return the converted date.
+        # For each format, try to parse and convert a date from the element.
+        # If parsing fails, try the next format.
+        # If success, return the converted date.
         for date_format in allowed_formats:
 
             try:
-                date = datetime.strptime( element, date_format )
-                #We want to perform calcs on the number of seconds from the epi week start after epoch.
-                #Let's call this the epiepoch. Epoch was on a Thursday 1st Jan 1970, so...
-                #      (4 + epi_week_start_day) % 7 = day's after epoch until epi week start
+                date = datetime.strptime(element, date_format)
+                # Want to calc using secs from the epi week start after epoch.
+                # Let's call this the epiepoch. Epoch was on Thurs 1/1/1970, so
+                # (4 + epi_week_start_day) % 7 = days between epoch & epiepoch
                 if isinstance(country_config['epi_week'], str):
                     epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
                 else:
                     year = datetime.now().year
-                    epi_offset = (4 + country_config["epi_week"][year].weekday()) % 7
-                #Time since epiepoch = date - epiepoch, where epiepoch = epoch + epioffset.  
-                since_epi_epoch = date - (datetime(1970,1,1) + timedelta(days=epi_offset))
+                    epi_offset = (
+                        4 + country_config["epi_week"][year].weekday()
+                    ) % 7
+                # Time since epiepoch = date - epiepoch
+                # Where epiepoch = epoch + epioffset.
+                since_epi_epoch = date - (datetime(1970, 1, 1) +
+                                          timedelta(days=epi_offset))
 
-                #Return the calculated number of seconds.
+                # Return the calculated number of seconds.
                 return since_epi_epoch.total_seconds()
 
-            #If failed to parse the date, try a different acceptable date format.
-            except ValueError as e:
+            # If failed to parse date, try a different acceptable date format.
+            except ValueError:
                 pass
 
-        #If the element didn't conform to any date format, just return the element.
+        # If the element didn't conform to a date format, just return element.
         return element
-        
