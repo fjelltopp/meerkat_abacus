@@ -22,6 +22,7 @@ install:
  - git clone https://github.com/meerkat-code/meerkat_api.git
  - cd meerkat_api/api_background
  - pip install .
+ - cd ../../
 script: nosetests -v
 notifications:
   slack:
