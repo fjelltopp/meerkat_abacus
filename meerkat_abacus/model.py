@@ -32,7 +32,8 @@ class DownloadDataFiles(Base):
     type = Column(String)
     status = Column(Float)
     success = Column(Integer)
-    content = Column(String)
+    csvcontent = Column(String)
+    xlscontent = Column(String)
 
 
 class Locations(Base):
