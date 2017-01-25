@@ -18,6 +18,7 @@ from meerkat_abacus.util import create_fake_data
 import inspect
 import csv
 import boto3
+import copy
 import logging
 
 
@@ -1058,41 +1059,64 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                     row[k] = sorted(row[k], key=sort_function)
                     links[k] = [x[links_by_name[k]["uuid"]] for x in row[k]]
 
-        variable_data, category_data, location_data, disregard = to_codes.to_code(
-            row, variables, locations, data_type["type"], data_type["form"],
-            country_config["alert_data"], multiple_forms)
+        rows = [row]
+        if data_type["multiple_row"]:
+            fields = data_type["multiple_row"].split(",")
+            i = 1
+            data_in_row = True
+            sub_rows = []
+            while data_in_row:
+                data_in_row = False
+                sub_row = copy.deepcopy(row)
+                for f in fields:
+                    column_name = f.replace("$", str(i))
+                    sub_row_name = f.replace("$", "")
+                    value = row[data_type["form"]].get(column_name, None)
+                    if value and value != "":
+                        sub_row[data_type["form"]][sub_row_name] = value
+                        data_in_row = True
+                sub_row[data_type["form"]][data_type["uuid"]] = sub_row[data_type["form"]][data_type["uuid"]] + ":" + str(i)
+                if data_in_row:
+                    sub_rows.append(sub_row)
+                i += 1
+                
+            rows = sub_rows
+        for row in rows:
+            variable_data, category_data, location_data, disregard = to_codes.to_code(
+                row, variables, locations, data_type["type"], data_type["form"],
+                country_config["alert_data"], multiple_forms)
+            try:
+                date = parse(row[data_type["form"]][data_type["date"]])
+                date = datetime(date.year, date.month, date.day)
+            except:
+                print("Invalid Date",
+                      row[data_type["form"]][data_type["date"]])
+                continue
 
-        try:
-            date = parse(row[data_type["form"]][data_type["date"]])
-            date = datetime(date.year, date.month, date.day)
-        except:
-            print("Invalid Date", row[data_type["form"]][data_type["date"]])
-            continue
-
-        # if date < locations[0][location_data["clinic"]].start_date:
-        #     next
-        if "alert" in variable_data:
-            variable_data["alert_id"] = row[data_type["form"]][data_type[
-                "uuid"]][-country_config["alert_id_length"]:]
-        variable_data[data_type["var"]] = 1
-
-        new_data = {
-            "date": date,
-            "type": data_type["type"],
-            "uuid": row[data_type["form"]][data_type["uuid"]],
-            "variables": variable_data,
-            "categories": category_data,
-            "links": links
-        }
-        for l in location_data.keys():
-            new_data[l] = location_data[l]
-
-        if disregard:
-            disregarded_data_rows.append(new_data)
-        else:
+            # if date < locations[0][location_data["clinic"]].start_date:
+            #     next
             if "alert" in variable_data:
-                alerts.append(model.Data(**new_data))
-            data_rows.append(new_data)
+                variable_data["alert_id"] = row[data_type["form"]][data_type[
+                    "uuid"]][-country_config["alert_id_length"]:]
+            variable_data[data_type["var"]] = 1
+
+            new_data = {
+                "date": date,
+                "type": data_type["type"],
+                "uuid": row[data_type["form"]][data_type["uuid"]],
+                "variables": variable_data,
+                "categories": category_data,
+                "links": links
+            }
+            for l in location_data.keys():
+                new_data[l] = location_data[l]
+
+            if disregard:
+                disregarded_data_rows.append(new_data)
+            else:
+                if "alert" in variable_data:
+                    alerts.append(model.Data(**new_data))
+                data_rows.append(new_data)
     return data_rows, disregarded_data_rows, alerts
 
 
