@@ -19,6 +19,9 @@ import inspect
 import csv
 import boto3
 import copy
+import json
+from shapely.geometry import shape
+from geoalchemy2.shape import from_shape
 import logging
 
 
@@ -42,6 +45,9 @@ def create_db(url, base, drop=False):
     if not database_exists(url):
         create_database(url)
     engine = create_engine(url)
+    connection = engine.connect()
+    connection.execute("CREATE EXTENSION IF NOT EXISTS postgis")
+    connection.close()
     base.metadata.create_all(engine)
     return True
 
@@ -458,9 +464,9 @@ def import_clinics(csv_file, session, country_id):
                 # same clinic, so we combine them.
                 if len(result.all()) == 0:
                     if row["longitude"] and row["latitude"]:
-                        geolocation = row["latitude"] + "," + row["longitude"]
+                        point = "POINT(" + row["latitude"] + " " + row["longitude"] + ")"
                     else:
-                        geolocation = None
+                        point = None
                     if "start_date" in row and row["start_date"]:
                         start_date = parse(row["start_date"], dayfirst=True)
                     else:
@@ -469,7 +475,7 @@ def import_clinics(csv_file, session, country_id):
                         model.Locations(
                             name=row["clinic"],
                             parent_location=parent_location,
-                            geolocation=geolocation,
+                            point_location=point,
                             deviceid=row["deviceid"],
                             clinic_type=row["clinic_type"].strip(),
                             case_report=case_report,
@@ -502,10 +508,21 @@ def import_regions(csv_file, session, parent_id):
                 model.Locations(
                     name=row["region"],
                     parent_location=parent_id,
-                    geolocation=row["geo"],
+                    #point_location=row["geo"],
                     level="region"))
     session.commit()
 
+    
+def import_geojson(geo_json, session):
+    with open(geo_json) as f:
+        geometry = json.loads(f.read())
+        for g in geometry["features"]:
+            shapely_shapes = shape(g["geometry"])
+            name = g["properties"]["name"]
+            location = session.query(model.Locations).filter(
+                model.Locations.name == name).first()
+            location.area = from_shape(shapely_shapes)
+        session.commit()
 
 def import_districts(csv_file, session):
     """
@@ -554,7 +571,9 @@ def import_locations(engine, session):
     import_regions(regions_file, session, 1)
     import_districts(districts_file, session)
     import_clinics(clinics_file, session, 1)
-
+    for geosjon_file in config.country_config["geojson_files"]:
+        import_geojson(config.config_directory + "/" + geosjon_file,
+                       session)
 
 def set_up_everything(leave_if_data, drop_db, N):
     """
@@ -893,8 +912,6 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     session.query(model.Links).delete()
     session.commit()
 
-
-
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
         if not no_print:
@@ -970,6 +987,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                 data = {uuid: last_data}
             if not no_print:
                 print("Added {} records".format(added))
+                print(len(session.query(model.Data).all()))
         if data:
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
@@ -979,6 +997,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             added += newly_added
             if not no_print:
                 print("Added {} records".format(added))
+                print(len(session.query(model.Data).all()))
             alerts += new_alerts
     send_alerts(alerts, session)
     conn.close()
@@ -1083,8 +1102,12 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             rows = sub_rows
         for row in rows:
             variable_data, category_data, location_data, disregard = to_codes.to_code(
-                row, variables, locations, data_type["type"], data_type["form"],
-                country_config["alert_data"], multiple_forms)
+                row, variables, locations, data_type["type"],
+                data_type["form"],
+                country_config["alert_data"],
+                multiple_forms, data_type["location"])
+            if variable_data is None:
+                continue
             try:
                 date = parse(row[data_type["form"]][data_type["date"]])
                 date = datetime(date.year, date.month, date.day)
@@ -1092,7 +1115,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 print("Invalid Date",
                       row[data_type["form"]][data_type["date"]])
                 continue
-
+            
             # if date < locations[0][location_data["clinic"]].start_date:
             #     next
             if "alert" in variable_data:
@@ -1110,7 +1133,6 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             }
             for l in location_data.keys():
                 new_data[l] = location_data[l]
-
             if disregard:
                 disregarded_data_rows.append(new_data)
             else:

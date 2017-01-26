@@ -6,8 +6,17 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
 from sqlalchemy.event import listen
+from geoalchemy2 import Geometry
 
 from meerkat_abacus.config import country_config
+
+from psycopg2.extensions import adapt, register_adapter, AsIs
+from geoalchemy2.elements import WKBElement
+
+# def WKBElementAdapter(element):
+#     return AsIs(adapt(element.desc).getquoted())
+
+# register_adapter(WKBElement, WKBElementAdapter)
 
 Base = declarative_base()
 
@@ -20,7 +29,7 @@ for table in country_config["tables"]:
                                "id": Column(Integer, primary_key=True),
                                "uuid": Column(String, index=True),
                                "data": Column(JSONB)})
-    create_index = DDL("CREATE INDEX {} ON {} USING gin(data);".format(table+"_gin",table))
+    create_index = DDL("CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table))
     listen(form_tables[table].__table__, 'after_create', create_index)
 
 
@@ -41,7 +50,8 @@ class Locations(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     parent_location = Column(Integer, index=True)
-    geolocation = Column(String)
+    point_location = Column(Geometry("POINT"))
+    area = Column(Geometry("POLYGON"))
     other = Column(String)
     deviceid = Column(String)
     clinic_type = Column(String)
@@ -79,7 +89,7 @@ class Data(Base):
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
     categories = Column(JSONB, index=True)
-    geolocation = Column(String)
+    geolocation = Column(Geometry("POINT"))
 
     def __repr__(self):
         return "<Data(uuid='%s', id='%s'>" % (
@@ -107,7 +117,7 @@ class DisregardedData(Base):
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
     categories = Column(JSONB, index=True)
-    geolocation = Column(String)
+    geolocation = Column(Geometry("POINT"))
 
     def __repr__(self):
         return "<DisregardedData(uuid='%s', id='%s'>" % (

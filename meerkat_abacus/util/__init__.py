@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from meerkat_abacus.model import Locations, AggregationVariables, Devices
 from meerkat_abacus.config import country_config
 import meerkat_abacus.config as config
-
+from geoalchemy2.shape import to_shape
 
 def epi_week(date):
     """
@@ -228,8 +228,10 @@ def get_start_date_by_deviceid(session):
     locations_by_deviceid = get_locations_by_deviceid(session)
     start_date_by_deviceid = {}
     for l in locations_by_deviceid:
-        start_date_by_deviceid[l] = locations[locations_by_deviceid[l]].start_date
+        start_date_by_deviceid[l] = locations[
+            locations_by_deviceid[l]].start_date
     return start_date_by_deviceid
+
 
 def get_locations(session):
     """
@@ -245,6 +247,8 @@ def get_locations(session):
     locations = {}
     for row in result:
         locations[row.id] = row
+    #    if row.area is not None:
+    #        row.area = to_shape(row.area)
     return locations
 
 

@@ -3,7 +3,8 @@ Functionality to turn raw data into codes
 """
 import meerkat_abacus.model as model
 from meerkat_abacus.codes.variable import Variable
-
+from geoalchemy2.shape import from_shape, to_shape
+from shapely.geometry import Point
 
 def get_variables(session, restrict=None):
     """
@@ -46,7 +47,7 @@ multiple_method = {"last": -1, "first": 0}
 
 
 def to_code(row, variables, locations, data_type, location_form, alert_data,
-            mul_forms):
+            mul_forms, location):
     """
     Takes a row and transforms it into a data row
 
@@ -71,33 +72,59 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
     """
 
     locations, locations_by_deviceid, regions, districts, devices = locations
-    clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"], None)
-    if not clinic_id:
+    if location == "deviceid":
+        clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"],
+                                              None)
+        if not clinic_id:
+            return (None, None, None, None)
+        ret_location = {
+            "clinic": clinic_id,
+            "clinic_type": locations[clinic_id].clinic_type,
+            "case_type": locations[clinic_id].case_type,
+            "tags": devices[row[location_form]["deviceid"]],
+            "country": 1,
+            "geolocation": locations[clinic_id].point_location.desc
+        }
+        if locations[clinic_id].parent_location in districts:
+            ret_location["district"] = locations[clinic_id].parent_location
+            ret_location["region"] = (
+                locations[locations[clinic_id].parent_location].parent_location)
+        elif locations[clinic_id].parent_location in regions:
+            ret_location["district"] = None
+            ret_location["region"] = locations[clinic_id].parent_location
+        else:
+            ret_location["district"] = None
+            ret_location["region"] = None
+    elif "in_geometry" in location:
+        fields = location.split("$")[1].split(",")
+        point = Point(float(row[location_form][fields[0]]), float(row[location_form][fields[1]]))
+        found = False
+        for loc in locations.values():
+            if loc.level == "district":
+                if to_shape(loc.area).contains(point):
+
+                    ret_location = {
+                        "clinic": None,
+                        "clinic_type": None,
+                        "case_type": None,
+                        "tags": None,
+                        "country": 1,
+                        "district": loc.id,
+                        "region": locations[loc.parent_location].id,
+                        "geolocation": from_shape(point).desc
+                    }
+                    found = True
+                    break
+        if not found:
+            print("Not Found")
+            return (None, None, None, None)
+    else:
         return (None, None, None, None)
-    ret_location = {
-        "clinic": clinic_id,
-        "clinic_type": locations[clinic_id].clinic_type,
-        "case_type": locations[clinic_id].case_type,
-        "tags": devices[row[location_form]["deviceid"]],
-        "country": 1,
-        "geolocation": locations[clinic_id].geolocation
-    }
     variables, variable_forms, variable_tests, variables_group = variables
 
-    if locations[clinic_id].parent_location in districts:
-        ret_location["district"] = locations[clinic_id].parent_location
-        ret_location["region"] = (
-            locations[locations[clinic_id].parent_location].parent_location)
-    elif locations[clinic_id].parent_location in regions:
-        ret_location["district"] = None
-        ret_location["region"] = locations[clinic_id].parent_location
-    else:
-        ret_location["district"] = None
-        ret_location["region"] = None
     variable_json = {}
     categories = {}
     disregard = False
-    old_row = row.copy()
     for group in variables[data_type].keys():
 
         #Flag for whether the variable uses a priority system. A priority system allows variable values
@@ -105,7 +132,6 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         #Any variable in the group with priority data will set the flag to True
         priority_flag = False
         for v in variables[data_type][group]:
-            print(variables[data_type][group][v].calculation_priority)
             if hasattr(variables[data_type][group][v],"calculation_priority") and \
             variables[data_type][group][v].calculation_priority not in ('', None):
                 priority_flag = True

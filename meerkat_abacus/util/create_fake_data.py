@@ -42,6 +42,9 @@ def get_value(field, data):
         value = ",".join(random.sample(argument, number_of_options))
     if field_type == "patient_id":
         value = random.randint(0, 10000)
+    if field_type == "range":
+        upper, lower = argument
+        value = random.uniform(upper, lower)
     if field_type == "date":
         now = datetime.datetime.now()
         start = now - datetime.timedelta(days=21)
