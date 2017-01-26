@@ -524,6 +524,7 @@ def import_geojson(geo_json, session):
             location.area = from_shape(shapely_shapes)
         session.commit()
 
+
 def import_districts(csv_file, session):
     """
     Import districts from csv file.
@@ -572,7 +573,7 @@ def import_locations(engine, session):
     import_districts(districts_file, session)
     import_clinics(clinics_file, session, 1)
     for geosjon_file in config.country_config["geojson_files"]:
-        import_geojson(config.config_directory + "/" + geosjon_file,
+        import_geojson(config.config_directory +  geosjon_file,
                        session)
 
 def set_up_everything(leave_if_data, drop_db, N):
@@ -1098,15 +1099,15 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 if data_in_row:
                     sub_rows.append(sub_row)
                 i += 1
-                
             rows = sub_rows
+        print(rows)
         for row in rows:
             variable_data, category_data, location_data, disregard = to_codes.to_code(
                 row, variables, locations, data_type["type"],
                 data_type["form"],
                 country_config["alert_data"],
                 multiple_forms, data_type["location"])
-            if variable_data is None:
+            if location_data is None:
                 continue
             try:
                 date = parse(row[data_type["form"]][data_type["date"]])

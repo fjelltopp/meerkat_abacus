@@ -77,13 +77,16 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                                               None)
         if not clinic_id:
             return (None, None, None, None)
+        clinic_gps = None
+        if locations[clinic_id].point_location is not None:
+            clinic_gps = locations[clinic_id].point_location.desc
         ret_location = {
             "clinic": clinic_id,
             "clinic_type": locations[clinic_id].clinic_type,
             "case_type": locations[clinic_id].case_type,
             "tags": devices[row[location_form]["deviceid"]],
             "country": 1,
-            "geolocation": locations[clinic_id].point_location.desc
+            "geolocation": clinic_gps
         }
         if locations[clinic_id].parent_location in districts:
             ret_location["district"] = locations[clinic_id].parent_location
@@ -102,7 +105,6 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         for loc in locations.values():
             if loc.level == "district":
                 if to_shape(loc.area).contains(point):
-
                     ret_location = {
                         "clinic": None,
                         "clinic_type": None,
@@ -121,7 +123,6 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
     else:
         return (None, None, None, None)
     variables, variable_forms, variable_tests, variables_group = variables
-
     variable_json = {}
     categories = {}
     disregard = False
