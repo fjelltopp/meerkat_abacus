@@ -32,6 +32,7 @@ def get_value(field, data):
     """
     field_type = list(field)[0]
     argument = field[field_type]
+    
     if field_type == "integer":
         upper, lower = argument
         value = random.randint(upper, lower)
