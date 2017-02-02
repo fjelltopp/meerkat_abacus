@@ -44,6 +44,8 @@ def threshold(var_id, limits, session, hospital_limits=None):
     for clinic_date in daily_over_threshold.index:
         clinic, date = clinic_date
         data_row = data[(data["clinic"] == clinic) & (data["date"] == date)]
+        if len(data_row) == 0:
+            continue
         clinic_type = data_row["clinic_type"].iloc[0]
         uuids = list(data_row["uuid"])
 
@@ -51,7 +53,7 @@ def threshold(var_id, limits, session, hospital_limits=None):
         if hospital_limits and clinic_type == "Hospital":
             if len(uuids) >= hospital_limits[0]:
                 add = True
-        else: 
+        else:
             if len(uuids) >= limits[0]:
                 add = True
         if add:
@@ -77,7 +79,7 @@ def threshold(var_id, limits, session, hospital_limits=None):
         cases = data[(data["clinic"] == clinic) & (data["date"] >= date) & (
             data["date"] < date + timedelta(days=7))]
         if len(cases) == 0:
-            next
+            continue
         clinic_type = cases["clinic_type"].iloc[0]
         uuids = list(cases.sort(columns=["date"])["uuid"])
 
