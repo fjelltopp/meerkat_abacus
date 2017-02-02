@@ -821,7 +821,6 @@ def create_links(data_type, input_conditions, table, session, conn):
                 #use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
-                print(link_query)
                 conn.execute(insert)
 
                 #split aggregate constraints into a list
