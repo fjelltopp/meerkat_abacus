@@ -1,7 +1,7 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, DDL, Float
+from sqlalchemy import Column, Integer, String, DateTime, DDL, Float, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
@@ -32,7 +32,8 @@ class DownloadDataFiles(Base):
     type = Column(String)
     status = Column(Float)
     success = Column(Integer)
-    content = Column(String)
+    csvcontent = Column(String)
+    xlscontent = Column(LargeBinary)
 
 
 class Locations(Base):
