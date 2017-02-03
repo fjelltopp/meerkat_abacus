@@ -36,14 +36,17 @@ def get_value(field, data):
     if field_type == "integer":
         upper, lower = argument
         value = random.randint(upper, lower)
-    if field_type == "one":
+    elif field_type == "one":
         value = random.sample(argument, 1)[0]
-    if field_type == "multiple":
+    elif field_type == "multiple":
         number_of_options = random.randint(1, len(argument))
         value = ",".join(random.sample(argument, number_of_options))
-    if field_type == "patient_id":
+    elif field_type == "patient_id":
         value = random.randint(0, 10000)
-    if field_type == "date":
+    elif field_type == "range":
+        upper, lower = argument
+        value = random.uniform(upper, lower)
+    elif field_type == "date":
         now = datetime.datetime.now()
         start = now - datetime.timedelta(days=21)
         total_days = (now - start).days
@@ -53,11 +56,13 @@ def get_value(field, data):
                              second=0,
                              minute=0,
                              microsecond=0).isoformat()
-    if field_type == "data":
+    elif field_type == "data":
         if argument in data.keys():
             value = random.sample(data[argument], 1)[0]
         else:
             print("{} not in data".format(argument))
+    else:
+        value = None
     return value
 
 

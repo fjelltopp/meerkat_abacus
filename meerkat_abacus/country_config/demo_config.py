@@ -8,10 +8,11 @@ country_config = {
         "demo_case",
         "demo_alert",
         "demo_register",
+#        "plague_data"
     ],
     "require_case_report": ["demo_case", "demo_register"],
     "codes_file": "demo_codes",
-    "coding_list":[
+    "coding_list": [
         "demo_codes.csv",
         "demographic_codes.csv",
         "icd_codes.csv"
@@ -25,6 +26,7 @@ country_config = {
         "districts": "demo_districts.csv",
         "regions": "demo_regions.csv"
     },
+    "geojson_files": ["demo_json.json"],
     "form_dates": {
         "case": "pt./visit_date",
         "alert": "end",
@@ -77,12 +79,18 @@ country_config = {
                                                       "case_management",
                                                       "contact_tracing",
                                                       "return_lab"]}},
+        "plague_data": {
+            "pt./visit_date": {"date": "year"},
+            "lat": {"range": [0, 0.4]},
+            "lng": {"range": [0, 0.4]},
+            "pt1./gender1": {"one": ["male", "female"]},
+            "pt2./gender2": {"one": ["male", "female"]}
+        }
     },
     "manual_test_data": {
-      "demo_case":"demo_case_test_data"
-
+      #"demo_case": "demo_case_test_data"
     },
-    "alert_data": {"age": "pt1./age", "gender": "pt1./gender"},
+    "alert_data": {"demo_case": {"age": "pt1./age", "gender": "pt1./gender"}},
     "alert_id_length": 6,
     "alert_text_content": [ 'reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id' ],
     "alert_sms_content": [ 'reason', 'date', 'clinic', 'region', 'gender', 'age', 'id' ],
