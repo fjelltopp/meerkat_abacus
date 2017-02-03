@@ -6,7 +6,7 @@ from meerkat_abacus.codes.variable import Variable
 from geoalchemy2.shape import from_shape, to_shape
 from shapely.geometry import Point
 
-def get_variables(session, restrict=None, match_on_form=None):
+def get_variables(session, restrict=None, match_on_type=None, match_on_form=None):
     """
     Get the variables out of the db and turn them into Variable classes.
 
@@ -36,8 +36,8 @@ def get_variables(session, restrict=None, match_on_form=None):
             group = row.id_pk
   
 
-        if match_on_form is not None:
-            if row.method =="match" and row.calculation_priority in ["", None] and row.form == match_on_form:
+        if match_on_form is not None and match_on_type is not None:
+            if row.method =="match" and row.calculation_priority in ["", None] and row.form == match_on_form and row.type == match_on_type:
                 col = row.db_column
                 match_variables.setdefault(col, {})
                 for value in row.condition.split(","):

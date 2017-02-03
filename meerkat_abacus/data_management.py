@@ -868,7 +868,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                 #use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
-                print(link_query)
+                # print(link_query)
                 conn.execute(insert)
 
                 #split aggregate constraints into a list
@@ -901,6 +901,7 @@ def create_links(data_type, input_conditions, table, session, conn):
 
                 session.commit()
     return link_names
+
 
 def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     """
@@ -942,8 +943,9 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
         table = model.form_tables[data_type["form"]]
         if not no_print:
             print(data_type["type"])
-        variables = to_codes.get_variables(session, match_on_form=data_type["form"])
-        print(variables[-1].keys())
+        variables = to_codes.get_variables(session,
+                                           match_on_type=data_type["type"],
+                                           match_on_form=data_type["form"])
         tables = [table]
         link_names = [None]
         conditions = []
@@ -1014,7 +1016,6 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                 data = {uuid: last_data}
             if not no_print:
                 print("Added {} records".format(added))
-                print(len(session.query(model.Data).all()))
         if data:
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
@@ -1024,7 +1025,6 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             added += newly_added
             if not no_print:
                 print("Added {} records".format(added))
-                print(len(session.query(model.Data).all()))
             alerts += new_alerts
     send_alerts(alerts, session)
     conn.close()
