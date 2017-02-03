@@ -6,7 +6,7 @@ from meerkat_abacus.codes.variable import Variable
 from geoalchemy2.shape import from_shape, to_shape
 from shapely.geometry import Point
 
-def get_variables(session, restrict=None):
+def get_variables(session, restrict=None, match_on_form=None):
     """
     Get the variables out of the db and turn them into Variable classes.
 
@@ -28,24 +28,55 @@ def get_variables(session, restrict=None):
     variable_forms = {}
     variable_tests = {}
     variables_group = {}
+
+    match_variables = {}
     for row in result:
         group = row.calculation_group
         if not group:
             group = row.id_pk
-        variables.setdefault(row.type, {})
-        variables[row.type].setdefault(group, {})
-        variables[row.type][group][row.id_pk] = Variable(row)
-        variable_forms[row.id_pk] = row.form
-        variable_tests[row.id_pk] = variables[row.type][group][row.id_pk].test_type
-        variables_group.setdefault(group, [])
-        variables_group[group].append(row.id_pk)
+  
 
-    return variables, variable_forms, variable_tests, variables_group
+        if match_on_form is not None:
+            if row.method =="match" and row.calculation_priority in ["", None] and row.form == match_on_form:
+                col = row.db_column
+                match_variables.setdefault(col, {})
+                for value in row.condition.split(","):
+                    match_variables[col].setdefault(value.strip(), [{}, {}])
+                    match_variables[col][value][0][row.id] = 1
+                    if row.alert and row.alert_type == "individual":
+                        match_variables[col][value][0]["alert"] = 1
+                        match_variables[col][value][0]["alert_reason"] = row.id
+                        match_variables[col][value][0]["alert_type"] = "individual"
+                    for c in row.category:
+                        match_variables[col][value][1][c] = row.id
+                    
+            else:
+                variables_group.setdefault(group, [])
+                variables_group[group].append(row.id_pk)
+                variables.setdefault(row.type, {})
+                variables[row.type].setdefault(group, {})
+                variables[row.type][group][row.id_pk] = Variable(row)
+                variable_forms[row.id_pk] = row.form
+                variable_tests[row.id_pk] = variables[row.type][
+                    group][row.id_pk].test_type
+        else:
+            variables_group.setdefault(group, [])
+            variables_group[group].append(row.id_pk)
+            variables.setdefault(row.type, {})
+            variables[row.type].setdefault(group, {})
+            variables[row.type][group][row.id_pk] = Variable(row)
+            variable_forms[row.id_pk] = row.form
+            variable_tests[row.id_pk] = variables[row.type][
+                group][row.id_pk].test_type
+
+
+    return (variables, variable_forms, variable_tests,
+            variables_group, match_variables)
 
 
 multiple_method = {"last": -1, "first": 0}
 
-
+# @profile
 def to_code(row, variables, locations, data_type, location_form, alert_data,
             mul_forms, location):
     """
@@ -70,7 +101,6 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
     """
-
     locations, locations_by_deviceid, regions, districts, devices = locations
     if location == "deviceid":
         clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"],
@@ -100,46 +130,62 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
             ret_location["region"] = None
     elif "in_geometry" in location:
         fields = location.split("$")[1].split(",")
-        point = Point(float(row[location_form][fields[0]]), float(row[location_form][fields[1]]))
-        found = False
-        for loc in locations.values():
-            if loc.level == "district":
-                if to_shape(loc.area).contains(point):
-                    ret_location = {
-                        "clinic": None,
-                        "clinic_type": None,
-                        "case_type": None,
-                        "tags": None,
-                        "country": 1,
-                        "district": loc.id,
-                        "region": locations[loc.parent_location].id,
-                        "geolocation": from_shape(point).desc
-                    }
-                    found = True
-                    break
-        if not found:
-            print("Not Found")
+        try:
+            point = Point(float(row[location_form][fields[0]]),
+                          float(row[location_form][fields[1]]))
+            found = False
+            for loc in locations.values():
+                if loc.level == "district":
+                    if loc.area is not None and to_shape(loc.area).contains(point):
+                        ret_location = {
+                            "clinic": None,
+                            "clinic_type": None,
+                            "case_type": None, 
+                            "tags": None,
+                            "country": 1,
+                            "district": loc.id,
+                            "region": locations[loc.parent_location].id,
+                            "geolocation": from_shape(point).desc
+                        }
+                        found = True
+                        break
+            if not found:
+                print("Not Found")
+                return (None, None, None, None)
+        except ValueError:
+            print("Value Error")
             return (None, None, None, None)
     else:
         return (None, None, None, None)
-    variables, variable_forms, variable_tests, variables_group = variables
+    variables, variable_forms, variable_tests, variables_group, match_variables = variables
     variable_json = {}
     categories = {}
+    for column in match_variables:
+        row_value = row[location_form].get(column, None)
+        if row_value not in ("", None):
+            codes, cats = match_variables[column].get(row_value, [{}, {}])
+            variable_json.update(codes)
+            categories.update(cats)
+    if "alert" in variable_json:
+        for data_var in alert_data[location_form].keys():
+            variable_json["alert_" + data_var] = row[
+                location_form][alert_data[location_form][data_var]]
     disregard = False
-    for group in variables[data_type].keys():
+    for group in variables.get(data_type, {}).keys():
 
-        #Flag for whether the variable uses a priority system. A priority system allows variable values
-        #with higher priority order to overwrite values with lower priority order.
-        #Any variable in the group with priority data will set the flag to True
+        # Flag for whether the variable uses a priority system. A priority system allows variable values
+        # with higher priority order to overwrite values with lower priority order.
+        # Any variable in the group with priority data will set the flag to True
         priority_flag = False
         for v in variables[data_type][group]:
-            if hasattr(variables[data_type][group][v],"calculation_priority") and \
+            if hasattr(variables[data_type][group][v], "calculation_priority") and \
             variables[data_type][group][v].calculation_priority not in ('', None):
                 priority_flag = True
-
-                intragroup_priority = 0 # Initialize the current priority level at zero 
+                intragroup_priority = 0  # Initialize the current priority level at zero
                 current_group_variable = None
-
+                break
+            else:
+                break
         # v is the primary key for the AggregationVariables table, not the string format id the data table refers the variables with
         for v in variables_group[group]:
             form = variable_forms[v]
@@ -176,7 +222,9 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                 #    test_outcome = variable_tests[v_backup](datum)
 
                 if test_outcome:
-                    if test_outcome == 1: # This is done to allocate an integer into the test_outcome instead of a boolean value
+                    if test_outcome == 1:
+                        # This is done to allocate an integer into the
+                        # test_outcome instead of a boolean value
                         test_outcome = 1
 
                     # fetch the string key for the current variable
@@ -186,25 +234,33 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                     if priority_flag:
                         # This is the initial state
                         if intragroup_priority == 0:
-                            variable_json[variables[data_type][group][v].variable.id] = test_outcome #insert new value
-                            intragroup_priority = int(variables[data_type][group][v].calculation_priority) # store current intragroup priority
-                            current_group_variable = variables[data_type][group][v].variable.id # store the variable id
+                            variable_json[variables[data_type][
+                                group][v].variable.id] = test_outcome  # insert new value
+                            intragroup_priority = int(variables[data_type][
+                                group][v].calculation_priority)  # store current intragroup priority
+                            current_group_variable = variables[data_type][
+                                group][v].variable.id  # store the variable id
 
                         # A higher priority order value is encountered
                         elif intragroup_priority > int(variables[data_type][group][v].calculation_priority): 
-                            del variable_json[current_group_variable] # remove existing group value of lower priority order
-                            variable_json[variables[data_type][group][v].variable.id] = test_outcome # insert new value
-                            intragroup_priority = int(variables[data_type][group][v].calculation_priority) # store current intragroup priority
-                            current_group_variable = variables[data_type][group][v].variable.id # store the variable id
+                            del variable_json[current_group_variable]  # remove existing group value of lower priority order
+                            variable_json[variables[data_type][
+                                group][v].variable.id] = test_outcome  # insert new value
+                            intragroup_priority = int(variables[data_type][
+                                group][v].calculation_priority)  # store current intragroup priority
+                            current_group_variable = variables[data_type][
+                                group][v].variable.id  # store the variable id
 
                         # Otherwise, do nothing
                     else:
                         #allocate the test outcome to the json object using the variable string id as key
-                        variable_json[variables[data_type][group][v].variable.id] = test_outcome
+                        variable_json[variables[data_type][
+                            group][v].variable.id] = test_outcome
 
-
-                    for cat in variables[data_type][group][v].variable.category:
-                        categories[cat] = variables[ data_type][group][v].variable.id
+                    for cat in variables[data_type][
+                            group][v].variable.category:
+                        categories[cat] = variables[data_type][
+                            group][v].variable.id
                     
                     if variables[data_type][group][v].variable.alert:
                         if variables[data_type][group][
@@ -213,9 +269,9 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                             variable_json["alert_type"] = "individual"
                             variable_json["alert_reason"] = variables[
                                 data_type][group][v].variable.id
-                            for data_var in alert_data.keys():
+                            for data_var in alert_data[location_form].keys():
                                 variable_json["alert_" + data_var] = row[
-                                    location_form][alert_data[data_var]]
+                                    location_form][alert_data[location_form][data_var]]
                     if variables[data_type][group][v].variable.disregard:
                         disregard = True
 

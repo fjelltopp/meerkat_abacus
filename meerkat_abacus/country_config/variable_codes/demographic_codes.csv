@@ -26,3 +26,5 @@
 "age_17","Male 20-59","case","demo_case",,"pt1./gender;pt1./age",,,"match and between","male;20,60","age_gender,ncd_age_gender","None;pt1./age",,"age_gender",,,,,,,,,
 "age_18","Male >60","case","demo_case",,"pt1./gender;pt1./age",,,"match and between","male;60,200","age_gender,ncd_age_gender","None;pt1./age",,"age_gender",,,,,,,,,
 "age_19","Under 24 Months","case","demo_case",,"child_age",,,"between","0,24","child_under_24","child_age",,,,,,,,,,,
+"gen_1","Male","case","plague_data",,"pt./gender",,,"match","male","gender",,,,,,,,,,,,
+"gen_2","Female","case","plague_data",,"pt./gender",,,"match","female","gender",,,,,,,,,,,,

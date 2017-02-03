@@ -73,7 +73,7 @@ class DbTest(unittest.TestCase):
             if r.name == "District 1":
                 self.assertEqual(
                     list(Polygon([(0, 0), (0, 0.4), (0.2, 0.4), (0.2, 0), (0, 0)]).exterior.coords),
-                    list(to_shape(r.area).exterior.coords)
+                    list(to_shape(r.area).geoms[0].exterior.coords)
                     )
                 
         # This file has a clinic with a non existent district
@@ -130,7 +130,6 @@ class DbTest(unittest.TestCase):
         )
         self.session.add(case)
         self.session.commit()
-        print(self.session.query(model.form_tables["demo_case"]).all())
         old_file = manage.country_config["types_file"]
         manage.country_config["types_file"] = "data_types_multi.csv"
         old_dir = manage.config.config_directory
@@ -190,7 +189,6 @@ class DbTest(unittest.TestCase):
             table_name="demo_case",
             quality_control=True)
         results = self.session.query(model.form_tables["demo_case"]).all()
-        print(results)
         self.assertEqual(len(results), 4)
         # Only 6 of the cases have deviceids in 1-6
         # One has to early submission date and one
@@ -220,7 +218,7 @@ class DbTest(unittest.TestCase):
             for table in model.form_tables:
                 results = session.query(model.form_tables[table])
                 self.assertEqual(len(results.all()), 500)
-        #Import variables
+        # Import variables
         agg_var = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.id == "tot_1").first()
         self.assertEqual(agg_var.name, "Total")
@@ -239,30 +237,27 @@ class DbTest(unittest.TestCase):
             .all())
         self.assertEqual(n_cases + n_disregarded_cases, n_expected_cases)
 
-        agg_var_female = session.query(model.AggregationVariables).filter(
-            model.AggregationVariables.name == "Female").first()
-        results = session.query(model.Data)
-        results2 = session.query(model.DisregardedData)
+        agg_var_female = "gen_2"
+        results = session.query(model.Data).filter(model.Data.type == "case")
+        results2 = session.query(model.DisregardedData).filter(model.DisregardedData.type == "case")
         number_of_totals = 0
         number_of_female = 0
         for row in results:
-            print(row)
             if "tot_1" in row.variables.keys():
                 number_of_totals += 1
-            if str(agg_var_female.id) in row.variables.keys():
+            if str(agg_var_female) in row.variables.keys():
                 number_of_female += 1
         for row in results2:
             if "tot_1" in row.variables.keys():
                 number_of_totals += 1
-            if str(agg_var_female.id) in row.variables.keys():
+            if str(agg_var_female) in row.variables.keys():
                 number_of_female += 1
 
-                
         total = session.query(t).filter(
             t.data.contains({"intro./visit": "new"}))
         female = session.query(t).filter(
             t.data.contains({"intro./visit": "new",
-                             agg_var_female.db_column: agg_var_female.condition
+                             "pt1./gender": "female"
                              }))
         self.assertEqual(number_of_totals, len(total.all()))
         self.assertEqual(number_of_female, len(female.all()))
