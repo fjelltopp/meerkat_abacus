@@ -1,13 +1,22 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, DDL, Float
+from sqlalchemy import Column, Integer, String, DateTime, DDL, Float, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
 from sqlalchemy.event import listen
+from geoalchemy2 import Geometry
 
 from meerkat_abacus.config import country_config
+
+from psycopg2.extensions import adapt, register_adapter, AsIs
+from geoalchemy2.elements import WKBElement
+
+# def WKBElementAdapter(element):
+#     return AsIs(adapt(element.desc).getquoted())
+
+# register_adapter(WKBElement, WKBElementAdapter)
 
 Base = declarative_base()
 
@@ -20,7 +29,7 @@ for table in country_config["tables"]:
                                "id": Column(Integer, primary_key=True),
                                "uuid": Column(String, index=True),
                                "data": Column(JSONB)})
-    create_index = DDL("CREATE INDEX {} ON {} USING gin(data);".format(table+"_gin",table))
+    create_index = DDL("CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table))
     listen(form_tables[table].__table__, 'after_create', create_index)
 
 
@@ -32,16 +41,18 @@ class DownloadDataFiles(Base):
     type = Column(String)
     status = Column(Float)
     success = Column(Integer)
-    content = Column(String)
-    
-    
+    csvcontent = Column(String)
+    xlscontent = Column(LargeBinary)
+
+
 class Locations(Base):
     __tablename__ = 'locations'
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
     parent_location = Column(Integer, index=True)
-    geolocation = Column(String)
+    point_location = Column(Geometry("POINT"))
+    area = Column(Geometry("MULTIPOLYGON"))
     other = Column(String)
     deviceid = Column(String)
     clinic_type = Column(String)
@@ -61,13 +72,14 @@ class Devices(Base):
     device_id = Column(String, primary_key=True)
     tags = Column(JSONB)
 
-    
+
 class Data(Base):
     __tablename__ = 'data'
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String)
     type = Column(String, index=True)
+    type_name = Column(String)
     date = Column(DateTime, index=True)
     country = Column(Integer, index=True)
     region = Column(Integer, index=True)
@@ -79,8 +91,8 @@ class Data(Base):
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
     categories = Column(JSONB, index=True)
-    geolocation = Column(String)
-    
+    geolocation = Column(Geometry("POINT"))
+
     def __repr__(self):
         return "<Data(uuid='%s', id='%s'>" % (
             self.uuid, self.id )
@@ -96,6 +108,7 @@ class DisregardedData(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String)
     type = Column(String, index=True)
+    type_name = Column(String)
     date = Column(DateTime, index=True)
     country = Column(Integer, index=True)
     region = Column(Integer, index=True)
@@ -107,11 +120,12 @@ class DisregardedData(Base):
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
     categories = Column(JSONB, index=True)
-    geolocation = Column(String)
-    
+    geolocation = Column(Geometry("POINT"))
+
     def __repr__(self):
         return "<DisregardedData(uuid='%s', id='%s'>" % (
-            self.uuid, self.id )
+            self.uuid, self.id
+        )
 
 create_index3 = DDL("CREATE INDEX disregarded_variables_gin ON disregarded_data USING gin(variables);")
 listen(DisregardedData.__table__, 'after_create', create_index3)
@@ -129,7 +143,8 @@ class Links(Base):
 class AggregationVariables(Base):
     __tablename__ = 'aggregation_variables'
 
-    id = Column(String, primary_key=True)
+    id_pk = Column(Integer, primary_key = True)
+    id = Column(String)
     name = Column(String)
     type = Column(String)
     form = Column(String)
@@ -143,6 +158,7 @@ class AggregationVariables(Base):
     calculation = Column(String)
     disregard = Column(Integer)
     calculation_group = Column(String)
+    calculation_priority = Column(String)
     classification = Column(String)
     classification_casedef = Column(String)
     source = Column(String)
@@ -152,7 +168,7 @@ class AggregationVariables(Base):
     risk_factors = Column(String)
     symptoms = Column(String)
     labs_diagnostics = Column(String)
-    
+
     def __repr__(self):
         return "<AggregationVariable(name='%s', id='%s'>" % (
             self.name, self.id)
@@ -170,7 +186,7 @@ class AggregationVariables(Base):
             return 0
         else:
             return daily
-        
+
     @validates("disregard")
     def disregard_setter(self, key, disregard):
         if disregard == "":

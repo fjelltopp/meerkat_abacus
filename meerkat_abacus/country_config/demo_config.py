@@ -8,9 +8,15 @@ country_config = {
         "demo_case",
         "demo_alert",
         "demo_register",
+#        "plague_data"
     ],
     "require_case_report": ["demo_case", "demo_register"],
     "codes_file": "demo_codes",
+    "coding_list": [
+        "demo_codes.csv",
+        "demographic_codes.csv",
+        "icd_codes.csv"
+    ],
     "links_file": "demo_links.csv",
     "types_file": "data_types.csv",
     "country_tests": "demo_test.py",
@@ -20,6 +26,7 @@ country_config = {
         "districts": "demo_districts.csv",
         "regions": "demo_regions.csv"
     },
+    "geojson_files": ["demo_json.json"],
     "form_dates": {
         "case": "pt./visit_date",
         "alert": "end",
@@ -36,6 +43,7 @@ country_config = {
                       "pt1./status": {"one": ["refugee", "national"]},
                       "intro_module": {"multiple": ["mh",
                                                     "imci", "rh", "labs", "px"]},
+                      "symptoms": {"multiple": ["A9_4", "B15-17_2", "A39_3", "A03_2","!0_1", "", ""]},
                       "pregnant": {"one": ["yes", "no"]},
                       "pregnancy_complications": {"one": ["yes", "no"]},
                       "smoke_ever": {"one": ["yes", "no"]},
@@ -71,13 +79,23 @@ country_config = {
                                                       "case_management",
                                                       "contact_tracing",
                                                       "return_lab"]}},
+        "plague_data": {
+            "pt./visit_date": {"date": "year"},
+            "lat": {"range": [0, 0.4]},
+            "lng": {"range": [0, 0.4]},
+            "pt1./gender1": {"one": ["male", "female"]},
+            "pt2./gender2": {"one": ["male", "female"]}
+        }
     },
-    "alert_data": {"age": "pt1./age", "gender": "pt1./gender"},
+    "manual_test_data": {
+      #"demo_case": "demo_case_test_data"
+    },
+    "alert_data": {"demo_case": {"age": "pt1./age", "gender": "pt1./gender"}},
     "alert_id_length": 6,
     "alert_text_content": [ 'reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id' ],
     "alert_sms_content": [ 'reason', 'date', 'clinic', 'region', 'gender', 'age', 'id' ],
-    "alert_email_content": [ 
-        'reason', 'date', 'clinic', 'region', 'breaker', 'patient', 'gender', 'age', 'breaker', 'id' 
+    "alert_email_content": [
+        'reason', 'date', 'clinic', 'region', 'breaker', 'patient', 'gender', 'age', 'breaker', 'id'
     ],
     "messaging_start_date": datetime.datetime(2016, 2, 15),
     "messaging_topic_prefix": "null",

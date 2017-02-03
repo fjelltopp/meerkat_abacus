@@ -1,0 +1,309 @@
+id_key,sympt_code,jor_sympt,jor_sympt::arabic
+A80,A80_1,Rapid onset (weeks),بداية سريعة (أسابيع)
+A80,A80_2,Loss of muscle tone (floppy),فقدان قوة العضلات (المرونة)
+A80,A80_3,Muscle weakness (paralysis),ضعف العضلات (الشلل)
+A80,A80_4,One or more limbs involved,واحد أو أكثر من الأطراف المعنية
+A80,A80_5,Other,أخرى
+A80,A80_6,None of the above,لا شيء مما سبق
+A9,A9_1,Acute onset of fever,بداية حادة من الحمى
+A9,A9_2,Haemorrhagic or purpuric rash,الطفح النزفي
+A9,A9_3,Bleeding from the nose,نزيف من الأنف
+A9,A9_4,Vomiting blood,قيء الدم
+A9,A9_5,Coughing up blood,سعال الدم
+A9,A9_6,Blood in stools,دم في البراز
+A9,A9_7,Other,أخرى
+A9,A9_8,None of the above,لا شيء مما سبق
+B05,B05_1,High fever ,حرارة مرتفعة
+B05,B05_2,Red maculopapular (blotchy) rash 3 to 7 daysa after onset starting behind the ears and hairline,البقعي الأحمر (بقع) الطفح الجلدي 3 إلى 7 أيام تبدأ بالظهور خلف الأذنين وخط الشعر
+B05,B05_3,Runny nose,سيلان الأنف
+B05,B05_4,Cough,السعال
+B05,B05_5,Conjunctivitis,التهاب الملتحمة
+B05,B05_6,Koplik spots (small white spots on buccal mucosa),بقع كوبليك (بقع بيضاء صغيرة على مخاطية الشدق)
+B05,B05_7,Other,أخرى
+B05,B05_8,None of the above,لا شيء مما سبق
+A00,A00_1,"Watery diarrhoea (3 or more abnormally loose or fluid stools in the past 24 hours, ""rice-water"" stool with or without vomiting)","الإسهال المائي (3 مرات أو أكثر بشكل غير طبيعي من براز رخو أو سوائل خلال ال 24 ساعة الماضية، البراز ""ماء الأرز"" مع أو بدون قيء)"
+A00,A00_2,"Severe dehydration (including any of the following loss of skin turgor, malaise, tachypnoea, hypotension)",الجفاف الشديد (بما في ذلك أي من التالية من تورم الجلد، والشعور بالضيق، وتسارع التنفس، انخفاض ضغط الدم)
+A00,A00_3,Fever (more common in children),حمى (أكثر شيوعا في الأطفال)
+A00,A00_4,Other,أخرى
+A00,A00_5,None of the above,لا شيء مما سبق
+"B15, B16, B17",B15-17_1,Asymptomatic,غير معد
+"B15, B16, B17",B15-17_2,Jaundice,اليرقان
+"B15, B16, B17",B15-17_3,Dark/brown urine,البول الداكن/البني
+"B15, B16, B17",B15-17_4,Anorexia,فقدان الشهية
+"B15, B16, B17",B15-17_5,Malaise,توعك
+"B15, B16, B17",B15-17_6,Fatigue,تعب
+"B15, B16, B17",B15-17_7,Pain in upper right quadrant,الألم في الربع العلوي الأيمن
+"B15, B16, B17",B15-17_8,Other,أخرى
+"B15, B16, B17",B15-17_9,None of the above,لا شيء مما سبق
+"A39, G00, A87",A39_1,Sudden onset of intense headache,حدوث مفاجئ للصداع الشديد
+"A39, G00, A87",A39_2,Suddepn onset of fever,حدوث مفاجئ للحمى
+"A39, G00, A87",A39_3,Sudden onset of nausea,حدوث مفاجئ للغثيان
+"A39, G00, A87",A39_4,Sudden onset of vomiting,حدوث مفاجئ للقيء
+"A39, G00, A87",A39_5,Sudden onset of photophobia,حدوث مفاجئ لرهاب الضوء
+"A39, G00, A87",A39_6,Sudden onset of stiff neck,حدوث مفاجئ لتصلب الرقبة
+"A39, G00, A87",A39_7,Lethargy,الخمول
+"A39, G00, A87",A39_8,Delirium,الهذيان
+"A39, G00, A87",A39_9,Coma,غيبوبة
+"A39, G00, A87",A39_10,Purpura,تبقع قرمزي
+"A39, G00, A87",A39_11,Shock symptoms,أعراض الصدمة
+"A39, G00, A87",A39_12,Other,أخرى
+"A39, G00, A87",A39_13,None of the above,لا شيء مما سبق
+A03,A03_1,Malnourished,يعاني من سوء التغذية
+A03,A03_2,Bloody diarrhoea (3 or more abnormally loose or fluid stools in past 24 hours with visible blood),الإسهال الدموي (3 مرات أو أكثر من براز رخو أو السوائل بشكل غير طبيعي خلال 24 ساعة الماضية مع دم مرئي)
+A03,A03_3,Fever,الحمى
+A03,A03_4,Abdominal cramps,تقلصات في البطن
+A03,A03_5,Rectal pain,ألم المستقيم
+A03,A03_6,Seizures,نوبة مرضية
+A03,A03_7,Sepsis,الإنتان
+A03,A03_8,Rectal prolapsed,هبوط المستقيم
+A03,A03_9,Toxic megacolon,تضخم القولون السمي
+A03,A03_10,Hemolytic uraemic syndrome,متلازمة انحلال الدم اليوريمي
+A03,A03_11,Other,أخرى
+A03,A03_12,None of the above,لا شيء مما سبق
+"B20, B21, B22, B23, B24",B20-24_1,Moderate unexplained weight loss (<10% of presumed or measured body weight),المعتدلة فقدان الوزن غير المبررة (<10٪ من يفترض أو قياس وزن الجسم)
+"B20, B21, B22, B23, B24",B20-24_2,Severe weight loss (>10% of presumed or measured body weight),فقدان الوزن الشديد (> 10٪ من يفترض أو قياس وزن الجسم)
+"B20, B21, B22, B23, B24",B20-24_3,Persistent generalized lymphadenopathy (PGL),استمرار اعتلال العقد اللمفاوية المعمم (PGL)
+"B20, B21, B22, B23, B24",B20-24_4,Recurrent respiratory tract infections ,التهابات الجهاز التنفسي المتكررة
+"B20, B21, B22, B23, B24",B20-24_5,Herpes zoster,الهربس النطاقي
+"B20, B21, B22, B23, B24",B20-24_6,Angular cheilitis,صماغ
+"B20, B21, B22, B23, B24",B20-24_7,Recurrent oral ulcerations,تقرحات الفم المتكررة
+"B20, B21, B22, B23, B24",B20-24_8,Papular pruritic eruptions,الثورات حاكة حطاطية
+"B20, B21, B22, B23, B24",B20-24_9,Seborrhoeic dermatitis,التهاب الجلد الدهني
+"B20, B21, B22, B23, B24",B20-24_10,Fungal nail infections,التهابات الأظافر الفطرية
+"B20, B21, B22, B23, B24",B20-24_11,Extensive human papilloma virus infection,عدوى فيروس الورم الحليمي البشري واسعة النطاق
+"B20, B21, B22, B23, B24",B20-24_12,Extensive molluscum contagiosum,واسعة المليساء المعدية
+"B20, B21, B22, B23, B24",B20-24_13,Lineal gingival erythema (LGE),حمامي اللثة  (LGE)
+"B20, B21, B22, B23, B24",B20-24_14,Parotoid enlargement,تضخم النكافية
+"B20, B21, B22, B23, B24",B20-24_15,Unexplained chronic diarrhoea for longer than one month,الإسهال المزمن غير المبرر لمدة أكثر من شهر واحد
+"B20, B21, B22, B23, B24",B20-24_16,Unexplained persistent fever (>1 month),الحمى المستمرة غير المبررة (> 1 شهر)
+"B20, B21, B22, B23, B24",B20-24_17,Oral candidiasis,داء المبيضات الفموي
+"B20, B21, B22, B23, B24",B20-24_18,Oral hairy leukoplakia,الطلاوة المشعرة عن طريق الفم
+"B20, B21, B22, B23, B24",B20-24_19,Pulmonary TB diagnosed in last 2 years,السل الرئوي تشخيصها في السنوات الأخيرة (2)
+"B20, B21, B22, B23, B24",B20-24_20,"Severe presumed bacterial infections (e.g. pneumonia, empyema)",الالتهابات البكتيرية يفترض الشديدة (مثل الالتهاب الرئوي ودبيلة)
+"B20, B21, B22, B23, B24",B20-24_21,Acute necrotizing ulcerative stomatitis/gingivitis/periodontitis,الحادة الناخر التقرحي التهاب الفم / التهاب اللثة / اللثة
+"B20, B21, B22, B23, B24",B20-24_22,HIV wasting syndrome,متلازمة الهزال فيروس نقص المناعة البشرية
+"B20, B21, B22, B23, B24",B20-24_23,Pneumocystis pneumonia,التهاب رئوي
+"B20, B21, B22, B23, B24",B20-24_24,Recurrent severe or radiological bacterial pneumonia,الالتهاب الرئوي البكتيري الحاد أو الإشعاعي المتكررة
+"B20, B21, B22, B23, B24",B20-24_25,"Chronic herpes simplex infection (orolabial, genital or anorectal >1 month)",عدوى الهربس البسيط المزمن (orolabial، الأعضاء التناسلية أو الشرجية> 1 شهر)
+"B20, B21, B22, B23, B24",B20-24_26,Oesophageal candidiasis,المبيضات المريئي
+"B20, B21, B22, B23, B24",B20-24_27,Extrapulmonary TB,السل خارج الرئة
+"B20, B21, B22, B23, B24",B20-24_28,Kaposi's sarcoma,ساركوما كابوزي
+"B20, B21, B22, B23, B24",B20-24_29,CNS toxoplasmosis,CNS داء المقوسات
+"B20, B21, B22, B23, B24",B20-24_30,HIV encephalopathy,فيروس نقص المناعة البشرية - اعتلال الدماغ
+"B20, B21, B22, B23, B24",B20-24_31,Other,أخرى
+"B20, B21, B22, B23, B24",B20-24_32,None of the above,لا شيء مما سبق
+"B50, B51, B52, B53, B54",B50-54_1,Headache,صداع
+"B50, B51, B52, B53, B54",B50-54_2,General pain in the back and joints,ألم عام وفي الظهر والمفاصل
+"B50, B51, B52, B53, B54",B50-54_3,Nausea or vomiting,غثيان أو قيء
+"B50, B51, B52, B53, B54",B50-54_4,Enlarged spleen and liver,تضخم الطحال والكبد
+"B50, B51, B52, B53, B54",B50-54_5,Anaemia,فقر دم
+"B50, B51, B52, B53, B54",B50-54_6,Other,أخرى
+"B50, B51, B52, B53, B54",B50-54_7,None of the above,لا شيء مما سبق
+B55,B55_1,Ulcers on exposed parts of the body,تقرحات على الاجزاء المكشوفه من الجسم
+B55,B55_2,"Lesions on mucous membranes in the nose, mouth, throat cavities and surrounding tissues",آفات على الأغشية المخاطية في الأنف والفم والحلق وتسوس الأسنان والأنسجة المحيطة بها
+B55,B55_3,Irregular fever,حمى غير منتظمة
+B55,B55_4,Weight loss,فقدان الوزن
+B55,B55_5,Swelling of spleen,تورم الطحال
+B55,B55_6,Swelling of liver,تورم الكبد
+B55,B55_7,Anaemia,فقر الدم
+B55,B55_8,Other,أخرى
+B55,B55_9,None of the above,لا شيء مما سبق
+B65,B65_1,Presence of blood in the urine or stool,وجود دم في البول أو البراز
+B65,B65_2,Frequent urination,كثرة التبول
+B65,B65_3,Difficult urination,صعوبة التبول
+B65,B65_4,Pain in the lower abdomen,ألم في أسفل البطن
+B65,B65_5,Other,أخرى
+B65,B65_6,None of the above,لا شيء مما سبق
+A36,A36_1,Fever,الحمى
+A36,A36_2,Running nose,سيلان الأنف
+A36,A36_3,Cough,السعال
+A36,A36_4,"Adherent membrane (tough, grayish-white color) of the nose, pharynx, tonsils or larynx",غشاء ملتصق (خشونة، لون رمادي أبيض) للأنف والبلعوم واللوزتين والحنجرة
+A36,A36_5,Inflammation of cervical lymph nodes and surrounding tissue,التهاب الغدد الليمفاوية العنقية والأنسجة المحيطة بها
+A36,A36_6,Other,أخرى
+A36,A36_7,None of the above,لا شيء مما سبق
+A35,A35_1,Inability to open the mouth,عدم القدرة على فتح الفم
+A35,A35_2,"Constant spasm in the muscles of the face, including the jaw",تشنج مستمر في عضلات الوجه بما في ذلك الفك
+A35,A35_3,Rigid body,جسد متصلب
+A35,A35_4,Inability to breathe,عدم القدرة على التنفس
+A35,A35_5,Other,أخرى
+A35,A35_6,None of the above,لا شيء مما سبق
+A37,A37_1,Cough lasting at least 2 weeks ,سعال مستمر لأسبوعين على الأقل
+A37,A37_2,Paroxysms of coughing,نوبة من السعال
+A37,A37_3,Inspiratory “whoop”,"الشهيق ""نعيق"""
+A37,A37_4,Posttussive vomiting,تقيء ما بعد السعال
+A37,A37_5,Other,أخرى
+A37,A37_6,None of the above,لا شيء مما سبق
+A22.0,A22_1,Pimple/papule with or without surrounding vesicles,بثرة / حطاطة مع أو بدون الحويصلات المحيطة
+A22.0,A22_2,Oedema,وذمة
+A22.0,A22_3,Eschar,ندبة
+A22.0,A22_4,Other,أخرى
+A22.0,A22_5,None of the above,لا شيء مما سبق
+A22.2,A22_6,Nausea,الغثيان
+A22.2,A22_7,Vomiting,القيء
+A22.2,A22_8,Fever,الحمى
+A22.2,A22_9,Abdominal pain,ألم في البطن
+A22.2,A22_10,Haematemesis,قيء دموي
+A22.2,A22_11,Bloody diarrhoea,إسهال مدمم
+A22.2,A22_12,Massive ascites,استسقاء كثير
+A22.2,A22_13,Toxaemia and shock,تسمم الدم والصدمة
+A22.2,A22_14,Sore throat,التهاب الحلق
+A22.2,A22_15,Dysphagia,عسر البلع
+A22.2,A22_16,Regional lymphadenopathy in the neck,تضخم منطقة العقد اللمفية في الرقبة 
+A22.2,A22_17,Other,أخرى
+A22.2,A22_18,None of the above,لا شيء مما سبق
+A22.1,A22_19,Mild fever,حمى خفيفة
+A22.1,A22_20,Fatigue,التعب
+A22.1,A22_21,Malaise,توعك
+A22.1,A22_22,Headache,صداع
+A22.1,A22_23,Muscle ache,آلام العضلات
+A22.1,A22_24,Chills and fever,قشعريرة وحمى
+A22.1,A22_25,Dyspnoea,بحة في الصوت
+A22.1,A22_26,Cyanosis,الازرقاق
+A22.1,A22_27,Disorientation with coma,الارتباك مع الغيبوبة
+A22.1,A22_28,Other,أخرى
+A22.1,A22_29,None of the above,لا شيء مما سبق
+A82,A82_1,"Spasms in response to tactile, auditory, visual or olfactory stimuli",تشنجات كرد فعل للمس والسمع، البصر أو محفزات حاسة الشم
+A82,A82_2,Paralysis or Guillan-Barre-like syndrome,"متلازمة شلل مماثل لـ ""غيان-باريه""  "
+A82,A82_3,Myoedema at percussion sites,الوذمة في مواقع قرع
+A82,A82_4,Encephalitis,التهاب الدماغ
+A82,A82_5,Other,أخرى
+A82,A82_6,None of the above,لا شيء مما سبق
+B06,B06_1,Low-grade fever,انخفاض درجة حرارة الجسم
+B06,B06_2,Headache,صداع
+B06,B06_3,Malaise,توعك
+B06,B06_4,Mild coryza,برد خفيف
+B06,B06_5,Conjunctivitis,التهاب باطن الجفن - الملتحمة
+B06,B06_6,"Postauricular, occipital and posterior cervical lymphadenopathy",التهاب الغدد اللمفية  خلف العنقيه  و خلف الاذن و القحف 
+B06,B06_7,Rash,طفح جلدي 
+B06,B06_8,Arthralgia,الم المفاصل
+B06,B06_9,Arthritis,التهاب المفاصل
+B06,B06_10,Thrombocytopenic purpura,نزف تحت الجلد بسبب انخفاض القريصات الدموية
+B06,B06_11,Encephalitis,التهاب الدماغ
+B06,B06_12,Other,أخرى
+B06,B06_13,None of the above,لا شيء مما سبق
+"J09, J10",J09-10_1,Fever,حمى
+"J09, J10",J09-10_2,Cough,سعال
+"J09, J10",J09-10_3,Sore throat,احتقان في الحلق
+"J09, J10",J09-10_4,Runny/stuffy nose,سيلان الأنف
+"J09, J10",J09-10_5,Body ache,الالام في الجسم 
+"J09, J10",J09-10_6,Headache,صداع
+"J09, J10",J09-10_7,Fatigue,تعب
+"J09, J10",J09-10_8,Vomiting,استفراغ
+"J09, J10",J09-10_9,Diarrhoea,اسهال
+"J09, J10",J09-10_10,Other,آخر
+"J09, J10",J09-10_11,None of the above,لا شيء مما سبق
+A05,A05_1,Nausea,الغثيان
+A05,A05_2,Vomiting,القيء
+A05,A05_3,Mucoid diarrhoea (fatty stools),إسهال مخاطي (براز دهني)
+A05,A05_4,Other diarrhoea (non-watery and non-bloody type),إسهال آخر (إسهال غير مائي وغير مدمم)
+A05,A05_5,Abdominal pain,ألم في البطن
+A05,A05_6,Headache,صداع
+A05,A05_7,Dizziness,الدوخة
+A05,A05_8,Loss of consciousness,فقدان الوعي
+A05,A05_9,Coma,غيبوبة
+A05,A05_10,Thirst,العطش
+A05,A05_11,Dehydration,الجفاف
+A05,A05_12,Dyspnoea,بحة في الصوت
+A05,A05_13,Weakness,ضعف
+A05,A05_14,Malaise,توعك
+A05,A05_15,Sore throat,التهاب الحلق
+A05,A05_16,Fever,حمى
+A05,A05_17,Chills,قشعريرة
+A05,A05_18,Gastroenteritis,التهاب المعدة والأمعاء
+A05,A05_19,Blurred vision,عدم وضوح الرؤية
+A05,A05_20,Twitching/convulsions,الوخز / التشنجات
+A05,A05_21,Tingling/numbness,وخز / خدر
+A05,A05_22,Dilated pupils,اتساع حدقة العين
+A05,A05_23,Constricted pupils,تضيق حدقة العين
+A05,A05_24,Difficulty swallowing/speaking/breathing,صعوبة في البلع / التحدث / التنفس
+A05,A05_25,Rash,طفح
+A05,A05_26,Itching of skin,حكة في الجلد
+A05,A05_27,Other,أخرى
+A05,A05_28,None of the above,لا شيء مما سبق
+A75,A75_1,Headache,صداع
+A75,A75_2,Chills,قشعريرة
+A75,A75_3,High fever ,ارتفاع في درجة الحرارة
+A75,A75_4,Prostration,الحالة تزداد سوءا
+A75,A75_5,Coughing,السعال
+A75,A75_6,Severe muscular pain,ألم عضلي شديد
+A75,A75_7,Macular skin eruption (dark spots) on upper trunk or other areas of the body),طفح جلدي تبقعي (بقع داكنة) على الجذع العلوي أو مناطق أخرى من الجسم
+A75,A75_8,Other,أخرى
+A75,A75_9,None of the above,لا شيء مما سبق
+"A16, A17, A18, A19",A16-19_1,Cough of long duration (>2 weeks),السعال لمدة طويلة (أكثر من أسبوعين)
+"A16, A17, A18, A19",A16-19_2,Coughing blood ,سعال مع دم
+"A16, A17, A18, A19",A16-19_3,Chest pain,ألم في الصدر
+"A16, A17, A18, A19",A16-19_4,Shortness of breath,ضيق في التنفس
+"A16, A17, A18, A19",A16-19_5,Fever/night sweats,حمى / تعرق ليلي
+"A16, A17, A18, A19",A16-19_6,Tiredness,تعب
+"A16, A17, A18, A19",A16-19_7,Loss of appetite,فقدان الشهية
+"A16, A17, A18, A19",A16-19_8,Weight loss,فقدان الوزن
+"A16, A17, A18, A19",A16-19_9,Other,أخرى
+"A16, A17, A18, A19",A16-19_10,None of the above,لا شيء مما سبق
+A30,A30_1,"Leprosy patches (can be pale or reddish or copper colored; flat or raised; do not itch; usually do not hurt; lack sensation to heat, touch or pain; can appear anywhere)",بقع الجذام (يمكن أن يكون شاحبة أو محمرة أو نحاسية اللون، مسطحة أو بارزة؛ لا تسبب الحكاك، عادة لا تؤذي، عدم الإحساس بالحرارة واللمس أو الألم، ويمكن أن تظهر في أي مكان)
+A30,A30_2,Reddish or skin-colored nodules,عقيدات بلون الجلد أو محمرة
+A30,A30_3,Smooth and shiny diffuse thickening of skin without a loss of sensation,انتشار سماكة الجلد ويكون ناعم وبراق  دون فقدان الإحساس
+A30,A30_4,Numbness or tingling of the hands or feet,خدر أو وخز في اليدين أو القدمين
+A30,A30_5,"Weakness of the hands, feet or eyelids",ضعف اليدين والقدمين أو الجفون
+A30,A30_6,Painful or tender nerves,ألم شديد أو قليل في الأعصاب
+A30,A30_7,Swelling of or lumps in the face or earlobes,تورم أو كتل في الوجه أو شحمة الأذن
+A30,A30_8,Painless wounds or burns on the hands or feet,جروح مؤلمة أو حروق في اليدين أو القدمين
+A30,A30_9,Other,أخرى
+A30,A30_10,None of the above,لا شيء مما سبق
+"I10, I11, I12, I13, I15",I10-15_1,Blurred vision,عدم وضوح الرؤية
+"I10, I11, I12, I13, I15",I10-15_2,Headache,الصداع
+"I10, I11, I12, I13, I15",I10-15_3,Shortness of breath,ضيق في التنفس
+"I10, I11, I12, I13, I15",I10-15_4,Nose bleeds,نزيف الأنف
+"I10, I11, I12, I13, I15",I10-15_5,Other,أخرى
+"I10, I11, I12, I13, I15",I10-15_6,None of the above,لا شيء مما سبق
+"J45, J46",J45-46_1,Cough,السعال
+"J45, J46",J45-46_2,Difficulty breathing,صعوبة في التنفس
+"J45, J46",J45-46_3,Tight chest,ضيق الصدر
+"J45, J46",J45-46_4,Wheezing,الصفير
+"J45, J46",J45-46_5,Symptoms triggered by respiratory infection/exercise/weather changes/stress,أعراض ناجمة عن عدوى الجهاز التنفسي / ممارسة الرياضة/ التغيرات المناخية / الإجهاد
+"J45, J46",J45-46_6,Symptoms worse at night or in the morning,الأعراض أسوأ في الليل أو في الصباح
+"J45, J46",J45-46_7,Symptoms since childhood or early adulthood,الأعراض منذ الطفولة أو البلوغ المبكر
+"J45, J46",J45-46_8,History of hayfever/eczema,تاريخ مرضي  من حمى القش / الأكزيما
+"J45, J46",J45-46_9,Other,أخرى
+"J45, J46",J45-46_10,None of the above,لا شيء مما سبق
+"E10, E11, E12, E13, E14",E10-14_1,Increased urinary frequency,زيادة عدد مرات التبول 
+"E10, E11, E12, E13, E14",E10-14_2,Thirst,عطش
+"E10, E11, E12, E13, E14",E10-14_3,Hunger,جوع
+"E10, E11, E12, E13, E14",E10-14_4,Unexplained weightloss,اوزان غير مبررة
+"E10, E11, E12, E13, E14",E10-14_5,Numbness in extremities,خدر الاطراف
+"E10, E11, E12, E13, E14",E10-14_6,Pain in feet,الم في القدم
+"E10, E11, E12, E13, E14",E10-14_7,Blurred vision,عدم وضوح الرؤيا
+"E10, E11, E12, E13, E14",E10-14_8,Fatigue,تعب
+"E10, E11, E12, E13, E14",E10-14_9,Recurrrent or severe infections,تكرر الألتهابات الشديدة
+"E10, E11, E12, E13, E14",E10-14_10,Loss consciousness,فقدان الوعي
+"E10, E11, E12, E13, E14",E10-14_11,Severe nausea or vomiting ,الغثيان الشديد أو التقيؤ
+"E10, E11, E12, E13, E14",E10-14_12,Coma,سبات
+"E10, E11, E12, E13, E14",E10-14_13,Other,آخر
+"E10, E11, E12, E13, E14",E10-14_14,None of the above,لا شيء مما سبق
+"J40, J41, J42, J43, J44, J47",J40-47_1,Cough,السعال
+"J40, J41, J42, J43, J44, J47",J40-47_2,Difficulty breathing,صعوبة في التنفس
+"J40, J41, J42, J43, J44, J47",J40-47_3,Tight chest,ضيق الصدر
+"J40, J41, J42, J43, J44, J47",J40-47_4,Wheezing,الصفير
+"J40, J41, J42, J43, J44, J47",J40-47_5,History of heavy smoking,تاريخ من التدخين الثقيل
+"J40, J41, J42, J43, J44, J47",J40-47_6,Age (symptoms began in middle age or later),(بدأت الأعراض في منتصف العمر أو في وقت لاحق)العمر
+"J40, J41, J42, J43, J44, J47",J40-47_7,History of exposure to indoor pollution/occupational agents,تاريخ من التعرض للتلوث في الأماكن المغلقة في المهنة
+"J40, J41, J42, J43, J44, J47",J40-47_8,Symptoms worsened over time,تسوء الأعراض مع مرور الوقت
+"J40, J41, J42, J43, J44, J47",J40-47_9,Other,أخرى
+"J40, J41, J42, J43, J44, J47",J40-47_10,None of the above,لا شيء مما سبق
+"N17, N18, N19",N17-19_1,Confusion,ارتباك
+"N17, N18, N19",N17-19_2,Nausea / vommitting,الغثيان / القيء
+"N17, N18, N19",N17-19_3,Poor appetite,فقدان الشهية
+"N17, N18, N19",N17-19_4,Dyspnoea,بحة في الصوت
+"N17, N18, N19",N17-19_5,Oedema,الاستسقاء
+"N17, N18, N19",N17-19_6,Weight loss,خسارة الوزن
+"N17, N18, N19",N17-19_7,Other,أخرى
+"N17, N18, N19",N17-19_8,None of the above,لا شيء مما سبق
+"D66, D67",D66-67_1,haematoma / Effusion,ورم دموي / انصباب
+"D66, D67",D66-67_2,haematuria,البيلة الدموية
+"D66, D67",D66-67_3,CNS signs (decreased GCS),علامات الجهاز العصبي المركزي (GCS منخفض) 
+"D66, D67",D66-67_4,Pallor,شحوب
+"D66, D67",D66-67_5,Dyspnoea,بحة في الصوت
+"D66, D67",D66-67_6,Tachycardia,عدم انتظام دقات القلب
+"D66, D67",D66-67_7,Other,أخرى
+"D66, D67",D66-67_8,None of the above,لا شيء مما سبق
+!0,!0_1,Unusual clinical presentation,السريرية غير عادي
+!0,!0_2,Change in treatment response,التغير في الاستجابة للعلاج
