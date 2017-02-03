@@ -41,7 +41,7 @@ country_config = {
                       "pt1./status": {"one": ["refugee", "national"]},
                       "intro_module": {"multiple": ["mh",
                                                     "imci", "rh", "labs", "px"]},
-                      "cd./symptoms": {"multiple": ["A9_4", "B15-17_2", "A39_3", "A03_2","!0_1", "", ""]},
+                      "symptoms": {"multiple": ["A9_4", "B15-17_2", "A39_3", "A03_2","!0_1", "", ""]},
                       "pregnant": {"one": ["yes", "no"]},
                       "pregnancy_complications": {"one": ["yes", "no"]},
                       "smoke_ever": {"one": ["yes", "no"]},
