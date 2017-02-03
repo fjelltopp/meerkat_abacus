@@ -43,6 +43,7 @@ country_config = {
                       "pt1./status": {"one": ["refugee", "national"]},
                       "intro_module": {"multiple": ["mh",
                                                     "imci", "rh", "labs", "px"]},
+                      "cd./symptoms": {"multiple": ["A9_4", "B15-17_2", "A39_3", "A03_2","!0_1", "", ""]},
                       "pregnant": {"one": ["yes", "no"]},
                       "pregnancy_complications": {"one": ["yes", "no"]},
                       "smoke_ever": {"one": ["yes", "no"]},
@@ -93,8 +94,8 @@ country_config = {
     "alert_id_length": 6,
     "alert_text_content": [ 'reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id' ],
     "alert_sms_content": [ 'reason', 'date', 'clinic', 'region', 'gender', 'age', 'id' ],
-    "alert_email_content": [ 
-        'reason', 'date', 'clinic', 'region', 'breaker', 'patient', 'gender', 'age', 'breaker', 'id' 
+    "alert_email_content": [
+        'reason', 'date', 'clinic', 'region', 'breaker', 'patient', 'gender', 'age', 'breaker', 'id'
     ],
     "messaging_start_date": datetime.datetime(2016, 2, 15),
     "messaging_topic_prefix": "null",

@@ -178,8 +178,8 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         # Any variable in the group with priority data will set the flag to True
         priority_flag = False
         for v in variables[data_type][group]:
-            if hasattr(variables[data_type][group][v], "calculation_priority") and \
-            variables[data_type][group][v].calculation_priority not in ('', None):
+            if hasattr(variables[data_type][group][v],"calculation_priority") and \
+               variables[data_type][group][v].calculation_priority not in ('', None):
                 priority_flag = True
                 intragroup_priority = 0  # Initialize the current priority level at zero
                 current_group_variable = None
