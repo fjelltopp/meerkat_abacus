@@ -1,0 +1,167 @@
+id_key,risk_code,jor_risk,jor_risk::arabic
+A80,A80_1,Age (children under 5),العمر (الأطفال دون 5)
+A80,A80_2,Mixing with people from affected areas,خالط أشخاص من مناطق موبوءه
+A80,A80_3,Another case of AFP reported in the same area,حالة أخرى من (الشلل الرخو الحاد) سجلت في نفس المنطقة
+A80,A80_4,Other,أخرى
+A80,A80_5,None of the above,لا شيء مما سبق
+A9,A9_1,Reside in or move to an endemic area,مقيم أو منتقل الى منطقة موبوءه
+A9,A9_2,"Exposure to vectors (ticks, rodents, livestock, mosquitoes, camels, horses etc.)",التعرض لناقلات (القراد والقوارض، والثروة الحيوانية، والبعوض، الإبل والخيول وغيرها)
+A9,A9_3,Other,أخرى
+A9,A9_4,None of the above,لا شيء مما سبق
+B05,B05_1,Age (children between 9 months and 5 years),العمر (الأطفال ما بين 9 أشهر و 5 سنوات)
+B05,B05_2,Overcrowding conditions,ظروف الاكتظاظ
+B05,B05_3,Measles immunization coverage rate known to be <80% in area of origin/residence,الحصبة معدل التغطية المعروف للتحصين أن يكون <80٪ في منطقة المنشأ / الإقامة
+B05,B05_4,Malnutrition,سوء التغذية
+B05,B05_5,Other,أخرى
+B05,B05_6,None of the above,لا شيء مما سبق
+A00,A00_1,An imported case,اصحاح بيئي متدني
+A00,A00_2,Low environmental sanitation,مصادر الطعام الملوثة
+A00,A00_3,Other,أخرى
+A00,A00_4,None of the above,لا شيء مما سبق
+B15,B15_1,Student at the school (enter school name),طالب في مدرسة (يدخل اسم المدرسة)
+B15,B15_2,Low environmental sanitation,إصحاح بيئي متدني
+B15,B15_3,Other,أخرى
+B15,B15_4,None of the above,لا شيء مما سبق
+"B16, B17",B16-17_1,Surgical or dental procedure within 6 months,إجراء جراحي أو سني خلال 6 أشهر
+"B16, B17",B16-17_2,Presence of other known cases,وجود حالات أخرى معروفة
+"B16, B17",B16-17_3,Other,أخرى
+"B16, B17",B16-17_4,None of the above,لا شيء مما سبق
+"A39, G00, A87",A39_1,Close and prolonged contact with individual suspected of having meningitis,اتصال وثيق وطويل الأمد مع فرد يشتبه اصابته بالتهاب السحايا
+"A39, G00, A87",A39_2,High rates of acute respiratory infection (ARI),ارتفاع معدلات عدوى الجهاز التنفسي الحاد
+"A39, G00, A87",A39_3,Overcrowding conditions,ظروف الاكتظاظ
+"A39, G00, A87",A39_4,Other,أخرى
+"A39, G00, A87",A39_5,None of the above,لا شيء مما سبق
+A03,A03_1,Contaminated water,المياه الملوثة
+A03,A03_2,Contaminated food,الطعام الملوث
+A03,A03_3,Malnourished,يعاني من سوء التغذية
+A03,A03_4,"Age (under 5, older adults)",السن (تحت 5، كبار السن)
+A03,A03_5,Children who have had measles in the past 6 weeks,الأطفال الذين لديهم الحصبة في 6 أسابيع الماضية
+A03,A03_6,Shigellosis outbreak,تفشي داء الشيغيلات
+A03,A03_7,Other,أخرى
+A03,A03_8,None of the above,لا شيء مما سبق
+B67,B67_1,Eat raw vegetables contaminated eggs of Echinococcus granular,أكل  خضراوات نيئة ملوثة ببيوض المشوكة الحبيبية 
+B67,B67_2,Pollution hands faeces of dogs containing eggs,تلوث الايدي ببراز الكلاب المحتوي على البيوض 
+B67,B67_3,Other,أخرى
+B67,B67_4,None of the above,لا شيء مما سبق
+"B20, B21, B22, B23, B24",B20-24_1,Unprotected vaginal and/or anal intercourse,الجماع المهبلي و / أو الشرجي غير المحمي
+"B20, B21, B22, B23, B24",B20-24_2,Sharing of drug injection equipment,تقاسم معدات حقن المخدرات
+"B20, B21, B22, B23, B24",B20-24_3,Breastfeeding with unknown or HIV-positive status,الرضاعة الطبيعية مع عدم المعرفة أو فيروس نقص المناعة المكتسبة الإيجابي
+"B20, B21, B22, B23, B24",B20-24_4,Other,أخرى
+"B20, B21, B22, B23, B24",B20-24_5,None of the above,لا شيء مما سبق
+"B50, B51, B52, B53, B54",B50-54_1,Exposure to areas where mosquito vector is present,التعرض لمناطق تواجد البعوض الناقل
+"B50, B51, B52, B53, B54",B50-54_2,Stagnant water sources,مصادر المياه الراكدة
+"B50, B51, B52, B53, B54",B50-54_3,Movement to/from malaria endemic areas,الحركة إلى / من المناطق الموبوءة بالملاريا
+"B50, B51, B52, B53, B54",B50-54_4,Children,الأطفال
+"B50, B51, B52, B53, B54",B50-54_5,Pregnant woman,الحوامل
+"B50, B51, B52, B53, B54",B50-54_6,Immune compromised individuals,الأشخاص مثبطي المناعة
+"B50, B51, B52, B53, B54",B50-54_7,Malnutrition,سوء التغذية
+"B50, B51, B52, B53, B54",B50-54_8,Other,أخرى
+"B50, B51, B52, B53, B54",B50-54_9,None of the above,لا شيء مما سبق
+A36,A36_1,Exposure to a case of diphtheria,التعرض لحالة دفتيريا
+A36,A36_2,Other,آخر
+A36,A36_3,None of the above,لا شيء مما سبق
+B55,B55_1,The existence of casualties among contacts,وجود اصابات بين المخالطين
+B55,B55_2,Other,أخرى
+B55,B55_3,None of the above,لا شيء مما سبق
+A35,A35_1,Injury or wound,إصابة أو جرح
+A35,A35_2,Other,أخرى
+A35,A35_3,None of the above,لا شيء مما سبق
+A33,A33_1,The use of unsterilized instruments during childbirth,استخدام أدوات غير معقمة أثناء الولادة
+A33,A33_2,Is inlaid with mother during pregnancy,الأم غير مطعمة أثناء فترة الحمل
+A33,A33_3,Birth outside health institution,ولادة خارج مؤسسة صحية
+A33,A33_4,Other,أخرى
+A33,A33_5,None of the above,لا شيء مما سبق
+A37,A37_1,Exposure to case of pertussis,التعرض لحالة من السعال الديكي
+A37,A37_2,Other,أخرى
+A37,A37_3,None of the above,لا شيء مما سبق
+A22,A22_1,"Skin lesion (cut, abrasion, bite, etc.) that could allow anthrax spore to penetrate",الآفة الجلدية (قطع، والكشط، لدغة، وغيرها) والتي قد تسمح لبوغ الجمرة الخبيثة بالاختراق
+A22,A22_2,Ingestion of contaminated meat,تناول اللحوم الملوثة
+A22,A22_3,Suspected inhalation of anthrax spores,اشتباه استنشاق جراثيم الجمرة الخبيثة
+A22,A22_4,Other,أخرى
+A22,A22_5,None of the above,لا شيء مما سبق
+A82,A82_1,"Exposure to rabies-carrying vectors (e.g. bats, etc.)",التعرض لناقل لداء الكلب (مثل الخفافيش، الخ)
+A82,A82_2,Other,أخرى
+A82,A82_3,None of the above,لا شيء مما سبق
+B06,B06_1,Exposure to individual with suspected rubella or cold-like symptoms and rash,التعرض الى شخص مشتبه باصابته بالحصبه الالمانيه او اعراض مشابهه للبرد
+B06,B06_2,Other,أخرى
+B06,B06_3,None of the above,لا شيء مما سبق
+A05,A05_1,Consumption of contaminated food,استهلاك الأغذية الملوثة
+A05,A05_2,Consumption of contaminated water,استهلاك الماء الملوث
+A05,A05_3,Other,أخرى
+A05,A05_4,None of the above,لا شيء مما سبق
+"J09, J10",J09-10_1,Person living with HIV,شخص مصاب بمرض نقص المناعة البشري
+"J09, J10",J09-10_2,Person with active TB,شخص مصاب بمرض السل
+"J09, J10",J09-10_3,Person with other chronic illness,امراض مزمنة
+"J09, J10",J09-10_4,Influenza outbreak/seasonal influenza,جائحة الانفلونزا الموسمية
+"J09, J10",J09-10_5,Other,أخرى
+"J09, J10",J09-10_6,None of the above,لا شيء مما سبق
+A75,A75_1,"Cold, mountainous conditions",البرد ، الظروف الجبلية
+A75,A75_2,Overcrowded living conditions,ظروف معيشية مكتظة
+A75,A75_3,Displacement,النزوح
+A75,A75_4,Exposure to lice,التعرض للقمل
+A75,A75_5,Other,أخرى
+"A16, A17, A18, A19",A16-19_1,Overcrowded living conditions,ظروف معيشية مكتظة
+"A16, A17, A18, A19",A16-19_2,Person living with HIV,العيش مع شخص مصاب بنق المناعة المكتسبة
+"A16, A17, A18, A19",A16-19_3,Homeless person,شخص بلا مأوى
+"A16, A17, A18, A19",A16-19_4,Former prisoner,سجين سابق
+"A16, A17, A18, A19",A16-19_5,High alcohol intake,استهلاك كحول مرتفع
+"A16, A17, A18, A19",A16-19_6,Drug user,متعاطي مخدرات
+"A16, A17, A18, A19",A16-19_7,Other,أخرى
+"A16, A17, A18, A19",A16-19_8,None of the above,لا شيء مما سبق
+A30,A30_1,Close contact with someone with leprosy,اتصال وثيق مع شخص مصاب بالجذام
+A30,A30_2,Displacement,النزوح
+A30,A30_3,Overcrowding conditions,ظروف الاكتظاظ
+A30,A30_4,Other,أخرى
+A30,A30_5,None of the above,لا شيء مما سبق
+"I10, I11, I12, I13, I15",I10-15_1,Overweight (BMI 25-29.9),الوزن الزائد (BMI 25-29.9)
+"I10, I11, I12, I13, I15",I10-15_2,Obese (BMI:30+),السمنة (BMI +30)
+"I10, I11, I12, I13, I15",I10-15_3,Physical inactivity,الخمول البدني
+"I10, I11, I12, I13, I15",I10-15_4,Smoking/tobacco use,التدخين / استخدام التبغ
+"I10, I11, I12, I13, I15",I10-15_5,Family history of cardiovascular disease,تاريخ عائلي من أمراض القلب والأوعية الدموية
+"I10, I11, I12, I13, I15",I10-15_6,"Age (male over 55 years, female over 65 years)",العمر (ذكر أكبر من 55 ، أنثى أكبر من 65)
+"I10, I11, I12, I13, I15",I10-15_7,Diabetes diagnosis,تشخيص مرض السكري
+"I10, I11, I12, I13, I15",I10-15_8,Increased salt intake,زيادة تناول الملح
+"I10, I11, I12, I13, I15",I10-15_9,Stress,الإجهاد
+"I10, I11, I12, I13, I15",I10-15_10,Other,أخرى
+"I10, I11, I12, I13, I15",I10-15_11,None of the above,لا شيء مما سبق
+"J45, J46",J45-46_1,Smoking/tobacco use,التدخين / استخدام التبغ
+"J45, J46",J45-46_2,Family history of Asthma,تاريخ عائلي من الإصابة بالربو
+"J45, J46",J45-46_3,Exposure to allergens,التعرض لمسببات الحساسية
+"J45, J46",J45-46_4,Occupational exposure e.g. chemicals,التعرض المهني مثال المواد الكيميائية
+"J45, J46",J45-46_5,"Environmental exposure e.g. smoking, air pollution",التعرض البيئي مثال التدخين وتلوث الهواء
+"J45, J46",J45-46_6,Other,أخرى
+"J45, J46",J45-46_7,None of the above,لا شيء مما سبق
+"E10, E11, E12, E13, E14",E10-14_1,"Viral exposure (Epstein-Barr, coxsackievirus, mumps, cytomegalovirus)",التعرض الفايروسي (ابشتاين بار، فيروس كوكساكي والنكاف والفيروس المضخم للخلايا)
+"E10, E11, E12, E13, E14",E10-14_2,Overweight (BMI:25-29.9),الوزن الزائد (25-29.9)
+"E10, E11, E12, E13, E14",E10-14_3,Obese (BMI:30+),السمنة(+30)
+"E10, E11, E12, E13, E14",E10-14_4,Physical inactivity,انخفاض النشاط البدني 
+"E10, E11, E12, E13, E14",E10-14_5,Family history of diabetes,تاريخ العائله لمرض السكري
+"E10, E11, E12, E13, E14",E10-14_6,High blood pressure (over 140/90mmHg),ارتفاع ضغط الدم (أكثر من 140/90mmHg)
+"E10, E11, E12, E13, E14",E10-14_7,Impaired glucose tolerance (IGT) FBS (110-125 mg/dl),فحص تحمل الجلوكوز (IGT) فحص السكر (صيام) (110-125  mg/dl)
+"E10, E11, E12, E13, E14",E10-14_8,History of gestational diabetes,تاريخ من سكري الحمل
+"E10, E11, E12, E13, E14",E10-14_9,History of cardiovasuclar diseases,تاريخ من أمراض القلب والأوعية الدموية
+"E10, E11, E12, E13, E14",E10-14_10,History of polycystic ovary syndrome,تاريخ من متلازمة المبيض المتعدد الكيسات
+"E10, E11, E12, E13, E14",E10-14_11,Other,أخرى
+"E10, E11, E12, E13, E14",E10-14_12,None of the above,لا شيء مما سبق
+"J40, J41, J42, J43, J44, J47",J40-47_1,Smoking/tobacco use,التدخين / استخدام التبغ
+"J40, J41, J42, J43, J44, J47",J40-47_2,Family history of COPD,تاريخ عائلي من مرض الانسداد الرئوي المزمن
+"J40, J41, J42, J43, J44, J47",J40-47_3,Occupational exposure e.g. chemicals,التعرض المهني مثال المواد الكيميائية
+"J40, J41, J42, J43, J44, J47",J40-47_4,"Environmental exposure e.g. smoking, air pollution",التعرض البيئي مثال التدخين وتلوث الهواء
+"J40, J41, J42, J43, J44, J47",J40-47_5,Other,أخرى
+"J40, J41, J42, J43, J44, J47",J40-47_6,None of the above,لا شيء مما سبق
+"N17, N18, N19",N17-19_1,Age,العمر
+"N17, N18, N19",N17-19_2,Co-morbidity,أمراض أخرى مشاركة
+"N17, N18, N19",N17-19_3,Family history,التاريخ العائلي
+"N17, N18, N19",N17-19_4,Medication history,التاريخ الدوائي
+"N17, N18, N19",N17-19_5,Hypertension,ارتفاع ضغط الدم
+"N17, N18, N19",N17-19_6,Dehydration,جفاف
+"N17, N18, N19",N17-19_7,Other,أخرى
+"N17, N18, N19",N17-19_8,None of the above,لا شيء مما سبق
+"D66, D67",D66-67_1,Family history,تاريخ عائلي
+"D66, D67",D66-67_2,Other,أخرى
+"D66, D67",D66-67_3,None of the above,لا شيء مما سبق
+!0,!0_1,"Travel History to areas where there is circulation of a respiratory virus with potential for serious public health impact (e.g. MERS, Avian Flu)",التاريخ السفر إلى المناطق التي توجد فيها تداول فيروس الجهاز التنفسي مع احتمال تأثير خطيرا للصحة العامة (مثل الميرة ، أنفلونزا الطيور )
+!0,!0_2,Illness in a health care worker who takes care of patients with respiratory illness ,المرض في العاملين في مجال الرعاية الصحية الذي يعتني المرضى الذين يعانون من أمراض الجهاز التنفسي
+!0,!0_3,"Illness in an abbaottoir worker, farmer or someone in close contact with animals and livestock (e.g. camels, chickens)",المرض في عامل abbaottoir ، مزارع أو أي شخص على اتصال وثيق مع الحيوانات والمواشي (مثل الجمال والدجاج )
+!0,!0_4,Patient is admitted to ICU,و اعترف المريض إلى وحدة العناية المركزة
+!0,!0_5,History of illness in the family or close contact,تاريخ المرض في الأسرة أو على اتصال وثيق
