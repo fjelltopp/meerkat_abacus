@@ -9,7 +9,7 @@ from meerkat_abacus.codes.to_codes import to_code
 from meerkat_abacus.codes.variable import Variable
 from meerkat_abacus.data_management import set_up_everything, create_db,\
  add_fake_data,create_links,import_locations, import_variables,\
- import_data
+ import_data, new_data_to_codes
 
 # Data for the tests
 locations = {1: model.Locations(name="Demo"),
@@ -188,18 +188,14 @@ class ToCodeTest(unittest.TestCase):
             stream_results=False).execute(query.statement)
 
         for data_type in data_type_definitions:
-        #data_type=data_type_definitions[0]
           create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=session, conn=conn)
-        #data_type=data_type_definitions[0]
-        #create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=session, conn=conn)
-
 
         # use predetermined test cases to check link generation#
         test_cases=[
-        ["uuid:init_visit_p70","uuid:return_visit_p70","return_visit"],
-        ["uuid:init_visit_e65","uuid:return_visit_e65","return_visit"],
-        ["uuid:false_init_visit_e65","uuid:return_visit_e65","return_visit"],
-        ["uuid:return_visit_p70","uuid:init_visit_p70","initial_visit"]
+          ["uuid:init_visit_p70","uuid:return_visit_p70","return_visit"],
+          ["uuid:init_visit_e65","uuid:return_visit_e65","return_visit"],
+          ["uuid:false_init_visit_e65","uuid:return_visit_e65","return_visit"],
+          ["uuid:return_visit_p70","uuid:init_visit_p70","initial_visit"]
         ]
 
         for test_case in test_cases:
@@ -212,13 +208,40 @@ class ToCodeTest(unittest.TestCase):
           self.assertEqual(len(res),1)
           self.assertEqual(res[0]["uuid_to"],test_case[1])
 
-
     def test_priority(self):
+        create_db(config.DATABASE_URL, model.Base, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        conn = engine.connect()
+        import_locations(engine, session)
+        import_variables(session)
+        add_fake_data(session, N=0, append=False, from_files=True)
+        import_data(engine=engine,session=session)
+        session.commit()
+
+        for data_type in data_type_definitions:
+          create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=session, conn=conn)
+
+        new_data_to_codes(engine)
+
+        # use predetermined test cases to check link generation#
+        test_cases=[
+          ["uuid:init_visit_p70","gen_2"],
+          ["uuid:init_visit_e65","gen_2"],
+          ["uuid:false_init_visit_e65","gen_2"]
+        ]
+
+        for test_case in test_cases:
+          query =  session.query(model.Data).filter(and_(model.Data.uuid==test_case[0], model.Data.type=='case'))
+
+          res = conn.execution_options(
+              stream_results=False).execute(query.statement).fetchall()
+          print("DEBUG: " + str(res) + "/n")
+
+          self.assertEqual(len(res),1)
+          self.assertEqual(res[0]["variables"][test_case[1]],1)
         
-
-        pass
-
-
 
     def test_variables(self):
         """
