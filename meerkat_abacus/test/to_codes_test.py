@@ -1,6 +1,6 @@
 import unittest
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 
 from meerkat_abacus import model
@@ -8,7 +8,8 @@ from meerkat_abacus import config
 from meerkat_abacus.codes.to_codes import to_code
 from meerkat_abacus.codes.variable import Variable
 from meerkat_abacus.data_management import set_up_everything, create_db,\
- add_fake_data,create_links,import_locations, import_variables
+ add_fake_data,create_links,import_locations, import_variables,\
+ import_data
 
 # Data for the tests
 locations = {1: model.Locations(name="Demo"),
@@ -86,19 +87,6 @@ agg_variables = [
         ),
 ]
 alert_data = {"column1": "column1"}
-link_definitions = {"name": "test_link",
-                    "type": "case",
-                    "to_form": "form1",
-                    "from_form": "form1",
-                    "from_column": "column1;column2",
-                    "to_column": "column1;column2",
-                    "method": "match;match",
-                    "order_by": "",
-                    "uuid": "meta/instanceID",
-                    "to_condition": "intro./visit:new",
-                    "aggregate_condition": "unique"
-                    }
-
 
 devices = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: []}
 all_locations = (locations, locations_by_deviceid, regions, districts, devices)
@@ -184,55 +172,40 @@ class ToCodeTest(unittest.TestCase):
         conn = engine.connect()
         import_locations(engine, session)
         import_variables(session)
-        add_fake_data(session, N=50, append=False, from_files=True)
+        add_fake_data(session, N=0, append=False, from_files=True)
+        import_data(engine=engine,session=session)
+        session.commit()
+
 
         query =  session.query(model.form_tables["demo_case"])
 
         res = conn.execution_options(
-            stream_results=True).execute(query.statement)
+            stream_results=False).execute(query.statement)
 
-        print("DEBUG DATA: " + str(res.fetchmany(50)))
-        
-        row1 = {"form1": {"index": 1,
-                          "column1": "A",
-                          "column2": "B",
-                          "column3": "7",
-                          "date": "2015-10-25",
-                          "deviceid": 1,
-                          "meta/instanceID": "a"}}
-        row2 = {"form1": {"index": 2,
-                          "column1": "A",
-                          "column2": "B",
-                          "column3": "4",
-                          "date": "2015-10-25",
-                          "deviceid": 2,
-                          "meta/instanceID": "b"}}
-
-        # table = model.form_tables[""]
-
-        # table = model.form_tables[data_type["form"] == ]
-        #         if data_type["db_column"]:
-        #    query_condtion = [
-        #        table.data[data_type["db_column"]].astext ==
-        #        data_type["condition"]
-        #    ]
-        #    conditions.append(query_condtion[0])
-        #conditions=[row1["column1"] == 
         data_type=data_type_definitions[0]
-        print("DEBUG: " + str(data_type))
         create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=session, conn=conn)
 
-        query =  session.query(model.Links)
+        # use predetermined test cases to check link generation#
+        test_cases=[
+        ["uuid:init_visit_p70","uuid:return_visit_p70","return_visit"],
+        ["uuid:init_visit_e65","uuid:return_visit_e65","return_visit"],
+        ["uuid:false_init_visit_e65","uuid:return_visit_e65","return_visit"]#,
+        #["uuid:return_visit_p70","uuid:init_visit_p70","initial_visit"]
+        ]
 
-        res = conn.execution_options(
-            stream_results=True).execute(query.statement)
+        for test_case in test_cases:
 
-        print("DEBUG LINKS: " + str(res.fetchmany(500)))
+          link_query_condition = and_(model.Links.uuid_from == test_case[0], model.Links.type == test_case[2])
+          query =  session.query(model.Links).filter(link_query_condition)
+
+          res = conn.execute(query.statement).fetchall()
+          # make sure that the item the link links to is the one defined above
+          self.assertEqual(len(res),1)
+          self.assertEqual(res[0]["uuid_to"],test_case[1])
 
 
-        #a=[1]
-        #print(a[2])
-        # create_links(data_type, input_conditions, table, session, conn):
+    def test_priority(self):
+        pass
 
 
 
