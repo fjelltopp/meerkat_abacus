@@ -30,7 +30,8 @@ locations = {1: model.Locations(name="Demo"),
 locations_by_deviceid = {1: 6, 2: 7, 3: 8}
 regions = [2, 3]
 districts = [4, 5]
-data_type_definitions = [{
+data_type_definitions = [
+  {
   "type":"case",
   "form":"demo_case",
   "db_column":"",
@@ -38,13 +39,17 @@ data_type_definitions = [{
   "date":"pt./visit_date",
   "var":"tot_1",
   "uuid":"meta/instanceID"
-}]
-      
-
-#  type  form  db_column condition date  var uuid
-# case  demo_case intro./visit  new pt./visit_date  tot_1 meta/instanceID
-
-
+  },
+  {
+  "type":"visit",
+  "form":"demo_case",
+  "db_column":"",
+  "condition":"",
+  "date":"pt./visit_date",
+  "var":"vis_1",
+  "uuid":"meta/instanceID"
+  },
+]
 
 agg_variables = [
     model.AggregationVariables(
@@ -182,15 +187,19 @@ class ToCodeTest(unittest.TestCase):
         res = conn.execution_options(
             stream_results=False).execute(query.statement)
 
-        data_type=data_type_definitions[0]
-        create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=session, conn=conn)
+        for data_type in data_type_definitions:
+        #data_type=data_type_definitions[0]
+          create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=session, conn=conn)
+        #data_type=data_type_definitions[0]
+        #create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=session, conn=conn)
+
 
         # use predetermined test cases to check link generation#
         test_cases=[
         ["uuid:init_visit_p70","uuid:return_visit_p70","return_visit"],
         ["uuid:init_visit_e65","uuid:return_visit_e65","return_visit"],
-        ["uuid:false_init_visit_e65","uuid:return_visit_e65","return_visit"]#,
-        #["uuid:return_visit_p70","uuid:init_visit_p70","initial_visit"]
+        ["uuid:false_init_visit_e65","uuid:return_visit_e65","return_visit"],
+        ["uuid:return_visit_p70","uuid:init_visit_p70","initial_visit"]
         ]
 
         for test_case in test_cases:
@@ -205,6 +214,8 @@ class ToCodeTest(unittest.TestCase):
 
 
     def test_priority(self):
+        
+
         pass
 
 
