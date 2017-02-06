@@ -2,6 +2,7 @@ import unittest
 
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy_utils import database_exists
 
 from meerkat_abacus import model
 from meerkat_abacus import config
@@ -115,10 +116,30 @@ class ToCodeTest(unittest.TestCase):
     """
 
     def setUp(self):
-        pass
+        create_db(config.DATABASE_URL, model.Base, drop=True)
+        self.engine = create_engine(config.DATABASE_URL)
+        self.Session = sessionmaker(bind=self.engine)
+        self.session = self.Session()
+        self.conn = self.engine.connect()
+        import_locations(self.engine, self.session)
+        import_variables(self.session)
+        add_fake_data(self.session, N=0, append=False, from_files=True)
+        import_data(engine=self.engine,session=self.session)
+        
+        for data_type in data_type_definitions:
+          create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=self.session, conn=self.conn)
+          self.session.commit()
+
+        new_data_to_codes(self.engine)
+
+        self.session.commit()
 
     def tearDown(self):
-        pass
+        self.session.commit()
+        self.conn.close()
+        self.session.close()
+        self.engine.dispose()
+
 
     def test_location_information(self):
         """
@@ -169,26 +190,7 @@ class ToCodeTest(unittest.TestCase):
         """
         Checking that links are generated correctly
         """
-        
-        create_db(config.DATABASE_URL, model.Base, drop=True)
-        engine = create_engine(config.DATABASE_URL)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        conn = engine.connect()
-        import_locations(engine, session)
-        import_variables(session)
-        add_fake_data(session, N=0, append=False, from_files=True)
-        import_data(engine=engine,session=session)
-        session.commit()
-
-
-        query =  session.query(model.form_tables["demo_case"])
-
-        res = conn.execution_options(
-            stream_results=False).execute(query.statement)
-
-        for data_type in data_type_definitions:
-          create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=session, conn=conn)
+        self.assertTrue(database_exists(config.DATABASE_URL))
 
         # use predetermined test cases to check link generation#
         test_cases=[
@@ -201,29 +203,21 @@ class ToCodeTest(unittest.TestCase):
         for test_case in test_cases:
 
           link_query_condition = and_(model.Links.uuid_from == test_case[0], model.Links.type == test_case[2])
-          query =  session.query(model.Links).filter(link_query_condition)
+          query =  self.session.query(model.Links).filter(link_query_condition)
 
-          res = conn.execute(query.statement).fetchall()
+          res = self.conn.execute(query.statement).fetchall()
+          print("DEBUG: " + str(res) + "\n")
+
           # make sure that the item the link links to is the one defined above
           self.assertEqual(len(res),1)
           self.assertEqual(res[0]["uuid_to"],test_case[1])
 
     def test_priority(self):
-        create_db(config.DATABASE_URL, model.Base, drop=True)
-        engine = create_engine(config.DATABASE_URL)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        conn = engine.connect()
-        import_locations(engine, session)
-        import_variables(session)
-        add_fake_data(session, N=0, append=False, from_files=True)
-        import_data(engine=engine,session=session)
-        session.commit()
+        """
+        Checking that the variable priority logic functions correctly
+        """
 
-        for data_type in data_type_definitions:
-          create_links(data_type=data_type, input_conditions=[], table=model.form_tables[data_type["form"]], session=session, conn=conn)
-
-        new_data_to_codes(engine)
+        self.assertTrue(database_exists(config.DATABASE_URL))
 
         # use predetermined test cases to check link generation#
         test_cases=[
@@ -233,11 +227,12 @@ class ToCodeTest(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-          query =  session.query(model.Data).filter(and_(model.Data.uuid==test_case[0], model.Data.type=='case'))
+          query =  self.session.query(model.Data).filter(and_(model.Data.uuid==test_case[0], model.Data.type=='case'))
 
-          res = conn.execution_options(
+          res = self.conn.execution_options(
               stream_results=False).execute(query.statement).fetchall()
-          print("DEBUG: " + str(res) + "/n")
+
+          print("DEBUG: " + str(res) + "\n")
 
           self.assertEqual(len(res),1)
           self.assertEqual(res[0]["variables"][test_case[1]],1)
