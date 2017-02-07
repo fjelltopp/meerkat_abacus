@@ -19,6 +19,7 @@ import inspect
 import csv
 import boto3
 import logging
+import os
 
 
 country_config = config.country_config
@@ -97,7 +98,8 @@ def add_fake_data(session, N=5000, append=False, from_files=False):
 
         manual_test_data = []
         if from_files and form in country_config.get("manual_test_data", {}).keys():
-            manual_test_data = util.read_csv(config.config_directory + \
+            current_directory = os.path.dirname(os.path.realpath(__file__))
+            manual_test_data = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
                 country_config["manual_test_data"][form] + ".csv")
 
 
