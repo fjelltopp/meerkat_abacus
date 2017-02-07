@@ -142,6 +142,7 @@ class DbTest(unittest.TestCase):
             
     @mock.patch('meerkat_abacus.util.requests')
     def test_db_setup(self, requests):
+        old_manual = task_queue.config.country_config["manual_test_data"]
         task_queue.config.country_config["manual_test_data"] = {}
         task_queue.set_up_db.apply().get()
         self.assertTrue(database_exists(config.DATABASE_URL))
@@ -203,12 +204,13 @@ class DbTest(unittest.TestCase):
         self.assertEqual(number_of_female, len(female.all()))
         session.close()
         self.assertFalse(manage.set_up_everything(True, False, 100))
-
+        task_queue.config.country_config["manual_test_data"] = old_manual
     def test_get_proccess_data(self):
         old_fake = task_queue.config.fake_data
         old_s3 = task_queue.config.get_data_from_s3
         task_queue.config.fake_data = True
         task_queue.config.get_data_from_s3 = False
+        old_manual = task_queue.config.country_config["manual_test_data"]
         task_queue.config.country_config["manual_test_data"] = {}
         manage.create_db(config.DATABASE_URL, model.Base, drop=True)
 
@@ -227,7 +229,7 @@ class DbTest(unittest.TestCase):
         #Clean up
         task_queue.config.fake_data = old_fake
         task_queue.config.get_data_from_s3 = old_s3
-
+        task_queue.config.country_config["manual_test_data"] = old_manual
 
 if __name__ == "__main__":
     unittest.main()
