@@ -2,7 +2,7 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func, and_
+from sqlalchemy import create_engine, func, and_, exc
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -20,9 +20,9 @@ import csv
 import boto3
 import copy
 import json
+import time
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
-import logging
 import os
 
 
@@ -44,7 +44,19 @@ def create_db(url, base, drop=False):
     if drop and database_exists(url):
         drop_database(url)
     if not database_exists(url):
-        create_database(url)
+        counter = 0
+        while counter<5:
+            try:
+                print('Creating database.')
+                create_database(url)
+                break
+            except exc.OperationalError as e:
+                print('There was an error connecting to the db.')
+                print(e)
+                print('Trying again in 5 seconds...')
+                time.sleep(5)
+                counter = counter + 1
+
     engine = create_engine(url)
     connection = engine.connect()
     connection.execute("CREATE EXTENSION IF NOT EXISTS postgis")
@@ -522,7 +534,7 @@ def import_regions(csv_file, session, parent_id):
                     level="region"))
     session.commit()
 
-    
+
 def import_geojson(geo_json, session):
     with open(geo_json) as f:
         geometry = json.loads(f.read())
@@ -603,7 +615,7 @@ def import_locations(engine, session):
         import_geojson(config.config_directory + geosjon_file,
                        session)
 
-        
+
 def set_up_everything(leave_if_data, drop_db, N):
     """
     Sets up the db and imports all the data. This should leave
@@ -695,8 +707,12 @@ def add_alerts(session):
             if len(limits) == 4:
                 hospital_limits = limits[2:]
                 limits = limits[:2]
-            new_alerts = alert_functions.threshold(var_id, limits, session,
-                                                   hospital_limits=hospital_limits)
+            new_alerts = alert_functions.threshold(
+                var_id,
+                limits,
+                session,
+                hospital_limits=hospital_limits
+            )
             type_name = "threshold"
         if a.alert_type == "double":
             new_alerts = alert_functions.double_double(a.id, session)
@@ -827,7 +843,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                 # assert that the join parameter lists are equally long
                 assert len(join_operators) == len(join_operands_from)
                 assert len(join_operands_from) == len(join_operands_to)
-                 
+
                 # loop through and handle the lists of join parameters
                 join_on = []
                 for i in range(0, len(join_operators)):
@@ -1144,7 +1160,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 print("Invalid Date",
                       row[data_type["form"]][data_type["date"]])
                 continue
-            
+
             # if date < locations[0][location_data["clinic"]].start_date:
             #     next
             if "alert" in variable_data:
