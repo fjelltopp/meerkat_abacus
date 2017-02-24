@@ -83,11 +83,13 @@ def add_fake_data(session, N=500, append=False, from_files=False):
        append: If we should append the new fake data or write
                over the old (default=False)
     """
+    print("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
     forms = country_config["tables"]
     # Make sure the case report form is handled before the alert form
     for form in forms:
+        print(form)
         form_name = form
         file_name = config.data_directory + form_name + ".csv"
         current_form = []
@@ -119,7 +121,7 @@ def add_fake_data(session, N=500, append=False, from_files=False):
                 alert_ids.append(row["meta/instanceID"][-country_config[
                     "alert_id_length"]:])
         util.write_csv(list(current_form) + list(manual_test_data) + generated_data, file_name)
-
+        print("hei")
 
 def get_data_from_s3(bucket):
     """
@@ -216,17 +218,23 @@ def table_data_from_csv(filename,
         remove = False
         if to_check:
             for variable in to_check:
-                if not to_check_test[variable](insert_row):
-                    if variable.variable.category == ["discard"]:
-                        remove = True
-                    else:
-                        if variable.column in insert_row:
-                            if insert_row[variable.column]:
-                                insert_row[variable.column] = None
-                                if variable.column in removed:
-                                    removed[variable.column] += 1
-                                else:
-                                    removed[variable.column] = 1
+                try:
+                    if not to_check_test[variable](insert_row):
+                        if variable.variable.category == ["discard"]:
+                            remove = True
+                        else:
+                            if variable.column in insert_row:
+                                if insert_row[variable.column]:
+                                    insert_row[variable.column] = None
+                                    if variable.column in removed:
+                                        removed[variable.column] += 1
+                                    else:
+                                        removed[variable.column] = 1
+                except Exception as e:
+                    pass
+                  #  print(variable.variable.id)
+#                    print(e)
+ #                   print(insert_row)
 
                         # Set the
         if remove:
@@ -882,7 +890,8 @@ def create_links(data_type, input_conditions, table, session, conn):
 
 
                     dupe_delete = session.query(model.Links.uuid_from).\
-                        filter(model.Links.uuid_from.in_(dupe_query)).\
+                        filter(model.Links.uuid_from.in_(dupe_query),
+                        model.Links.type == link["name"]).\
                         delete(synchronize_session='fetch')
 
                     aliased_link_table = aliased(model.Links)
@@ -894,7 +903,8 @@ def create_links(data_type, input_conditions, table, session, conn):
                                             filter(aliased_link_table.type == link["name"])
 
                     circular_delete = session.query(model.Links).\
-                        filter(model.Links.id.in_(circular_query)).\
+                        filter(model.Links.id.in_(circular_query),
+                        model.Links.type == link["name"]).\
                         delete(synchronize_session='fetch')
 
 
