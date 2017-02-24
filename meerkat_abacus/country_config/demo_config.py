@@ -88,7 +88,7 @@ country_config = {
         }
     },
     "manual_test_data": {
-      #"demo_case": "demo_case_test_data"
+      "demo_case":"demo_case_link_test_data"
     },
     "alert_data": {"demo_case": {"age": "pt1./age", "gender": "pt1./gender"}},
     "alert_id_length": 6,

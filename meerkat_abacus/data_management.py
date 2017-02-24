@@ -23,7 +23,7 @@ import json
 import time
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
-
+import os
 
 
 country_config = config.country_config
@@ -98,11 +98,13 @@ def add_fake_data(session, N=500, append=False, from_files=False):
        append: If we should append the new fake data or write
                over the old (default=False)
     """
+    print("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
     forms = country_config["tables"]
     # Make sure the case report form is handled before the alert form
     for form in forms:
+        print(form)
         form_name = form
         file_name = config.data_directory + form_name + ".csv"
         current_form = []
@@ -119,7 +121,8 @@ def add_fake_data(session, N=500, append=False, from_files=False):
 
         manual_test_data = []
         if from_files and form in country_config.get("manual_test_data", {}).keys():
-            manual_test_data = util.read_csv(config.config_directory + \
+            current_directory = os.path.dirname(os.path.realpath(__file__))
+            manual_test_data = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
                 country_config["manual_test_data"][form] + ".csv")
 
 
@@ -134,7 +137,7 @@ def add_fake_data(session, N=500, append=False, from_files=False):
                 alert_ids.append(row["meta/instanceID"][-country_config[
                     "alert_id_length"]:])
         util.write_csv(list(current_form) + list(manual_test_data) + generated_data, file_name)
-
+        print("hei")
 
 def get_data_from_s3(bucket):
     """
@@ -231,17 +234,23 @@ def table_data_from_csv(filename,
         remove = False
         if to_check:
             for variable in to_check:
-                if not to_check_test[variable](insert_row):
-                    if variable.variable.category == ["discard"]:
-                        remove = True
-                    else:
-                        if variable.column in insert_row:
-                            if insert_row[variable.column]:
-                                insert_row[variable.column] = None
-                                if variable.column in removed:
-                                    removed[variable.column] += 1
-                                else:
-                                    removed[variable.column] = 1
+                try:
+                    if not to_check_test[variable](insert_row):
+                        if variable.variable.category == ["discard"]:
+                            remove = True
+                        else:
+                            if variable.column in insert_row:
+                                if insert_row[variable.column]:
+                                    insert_row[variable.column] = None
+                                    if variable.column in removed:
+                                        removed[variable.column] += 1
+                                    else:
+                                        removed[variable.column] = 1
+                except Exception as e:
+                    pass
+                  #  print(variable.variable.id)
+#                    print(e)
+ #                   print(insert_row)
 
                         # Set the
         if remove:
@@ -708,8 +717,12 @@ def add_alerts(session):
             if len(limits) == 4:
                 hospital_limits = limits[2:]
                 limits = limits[:2]
-            new_alerts = alert_functions.threshold(var_id, limits, session,
-                                                   hospital_limits=hospital_limits)
+            new_alerts = alert_functions.threshold(
+                var_id,
+                limits,
+                session,
+                hospital_limits=hospital_limits
+            )
             type_name = "threshold"
         if a.alert_type == "double":
             new_alerts = alert_functions.double_double(a.id, session)
@@ -832,28 +845,31 @@ def create_links(data_type, input_conditions, table, session, conn):
                 columns.append(bindparam("type", link["name"]).label("type"))
                 columns.append(link_alias.data.label("data_to"))
 
-                #split the semicolon separated join parameters into lists
+                # split the semicolon separated join parameters into lists
                 join_operators = link["method"].split(";")
                 join_operands_from = link["from_column"].split(";")
                 join_operands_to = link["to_column"].split(";")
 
-                #assert that the join parameter lists are equally long
+                # assert that the join parameter lists are equally long
                 assert len(join_operators) == len(join_operands_from)
                 assert len(join_operands_from) == len(join_operands_to)
 
-                #loop through and handle the lists of join parameters
+                # loop through and handle the lists of join parameters
                 join_on = []
-                for i in range(0,len(join_operators)):
+                for i in range(0, len(join_operators)):
                     if join_operators[i] == "match":
-                        join_on.append(link_alias.data[join_operands_to[i]].astext == \
+                        join_on.append(link_alias.data[
+                            join_operands_to[i]].astext ==
                             table.data[join_operands_from[i]].astext)
 
                     elif join_operators[i] == "lower_match":
                         join_on.append(func.replace(func.lower(
-                            link_alias.data[join_operands_to[i]].astext), "-", "_") == \
+                            link_alias.data[
+                                join_operands_to[i]].astext), "-", "_") ==
                                 func.replace(
-                                    func.lower(table.data[join_operands_from[i]].astext),
-                                    "-", "_"))
+                                    func.lower(table.data[
+                                        join_operands_from[i]]
+                                               .astext), "-", "_"))
 
                     elif join_operators[i] == "alert_match":
                         join_on.append(link_alias.data[join_operands_to[i]].astext == \
@@ -862,33 +878,33 @@ def create_links(data_type, input_conditions, table, session, conn):
                                 42 - country_config["alert_id_length"],
                                 country_config["alert_id_length"]))
 
-                    #check that the column values used for join are not empty
+                    # check that the column values used for join are not empty
                     conditions.append(
                         link_alias.data[join_operands_to[i]].astext != '')
                     conditions.append(table.data[join_operands_from[i]].astext != '')
 
-                #handle the filter condition
+                # handle the filter condition
                 if link["to_condition"]:
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
                         link_alias.data[column].astext == condition)
 
-                #make sure that the link is not referring to itself
+                # make sure that the link is not referring to itself
                 conditions.append(from_form.uuid != link_alias.uuid)
 
-                #build query from join and filter conditions
+                # build query from join and filter conditions
                 link_query = session.query(*columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
 
-                #use query to perform insert
+                # use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
                 conn.execute(insert)
 
-                #split aggregate constraints into a list
+                # split aggregate constraints into a list
                 aggregate_conditions = aggregate_condition.split(';')
 
-                #if the link type has uniqueness constraint, remove non-unique links and circular links
+                # if the link type has uniqueness constraint, remove non-unique links and circular links
                 if 'unique' in aggregate_conditions:
                     dupe_query = session.query(model.Links.uuid_from).\
                                             filter(model.Links.type == link["name"]).\
@@ -897,7 +913,8 @@ def create_links(data_type, input_conditions, table, session, conn):
 
 
                     dupe_delete = session.query(model.Links.uuid_from).\
-                        filter(model.Links.uuid_from.in_(dupe_query)).\
+                        filter(model.Links.uuid_from.in_(dupe_query),
+                        model.Links.type == link["name"]).\
                         delete(synchronize_session='fetch')
 
                     aliased_link_table = aliased(model.Links)
@@ -909,7 +926,8 @@ def create_links(data_type, input_conditions, table, session, conn):
                                             filter(aliased_link_table.type == link["name"])
 
                     circular_delete = session.query(model.Links).\
-                        filter(model.Links.id.in_(circular_query)).\
+                        filter(model.Links.id.in_(circular_query),
+                        model.Links.type == link["name"]).\
                         delete(synchronize_session='fetch')
 
 

@@ -287,12 +287,15 @@ def write_csv(rows, file_path):
         rows: list of dicts with data
         file_path: path to write file to
     """
-    with open(file_path, "w", encoding='utf-8') as f:
-        columns = sorted(list(rows[0]))
-        out = csv.DictWriter(f, columns)
-        out.writeheader()
-        for row in rows:
-            out.writerow(row)
+
+    #Only write if rows were inserted
+    if rows:
+        with open(file_path, "w", encoding='utf-8') as f:
+            columns = sorted(list(rows[0]))
+            out = csv.DictWriter(f, columns)
+            out.writeheader()
+            for row in rows:
+                out.writerow(row)
 
 
 def read_csv(file_path):
@@ -305,11 +308,12 @@ def read_csv(file_path):
     Returns:
         rows(list): list of rows
     """
-    with open(file_path, "r", encoding='utf-8') as f:
+    with open(file_path, "r", encoding='utf-8', errors="replace") as f:
         reader = csv.DictReader(f)
         for row in reader:
             yield row
 
+            
 def refine_hermes_topics(topics):
     """
     We don't want mass emails to be sent from the dev environment, but we do want the ability to test.
