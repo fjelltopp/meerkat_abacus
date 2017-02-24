@@ -194,9 +194,11 @@ class UtilTest(unittest.TestCase):
                 uuid="26",
                 variables={"cmd_1": 1}),
         ]
+        self.session.commit()
 
     def tearDown(self):
-        pass
+        self.session.commit()
+        self.session.close()
 
     def test_threshold(self):
 

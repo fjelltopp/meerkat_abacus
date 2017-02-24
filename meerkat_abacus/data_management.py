@@ -2,7 +2,7 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func, and_
+from sqlalchemy import create_engine, func, and_, exc
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -20,9 +20,10 @@ import csv
 import boto3
 import copy
 import json
+import time
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
-import logging
+import os
 
 
 country_config = config.country_config
@@ -40,10 +41,24 @@ def create_db(url, base, drop=False):
     Returns:
         Boolean: True
     """
-    if drop and database_exists(url):
-        drop_database(url)
-    if not database_exists(url):
-        create_database(url)
+    counter = 0
+    while counter < 5:
+        try:
+            if drop and database_exists(url):
+                print('Dropping database.')
+                drop_database(url)
+            if not database_exists(url):
+                print('Creating database.')
+                create_database(url)
+                break
+
+        except exc.OperationalError as e:
+            print('There was an error connecting to the db.')
+            print(e)
+            print('Trying again in 5 seconds...')
+            time.sleep(5)
+            counter = counter + 1
+
     engine = create_engine(url)
     connection = engine.connect()
     connection.execute("CREATE EXTENSION IF NOT EXISTS postgis")
@@ -106,7 +121,8 @@ def add_fake_data(session, N=500, append=False, from_files=False):
 
         manual_test_data = []
         if from_files and form in country_config.get("manual_test_data", {}).keys():
-            manual_test_data = util.read_csv(config.config_directory + \
+            current_directory = os.path.dirname(os.path.realpath(__file__))
+            manual_test_data = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
                 country_config["manual_test_data"][form] + ".csv")
 
 
@@ -528,7 +544,7 @@ def import_regions(csv_file, session, parent_id):
                     level="region"))
     session.commit()
 
-    
+
 def import_geojson(geo_json, session):
     with open(geo_json) as f:
         geometry = json.loads(f.read())
@@ -609,7 +625,7 @@ def import_locations(engine, session):
         import_geojson(config.config_directory + geosjon_file,
                        session)
 
-        
+
 def set_up_everything(leave_if_data, drop_db, N):
     """
     Sets up the db and imports all the data. This should leave
@@ -701,8 +717,12 @@ def add_alerts(session):
             if len(limits) == 4:
                 hospital_limits = limits[2:]
                 limits = limits[:2]
-            new_alerts = alert_functions.threshold(var_id, limits, session,
-                                                   hospital_limits=hospital_limits)
+            new_alerts = alert_functions.threshold(
+                var_id,
+                limits,
+                session,
+                hospital_limits=hospital_limits
+            )
             type_name = "threshold"
         if a.alert_type == "double":
             new_alerts = alert_functions.double_double(a.id, session)
@@ -825,28 +845,31 @@ def create_links(data_type, input_conditions, table, session, conn):
                 columns.append(bindparam("type", link["name"]).label("type"))
                 columns.append(link_alias.data.label("data_to"))
 
-                #split the semicolon separated join parameters into lists
+                # split the semicolon separated join parameters into lists
                 join_operators = link["method"].split(";")
                 join_operands_from = link["from_column"].split(";")
                 join_operands_to = link["to_column"].split(";")
 
-                #assert that the join parameter lists are equally long
+                # assert that the join parameter lists are equally long
                 assert len(join_operators) == len(join_operands_from)
                 assert len(join_operands_from) == len(join_operands_to)
-                 
-                #loop through and handle the lists of join parameters 
+
+                # loop through and handle the lists of join parameters
                 join_on = []
-                for i in range(0,len(join_operators)):
+                for i in range(0, len(join_operators)):
                     if join_operators[i] == "match":
-                        join_on.append(link_alias.data[join_operands_to[i]].astext == \
+                        join_on.append(link_alias.data[
+                            join_operands_to[i]].astext ==
                             table.data[join_operands_from[i]].astext)
 
                     elif join_operators[i] == "lower_match":
                         join_on.append(func.replace(func.lower(
-                            link_alias.data[join_operands_to[i]].astext), "-", "_") == \
+                            link_alias.data[
+                                join_operands_to[i]].astext), "-", "_") ==
                                 func.replace(
-                                    func.lower(table.data[join_operands_from[i]].astext),
-                                    "-", "_"))
+                                    func.lower(table.data[
+                                        join_operands_from[i]]
+                                               .astext), "-", "_"))
 
                     elif join_operators[i] == "alert_match":
                         join_on.append(link_alias.data[join_operands_to[i]].astext == \
@@ -855,33 +878,33 @@ def create_links(data_type, input_conditions, table, session, conn):
                                 42 - country_config["alert_id_length"],
                                 country_config["alert_id_length"]))
 
-                    #check that the column values used for join are not empty
+                    # check that the column values used for join are not empty
                     conditions.append(
                         link_alias.data[join_operands_to[i]].astext != '')
                     conditions.append(table.data[join_operands_from[i]].astext != '')
 
-                #handle the filter condition
+                # handle the filter condition
                 if link["to_condition"]:
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
                         link_alias.data[column].astext == condition)
 
-                #make sure that the link is not referring to itself
-                conditions.append(from_form.uuid != link_alias.uuid)    
+                # make sure that the link is not referring to itself
+                conditions.append(from_form.uuid != link_alias.uuid)
 
-                #build query from join and filter conditions
+                # build query from join and filter conditions
                 link_query = session.query(*columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
 
-                #use query to perform insert
+                # use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
                 conn.execute(insert)
 
-                #split aggregate constraints into a list
+                # split aggregate constraints into a list
                 aggregate_conditions = aggregate_condition.split(';')
 
-                #if the link type has uniqueness constraint, remove non-unique links and circular links
+                # if the link type has uniqueness constraint, remove non-unique links and circular links
                 if 'unique' in aggregate_conditions:
                     dupe_query = session.query(model.Links.uuid_from).\
                                             filter(model.Links.type == link["name"]).\
@@ -1149,7 +1172,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 print("Invalid Date",
                       row[data_type["form"]][data_type["date"]])
                 continue
-            
+
             # if date < locations[0][location_data["clinic"]].start_date:
             #     next
             if "alert" in variable_data:
