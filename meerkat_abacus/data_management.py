@@ -854,11 +854,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                 assert len(join_operators) == len(join_operands_from)
                 assert len(join_operands_from) == len(join_operands_to)
 
-<<<<<<< HEAD
                 # loop through and handle the lists of join parameters
-=======
-                #loop through and handle the lists of join parameters
->>>>>>> master
                 join_on = []
                 for i in range(0, len(join_operators)):
                     if join_operators[i] == "match":
@@ -893,11 +889,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                     conditions.append(
                         link_alias.data[column].astext == condition)
 
-<<<<<<< HEAD
                 # make sure that the link is not referring to itself
-=======
-                #make sure that the link is not referring to itself
->>>>>>> master
                 conditions.append(from_form.uuid != link_alias.uuid)
 
                 # build query from join and filter conditions
