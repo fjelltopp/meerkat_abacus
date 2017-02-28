@@ -2,7 +2,7 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func, and_
+from sqlalchemy import create_engine, func, and_, exc
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -20,9 +20,9 @@ import csv
 import boto3
 import copy
 import json
+import time
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
-import logging
 import os
 
 
@@ -41,10 +41,24 @@ def create_db(url, base, drop=False):
     Returns:
         Boolean: True
     """
-    if drop and database_exists(url):
-        drop_database(url)
-    if not database_exists(url):
-        create_database(url)
+    counter = 0
+    while counter < 5:
+        try:
+            if drop and database_exists(url):
+                print('Dropping database.')
+                drop_database(url)
+            if not database_exists(url):
+                print('Creating database.')
+                create_database(url)
+                break
+
+        except exc.OperationalError as e:
+            print('There was an error connecting to the db.')
+            print(e)
+            print('Trying again in 5 seconds...')
+            time.sleep(5)
+            counter = counter + 1
+
     engine = create_engine(url)
     connection = engine.connect()
     connection.execute("CREATE EXTENSION IF NOT EXISTS postgis")
@@ -84,11 +98,13 @@ def add_fake_data(session, N=500, append=False, from_files=False):
        append: If we should append the new fake data or write
                over the old (default=False)
     """
+    print("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
     forms = country_config["tables"]
     # Make sure the case report form is handled before the alert form
     for form in forms:
+        print(form)
         form_name = form
         file_name = config.data_directory + form_name + ".csv"
         current_form = []
@@ -121,7 +137,7 @@ def add_fake_data(session, N=500, append=False, from_files=False):
                 alert_ids.append(row["meta/instanceID"][-country_config[
                     "alert_id_length"]:])
         util.write_csv(list(current_form) + list(manual_test_data) + generated_data, file_name)
-
+        print("hei")
 
 def get_data_from_s3(bucket):
     """
@@ -218,17 +234,23 @@ def table_data_from_csv(filename,
         remove = False
         if to_check:
             for variable in to_check:
-                if not to_check_test[variable](insert_row):
-                    if variable.variable.category == ["discard"]:
-                        remove = True
-                    else:
-                        if variable.column in insert_row:
-                            if insert_row[variable.column]:
-                                insert_row[variable.column] = None
-                                if variable.column in removed:
-                                    removed[variable.column] += 1
-                                else:
-                                    removed[variable.column] = 1
+                try:
+                    if not to_check_test[variable](insert_row):
+                        if variable.variable.category == ["discard"]:
+                            remove = True
+                        else:
+                            if variable.column in insert_row:
+                                if insert_row[variable.column]:
+                                    insert_row[variable.column] = None
+                                    if variable.column in removed:
+                                        removed[variable.column] += 1
+                                    else:
+                                        removed[variable.column] = 1
+                except Exception as e:
+                    pass
+                  #  print(variable.variable.id)
+#                    print(e)
+ #                   print(insert_row)
 
                         # Set the
         if remove:
@@ -522,7 +544,7 @@ def import_regions(csv_file, session, parent_id):
                     level="region"))
     session.commit()
 
-    
+
 def import_geojson(geo_json, session):
     with open(geo_json) as f:
         geometry = json.loads(f.read())
@@ -603,7 +625,7 @@ def import_locations(engine, session):
         import_geojson(config.config_directory + geosjon_file,
                        session)
 
-        
+
 def set_up_everything(leave_if_data, drop_db, N):
     """
     Sets up the db and imports all the data. This should leave
@@ -695,8 +717,12 @@ def add_alerts(session):
             if len(limits) == 4:
                 hospital_limits = limits[2:]
                 limits = limits[:2]
-            new_alerts = alert_functions.threshold(var_id, limits, session,
-                                                   hospital_limits=hospital_limits)
+            new_alerts = alert_functions.threshold(
+                var_id,
+                limits,
+                session,
+                hospital_limits=hospital_limits
+            )
             type_name = "threshold"
         if a.alert_type == "double":
             new_alerts = alert_functions.double_double(a.id, session)
@@ -827,7 +853,7 @@ def create_links(data_type, input_conditions, table, session, conn):
                 # assert that the join parameter lists are equally long
                 assert len(join_operators) == len(join_operands_from)
                 assert len(join_operands_from) == len(join_operands_to)
-                 
+
                 # loop through and handle the lists of join parameters
                 join_on = []
                 for i in range(0, len(join_operators)):
@@ -887,7 +913,8 @@ def create_links(data_type, input_conditions, table, session, conn):
 
 
                     dupe_delete = session.query(model.Links.uuid_from).\
-                        filter(model.Links.uuid_from.in_(dupe_query)).\
+                        filter(model.Links.uuid_from.in_(dupe_query),
+                        model.Links.type == link["name"]).\
                         delete(synchronize_session='fetch')
 
                     aliased_link_table = aliased(model.Links)
@@ -899,7 +926,8 @@ def create_links(data_type, input_conditions, table, session, conn):
                                             filter(aliased_link_table.type == link["name"])
 
                     circular_delete = session.query(model.Links).\
-                        filter(model.Links.id.in_(circular_query)).\
+                        filter(model.Links.id.in_(circular_query),
+                        model.Links.type == link["name"]).\
                         delete(synchronize_session='fetch')
 
 
@@ -1144,7 +1172,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 print("Invalid Date",
                       row[data_type["form"]][data_type["date"]])
                 continue
-            
+
             # if date < locations[0][location_data["clinic"]].start_date:
             #     next
             if "alert" in variable_data:
