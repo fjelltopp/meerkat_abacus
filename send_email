@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/miniconda/bin/python3
 
 from meerkat_abacus import task_queue
 import argparse

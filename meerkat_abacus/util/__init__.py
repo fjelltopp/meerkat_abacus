@@ -308,11 +308,12 @@ def read_csv(file_path):
     Returns:
         rows(list): list of rows
     """
-    with open(file_path, "r", encoding='utf-8') as f:
+    with open(file_path, "r", encoding='utf-8', errors="replace") as f:
         reader = csv.DictReader(f)
         for row in reader:
             yield row
 
+            
 def refine_hermes_topics(topics):
     """
     We don't want mass emails to be sent from the dev environment, but we do want the ability to test.

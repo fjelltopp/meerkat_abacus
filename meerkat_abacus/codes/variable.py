@@ -221,7 +221,12 @@ class Variable():
         value = row[self.columns[0]]
         if value is not "" and value is not None and value is not 0:
             if self.calculation == "date":
-                return parse(value).isoformat()
+                if value:
+                    try:
+                        return parse(value).isoformat()
+                    except ValueError:
+                        print(value)
+                        return 0
             else:
                 return value
         else:
@@ -329,9 +334,9 @@ class Variable():
                 if isinstance(country_config['epi_week'], str):
                     epi_offset = (4 + int(country_config['epi_week'][4:])) % 7
                 else:
-                    year = datetime.now().year
+                    year = date.year
                     epi_offset = (
-                        4 + country_config["epi_week"][year].weekday()
+                        4 + country_config["epi_week"].get(year, datetime(year, 1, 1)).weekday()
                     ) % 7
                 # Time since epiepoch = date - epiepoch
                 # Where epiepoch = epoch + epioffset.
