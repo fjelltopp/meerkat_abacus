@@ -5,37 +5,42 @@ Unit tests Meerkat Abacus
 """
 
 import meerkat_abacus
+from meerkat_abacus import config, task_queue
 from meerkat_abacus.test.db_test import *
 from meerkat_abacus.test.link_test import *
 from meerkat_abacus.test.to_codes_test import *
 from meerkat_abacus.test.util_test import *
 from meerkat_abacus.test.variable_test import *
-from meerkat_abacus.task_queue import *
-import unittest
 from unittest import mock
-#from meerkat_abacus.test.util_test import *
+import unittest
+
 
 class CeleryTaskTest(unittest.TestCase):
 
     def setUp(self):
         pass
-    
+
     def tearDown(self):
         pass
 
     @mock.patch('meerkat_abacus.task_queue.requests')
     def test_send_email_report(self, request_mock):
         report = 'test_report'
+        # First check that no email is sent when mailing root is false.
         task_queue.send_report_email(report, 'fr', "1")
-        self.assertTrue( request_mock.request.called )
-        request_mock.request.assert_any_call( 
-            'POST', 
-            config.auth_root + '/api/login' ,
-            json={ "username": "report-emails",
-                   "password": config.mailing_key }, 
-            headers={'content-type': 'application/json'}     
+        self.assertFalse(request_mock.request.called)
+        # Then check that the email request is made when mailing root is set
+        config.mailing_root = 'test_mailing_root'
+        task_queue.send_report_email(report, 'fr', "1")
+        self.assertTrue(request_mock.request.called)
+        request_mock.request.assert_any_call(
+            'POST',
+            config.auth_root + '/api/login',
+            json={"username": "report-emails",
+                  "password": config.mailing_key},
+            headers={'content-type': 'application/json'}
         )
-        
+
 
 if __name__ == "__main__":
     unittest.main()
