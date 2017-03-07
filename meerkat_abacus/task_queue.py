@@ -90,6 +90,11 @@ def new_data_to_codes(restrict_uuids=None):
 def send_report_email(report, language, location):
     """Send a report email."""
 
+    # If the mailing root isn't set, don't send the email.
+    if not config.mailing_root:
+        logging.info("Mailing root not set. Email {} not sent.".format(report))
+        return
+
     # Important to log so we can debug if something goes wrong in deployment.
     pre = "EMAIL " + str(report) + ":  "
     logging.warning(pre + "Trying to send report email.")
