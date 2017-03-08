@@ -63,6 +63,8 @@ mailing_root = from_env("MAILING_ROOT", "")
 auth_root = from_env('MEERKAT_AUTH_ROOT', 'http://dev_nginx_1/auth')
 send_test_emails = from_env('MEERKAT_TEST_EMAILS', False)
 
+sentry_dns = from_env('SENTRY_DNS', '')
+
 # Country config
 country_config_file = from_env("COUNTRY_CONFIG", "demo_config.py")
 
