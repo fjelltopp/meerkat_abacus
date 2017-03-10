@@ -1,14 +1,18 @@
 """
 Various utility functions for meerkat abacus
 """
-import csv, requests, json, itertools, logging
+import csv
+import requests
+import json
+import itertools
+import logging
 from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from meerkat_abacus.model import Locations, AggregationVariables, Devices
 from meerkat_abacus.config import country_config
 import meerkat_abacus.config as config
-from geoalchemy2.shape import to_shape
+
 
 def epi_week(date):
     """
@@ -19,9 +23,10 @@ def epi_week(date):
     Returns epi_week
     """
     start_date = epi_week_start_date(date.year)
-    if date < start_date:
-        start_date = start_date.replace(year=start_date.year-1)
     year = start_date.year
+    # If the date is before the start date, include in week 1.
+    if date < start_date:
+        return year, 1
     return year, (date - start_date).days // 7 + 1
 
 
@@ -85,8 +90,8 @@ def get_link_definitions(session):
 
 def field_to_list(row, key):
     """
-    Transforms key in row to a list. We split on semicolons if they exist in the string,
-    otherwise we use commas.
+    Transforms key in row to a list. We split on semicolons if they exist in
+    the string, otherwise we use commas.
 
     Args:
         row: row of data
@@ -104,6 +109,7 @@ def field_to_list(row, key):
         row[key] = [row[key]]
     return row
 
+
 def get_links(file_path):
     """
     Returns links indexed by type
@@ -117,6 +123,7 @@ def get_links(file_path):
         links_by_type[l["type"]].append(l)
         links_by_name[l["name"]] = l
     return links_by_type, links_by_name
+
 
 def all_location_data(session):
     """
@@ -153,6 +160,7 @@ def get_variables(session):
         variables[row.id] = row
     return variables
 
+
 def get_device_tags(session):
     """
     Returns a dict of device tags by id
@@ -168,6 +176,7 @@ def get_device_tags(session):
     for row in result:
         devices[row.device_id] = row.tags
     return devices
+
 
 def get_regions_districts(session):
     """
@@ -212,6 +221,7 @@ def get_locations_by_deviceid(session):
             else:
                 locations_by_deviceid[locations[l].deviceid] = l
     return locations_by_deviceid
+
 
 def get_start_date_by_deviceid(session):
     """
@@ -287,8 +297,7 @@ def write_csv(rows, file_path):
         rows: list of dicts with data
         file_path: path to write file to
     """
-
-    #Only write if rows were inserted
+    # Only write if rows were inserted
     if rows:
         with open(file_path, "w", encoding='utf-8') as f:
             columns = sorted(list(rows[0]))
@@ -313,37 +322,42 @@ def read_csv(file_path):
         for row in reader:
             yield row
 
-            
+
 def refine_hermes_topics(topics):
     """
-    We don't want mass emails to be sent from the dev environment, but we do want the ability to test.
+    We don't want mass emails to be sent from the dev environment, but we do
+    want the ability to test.
 
-    This function takes a list of hermes topics, and if we are in the development/testing
-    environment (determined by config "hermes_dev") this function strips them back to only those topics
-    in the config variable "hermes_dev_topics".
+    This function takes a list of hermes topics, and if we are in the
+    development/testing environment (determined by config "hermes_dev") this
+    function strips them back to only those topics in the config variable
+    "hermes_dev_topics".
 
     Args:
-        topics ([str]) A list of topic ids that a message is initially intended to be published to.
+        topics ([str]) A list of topic ids that a message is initially intended
+        to be published to.
 
     Returns:
-        [str] A refined list of topic ids containing only those topics from config "hermes_dev_topics",
-        if config "hermes_dev" == 1.
+        [str] A refined list of topic ids containing only those topics from
+        config "hermes_dev_topics", if config "hermes_dev" == 1.
     """
 
-    #Make topics a copied (don't edit original) list if it isn't already one.
-    topics = list([topics]) if not isinstance( topics, list ) else list(topics)
+    # Make topics a copied (don't edit original) list if it isn't already one.
+    topics = list([topics]) if not isinstance(topics, list) else list(topics)
 
-    logging.info( "Initial topics: " + str( topics ) )
+    logging.info("Initial topics: " + str(topics))
 
-    #If in development/testing environment, remove topics that aren't pre-specified as allowed.
+    # If in development/testing environment...
+    # Remove topics that aren't pre-specified as allowed.
     if config.hermes_dev:
-        for t in range( len(topics)-1, -1, -1 ):
+        for t in range(len(topics)-1, -1, -1):
             if topics[t] not in config.hermes_dev_topics:
                 del topics[t]
 
-    logging.info( "Refined topics: " + str( topics ) )
+    logging.info("Refined topics: " + str(topics))
 
     return topics
+
 
 def hermes(url, method, data=None):
     """
