@@ -2,7 +2,7 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func, and_, exc
+from sqlalchemy import create_engine, func, and_, exc, over, update, select
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -1220,6 +1220,81 @@ def send_alerts(alerts, session):
         alert_id = alert.uuid[-country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations)
 
+def correct_initial_visits(session, table, identifier_key_list=['patientid','icd_code'], visit_type_key='intro./visit', visit_date_key='pt./visit_date'):
+    """
+    Corrects cases where a patient has multiple initial visits.
+    The additional initial visits will be corrected to return visits.
+    """
+
+    new_visit_value = "new"
+    return_visit_value = "return"
+
+    # construct a comparison list that makes sure the identifier jsonb data values are not empty
+    identifier_column_objects = []
+    empty_values_filter = []
+    for key in identifier_key_list:
+
+        # make a column object list of identifier values
+        identifier_column_objects.append(table.data[key].astext)
+
+        # construct a comparison list that makes sure the identifier
+        # jsonb data values are not empty
+        empty_values_filter.append(table.data[key].astext != "")
+
+    # create a Common Table Expression object to rank visit dates accoring to 
+    cte_table_ranked = session.query(
+        table.id,
+        func.jsonb_set(table.data,'{'+visit_type_key+'}','"return"',False).label('data'),
+        over(func.rank(), 
+            partition_by = [*identifier_column_objects],
+            order_by =[table.data[visit_date_key],table.id]).label('rnk'))\
+        .filter(table.data[visit_type_key].astext == new_visit_value)\
+        .filter(and_(*empty_values_filter)).cte("cte_table_ranked")
+
+
+    #return cte_table_ranked
+        #.with_for_update()
+
+    #select_query = session.query(
+    #    cte_table_ranked.c.data)\
+    #.filter(and_(table.id==cte_table_ranked.c.id, cte_table_ranked.c.rnk>1))\
+    #.update(values={table.data:cte_table_ranked.c.data})
+        #func.jsonb_set(cte_table_ranked.c.data,'{'+visit_type_key+'}','"return"',False).label('visit'))\
+   
+
+    #ret = session.query(table)\
+    #.update(values = {table.data: cte_table_ranked.data})\
+    #.where(and_(table.id == cte_table_ranked.id, cte_table.ranked.rnk > 1)) 
+    
+    # final_query = session.query(cte_query.c.id, cte_query.c.data_new)
+    ret = session.query(table)\
+    .update(values = {table.data: select([cte_table_ranked.c.data]).where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))}, synchronize_session='fetch')\
+    .where(and_(table.id == cte_table_ranked.c.id, cte_table.c.ranked.rnk > 1))
+    #.update(values = {table.data: select([cte_table_ranked.c.data]).where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))}, synchronize_session='fetch')
+    
+
+
+    #ret = session.table.update()
+    #.values(data=func.jsonb_set(data,'{'+visit_type_key+'}','"return"',false))\
+    #.where(and_(table.id == cte_table_ranked.c.id, cte_table.ranked.c.rnk > 1))
+
+    """
+    with jor_case_ranked as (
+    select id, data->>'patientid' patientid, data->>'icd_code' icd_code, 
+    rank() over (PARTITION BY data->>'patientid', data->>'icd_code' ORDER BY (data->>'pt./visit_date')::date, id ASC) rnk
+    from jor_case where data->>'intro./visit_type' = 'new' and data->>'patientid' <> '' and data->>'icd_code' <> '')
+    update jor_case as c 
+    set data = jsonb_set(data,'{intro./visit_type}','"return"',false) 
+    from jor_case_ranked c_r 
+    where c.id = c_r.id and c_r.rnk>1;
+    """
+
+    #ret = [str(final_query)]
+    #for i in final_query:
+    #    ret.append(i)
+
+    return str(ret)
+
 
 if __name__ == "__main__":
     engine = create_engine(config.DATABASE_URL)
@@ -1227,3 +1302,5 @@ if __name__ == "__main__":
     session = Session()
 
     export_data(session)
+
+
