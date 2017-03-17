@@ -1254,7 +1254,7 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
     # create update query using the Common Table Expression
     duplicate_removal_update = session.query(table)\
     .filter(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
-    .update(values = {table.data: cte_table_ranked.c.data}, synchronize_session='fetch')\
+    .update(values = {table.data: cte_table_ranked.c.data})
 
     session.commit()
 
