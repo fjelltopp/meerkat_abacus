@@ -1251,34 +1251,15 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
         .filter(table.data[visit_type_key].astext == new_visit_value)\
         .filter(and_(*empty_values_filter)).cte("cte_table_ranked")
 
+    # create update query using the Common Table Expression
+    duplicate_removal_update = session.query(table)\
+    .filter(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
+    .update(values = {table.data: cte_table_ranked.c.data}, synchronize_session='fetch')\
 
-    #return cte_table_ranked
-        #.with_for_update()
-
-    #select_query = session.query(
-    #    cte_table_ranked.c.data)\
-    #.filter(and_(table.id==cte_table_ranked.c.id, cte_table_ranked.c.rnk>1))\
-    #.update(values={table.data:cte_table_ranked.c.data})
-        #func.jsonb_set(cte_table_ranked.c.data,'{'+visit_type_key+'}','"return"',False).label('visit'))\
-   
-
-    #ret = session.query(table)\
-    #.update(values = {table.data: cte_table_ranked.data})\
-    #.where(and_(table.id == cte_table_ranked.id, cte_table.ranked.rnk > 1)) 
-    
-    # final_query = session.query(cte_query.c.id, cte_query.c.data_new)
-    ret = session.query(table)\
-    .update(values = {table.data: select([cte_table_ranked.c.data]).where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))}, synchronize_session='fetch')\
-    .where(and_(table.id == cte_table_ranked.c.id, cte_table.c.ranked.rnk > 1))
-    #.update(values = {table.data: select([cte_table_ranked.c.data]).where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))}, synchronize_session='fetch')
-    
-
-
-    #ret = session.table.update()
-    #.values(data=func.jsonb_set(data,'{'+visit_type_key+'}','"return"',false))\
-    #.where(and_(table.id == cte_table_ranked.c.id, cte_table.ranked.c.rnk > 1))
+    session.commit()
 
     """
+    The SQLAlchemy ORM objects emulate the following SQL statement:
     with jor_case_ranked as (
     select id, data->>'patientid' patientid, data->>'icd_code' icd_code, 
     rank() over (PARTITION BY data->>'patientid', data->>'icd_code' ORDER BY (data->>'pt./visit_date')::date, id ASC) rnk
@@ -1289,11 +1270,7 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
     where c.id = c_r.id and c_r.rnk>1;
     """
 
-    #ret = [str(final_query)]
-    #for i in final_query:
-    #    ret.append(i)
-
-    return str(ret)
+    return str(duplicate_removal_update)
 
 
 if __name__ == "__main__":
