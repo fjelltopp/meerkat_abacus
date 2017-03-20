@@ -7,8 +7,21 @@ from datetime import datetime
 import requests
 import logging
 import traceback
-from celery import Celery
+# from celery import Celery
+import celery
 from meerkat_abacus import celeryconfig
+import raven
+from raven.contrib.celery import register_signal, register_logger_signal
+
+class Celery(celery.Celery):
+
+    def on_configure(self):
+        if config.sentry_dns:
+            client = raven.Client(config.sentry_dns)
+            # register a custom filter to filter out duplicate logs
+            register_logger_signal(client)
+            # hook into the Celery error handler
+            register_signal(client)
 
 
 app = Celery()
@@ -89,6 +102,11 @@ def new_data_to_codes(restrict_uuids=None):
 @app.task
 def send_report_email(report, language, location):
     """Send a report email."""
+
+    # If the mailing root isn't set, don't send the email.
+    if not config.mailing_root:
+        logging.info("Mailing root not set. Email {} not sent.".format(report))
+        return
 
     # Important to log so we can debug if something goes wrong in deployment.
     pre = "EMAIL " + str(report) + ":  "
