@@ -107,5 +107,6 @@ country_config = {
         "ncd_public_health": {"period": "month", "send_day": "1", "language": "en"},
         "communicable_diseases": {"period": "week", "send_day": "0", "language": "en"},
         "non_communicable_diseases": {"period": "month", "send_day": "1", "language": "en"}
-    }
+    },
+    "translation_dir": "/var/www/meerkat_frontend/country_config/translations"
 }

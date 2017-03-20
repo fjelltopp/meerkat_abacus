@@ -239,20 +239,19 @@ def table_data_from_csv(filename,
                         if variable.variable.category == ["discard"]:
                             remove = True
                         else:
-                            if variable.column in insert_row:
-                                if insert_row[variable.column]:
-                                    insert_row[variable.column] = None
-                                    if variable.column in removed:
-                                        removed[variable.column] += 1
+                            column = variable.column
+                            if ";" in column or "," in column:
+                                column = column.split(";")[0].split(",")[0]
+                            if column in insert_row:
+                                if insert_row[column]:
+                                    insert_row[column] = None
+                                    if column in removed:
+                                        removed[column] += 1
                                     else:
-                                        removed[variable.column] = 1
+                                        removed[column] = 1
                 except Exception as e:
-                    pass
-                  #  print(variable.variable.id)
-#                    print(e)
- #                   print(insert_row)
+                    print(e)
 
-                        # Set the
         if remove:
             continue
         if deviceids:
@@ -267,6 +266,7 @@ def table_data_from_csv(filename,
             new_rows.append(insert_row[uuid_field])
         i += 1
         if i % 10000 == 0:
+            print(removed)
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
     if to_check:
