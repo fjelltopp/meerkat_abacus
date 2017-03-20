@@ -1224,6 +1224,13 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
     """
     Corrects cases where a patient has multiple initial visits.
     The additional initial visits will be corrected to return visits.
+
+    Args:
+        session: db session
+        table: table to check for duplicates
+        identifier_key_list: list of json keys in the data column that should occur only once for an initial visit 
+        visit_type_key: key of the json column data that defines visit type
+        visit_date_key: key of the json column data that stores the visit date
     """
 
     new_visit_value = "new"
@@ -1252,9 +1259,16 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
         .filter(and_(*empty_values_filter)).cte("cte_table_ranked")
 
     # create update query using the Common Table Expression
-    duplicate_removal_update = session.query(table)\
-    .filter(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
-    .update(values = {table.data: cte_table_ranked.c.data})
+    #duplicate_removal_update = session.query(table)\
+    #.filter(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
+    #.update(values = {table.data: cte_table_ranked.c.data}, update_args = {'returning': [table.uuid]})
+
+    duplicate_removal_update = update(table.__table__)\
+    .where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
+    .values(data = cte_table_ranked.c.data)\
+    .returning(table.uuid) 
+
+    ret = session.execute(duplicate_removal_update)
 
     session.commit()
 
@@ -1270,7 +1284,7 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
     where c.id = c_r.id and c_r.rnk>1;
     """
 
-    return str(duplicate_removal_update)
+    return ret
 
 
 if __name__ == "__main__":
