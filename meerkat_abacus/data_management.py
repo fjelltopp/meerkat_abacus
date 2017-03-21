@@ -662,6 +662,8 @@ def set_up_everything(leave_if_data, drop_db, N):
         import_variables(session)
         print("Import Data")
         import_data(engine, session)
+        print("Controlling initial visits")
+        initial_visit_control(session)
         print("To codes")
         session.query(model.Data).delete()
         engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
@@ -1220,6 +1222,28 @@ def send_alerts(alerts, session):
         alert_id = alert.uuid[-country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations)
 
+def initial_visit_control(session):
+    """
+    Configures and corrects the initial visits and recalculates their codes
+    """
+
+    engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    if "initial_visit_control" not in country_config:
+        return False
+
+    for form_table in country_config['initial_visit_control'].keys():
+        table = form_table
+        identifier_key_list = country_config['initial_visit_control'][form_table]['identifier_key_list']
+        visit_type_key = country_config['initial_visit_control'][form_table]['visit_type_key']
+        visit_date_key = country_config['initial_visit_control'][form_table]['visit_date_key']
+        corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key)
+
+    return corrected
+
+
 def correct_initial_visits(session, table, identifier_key_list=['patientid','icd_code'], visit_type_key='intro./visit', visit_date_key='pt./visit_date'):
     """
     Corrects cases where a patient has multiple initial visits.
@@ -1259,10 +1283,6 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
         .filter(and_(*empty_values_filter)).cte("cte_table_ranked")
 
     # create update query using the Common Table Expression
-    #duplicate_removal_update = session.query(table)\
-    #.filter(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
-    #.update(values = {table.data: cte_table_ranked.c.data}, update_args = {'returning': [table.uuid]})
-
     duplicate_removal_update = update(table.__table__)\
     .where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
     .values(data = cte_table_ranked.c.data)\
@@ -1270,7 +1290,7 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
 
     ret = session.execute(duplicate_removal_update)
 
-    session.commit()
+    # session.commit()
 
     """
     The SQLAlchemy ORM objects emulate the following SQL statement:
