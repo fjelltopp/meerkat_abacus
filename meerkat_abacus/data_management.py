@@ -1245,7 +1245,7 @@ def initial_visit_control():
         return []
 
     for form_table in country_config['initial_visit_control'].keys():
-        table = form_table
+        table = model.form_tables[form_table]
         identifier_key_list = country_config['initial_visit_control'][form_table]['identifier_key_list']
         visit_type_key = country_config['initial_visit_control'][form_table]['visit_type_key']
         visit_date_key = country_config['initial_visit_control'][form_table]['visit_date_key']
@@ -1300,7 +1300,7 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
 
     ret = session.execute(duplicate_removal_update)
 
-    # session.commit()
+    session.commit()
 
     """
     The SQLAlchemy ORM objects emulate the following SQL statement:

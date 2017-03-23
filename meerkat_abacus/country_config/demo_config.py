@@ -10,6 +10,14 @@ country_config = {
         "demo_register",
 #        "plague_data"
     ],
+    "initial_visit_control": {
+        "demo_case": {
+          "identifier_key_list": ["pt./pid","icd_code"],
+          "visit_type_key": "intro./visit",
+          "visit_date_key": "pt./visit_date" 
+        }
+
+    },
     "require_case_report": ["demo_case", "demo_register"],
     "codes_file": "demo_codes",
     "coding_list": [
