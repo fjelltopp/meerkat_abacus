@@ -63,10 +63,22 @@ def get_proccess_data(print_progress=False):
         print("Import new data")
     new_records = import_new_data()
     if print_progress:
+        print("Validating initial visits")
+    changed_records = corrected_initial_visits = correct_initial_visits() 
+    if print_progress:
         print("To Code")
     new_data_to_codes(restrict_uuids=new_records)
     if print_progress:
         print("Finished")
+
+@app.task
+def correct_initial_visits():
+    """
+    Make sure patients don't have several initial visits 
+    for the same diagnosis
+    """
+    ret = data_management.initial_visit_control()
+    return ret
 
 
 @app.task

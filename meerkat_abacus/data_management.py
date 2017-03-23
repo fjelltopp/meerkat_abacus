@@ -97,6 +97,8 @@ def add_fake_data(session, N=500, append=False, from_files=False):
        N: number of rows to create for each from (default=500)
        append: If we should append the new fake data or write
                over the old (default=False)
+       from_files: whether to add data from the manual test case
+                   files defined in country_config
     """
     print("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
@@ -119,11 +121,14 @@ def add_fake_data(session, N=500, append=False, from_files=False):
         else:
             form_deviceids = deviceids
 
-        manual_test_data = []
+        manual_test_data = {}
         if from_files and form in country_config.get("manual_test_data", {}).keys():
             current_directory = os.path.dirname(os.path.realpath(__file__))
-            manual_test_data = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
-                country_config["manual_test_data"][form] + ".csv")
+            for fake_data_file in country_config.get("manual_test_data", {})[form]:
+                manual_test_data[fake_data_file] = []
+                print("adding test data from file: " + fake_data_file + ".csv")
+                manual_test_data[fake_data_file] = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
+                    fake_data_file + ".csv")
 
 
         generated_data = create_fake_data.create_form(
@@ -136,8 +141,13 @@ def add_fake_data(session, N=500, append=False, from_files=False):
             for row in generated_data:
                 alert_ids.append(row["meta/instanceID"][-country_config[
                     "alert_id_length"]:])
-        util.write_csv(list(current_form) + list(manual_test_data) + generated_data, file_name)
-        print("hei")
+
+        manual_test_data_list = []
+        for manual_test_data_file in manual_test_data.keys():
+            manual_test_data_list += list(manual_test_data[manual_test_data_file])
+
+        util.write_csv(list(current_form) + list(manual_test_data_list) + generated_data, file_name)
+        #print("hei")
 
 def get_data_from_s3(bucket):
     """
@@ -663,7 +673,7 @@ def set_up_everything(leave_if_data, drop_db, N):
         print("Import Data")
         import_data(engine, session)
         print("Controlling initial visits")
-        initial_visit_control(session)
+        initial_visit_control()
         print("To codes")
         session.query(model.Data).delete()
         engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
@@ -1222,7 +1232,7 @@ def send_alerts(alerts, session):
         alert_id = alert.uuid[-country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations)
 
-def initial_visit_control(session):
+def initial_visit_control():
     """
     Configures and corrects the initial visits and recalculates their codes
     """
@@ -1232,7 +1242,7 @@ def initial_visit_control(session):
     session = Session()
 
     if "initial_visit_control" not in country_config:
-        return False
+        return []
 
     for form_table in country_config['initial_visit_control'].keys():
         table = form_table
