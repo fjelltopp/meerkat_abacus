@@ -2,7 +2,7 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func, and_, exc, over, update, select
+from sqlalchemy import create_engine, func, and_, exc, over, update, select, delete
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -1234,7 +1234,8 @@ def send_alerts(alerts, session):
 
 def initial_visit_control():
     """
-    Configures and corrects the initial visits and recalculates their codes
+    Configures and corrects the initial visits and removes the calculated codes
+    from the data table where the visit was amended
     """
 
     engine = create_engine(config.DATABASE_URL)
@@ -1244,12 +1245,15 @@ def initial_visit_control():
     if "initial_visit_control" not in country_config:
         return []
 
+    corrected = []
     for form_table in country_config['initial_visit_control'].keys():
         table = model.form_tables[form_table]
         identifier_key_list = country_config['initial_visit_control'][form_table]['identifier_key_list']
         visit_type_key = country_config['initial_visit_control'][form_table]['visit_type_key']
         visit_date_key = country_config['initial_visit_control'][form_table]['visit_date_key']
-        corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key)
+        ret_corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key)
+        for i in ret_corrected.fetchall():
+            corrected.append(i[0])
 
     return corrected
 
@@ -1284,14 +1288,17 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
 
     # create a Common Table Expression object to rank visit dates accoring to 
     cte_table_ranked = session.query(
-        table.id,
+        table.id, table.uuid,
         func.jsonb_set(table.data,'{'+visit_type_key+'}','"return"',False).label('data'),
-        over(func.rank(), 
+        over(func.rank(),
             partition_by = [*identifier_column_objects],
             order_by =[table.data[visit_date_key],table.id]).label('rnk'))\
         .filter(table.data[visit_type_key].astext == new_visit_value)\
         .filter(and_(*empty_values_filter)).cte("cte_table_ranked")
 
+    # create delete statement using the Common Table Expression
+    data_entry_delete = delete(model.Data).where(and_(model.Data.uuid == cte_table_ranked.c.uuid, cte_table_ranked.c.rnk > 1))
+    
     # create update query using the Common Table Expression
     duplicate_removal_update = update(table.__table__)\
     .where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\

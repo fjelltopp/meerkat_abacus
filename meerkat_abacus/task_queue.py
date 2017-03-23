@@ -64,10 +64,10 @@ def get_proccess_data(print_progress=False):
     new_records = import_new_data()
     if print_progress:
         print("Validating initial visits")
-    changed_records = corrected_initial_visits = correct_initial_visits() 
+    changed_records = correct_initial_visits() 
     if print_progress:
         print("To Code")
-    new_data_to_codes(restrict_uuids=new_records)
+    new_data_to_codes(restrict_uuids=list(set(changed_records + new_records)))
     if print_progress:
         print("Finished")
 
@@ -75,7 +75,8 @@ def get_proccess_data(print_progress=False):
 def correct_initial_visits():
     """
     Make sure patients don't have several initial visits 
-    for the same diagnosis
+    for the same diagnosis and remove the data table
+    row for amended rows
     """
     ret = data_management.initial_visit_control()
     return ret
