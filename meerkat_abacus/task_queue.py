@@ -76,7 +76,7 @@ def correct_initial_visits():
     """
     Make sure patients don't have several initial visits 
     for the same diagnosis and remove the data table
-    row for amended rows
+    rows for amended rows
     """
     ret = data_management.initial_visit_control()
     return ret
