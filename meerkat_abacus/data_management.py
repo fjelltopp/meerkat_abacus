@@ -808,7 +808,7 @@ def create_alert_id(alert):
     return "".join(sorted(alert["uuids"]))[-country_config["alert_id_length"]:]
 
 
-def add_new_fake_data(to_add):
+def add_new_fake_data(to_add, from_files = False):
     """
     Wrapper function to add new fake data to the existing csv files
 i
@@ -818,7 +818,7 @@ i
     engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
-    add_fake_data(session, to_add, append=True)
+    add_fake_data(session, to_add, append=True, from_files=from_files)
 
 
 def create_links(data_type, input_conditions, table, session, conn):

@@ -56,7 +56,10 @@ def set_up_db():
 def get_proccess_data(print_progress=False):
     """Get/create new data and proccess it."""
     if config.fake_data:
-        add_new_fake_data(5)
+        if config.country_config['manual_test_data']:
+            add_new_fake_data(5, from_files = True)
+        else:
+            add_new_fake_data(5)
     if config.get_data_from_s3:
         get_new_data_from_s3()
     if print_progress:
@@ -97,9 +100,9 @@ def import_new_data():
 
 
 @app.task
-def add_new_fake_data(to_add):
+def add_new_fake_data(to_add, from_files=False):
     """ Add new fake data """
-    return data_management.add_new_fake_data(to_add)
+    return data_management.add_new_fake_data(to_add, from_files)
 
 
 @app.task
