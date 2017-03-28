@@ -1245,8 +1245,8 @@ def initial_visit_control():
     if "initial_visit_control" not in country_config:
         return []
 
-    corrected = []
     log = []
+    corrected = []
     for form_table in country_config['initial_visit_control'].keys():
         table = model.form_tables[form_table]
         identifier_key_list = country_config['initial_visit_control'][form_table]['identifier_key_list']
@@ -1260,7 +1260,7 @@ def initial_visit_control():
             module_key, module_value)
         for i in ret_corrected.fetchall():
             corrected.append(i[0])
-            log.append([datetime.now(),i[0]])
+            log.append({'timestamp':str(datetime.now()),'uuid':i[0]})
 
 
     file_name = config.data_directory + 'initial_visit_control_corrected_rows.csv'

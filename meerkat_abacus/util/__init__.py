@@ -289,20 +289,26 @@ def get_deviceids(session, case_report=False):
     return deviceids
 
 
-def write_csv(rows, file_path, mode = "w"):
+def write_csv(rows, file_path, mode = 'w'):
     """
     Writes rows to csvfile
 
     Args:
         rows: list of dicts with data
         file_path: path to write file to
+        mode: 'w' for writing to a new file, 'a' for 
+         appending without overwriting
+
     """
     # Only write if rows were inserted
     if rows:
         with open(file_path, mode, encoding='utf-8') as f:
             columns = sorted(list(rows[0]))
             out = csv.DictWriter(f, columns)
-            out.writeheader()
+
+            if mode == 'w':
+                out.writeheader()
+            
             for row in rows:
                 out.writerow(row)
 
