@@ -14,7 +14,9 @@ country_config = {
         "demo_case": {
           "identifier_key_list": ["pt./pid","icd_code"],
           "visit_type_key": "intro./visit",
-          "visit_date_key": "pt./visit_date" 
+          "visit_date_key": "pt./visit_date",
+          "module_key": "intro./module",
+          "module_value": "ncd"
         }
 
     },

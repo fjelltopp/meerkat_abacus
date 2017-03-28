@@ -1246,19 +1246,32 @@ def initial_visit_control():
         return []
 
     corrected = []
+    log = []
     for form_table in country_config['initial_visit_control'].keys():
         table = model.form_tables[form_table]
         identifier_key_list = country_config['initial_visit_control'][form_table]['identifier_key_list']
         visit_type_key = country_config['initial_visit_control'][form_table]['visit_type_key']
         visit_date_key = country_config['initial_visit_control'][form_table]['visit_date_key']
-        ret_corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key)
+        module_key = country_config['initial_visit_control'][form_table]['module_key']
+        module_value = country_config['initial_visit_control'][form_table]['module_value']
+
+
+        ret_corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key,
+            module_key, module_value)
         for i in ret_corrected.fetchall():
             corrected.append(i[0])
+            log.append([datetime.now(),i[0]])
+
+
+    file_name = config.data_directory + 'initial_visit_control_corrected_rows.csv'
+    util.write_csv(log, file_name, mode = "a")
 
     return corrected
 
 
-def correct_initial_visits(session, table, identifier_key_list=['patientid','icd_code'], visit_type_key='intro./visit', visit_date_key='pt./visit_date'):
+def correct_initial_visits(session, table, 
+    identifier_key_list=['patientid','icd_code'], visit_type_key='intro./visit', visit_date_key='pt./visit_date', 
+    module_key='intro./module', module_value="ncd"):
     """
     Corrects cases where a patient has multiple initial visits.
     The additional initial visits will be corrected to return visits.
@@ -1269,6 +1282,8 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
         identifier_key_list: list of json keys in the data column that should occur only once for an initial visit 
         visit_type_key: key of the json column data that defines visit type
         visit_date_key: key of the json column data that stores the visit date
+        module_key: module to filter the processing to
+        module_value
     """
 
     new_visit_value = "new"
@@ -1294,7 +1309,11 @@ def correct_initial_visits(session, table, identifier_key_list=['patientid','icd
             partition_by = [*identifier_column_objects],
             order_by =[table.data[visit_date_key],table.id]).label('rnk'))\
         .filter(table.data[visit_type_key].astext == new_visit_value)\
-        .filter(and_(*empty_values_filter)).cte("cte_table_ranked")
+        .filter(and_(*empty_values_filter))\
+        .filter(table.data[module_key].astext == module_value)\
+        .cte("cte_table_ranked")
+
+
 
     # create delete statement using the Common Table Expression
     data_entry_delete = delete(model.Data).where(and_(model.Data.uuid == cte_table_ranked.c.uuid, cte_table_ranked.c.rnk > 1))

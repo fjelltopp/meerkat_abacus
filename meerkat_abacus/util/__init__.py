@@ -289,7 +289,7 @@ def get_deviceids(session, case_report=False):
     return deviceids
 
 
-def write_csv(rows, file_path):
+def write_csv(rows, file_path, mode = "w"):
     """
     Writes rows to csvfile
 
@@ -299,7 +299,7 @@ def write_csv(rows, file_path):
     """
     # Only write if rows were inserted
     if rows:
-        with open(file_path, "w", encoding='utf-8') as f:
+        with open(file_path, mode, encoding='utf-8') as f:
             columns = sorted(list(rows[0]))
             out = csv.DictWriter(f, columns)
             out.writeheader()
