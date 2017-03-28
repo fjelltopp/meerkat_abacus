@@ -1,6 +1,8 @@
 language: python
+dist: 
+   -trusty
 python:
-  - '3.5'
+  - '3.6'
 env:
 - MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
   DATA_DIRECTORY='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/data/'
