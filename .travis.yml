@@ -6,7 +6,7 @@ env:
   DATA_DIRECTORY='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/data/'
   COUNTRY_CONFIG_DIR='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/country_config/'
 addons:
-  postgresql: '9.4'
+  postgresql: '9.6'
 services:
 - postgresql
 install:
