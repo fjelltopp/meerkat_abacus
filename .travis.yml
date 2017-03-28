@@ -11,6 +11,8 @@ addons:
   postgresql: '9.6'
 services:
 - postgresql
+before_script:
+  - psql -U postgres -c "create extension postgis"
 install:
  - sudo apt-get update
  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
