@@ -1333,9 +1333,9 @@ def correct_initial_visits(session, table,
     with jor_case_ranked as (
     select id, data->>'patientid' patientid, data->>'icd_code' icd_code, 
     rank() over (PARTITION BY data->>'patientid', data->>'icd_code' ORDER BY (data->>'pt./visit_date')::date, id ASC) rnk
-    from jor_case where data->>'intro./visit_type' = 'new' and data->>'patientid' <> '' and data->>'icd_code' <> '')
+    from jor_case where data->>'intro./visit' = 'new' and data->>'patientid' <> '' and data->>'icd_code' <> '')
     update jor_case as c 
-    set data = jsonb_set(data,'{intro./visit_type}','"return"',false) 
+    set data = jsonb_set(data,'{intro./visit}','"return"',false) 
     from jor_case_ranked c_r 
     where c.id = c_r.id and c_r.rnk>1;
     """
