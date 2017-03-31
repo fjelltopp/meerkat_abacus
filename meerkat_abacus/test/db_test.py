@@ -267,6 +267,7 @@ class DbTest(unittest.TestCase):
         session.close()
         self.assertFalse(manage.set_up_everything(True, False, 100))
         task_queue.config.country_config["manual_test_data"] = old_manual
+
     def test_get_proccess_data(self):
         old_fake = task_queue.config.fake_data
         old_s3 = task_queue.config.get_data_from_s3
@@ -292,6 +293,33 @@ class DbTest(unittest.TestCase):
         task_queue.config.fake_data = old_fake
         task_queue.config.get_data_from_s3 = old_s3
         task_queue.config.country_config["manual_test_data"] = old_manual
+
+
+    def test_get_new_data_initial_visit_control(self):
+        """
+        Tests the initial visit control in case new data is brought in and it needs to be validated
+        """
+        old_fake = task_queue.config.fake_data
+        old_s3 = task_queue.config.get_data_from_s3
+        task_queue.config.fake_data = True
+        task_queue.config.get_data_from_s3 = False
+        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+
+        numbers = {}
+        manage.import_locations(self.engine, self.session)
+        manage.import_variables(self.session)
+        manage.add_fake_data(self.session, N=500, append=False)
+        task_queue.get_proccess_data.apply().get()
+        for table in model.form_tables:
+            res = self.session.query(model.form_tables[table])
+            numbers[table] = len(res.all())
+        task_queue.get_proccess_data.apply().get()
+        for table in model.form_tables:
+            res = self.session.query(model.form_tables[table])
+            self.assertEqual(numbers[table] + 5, len(res.all()))
+        #Reset configuration parameters
+        task_queue.config.fake_data = old_fake
+        task_queue.config.get_data_from_s3 = old_s3
 
 if __name__ == "__main__":
     unittest.main()
