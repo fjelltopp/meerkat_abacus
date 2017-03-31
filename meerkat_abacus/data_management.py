@@ -137,7 +137,7 @@ def add_fake_data(session, N=500, append=False, from_files=False):
                 alert_ids.append(row["meta/instanceID"][-country_config[
                     "alert_id_length"]:])
         util.write_csv(list(current_form) + list(manual_test_data) + generated_data, file_name)
-        print("hei")
+
 
 def get_data_from_s3(bucket):
     """
@@ -514,6 +514,7 @@ def import_clinics(csv_file, session, country_id):
                             case_type=row.get("case_type", None),
                             level="clinic",
                             population=population,
+                            service_provider=row.get("service_provider", None),
                             start_date=start_date))
                 else:
                     location = result.first()
@@ -831,6 +832,7 @@ def create_links(data_type, input_conditions, table, session, conn):
     links_by_type, links_by_name = util.get_links(config.config_directory +
                                                   country_config["links_file"])
     link_names = []
+    print(data_type, links_by_type.get(data_type["type"], None))
     if data_type["type"] in links_by_type:
         for link in links_by_type[data_type["type"]]:
             conditions = list(input_conditions)
@@ -895,7 +897,6 @@ def create_links(data_type, input_conditions, table, session, conn):
                 # build query from join and filter conditions
                 link_query = session.query(*columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
-
                 # use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)

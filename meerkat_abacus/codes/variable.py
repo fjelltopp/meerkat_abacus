@@ -264,6 +264,10 @@ class Variable():
             return greater & less
         except ZeroDivisionError:
             return 0
+        except ValueError as e:
+            print("Value error while testing for code ", self.variable.id)
+            raise e
+            
 
     def test_calc(self, old_row):
         """
@@ -294,6 +298,7 @@ class Variable():
 
         try:
             return float(eval(self.calculation))
+        
         except ZeroDivisionError:
             return 0
 

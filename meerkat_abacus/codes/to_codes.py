@@ -128,6 +128,9 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         else:
             ret_location["district"] = None
             ret_location["region"] = None
+        row[location_form]["clinic_type"] = locations[clinic_id].clinic_type
+        row[location_form]["service_provider"] = locations[clinic_id].service_provider
+        
     elif "in_geometry" in location:
         fields = location.split("$")[1].split(",")
         try:
