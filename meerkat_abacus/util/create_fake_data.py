@@ -48,7 +48,10 @@ def get_value(field, data):
         value = random.uniform(upper, lower)
     elif field_type == "date":
         now = datetime.datetime.now()
-        start = now - datetime.timedelta(days=21)
+        start_offset = 21
+        if argument == "age":
+            start_offset = 365*80
+        start = now - datetime.timedelta(days=start_offset)
         total_days = (now - start).days
         date = start + datetime.timedelta(
             days=random.uniform(0, total_days))

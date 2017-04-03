@@ -10,6 +10,16 @@ country_config = {
         "demo_register",
 #        "plague_data"
     ],
+    "initial_visit_control": {
+        "demo_case": {
+          "identifier_key_list": ["pt./pid","icd_code"],
+          "visit_type_key": "intro./visit",
+          "visit_date_key": "pt./visit_date",
+          "module_key": "intro./module",
+          "module_value": "ncd"
+        }
+
+    },
     "require_case_report": ["demo_case", "demo_register"],
     "codes_file": "demo_codes",
     "coding_list": [
@@ -88,7 +98,10 @@ country_config = {
         }
     },
     "manual_test_data": {
-      "demo_case":"demo_case_link_test_data"
+      "demo_case":[
+        "demo_case_link_test_data",
+        "demo_case_duplicate_initial_visits_test_data"
+        ]
     },
     "alert_data": {"demo_case": {"age": "pt1./age", "gender": "pt1./gender"}},
     "alert_id_length": 6,

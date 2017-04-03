@@ -68,7 +68,7 @@ def epi_week_start_date(year, epi_config=country_config["epi_week"]):
             adjustment = 7 + adjustment
         return first_of_year + timedelta(days=adjustment)
     else:
-        return epi_config[year]
+        return epi_config.get(year, datetime(year, 1, 1))
 
 
 def get_link_definitions(session):
@@ -289,20 +289,26 @@ def get_deviceids(session, case_report=False):
     return deviceids
 
 
-def write_csv(rows, file_path):
+def write_csv(rows, file_path, mode = 'w'):
     """
     Writes rows to csvfile
 
     Args:
         rows: list of dicts with data
         file_path: path to write file to
+        mode: 'w' for writing to a new file, 'a' for 
+         appending without overwriting
+
     """
     # Only write if rows were inserted
     if rows:
-        with open(file_path, "w", encoding='utf-8') as f:
+        with open(file_path, mode, encoding='utf-8') as f:
             columns = sorted(list(rows[0]))
             out = csv.DictWriter(f, columns)
-            out.writeheader()
+
+            if mode == 'w':
+                out.writeheader()
+            
             for row in rows:
                 out.writerow(row)
 

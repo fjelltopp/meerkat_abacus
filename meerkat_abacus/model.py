@@ -59,6 +59,7 @@ class Locations(Base):
     start_date = Column(DateTime)
     case_type = Column(String, index=True)
     population = Column(Integer, default=0)
+    service_provider = Column(String)
 
     def __repr__(self):
         return "<Location(name='%s', id='%s', parent_location='%s')>" % (

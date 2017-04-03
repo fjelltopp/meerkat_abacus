@@ -56,17 +56,33 @@ def set_up_db():
 def get_proccess_data(print_progress=False):
     """Get/create new data and proccess it."""
     if config.fake_data:
-        add_new_fake_data(5)
+        if config.country_config['manual_test_data']:
+            add_new_fake_data(5, from_files = True)
+        else:
+            add_new_fake_data(5)
     if config.get_data_from_s3:
         get_new_data_from_s3()
     if print_progress:
         print("Import new data")
     new_records = import_new_data()
     if print_progress:
+        print("Validating initial visits")
+    changed_records = correct_initial_visits() 
+    if print_progress:
         print("To Code")
-    new_data_to_codes(restrict_uuids=new_records)
+    new_data_to_codes(restrict_uuids=list(set(changed_records + new_records)))
     if print_progress:
         print("Finished")
+
+@app.task
+def correct_initial_visits():
+    """
+    Make sure patients don't have several initial visits 
+    for the same diagnosis and remove the data table
+    rows for amended rows
+    """
+    ret = data_management.initial_visit_control()
+    return ret
 
 
 @app.task
@@ -84,9 +100,9 @@ def import_new_data():
 
 
 @app.task
-def add_new_fake_data(to_add):
+def add_new_fake_data(to_add, from_files=False):
     """ Add new fake data """
-    return data_management.add_new_fake_data(to_add)
+    return data_management.add_new_fake_data(to_add, from_files)
 
 
 @app.task

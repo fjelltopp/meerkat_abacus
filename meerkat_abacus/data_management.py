@@ -2,7 +2,7 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func, and_, exc
+from sqlalchemy import create_engine, func, and_, exc, over, update, select, delete
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -97,6 +97,8 @@ def add_fake_data(session, N=500, append=False, from_files=False):
        N: number of rows to create for each from (default=500)
        append: If we should append the new fake data or write
                over the old (default=False)
+       from_files: whether to add data from the manual test case
+                   files defined in country_config
     """
     print("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
@@ -119,11 +121,14 @@ def add_fake_data(session, N=500, append=False, from_files=False):
         else:
             form_deviceids = deviceids
 
-        manual_test_data = []
+        manual_test_data = {}
         if from_files and form in country_config.get("manual_test_data", {}).keys():
             current_directory = os.path.dirname(os.path.realpath(__file__))
-            manual_test_data = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
-                country_config["manual_test_data"][form] + ".csv")
+            for fake_data_file in country_config.get("manual_test_data", {})[form]:
+                manual_test_data[fake_data_file] = []
+                print("adding test data from file: " + fake_data_file + ".csv")
+                manual_test_data[fake_data_file] = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
+                    fake_data_file + ".csv")
 
 
         generated_data = create_fake_data.create_form(
@@ -136,8 +141,12 @@ def add_fake_data(session, N=500, append=False, from_files=False):
             for row in generated_data:
                 alert_ids.append(row["meta/instanceID"][-country_config[
                     "alert_id_length"]:])
-        util.write_csv(list(current_form) + list(manual_test_data) + generated_data, file_name)
-        print("hei")
+        manual_test_data_list = []
+        for manual_test_data_file in manual_test_data.keys():
+            manual_test_data_list += list(manual_test_data[manual_test_data_file])
+
+        util.write_csv(list(current_form) + list(manual_test_data_list) + generated_data, file_name)
+
 
 def get_data_from_s3(bucket):
     """
@@ -514,6 +523,7 @@ def import_clinics(csv_file, session, country_id):
                             case_type=row.get("case_type", None),
                             level="clinic",
                             population=population,
+                            service_provider=row.get("service_provider", None),
                             start_date=start_date))
                 else:
                     location = result.first()
@@ -662,6 +672,8 @@ def set_up_everything(leave_if_data, drop_db, N):
         import_variables(session)
         print("Import Data")
         import_data(engine, session)
+        print("Controlling initial visits")
+        initial_visit_control()
         print("To codes")
         session.query(model.Data).delete()
         engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
@@ -796,7 +808,7 @@ def create_alert_id(alert):
     return "".join(sorted(alert["uuids"]))[-country_config["alert_id_length"]:]
 
 
-def add_new_fake_data(to_add):
+def add_new_fake_data(to_add, from_files = False):
     """
     Wrapper function to add new fake data to the existing csv files
 i
@@ -806,7 +818,7 @@ i
     engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
-    add_fake_data(session, to_add, append=True)
+    add_fake_data(session, to_add, append=True, from_files=from_files)
 
 
 def create_links(data_type, input_conditions, table, session, conn):
@@ -831,6 +843,7 @@ def create_links(data_type, input_conditions, table, session, conn):
     links_by_type, links_by_name = util.get_links(config.config_directory +
                                                   country_config["links_file"])
     link_names = []
+    print(data_type, links_by_type.get(data_type["type"], None))
     if data_type["type"] in links_by_type:
         for link in links_by_type[data_type["type"]]:
             conditions = list(input_conditions)
@@ -895,7 +908,6 @@ def create_links(data_type, input_conditions, table, session, conn):
                 # build query from join and filter conditions
                 link_query = session.query(*columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
-
                 # use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
@@ -1220,6 +1232,116 @@ def send_alerts(alerts, session):
         alert_id = alert.uuid[-country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations)
 
+def initial_visit_control():
+    """
+    Configures and corrects the initial visits and removes the calculated codes
+    from the data table where the visit was amended
+    """
+
+    engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    if "initial_visit_control" not in country_config:
+        return []
+
+    log = []
+    corrected = []
+    for form_table in country_config['initial_visit_control'].keys():
+        table = model.form_tables[form_table]
+        identifier_key_list = country_config['initial_visit_control'][form_table]['identifier_key_list']
+        visit_type_key = country_config['initial_visit_control'][form_table]['visit_type_key']
+        visit_date_key = country_config['initial_visit_control'][form_table]['visit_date_key']
+        module_key = country_config['initial_visit_control'][form_table]['module_key']
+        module_value = country_config['initial_visit_control'][form_table]['module_value']
+
+
+        ret_corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key,
+            module_key, module_value)
+        for i in ret_corrected.fetchall():
+            corrected.append(i[0])
+            log.append({'timestamp':str(datetime.now()),'uuid':i[0]})
+
+
+    file_name = config.data_directory + 'initial_visit_control_corrected_rows.csv'
+    util.write_csv(log, file_name, mode = "a")
+
+    return corrected
+
+
+def correct_initial_visits(session, table, 
+    identifier_key_list=['patientid','icd_code'], visit_type_key='intro./visit', visit_date_key='pt./visit_date', 
+    module_key='intro./module', module_value="ncd"):
+    """
+    Corrects cases where a patient has multiple initial visits.
+    The additional initial visits will be corrected to return visits.
+
+    Args:
+        session: db session
+        table: table to check for duplicates
+        identifier_key_list: list of json keys in the data column that should occur only once for an initial visit 
+        visit_type_key: key of the json column data that defines visit type
+        visit_date_key: key of the json column data that stores the visit date
+        module_key: module to filter the processing to
+        module_value
+    """
+
+    new_visit_value = "new"
+    return_visit_value = "return"
+
+    # construct a comparison list that makes sure the identifier jsonb data values are not empty
+    identifier_column_objects = []
+    empty_values_filter = []
+    for key in identifier_key_list:
+
+        # make a column object list of identifier values
+        identifier_column_objects.append(table.data[key].astext)
+
+        # construct a comparison list that makes sure the identifier
+        # jsonb data values are not empty
+        empty_values_filter.append(table.data[key].astext != "")
+
+    # create a Common Table Expression object to rank visit dates accoring to 
+    cte_table_ranked = session.query(
+        table.id, table.uuid,
+        func.jsonb_set(table.data,'{'+visit_type_key+'}','"return"',False).label('data'),
+        over(func.rank(),
+            partition_by = [*identifier_column_objects],
+            order_by =[table.data[visit_date_key],table.id]).label('rnk'))\
+        .filter(table.data[visit_type_key].astext == new_visit_value)\
+        .filter(and_(*empty_values_filter))\
+        .filter(table.data[module_key].astext == module_value)\
+        .cte("cte_table_ranked")
+
+
+
+    # create delete statement using the Common Table Expression
+    data_entry_delete = delete(model.Data).where(and_(model.Data.uuid == cte_table_ranked.c.uuid, cte_table_ranked.c.rnk > 1))
+    
+    # create update query using the Common Table Expression
+    duplicate_removal_update = update(table.__table__)\
+    .where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
+    .values(data = cte_table_ranked.c.data)\
+    .returning(table.uuid) 
+
+    ret = session.execute(duplicate_removal_update)
+
+    session.commit()
+
+    """
+    The SQLAlchemy ORM objects emulate the following SQL statement:
+    with jor_case_ranked as (
+    select id, data->>'patientid' patientid, data->>'icd_code' icd_code, 
+    rank() over (PARTITION BY data->>'patientid', data->>'icd_code' ORDER BY (data->>'pt./visit_date')::date, id ASC) rnk
+    from jor_case where data->>'intro./visit' = 'new' and data->>'patientid' <> '' and data->>'icd_code' <> '')
+    update jor_case as c 
+    set data = jsonb_set(data,'{intro./visit}','"return"',false) 
+    from jor_case_ranked c_r 
+    where c.id = c_r.id and c_r.rnk>1;
+    """
+
+    return ret
+
 
 if __name__ == "__main__":
     engine = create_engine(config.DATABASE_URL)
@@ -1227,3 +1349,5 @@ if __name__ == "__main__":
     session = Session()
 
     export_data(session)
+
+
