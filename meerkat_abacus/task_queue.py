@@ -12,6 +12,7 @@ import celery
 from meerkat_abacus import celeryconfig
 import raven
 from raven.contrib.celery import register_signal, register_logger_signal
+from meerkat_libs.logger_client import Logger
 
 class Celery(celery.Celery):
 
@@ -22,6 +23,18 @@ class Celery(celery.Celery):
             register_logger_signal(client)
             # hook into the Celery error handler
             register_signal(client)
+
+        # set up logging
+        logging_url = config.LOGGING_URL
+        source = config.LOGGING_SOURCE
+        source_type = config.LOGGING_SOURCE_TYPE
+        implementation = config.LOGGING_IMPLEMENTATION
+        event_type = "batch_job_event"
+        self.logger = Logger(logging_url,
+                        event_type,
+                        source,
+                        source_type,
+                        implementation)
 
 
 app = Celery()
@@ -50,6 +63,7 @@ def set_up_db():
                                       True,
                                       500)
     print("Finished setting up DB")
+    app.logger.send({"task":"set_up_db"})
 
 
 @app.task
@@ -73,6 +87,9 @@ def get_proccess_data(print_progress=False):
     new_data_to_codes(restrict_uuids=list(set(changed_records + new_records)))
     if print_progress:
         print("Finished")
+    app.logger.send({   "task":"get_proccess_data",
+                        "new_records": len(new_records),
+                        "corrected_initial_visits": len(changed_records)})
 
 @app.task
 def correct_initial_visits():

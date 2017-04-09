@@ -80,3 +80,8 @@ if hermes_dev:
     country_config["messaging_silent"] = True
 
 s3_bucket = country_config_module.s3_bucket
+
+LOGGING_URL = os.getenv("LOGGING_URL", None)
+LOGGING_SOURCE = os.getenv("LOGGING_SOURCE", "abacus")
+LOGGING_SOURCE_TYPE = "abacus"
+LOGGING_IMPLEMENTATION = os.getenv("LOGGING_IMPLEMENTATION", "demo")
