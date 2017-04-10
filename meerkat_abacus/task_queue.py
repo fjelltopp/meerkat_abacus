@@ -219,7 +219,7 @@ def send_report_email(report, language, location):
         }
         util.hermes('/error', 'PUT', data)
         app.logger.send({   "task":"send_report_email", 
-                            "report": str(report).
+                            "report": str(report),
                             "status": "FAILURE",
                             "data": data}
                             )
