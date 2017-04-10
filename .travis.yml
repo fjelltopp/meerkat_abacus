@@ -7,6 +7,8 @@ env:
 - MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
   DATA_DIRECTORY='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/data/'
   COUNTRY_CONFIG_DIR='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/country_config/'
+  LOGGING_URL='http://nginx/logging'
+
 addons:
   postgresql: '9.6'
 services:
