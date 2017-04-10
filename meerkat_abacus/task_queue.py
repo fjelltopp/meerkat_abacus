@@ -45,8 +45,8 @@ from api_background.export_data import export_form, export_category, export_data
 def task_logger(data):
     try:
         app.logger.send(data)
-    except requests.exceptions.ConnectionError as e:
-        print("Could not connect to persistent logger: " + str(e))
+    except Exception as e:
+        print("Could write log to logging database: " + str(e))
 
 
 # When we start celery we run the set_up_db command
