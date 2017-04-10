@@ -195,7 +195,7 @@ def send_report_email(report, language, location):
         # Report success
         logging.info(pre + "Successfully sent " + str(report) + " email.")
         app.logger.send({   "task":"send_report_email", 
-                            "report": str(report).
+                            "report": str(report),
                             "status": "SUCCESS"}
                             )
 
