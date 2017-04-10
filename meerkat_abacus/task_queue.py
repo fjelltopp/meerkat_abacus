@@ -42,6 +42,12 @@ app.config_from_object(celeryconfig)
 
 from api_background.export_data import export_form, export_category, export_data
 
+def task_logger(data):
+    try:
+        app.logger.send(data)
+    except ConnectionError as e:
+        print("Could not connect to persistent logger: " + str(e))
+
 
 # When we start celery we run the set_up_db command
 @worker_ready.connect
@@ -63,7 +69,7 @@ def set_up_db():
                                       True,
                                       500)
     print("Finished setting up DB")
-    app.logger.send({"task":"set_up_db"})
+    task_logger({"task":"set_up_db"})
 
 
 @app.task
@@ -87,7 +93,7 @@ def get_proccess_data(print_progress=False):
     new_data_to_codes(restrict_uuids=list(set(changed_records + new_records)))
     if print_progress:
         print("Finished")
-    app.logger.send({   "task":"get_proccess_data",
+    task_logger({   "task":"get_proccess_data",
                         "new_records": len(new_records),
                         "corrected_initial_visits": len(changed_records)})
 
@@ -194,7 +200,7 @@ def send_report_email(report, language, location):
 
         # Report success
         logging.info(pre + "Successfully sent " + str(report) + " email.")
-        app.logger.send({   "task":"send_report_email", 
+        task_logger({   "task":"send_report_email", 
                             "report": str(report),
                             "status": "SUCCESS"}
                             )
@@ -218,7 +224,7 @@ def send_report_email(report, language, location):
                 "<p><b>Hope you can fix it soon!</b></p>")
         }
         util.hermes('/error', 'PUT', data)
-        app.logger.send({   "task":"send_report_email", 
+        task_logger({   "task":"send_report_email", 
                             "report": str(report),
                             "status": "FAILURE",
                             "data": data}
