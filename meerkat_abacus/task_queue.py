@@ -194,6 +194,10 @@ def send_report_email(report, language, location):
 
         # Report success
         logging.info(pre + "Successfully sent " + str(report) + " email.")
+        app.logger.send({   "task":"send_report_email", 
+                            "report": str(report).
+                            "status": "SUCCESS"}
+                            )
 
     except Exception:
         # Log the exception properly.
@@ -214,3 +218,8 @@ def send_report_email(report, language, location):
                 "<p><b>Hope you can fix it soon!</b></p>")
         }
         util.hermes('/error', 'PUT', data)
+        app.logger.send({   "task":"send_report_email", 
+                            "report": str(report).
+                            "status": "FAILURE",
+                            "data": data}
+                            )
