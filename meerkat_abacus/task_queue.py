@@ -45,7 +45,7 @@ from api_background.export_data import export_form, export_category, export_data
 def task_logger(data):
     try:
         app.logger.send(data)
-    except ConnectionError as e:
+    except requests.exceptions.ConnectionError as e:
         print("Could not connect to persistent logger: " + str(e))
 
 
