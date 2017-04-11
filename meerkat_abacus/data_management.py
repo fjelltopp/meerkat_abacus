@@ -2,7 +2,8 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
-from sqlalchemy import create_engine, func, and_, exc, over, update, select, delete
+from sqlalchemy import create_engine, func, and_
+from sqlalchemy import exc, over, update, delete
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -15,14 +16,14 @@ from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
+from shapely.geometry import shape, Polygon, MultiPolygon
+from geoalchemy2.shape import from_shape
 import inspect
 import csv
 import boto3
 import copy
 import json
 import time
-from shapely.geometry import shape, Polygon, MultiPolygon
-from geoalchemy2.shape import from_shape
 import os
 
 
@@ -1269,8 +1270,8 @@ def initial_visit_control():
     return corrected
 
 
-def correct_initial_visits(session, table, 
-    identifier_key_list=['patientid','icd_code'], visit_type_key='intro./visit', visit_date_key='pt./visit_date', 
+def correct_initial_visits(session, table,
+    identifier_key_list=['patientid','icd_code'], visit_type_key='intro./visit', visit_date_key='pt./visit_date',
     module_key='intro./module', module_value="ncd"):
     """
     Corrects cases where a patient has multiple initial visits.
@@ -1279,7 +1280,7 @@ def correct_initial_visits(session, table,
     Args:
         session: db session
         table: table to check for duplicates
-        identifier_key_list: list of json keys in the data column that should occur only once for an initial visit 
+        identifier_key_list: list of json keys in the data column that should occur only once for an initial visit
         visit_type_key: key of the json column data that defines visit type
         visit_date_key: key of the json column data that stores the visit date
         module_key: module to filter the processing to
@@ -1301,7 +1302,7 @@ def correct_initial_visits(session, table,
         # jsonb data values are not empty
         empty_values_filter.append(table.data[key].astext != "")
 
-    # create a Common Table Expression object to rank visit dates accoring to 
+    # create a Common Table Expression object to rank visit dates accoring to
     cte_table_ranked = session.query(
         table.id, table.uuid,
         func.jsonb_set(table.data,'{'+visit_type_key+'}','"return"',False).label('data'),
@@ -1317,12 +1318,12 @@ def correct_initial_visits(session, table,
 
     # create delete statement using the Common Table Expression
     data_entry_delete = delete(model.Data).where(and_(model.Data.uuid == cte_table_ranked.c.uuid, cte_table_ranked.c.rnk > 1))
-    
+
     # create update query using the Common Table Expression
     duplicate_removal_update = update(table.__table__)\
     .where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
     .values(data = cte_table_ranked.c.data)\
-    .returning(table.uuid) 
+    .returning(table.uuid)
 
     ret = session.execute(duplicate_removal_update)
 
@@ -1331,12 +1332,12 @@ def correct_initial_visits(session, table,
     """
     The SQLAlchemy ORM objects emulate the following SQL statement:
     with jor_case_ranked as (
-    select id, data->>'patientid' patientid, data->>'icd_code' icd_code, 
+    select id, data->>'patientid' patientid, data->>'icd_code' icd_code,
     rank() over (PARTITION BY data->>'patientid', data->>'icd_code' ORDER BY (data->>'pt./visit_date')::date, id ASC) rnk
     from jor_case where data->>'intro./visit' = 'new' and data->>'patientid' <> '' and data->>'icd_code' <> '')
-    update jor_case as c 
-    set data = jsonb_set(data,'{intro./visit}','"return"',false) 
-    from jor_case_ranked c_r 
+    update jor_case as c
+    set data = jsonb_set(data,'{intro./visit}','"return"',false)
+    from jor_case_ranked c_r
     where c.id = c_r.id and c_r.rnk>1;
     """
 
@@ -1349,5 +1350,3 @@ if __name__ == "__main__":
     session = Session()
 
     export_data(session)
-
-
