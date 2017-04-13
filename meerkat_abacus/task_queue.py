@@ -56,7 +56,7 @@ def set_up_db():
 def get_proccess_data(print_progress=False):
     """Get/create new data and proccess it."""
     if config.fake_data:
-        if config.country_config['manual_test_data']:
+        if config.country_config.get('manual_test_data', None):
             add_new_fake_data(5, from_files = True)
         else:
             add_new_fake_data(5)

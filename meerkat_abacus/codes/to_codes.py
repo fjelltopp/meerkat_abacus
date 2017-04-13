@@ -102,8 +102,13 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         alert(model.Alerts): Alert record if created
     """
     locations, locations_by_deviceid, regions, districts, devices = locations
-    if location == "deviceid":
-        clinic_id = locations_by_deviceid.get(row[location_form]["deviceid"],
+
+    if "deviceid" in location:
+        column = "deviceid"
+        if ":" in location:
+            column = location.split(":")[-1]
+        
+        clinic_id = locations_by_deviceid.get(row[location_form][column],
                                               None)
         if not clinic_id:
             return (None, None, None, None)
