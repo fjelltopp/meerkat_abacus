@@ -41,6 +41,7 @@ def from_env(env_var, default):
 
 
 # Application config
+DEPLOYMENT = from_env("DEPLOYMENT", "unknown")
 current_directory = os.path.dirname(os.path.realpath(__file__))
 DATABASE_URL = from_env(
     "MEERKAT_ABACUS_DB_URL",
