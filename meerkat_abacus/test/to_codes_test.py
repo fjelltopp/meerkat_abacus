@@ -29,7 +29,7 @@ locations = {1: model.Locations(name="Demo", id=1),
                  name="Clinic 2", parent_location=5, id=7),
              8: model.Locations(
                  name="Clinic with no district", parent_location=2, id=8)}
-locations_by_deviceid = {1: 6, 2: 7, 3: 8}
+locations_by_deviceid = {"1": 6, "2": 7, "3": 8}
 regions = [2, 3]
 districts = [4, 5]
 agg_variables = [
@@ -65,7 +65,8 @@ agg_variables = [
 ]
 alert_data = {"form1": {"column1": "column1"}}
 
-devices = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: []}
+devices = {"1": [], "2": [], "3": [], "4": [], "5": [],
+           "6": [], "7": [], "8": []}
 all_locations = (locations, locations_by_deviceid, regions, districts, devices)
 
 variables = {"case": {1: {}, 2: {}, 3: {}, 4: {}}}
@@ -102,7 +103,7 @@ class ToCodeTest(unittest.TestCase):
                 "column2": "B34",
                 "column3": "7",
                 "date": "2015-10-25",
-                "deviceid": 1,
+                "deviceid": "1",
                 "meta/instanceID": "a"}}
         var, category, ret_location, disregarded = to_code(
             row,
@@ -113,7 +114,7 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(ret_location["district"], 4)
         self.assertEqual(ret_location["clinic"], 6)
 
-        row["form1"]["deviceid"] = 2
+        row["form1"]["deviceid"] = "2"
         var, category, ret_location, disregard = to_code(
             row,
             (variables, variables_forms, variables_test, variables_groups, {}),
@@ -122,7 +123,7 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(ret_location["region"], 3)
         self.assertEqual(ret_location["district"], 5)
 
-        row["form1"]["deviceid"] = 3
+        row["form1"]["deviceid"] = "3"
         var, category, ret_location, disregard = to_code(
             row,
             (variables, variables_forms, variables_test, variables_groups, {}),
@@ -130,7 +131,7 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(ret_location["country"], 1)
         self.assertEqual(ret_location["region"], 2)
         self.assertEqual(ret_location["district"], None)
-        row["form1"]["deviceid"] = 99
+        row["form1"]["deviceid"] = "99"
         var, category, ret_location, disregard = to_code(
             row,
             (variables, variables_forms, variables_test, variables_groups, {}),
@@ -146,7 +147,7 @@ class ToCodeTest(unittest.TestCase):
                 "lat": "0.1",
                 "lng": "0.1",
                 "date": "2015-10-25",
-                "deviceid": 1,
+                "deviceid": "1",
                 "meta/instanceID": "a"}}
         var, category, ret_location, disregard = to_code(
             row,
@@ -165,7 +166,7 @@ class ToCodeTest(unittest.TestCase):
                 "lat": "0.3",
                 "lng": "0.1",
                 "date": "2015-10-25",
-                "deviceid": 1,
+                "deviceid": "1",
                 "meta/instanceID": "a"}}
         var, category, ret_location, disregard = to_code(
             row,
@@ -184,7 +185,7 @@ class ToCodeTest(unittest.TestCase):
                 "lat": "0.5",
                 "lng": "0.1",
                 "date": "2015-10-25",
-                "deviceid": 1,
+                "deviceid": "1",
                 "meta/instanceID": "a"}}
         var, category, ret_location, disregard = to_code(
             row,
@@ -204,21 +205,21 @@ class ToCodeTest(unittest.TestCase):
                           "column2": "B34",
                           "column3": "7",
                           "date": "2015-10-25",
-                          "deviceid": 1,
+                          "deviceid": "1",
                           "meta/instanceID": "a"}}
         row2 = {"form1": {"index": 2,
                           "column1": "B",
                           "column2": "A",
                           "column3": "4",
                           "date": "2015-10-25",
-                          "deviceid": 2,
+                          "deviceid": "2",
                           "meta/instanceID": "b"}}
         row3 = {"form1": {"index": 1,
                           "column1": "A",
                           "column2": "C",
                           "column3": "7",
                           "date": "2015-10-25",
-                          "deviceid": 2,
+                          "deviceid": "2",
                           "meta/instanceID": "c"}}
         var, category, ret_loc, disregard = to_code(
             row1,
