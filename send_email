@@ -29,6 +29,14 @@ parser.add_argument(
 )
 args = parser.parse_args()
 args_dict = vars(args)
+
+# Check the cerf report region because unlike other reports it isn't sent for 1
+if args_dict['report'] == 'cerf' and args_dict['loc'] != 19:
+    args_dict['loc'] = int(input(
+        'NOTE: CERF should be sent for Androy '
+        'region 19. Please confirm location ID: '
+    ))
+
 print(args_dict)
 
 task_queue.send_report_email(
