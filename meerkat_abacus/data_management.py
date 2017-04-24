@@ -844,7 +844,6 @@ def create_links(data_type, input_conditions, table, session, conn):
     links_by_type, links_by_name = util.get_links(config.config_directory +
                                                   country_config["links_file"])
     link_names = []
-    print(data_type, links_by_type.get(data_type["type"], None))
     if data_type["type"] in links_by_type:
         for link in links_by_type[data_type["type"]]:
             conditions = list(input_conditions)
@@ -1020,7 +1019,6 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             model.Links.type).outerjoin(
                 (model.Links,
                  table.uuid == model.Links.uuid_from)).filter(*query_condtion)
-
         data = {}
         res = conn.execution_options(
             stream_results=True).execute(query.statement)
@@ -1177,6 +1175,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 multiple_forms, data_type["location"]
                 )
             if location_data is None:
+                print("Missing loc data")
                 continue
             try:
                 date = parse(row[data_type["form"]][data_type["date"]])
