@@ -105,10 +105,14 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
 
     if "deviceid" in location:
         column = "deviceid"
+        prefix = ""
         if ":" in location:
-            column = location.split(":")[-1]
+            splitted = location.split(":")
+            column = location.split(":")[1]
+            if len(splitted) == 3:
+                prefix = location.split(":")[2]
         
-        clinic_id = locations_by_deviceid.get(row[location_form][column],
+        clinic_id = locations_by_deviceid.get(prefix + row[location_form][column],
                                               None)
         if not clinic_id:
             return (None, None, None, None)

@@ -67,7 +67,7 @@ def get_proccess_data(print_progress=False):
     new_records = import_new_data()
     if print_progress:
         print("Validating initial visits")
-    changed_records = correct_initial_visits() 
+    changed_records = correct_initial_visits()
     if print_progress:
         print("To Code")
     new_data_to_codes(restrict_uuids=list(set(changed_records + new_records)))
@@ -77,7 +77,7 @@ def get_proccess_data(print_progress=False):
 @app.task
 def correct_initial_visits():
     """
-    Make sure patients don't have several initial visits 
+    Make sure patients don't have several initial visits
     for the same diagnosis and remove the data table
     rows for amended rows
     """
@@ -184,16 +184,22 @@ def send_report_email(report, language, location):
 
         # Notify the developers that there has been a problem.
         data = {
-            "subject": "FAILED: " + str(report) + " email",
-            "message": "The {} email has failed to send.".format(report),
+            "subject": "FAILED: {} email".format(report),
+            "message": "Email failed to send from {} deployment.".format(
+                report,
+                config.DEPLOYMENT
+            ),
             "html-message": (
-                "<p>Hi <<first_name>> <<last_name>>,</p>" +
-                "<p>There's been a problem sending the " + str(report) +
-                " report email. " + "Here's the traceback...</p><p>" +
-                str(traceback.format_exc()) + "</p><p>The problem occured " +
-                "at " + datetime.now().isoformat() + " for the country " +
-                config.country_config.get('country_name', 'ERROR') +
-                " with HERMES_DEV == " + str(config.hermes_dev) + ".</p>" +
-                "<p><b>Hope you can fix it soon!</b></p>")
+                "<p>Hi <<first_name>> <<last_name>>,</p><p>There's been a "
+                "problem sending the {report} report email. Here's the "
+                "traceback...</p><p>{traceback}</p><p>The problem occured "
+                "at {time} for the {deployment} deployment.</p><p><b>Hope you "
+                "can fix it soon!</b></p>"
+            ).format(
+                report=report,
+                traceback=traceback.format_exc(),
+                time=datetime.now().isoformat(),
+                deployment=config.DEPLOYMENT
+            )
         }
         util.hermes('/error', 'PUT', data)
