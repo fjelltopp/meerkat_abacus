@@ -192,7 +192,7 @@ def get_regions_districts(session):
     regions = []
     districts = []
     for l in locations.keys():
-        if locations[l].parent_location == 1 and locations[l].level == "region":
+        if locations[l].level == "region":
             regions.append(l)
     for l in locations.keys():
         if locations[l].parent_location in regions and locations[l].level == "district":
@@ -467,10 +467,14 @@ def send_alert(alert_id, alert, variables, locations):
     if alert.date > datetime.now() - timedelta(days=7):
 
         # List the possible strings that construct an alert sms message
+        district = ""
+        if alert.district:
+            district = locations[alert.district].name
+        
         text_strings = {
             'date': "Date: " + alert.date.strftime("%d %b %Y") + "\n",
             'clinic': "Clinic: " + locations[alert.clinic].name + "\n",
-            'district': "District: " + locations[alert.district].name + "\n",
+            'district': "District: " + district + "\n",
             'region': "Region: " + locations[alert.region].name + "\n",
             'patient': "Patient ID: " + alert.uuid + "\n",
             'age': "Age: " + str(alert.variables["alert_age"]) + "\n",
@@ -491,7 +495,7 @@ def send_alert(alert_id, alert, variables, locations):
             'clinic': ("<tr><td><b>Clinic:</b></td><td>" +
                        locations[alert.clinic].name + "</td></tr>"),
             'district': ("<tr><td><b>District:</b></td><td>" +
-                         locations[alert.district].name + "</td></tr>"),
+                         district + "</td></tr>"),
             'region': ("<tr><td><b>Region:</b></td><td>" +
                        locations[alert.region].name + "</td></tr>"),
             'patient': ("<tr><td><b>Patient ID:</b></td><td>" +
