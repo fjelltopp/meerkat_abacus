@@ -562,6 +562,7 @@ def import_regions(csv_file, session, parent_id):
                 model.Locations(
                     name=row["region"],
                     parent_location=parent_id,
+                    population=row.get("population", 0),
                     #point_location=row["geo"],
                     level="region"))
     session.commit()
@@ -614,6 +615,7 @@ def import_districts(csv_file, session):
                 model.Locations(
                     name=row["district"],
                     parent_location=regions[row["region"]],
+                    population=row.get("population", 0),
                     level="district"))
     session.commit()
 
