@@ -176,6 +176,7 @@ def table_data_from_csv(filename,
                         table_name=None,
                         row_function=None,
                         quality_control=None,
+                        allow_enketo=False,
                         start_dates=None):
     """
     Adds all the data from a csv file. We delete all old data first
@@ -266,7 +267,7 @@ def table_data_from_csv(filename,
             continue
         if deviceids:
             if should_row_be_added(insert_row, table_name, deviceids,
-                                   start_dates):
+                                   start_dates, allow_enketo=allow_enketo):
                 dicts.append({"data": insert_row,
                               "uuid": insert_row[uuid_field]})
                 new_rows.append(insert_row[uuid_field])
@@ -287,7 +288,7 @@ def table_data_from_csv(filename,
     return new_rows
 
 
-def should_row_be_added(row, form_name, deviceids, start_dates):
+def should_row_be_added(row, form_name, deviceids, start_dates, allow_enketo=False):
     """
     Determines if a data row should be added.
     If deviceid is not None, the reccord need to have one of the deviceids.
@@ -306,6 +307,12 @@ def should_row_be_added(row, form_name, deviceids, start_dates):
     if deviceids is not None:
         if row.get("deviceid", None) in deviceids:
             ret = True
+        else:
+            if allow_enketo:
+                for url in allow_enketo:
+                    if url in row.get("deviceid", None):
+                        ret = True
+                        break
     else:
         ret = True
     if start_dates and row.get("deviceid", None) in start_dates:
@@ -377,6 +384,9 @@ def import_data(engine, session):
         if "quality_control" in country_config:
             if form in country_config["quality_control"]:
                 quality_control = True
+        allow_enketo = False
+        if form in country_config["allow_enketo"]:
+            allow_enketo = country_config["allow_enketo"][form]
         table_data_from_csv(
             form,
             model.form_tables[form],
@@ -387,7 +397,8 @@ def import_data(engine, session):
             deviceids=form_deviceids,
             table_name=form,
             start_dates=start_dates,
-            quality_control=quality_control)
+            quality_control=quality_control,
+            allow_enketo=allow_enketo)
 
 
 def import_new_data():

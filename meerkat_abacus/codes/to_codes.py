@@ -34,8 +34,6 @@ def get_variables(session, restrict=None, match_on_type=None, match_on_form=None
         group = row.calculation_group
         if not group:
             group = row.id_pk
-  
-
         if match_on_form is not None and match_on_type is not None:
             if row.method =="match" and row.calculation_priority in ["", None] and row.form == match_on_form and row.type == match_on_type:
                 col = row.db_column
@@ -123,7 +121,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
             "clinic": clinic_id,
             "clinic_type": locations[clinic_id].clinic_type,
             "case_type": locations[clinic_id].case_type,
-            "tags": devices[row[location_form]["deviceid"]],
+            "tags": devices.get(row[location_form].get("deviceid", None), None),
             "country": 1,
             "geolocation": clinic_gps
         }
