@@ -385,7 +385,7 @@ def import_data(engine, session):
             if form in country_config["quality_control"]:
                 quality_control = True
         allow_enketo = False
-        if form in country_config["allow_enketo"]:
+        if form in country_config.get("allow_enketo", []):
             allow_enketo = country_config["allow_enketo"][form]
         table_data_from_csv(
             form,
