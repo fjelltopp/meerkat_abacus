@@ -186,7 +186,6 @@ def send_report_email(report, language, location):
         data = {
             "subject": "FAILED: {} email".format(report),
             "message": "Email failed to send from {} deployment.".format(
-                report,
                 config.DEPLOYMENT
             ),
             "html-message": (
