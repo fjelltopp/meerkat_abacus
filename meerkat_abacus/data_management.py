@@ -546,6 +546,7 @@ def import_clinics(csv_file, session, country_id):
     session.commit()
 
 
+
 def import_geojson(geo_json, session):
     with open(geo_json) as f:
         geometry = json.loads(f.read())
@@ -594,7 +595,10 @@ def import_regions(csv_file, session, column_name,
                 model.Locations(
                     name=row[column_name],
                     parent_location=parents[row[parent_column_name]],
-                    level=level_name))
+                    level=level_name,
+                    population=row.get("population", 0),
+            )
+
     session.commit()
 
     

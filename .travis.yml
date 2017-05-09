@@ -1,6 +1,6 @@
 language: python
 dist: 
-   -trusty
+   - trusty
 python:
   - '3.6'
 env:
