@@ -34,7 +34,8 @@ country_config = {
     "locations": {
         "clinics": "demo_clinics.csv",
         "districts": "demo_districts.csv",
-        "regions": "demo_regions.csv"
+        "regions": "demo_regions.csv",
+        "zones": "demo_zones.csv"
     },
     "geojson_files": ["demo_json.json"],
     "form_dates": {
