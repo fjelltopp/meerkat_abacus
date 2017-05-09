@@ -595,7 +595,8 @@ def import_regions(csv_file, session, column_name,
                     parent_location=parents[row[parent_column_name]],
                     level=level_name,
                     population=row.get("population", 0)
-            ))
+                )
+            )
 
     session.commit()
 

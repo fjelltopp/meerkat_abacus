@@ -52,17 +52,18 @@ class DbTest(unittest.TestCase):
         manage.country_config["locations"] = {
             "clinics": "demo_clinics.csv",
             "districts": "demo_districts.csv",
-            "regions": "demo_regions.csv"
+            "regions": "demo_regions.csv",
+            "zones": "demo_zones.csv"
         }
         manage.import_locations(self.engine, self.session)
         results = self.session.query(model.Locations).all()
         self.assertEqual(
             len(results),
-            12)  # Important as we should not merge the final Clinic 1
+            14)  # Important as we should not merge the final Clinic 1
         for r in results:
             #Checking that devideids are handled properly
             if r.name == "Clinic 1":
-                if r.parent_location == 4:
+                if r.parent_location == 6:
                     self.assertEqual(r.deviceid, "1,6")
                 else:
                     self.assertEqual(r.deviceid, "7")
@@ -115,7 +116,8 @@ class DbTest(unittest.TestCase):
         manage.country_config["locations"] = {
             "clinics": "demo_clinics.csv",
             "districts": "demo_districts.csv",
-            "regions": "demo_regions.csv"
+            "regions": "demo_regions.csv",
+            "zones": "demo_zones.csv"
         }
         manage.import_locations(self.engine, self.session)
 
