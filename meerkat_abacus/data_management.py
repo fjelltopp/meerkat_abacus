@@ -448,17 +448,15 @@ def import_clinics(csv_file, session, country_id):
         country_id: id of the country
     """
 
-    result = session.query(model.Locations)\
-                    .filter(model.Locations.parent_location == country_id)
+    result = session.query(model.Locations)
     regions = {}
     for region in result:
-        regions[region.name] = region.id
-
+        if region.level == "region":
+            regions[region.name] = region.id
     districts = {}
-    result = session.query(model.Locations)\
-                    .filter(model.Locations.parent_location != country_id)
     for district in result:
-        districts[district.name] = district.id
+        if district.level == "district":
+            districts[district.name] = district.id
 
     deviceids = []
     with open(csv_file) as f:
@@ -596,8 +594,8 @@ def import_regions(csv_file, session, column_name,
                     name=row[column_name],
                     parent_location=parents[row[parent_column_name]],
                     level=level_name,
-                    population=row.get("population", 0),
-            )
+                    population=row.get("population", 0)
+            ))
 
     session.commit()
 
