@@ -448,17 +448,15 @@ def import_clinics(csv_file, session, country_id):
         country_id: id of the country
     """
 
-    result = session.query(model.Locations)\
-                    .filter(model.Locations.parent_location == country_id)
+    result = session.query(model.Locations)
     regions = {}
     for region in result:
-        regions[region.name] = region.id
-
+        if region.level == "region":
+            regions[region.name] = region.id
     districts = {}
-    result = session.query(model.Locations)\
-                    .filter(model.Locations.parent_location != country_id)
     for district in result:
-        districts[district.name] = district.id
+        if district.level == "district":
+            districts[district.name] = district.id
 
     deviceids = []
     with open(csv_file) as f:
@@ -546,27 +544,6 @@ def import_clinics(csv_file, session, country_id):
     session.commit()
 
 
-def import_regions(csv_file, session, parent_id):
-    """
-    Import regions from csv-file.
-
-    Args:
-        csv_file: path to csv file with regions
-        session: SQLAlchemy session
-        parent_id: The id of the country
-    """
-    with open(csv_file) as f:
-        csv_regions = csv.DictReader(f)
-        for row in csv_regions:
-            session.add(
-                model.Locations(
-                    name=row["region"],
-                    parent_location=parent_id,
-                    population=row.get("population", 0),
-                    #point_location=row["geo"],
-                    level="region"))
-    session.commit()
-
 
 def import_geojson(geo_json, session):
     with open(geo_json) as f:
@@ -597,7 +574,8 @@ def import_geojson(geo_json, session):
             session.commit()
 
 
-def import_districts(csv_file, session):
+def import_regions(csv_file, session, column_name,
+                   parent_column_name, level_name):
     """
     Import districts from csv file.
 
@@ -605,21 +583,24 @@ def import_districts(csv_file, session):
         csv_file: path to csv file with districts
         session: SQLAlchemy session
     """
-    regions = {}
+    parents = {}
     for instance in session.query(model.Locations):
-        regions[instance.name] = instance.id
+        parents[instance.name] = instance.id
     with open(csv_file) as f:
         districts_csv = csv.DictReader(f)
         for row in districts_csv:
             session.add(
                 model.Locations(
-                    name=row["district"],
-                    parent_location=regions[row["region"]],
-                    population=row.get("population", 0),
-                    level="district"))
+                    name=row[column_name],
+                    parent_location=parents[row[parent_column_name]],
+                    level=level_name,
+                    population=row.get("population", 0)
+                )
+            )
+
     session.commit()
 
-
+    
 def import_locations(engine, session):
     """
     Imports all locations from csv-files.
@@ -636,14 +617,23 @@ def import_locations(engine, session):
 
     session.query(model.Devices).delete()
     session.commit()
+    zone_file = None
+    if "zones" in country_config["locations"]:
+        zone_file = (config.config_directory + "locations/" +
+                    country_config["locations"]["zones"])
     regions_file = (config.config_directory + "locations/" +
                     country_config["locations"]["regions"])
     districts_file = (config.config_directory + "locations/" +
                       country_config["locations"]["districts"])
     clinics_file = (config.config_directory + "locations/" +
                     country_config["locations"]["clinics"])
-    import_regions(regions_file, session, 1)
-    import_districts(districts_file, session)
+
+    if zone_file:
+        import_regions(zone_file, session, "zone", "country", "zone")
+        import_regions(regions_file, session, "region", "zone", "region")
+    else:
+        import_regions(regions_file, session, "region", "country", "region")
+    import_regions(districts_file, session, "district", "region", "district")
     import_clinics(clinics_file, session, 1)
     for geosjon_file in config.country_config["geojson_files"]:
         import_geojson(config.config_directory + geosjon_file,

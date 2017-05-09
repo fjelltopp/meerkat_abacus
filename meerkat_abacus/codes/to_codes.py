@@ -128,13 +128,18 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         if locations[clinic_id].parent_location in districts:
             ret_location["district"] = locations[clinic_id].parent_location
             ret_location["region"] = (
-                locations[locations[clinic_id].parent_location].parent_location)
+                locations[ret_location["district"]].parent_location)
+            ret_location["zone"] = (
+                 locations[ret_location["region"]].parent_location)
         elif locations[clinic_id].parent_location in regions:
             ret_location["district"] = None
             ret_location["region"] = locations[clinic_id].parent_location
+            ret_location["zone"] = (
+                 locations[ret_location["region"]].parent_location)
         else:
             ret_location["district"] = None
             ret_location["region"] = None
+            ret_location["zone"] = None
         row[location_form]["clinic_type"] = locations[clinic_id].clinic_type
         row[location_form]["service_provider"] = locations[clinic_id].service_provider
         
