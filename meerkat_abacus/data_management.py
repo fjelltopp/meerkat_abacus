@@ -207,6 +207,7 @@ def table_data_from_csv(filename,
         uuids = []
         for r in result:
             uuids.append(r.uuid)
+        uuids = set(uuids)
     else:
         session.query(table).delete()
         engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(
