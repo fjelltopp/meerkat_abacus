@@ -592,7 +592,7 @@ def import_regions(csv_file, session, column_name,
             session.add(
                 model.Locations(
                     name=row[column_name],
-                    parent_location=parents[row[parent_column_name]],
+                    parent_location=parents[row[parent_column_name].strip()],
                     level=level_name,
                     population=row.get("population", 0)
                 )
