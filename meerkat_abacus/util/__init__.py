@@ -14,6 +14,31 @@ from meerkat_abacus.config import country_config
 import meerkat_abacus.config as config
 
 
+def is_child(parent, child, locations):
+    """
+    Determines if child is child of parent
+
+    Args:
+        parent: parent_id
+        child: child_id
+        locations: all locations in dict
+
+    Returns:
+       is_child(Boolean): True if child is child of parent
+    """
+    parent = int(parent)
+    child = int(child)
+
+    if child == parent or parent == 1:
+        return True
+    loc_id = child
+
+    while loc_id != 1:
+        loc_id = locations[loc_id].parent_location
+        if loc_id == parent:
+            return True
+    return False
+
 def epi_week(date):
     """
     calculate epi week
