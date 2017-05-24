@@ -439,7 +439,8 @@ def import_new_data():
     return new_records
 
 
-def import_clinics(csv_file, session, country_id):
+def import_clinics(csv_file, session, country_id,
+                   other_info=None, other_condition=None):
     """
     Import clinics from csv file.
 
@@ -465,6 +466,15 @@ def import_clinics(csv_file, session, country_id):
         for row in clinics_csv:
             if row["deviceid"] and row["clinic"].lower() != "not used" and row[
                     "deviceid"] not in deviceids:
+
+                other_cond = True
+                if other_condition:
+                    for key in other_condition.keys():
+                        if row.get(key, None) and row[key] != other_condition[key]:
+                            other_cond = False
+                            break
+                if not other_cond:
+                    continue
                 if "case_report" in row.keys():
                     if row["case_report"] in ["Yes", "yes"]:
                         case_report = 1
@@ -511,6 +521,14 @@ def import_clinics(csv_file, session, country_id):
                     model.Locations.clinic_type is not None
                 )
 
+
+                # Construct other information from config
+
+                other = {}
+                if other_info:
+                    for field in other_info:
+                        other[field] = row.get(field, None)
+                        
                 # If two clinics have the same name and the same
                 # parent_location, we are dealing with two tablets from the
                 # same clinic, so we combine them.
@@ -534,6 +552,7 @@ def import_clinics(csv_file, session, country_id):
                             case_type=row.get("case_type", None),
                             level="clinic",
                             population=population,
+                            other=other,
                             service_provider=row.get("service_provider", None),
                             start_date=start_date))
                 else:
@@ -635,7 +654,9 @@ def import_locations(engine, session):
     else:
         import_regions(regions_file, session, "region", "country", "region")
     import_regions(districts_file, session, "district", "region", "district")
-    import_clinics(clinics_file, session, 1)
+    import_clinics(clinics_file, session, 1,
+                   other_info=country_config.get("other_location_information", None),
+                   other_condition=country_config.get("other_location_condition", None))
     for geosjon_file in config.country_config["geojson_files"]:
         import_geojson(config.config_directory + geosjon_file,
                        session)
