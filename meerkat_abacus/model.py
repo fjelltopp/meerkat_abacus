@@ -51,7 +51,7 @@ class Locations(Base):
     parent_location = Column(Integer, index=True)
     point_location = Column(Geometry("POINT"))
     area = Column(Geometry("MULTIPOLYGON"))
-    other = Column(String)
+    other = Column(JSONB)
     deviceid = Column(String)
     clinic_type = Column(String)
     case_report = Column(Integer, index=True)
