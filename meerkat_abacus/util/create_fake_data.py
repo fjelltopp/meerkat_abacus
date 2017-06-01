@@ -41,6 +41,9 @@ def get_value(field, data):
     elif field_type == "multiple":
         number_of_options = random.randint(1, len(argument))
         value = ",".join(random.sample(argument, number_of_options))
+    elif field_type == "multiple-spaces":
+        number_of_options = random.randint(1, len(argument))
+        value = " ".join(random.sample(argument, number_of_options))
     elif field_type == "patient_id":
         value = random.randint(0, 10000)
     elif field_type == "range":

@@ -10,3 +10,4 @@ coverage==4.0.3
 boto3==1.4.4
 shapely==1.5.17
 raven==6.0.0
+# pygrowup==0.8.2

@@ -75,6 +75,9 @@ country_config = {
                       "results./glucose_fasting": {"integer": [1, 200]},
                       "results./hba1c": {"integer": [0, 20]},
                       "vaccination": {"one": ["yes", "no"]},
+                      "risk_code": {"multiple-spaces":  ["A80_5", "D67-67-2",
+                                                  "E10-14_9"]},
+                      "sympt_code": {"multiple-spaces": ["A80_3", "B05_8"]},
                       "breastfeed": {"one": ["yes", "no"]},
                       "exclusive_breastfeed": {"one": ["yes", "no"]},
                       "formula": {"one": ["yes", "no"]}},
@@ -100,8 +103,8 @@ country_config = {
     },
     "manual_test_data": {
       "demo_case":[
-        "demo_case_link_test_data",
-        "demo_case_duplicate_initial_visits_test_data"
+        #"demo_case_link_test_data",
+        #"demo_case_duplicate_initial_visits_test_data"
         ]
     },
     "alert_data": {"demo_case": {"age": "pt1./age", "gender": "pt1./gender"}},
