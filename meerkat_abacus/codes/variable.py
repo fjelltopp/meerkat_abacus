@@ -317,22 +317,14 @@ class Variable():
         if type(element) is not str:
             return element
 
-        # A list of the valid datestring formats
-        allowed_formats = [
-            '%b %d, %Y',
-            '%d-%b-%Y',
-            '%d-%b-%Y %I:%M:%S',
-            '%b %d, %Y %I:%M:%S %p',
-            '%Y-%m-%dT%H:%M:%S.%f',
-            '%Y-%m-%dT%H:%M:%S'
-        ]  
+
         # For each format, try to parse and convert a date from the element.
         # If parsing fails, try the next format.
         # If success, return the converted date.
-        for date_format in allowed_formats:
+        for i, date_format in enumerate(allowed_formats):
 
             try:
-                date = datetime.strptime(element, date_format)
+                date = parse_date(element, date_format)
                 # Want to calc using secs from the epi week start after epoch.
                 # Let's call this the epiepoch. Epoch was on Thurs 1/1/1970, so
                 # (4 + epi_week_start_day) % 7 = days between epoch & epiepoch
@@ -352,8 +344,45 @@ class Variable():
                 return since_epi_epoch.total_seconds()
 
             # If failed to parse date, try a different acceptable date format.
-            except ValueError:
+            except (ValueError, KeyError):
                 pass
 
         # If the element didn't conform to a date format, just return element.
         return element
+
+# A list of the valid datestring formats
+allowed_formats = [
+    '%b %d, %Y',
+    '%d-%b-%Y',
+    '%d-%b-%Y %I:%M:%S',
+    '%b %d, %Y %I:%M:%S %p',
+    '%Y-%m-%dT%H:%M:%S.%f',
+    '%Y-%m-%dT%H:%M:%S'
+]
+
+    
+months = {
+    "Jan": 1,
+    "Feb": 2,
+    "Mar": 3,
+    "Apr": 4,
+    "May": 5,
+    "Jun": 6,
+    "Jul": 7,
+    "Aug": 8,
+    "Sep": 9,
+    "Oct": 10,
+    "Nov": 11,
+    "Dec": 12
+}
+
+
+def parse_date(string, date_format):
+    if date_format == '%b %d, %Y':
+        year = string[-4:]
+        f = string[:-6]
+        mon = f[0:3]
+        day = f[3:]
+        return datetime(int(year), months[mon], int(day))
+    else:
+        return datetime.strptime(string, date_format)

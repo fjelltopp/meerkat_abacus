@@ -145,7 +145,11 @@ def add_fake_data(session, N=500, append=False, from_files=False):
         manual_test_data_list = []
         for manual_test_data_file in manual_test_data.keys():
             manual_test_data_list += list(manual_test_data[manual_test_data_file])
-
+        for row in manual_test_data_list:
+            if len(generated_data) > 0:
+                for key in generated_data[0].keys():
+                    if key not in row:
+                        row[key] = None
         util.write_csv(list(current_form) + list(manual_test_data_list) + generated_data, file_name)
 
 
