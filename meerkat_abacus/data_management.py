@@ -145,7 +145,11 @@ def add_fake_data(session, N=500, append=False, from_files=False):
         manual_test_data_list = []
         for manual_test_data_file in manual_test_data.keys():
             manual_test_data_list += list(manual_test_data[manual_test_data_file])
-
+        for row in manual_test_data_list:
+            if len(generated_data) > 0:
+                for key in generated_data[0].keys():
+                    if key not in row:
+                        row[key] = None
         util.write_csv(list(current_form) + list(manual_test_data_list) + generated_data, file_name)
 
 
@@ -164,6 +168,7 @@ def get_data_from_s3(bucket):
         s3.meta.client.download_file(bucket, "data/" + file_name,
                                      config.data_directory + file_name)
 
+import time
 
 def table_data_from_csv(filename,
                         table,
@@ -228,7 +233,7 @@ def table_data_from_csv(filename,
          variables_group, variables_match) = to_codes.get_variables(session, "import")
         if variables:
             to_check = [variables["import"][x][x]
-                        for x in variables["import"].keys()]
+                        for x in variables["import"].keys() if variables["import"][x][x].variable.form == filename]
             for variable in to_check:
                 to_check_test[variable] = variable.test
     removed = {}
@@ -266,6 +271,7 @@ def table_data_from_csv(filename,
 
         if remove:
             continue
+        
         if deviceids:
             if should_row_be_added(insert_row, table_name, deviceids,
                                    start_dates, allow_enketo=allow_enketo):
@@ -281,11 +287,13 @@ def table_data_from_csv(filename,
             print(removed)
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
+
     if to_check:
         print("Quality Controll performed: ")
         print(removed)
     conn.execute(table.__table__.insert(), dicts)
     conn.close()
+    print(i)
     return new_rows
 
 
