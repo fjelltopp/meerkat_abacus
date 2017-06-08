@@ -58,12 +58,12 @@ interval = 3600  # Seconds
 hermes_api_key = from_env("HERMES_API_KEY", "")
 hermes_api_root = from_env("HERMES_API_ROOT", "")
 hermes_dev = int(from_env("HERMES_DEV", False))
-hermes_dev_topics = []  # ['test-emails', 'error-reporting', 'notify-dev']
 mailing_key = from_env("MAILING_KEY", "")
 mailing_root = from_env("MAILING_ROOT", "")
 auth_root = from_env('MEERKAT_AUTH_ROOT', 'http://dev_nginx_1/auth')
 send_test_emails = from_env('MEERKAT_TEST_EMAILS', False)
-
+server_auth_username = os.environ.get('SERVER_AUTH_USERNAME', 'root')
+server_auth_password = os.environ.get('SERVER_AUTH_PASSWORD', 'password')
 sentry_dns = from_env('SENTRY_DNS', '')
 
 # Country config

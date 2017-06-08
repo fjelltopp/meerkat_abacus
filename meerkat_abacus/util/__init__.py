@@ -3,9 +3,9 @@ Various utility functions for meerkat abacus
 """
 import csv
 import requests
-import json
 import itertools
 import logging
+import json
 from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -321,7 +321,7 @@ def write_csv(rows, file_path, mode = 'w'):
     Args:
         rows: list of dicts with data
         file_path: path to write file to
-        mode: 'w' for writing to a new file, 'a' for 
+        mode: 'w' for writing to a new file, 'a' for
          appending without overwriting
 
     """
@@ -333,7 +333,7 @@ def write_csv(rows, file_path, mode = 'w'):
 
             if mode == 'w':
                 out.writeheader()
-            
+
             for row in rows:
                 out.writerow(row)
 
@@ -354,40 +354,37 @@ def read_csv(file_path):
             yield row
 
 
-def refine_hermes_topics(topics):
+def authenticate_server():
     """
-    We don't want mass emails to be sent from the dev environment, but we do
-    want the ability to test.
-
-    This function takes a list of hermes topics, and if we are in the
-    development/testing environment (determined by config "hermes_dev") this
-    function strips them back to only those topics in the config variable
-    "hermes_dev_topics".
-
-    Args:
-        topics ([str]) A list of topic ids that a message is initially intended
-        to be published to.
+    Makes an authentication request to meerkat_auth using the server username
+    and password.
 
     Returns:
-        [str] A refined list of topic ids containing only those topics from
-        config "hermes_dev_topics", if config "hermes_dev" == 1.
+        dict: a dictionary containing the authorisation headers required for
+            a request e.g. {'Authorization': 'Bearer withTokenHere'}
     """
+    # TODO: Store token locally and only re-authenticate upon token expiry
 
-    # Make topics a copied (don't edit original) list if it isn't already one.
-    topics = list([topics]) if not isinstance(topics, list) else list(topics)
+    # Assemble auth request params
+    url = config.auth_root + '/api/login'
+    data = {
+        'username': config.server_auth_username,
+        'password': config.server_auth_password
+    }
+    headers = {'content-type': 'application/json'}
+    r = requests.request('POST', url, json=data, headers=headers)
+    logging.warning("Received authentication response: " + str(r))
 
-    logging.info("Initial topics: " + str(topics))
+    # We need authentication to work, so raise an exception if it doesn't.
+    if r.status_code != 200:
+        raise Exception(
+            "Authentication request returned not-ok response code: " +
+            str(r.status_code)
+        )
 
-    # If in development/testing environment...
-    # Remove topics that aren't pre-specified as allowed.
-    if config.hermes_dev:
-        for t in range(len(topics)-1, -1, -1):
-            if topics[t] not in config.hermes_dev_topics:
-                del topics[t]
-
-    logging.info("Refined topics: " + str(topics))
-
-    return topics
+    # Create the headers for a properly authenticated request.
+    token = r.cookies['meerkat_jwt']
+    return {'Authorization': 'Bearer ' + token}
 
 
 def hermes(url, method, data=None):
@@ -400,21 +397,9 @@ def hermes(url, method, data=None):
        data: data to send
     """
 
-    # If we are in the dev envirnoment only allow publishing to specially
-    # selected topics.
-    if data.get('topics', []):
-
-        topics = refine_hermes_topics(data.get('topics', []))
-        # Return a error message if we have tried to publish a mass email from
-        # the dev envirnoment.
-        if not topics:
-            return {"message": ("No topics to publish to, perhaps because "
-                                "system is in hermes dev mode.")}
-        else:
-            data['topics'] = topics
-
-    # Add the API key and turn into JSON.
-    data["api_key"] = config.hermes_api_key
+    # Assemble hermes params
+    headers = {'content-type': 'application/json', **authenticate_server()}
+    logging.warning("Sending json: " + json.dumps(data) + "\nTo url: " + url)
 
     try:
         url = config.hermes_api_root + "/" + url
@@ -495,7 +480,7 @@ def send_alert(alert_id, alert, variables, locations):
         district = ""
         if alert.district:
             district = locations[alert.district].name
-        
+
         text_strings = {
             'date': "Date: " + alert.date.strftime("%d %b %Y") + "\n",
             'clinic': "Clinic: " + locations[alert.clinic].name + "\n",
