@@ -567,8 +567,12 @@ def import_clinics(csv_file, session, country_id,
                     location = result.first()
                     location.deviceid = location.deviceid + "," + row[
                         "deviceid"]
-                    if location.case_type != row.get("case_type", None):
-                        location.case_type = "multiple"
+                    new_case_type = row.get("case_type", None)
+                    if not location.case_type and new_case_type is not None:
+                        location.case_type = new_case_type
+                    elif new_case_type:
+                        if location.case_type != row.get("case_type", None):
+                            location.case_type = "multiple"
     session.commit()
 
 
