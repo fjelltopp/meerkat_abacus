@@ -38,6 +38,12 @@ if config.start_celery:
         'schedule': timedelta(seconds=config.interval)
     }
 
+CELERYBEAT_SCHEDULE['cleanup_downloads'] = {
+    'task': 'task_queue.cleanup_downloads',
+    'schedule': crontab(minute=16, hour='*')
+}
+
+
 # Each report will need it's own sending schedule.
 # Add them from the country config to the celery schedule here.
 # Only add if the mailing root is set - empty env variable silences reports.

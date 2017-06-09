@@ -4,14 +4,17 @@ Celery setup and wraper tasks to periodically update the database.
 from meerkat_abacus import config, util, data_management
 from celery.signals import worker_ready
 from datetime import datetime
+from raven.contrib.celery import register_signal, register_logger_signal
+from meerkat_abacus import celeryconfig
 import requests
 import logging
 import traceback
-# from celery import Celery
 import celery
-from meerkat_abacus import celeryconfig
 import raven
-from raven.contrib.celery import register_signal, register_logger_signal
+import time
+import os
+import shutil
+
 
 class Celery(celery.Celery):
 
@@ -74,6 +77,7 @@ def get_proccess_data(print_progress=False):
     if print_progress:
         print("Finished")
 
+
 @app.task
 def correct_initial_visits():
     """
@@ -110,9 +114,24 @@ def new_data_to_codes(restrict_uuids=None):
     """
     Add any new data in form tables to data table.
     """
-    return data_management.new_data_to_codes(no_print=True,
-                                             restrict_uuids=restrict_uuids
-                                             )
+    return data_management.new_data_to_codes(
+        no_print=True,
+        restrict_uuids=restrict_uuids
+    )
+
+
+@app.task
+def cleanup_downloads():
+    folder = '/var/www/meerkat_api/api_background/api_background/exported_data'
+    downloads = os.listdir(folder)
+    oldest = time.time() - 3600
+    for download in downloads:
+        path = '{}/{}'.format(folder, download)
+        if os.stat(path).st_mtime < oldest:
+            try:
+                shutil.rmtree(path)
+            except NotADirectoryError:
+                pass
 
 
 @app.task
