@@ -259,16 +259,22 @@ def table_data_from_csv(filename,
                             column = variable.column
                             if ";" in column or "," in column:
                                 column = column.split(";")[0].split(",")[0]
+                            category = variable.variable.category
+                            replace_value = None
+                            if category and "replace:" in category[0]:
+                                replace_column = category[0].split(":")[1]
+                                replace_value = insert_row.get(replace_column,
+                                                               None)
                             if column in insert_row:
                                 if insert_row[column]:
-                                    insert_row[column] = None
+                                    insert_row[column] = replace_value
                                     if column in removed:
                                         removed[column] += 1
                                     else:
                                         removed[column] = 1
                 except Exception as e:
                     print(e)
-
+                    
         if remove:
             continue
         

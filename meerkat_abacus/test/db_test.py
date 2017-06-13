@@ -173,7 +173,17 @@ class DbTest(unittest.TestCase):
                 category=["discard"],
                 calculation='Variable.to_date(pt./visit_date)',
                 condition="1388527200,2019679200"
+            ),
+            model.AggregationVariables(
+                id="qul_3",
+                type="import",
+                form="demo_case",
+                db_column="pt./visit_date",
+                method="match",
+                category=["replace:SubmissionDate"],
+                condition="15-Apr-2016"
             )
+
         ]
         
         self.session.query(model.AggregationVariables).delete()
@@ -205,6 +215,8 @@ class DbTest(unittest.TestCase):
             else:
                 self.assertNotEqual(r.data["results./bmi_height"], None)
                 self.assertNotEqual(r.data["results./bmi_weight"], None)
+            if r.uuid == "5":
+                self.assertEqual(r.data["pt./visit_date"], "2016-04-17T02:43:31.306860")
             self.assertIn(r.uuid, ["3", "4", "5", "1"])
             
     @mock.patch('meerkat_abacus.util.requests')
