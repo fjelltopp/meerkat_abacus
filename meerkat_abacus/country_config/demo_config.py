@@ -77,7 +77,7 @@ country_config = {
                       "vaccination": {"one": ["yes", "no"]},
                       "risk_code": {"multiple-spaces":  ["A80_5", "D67-67-2",
                                                   "E10-14_9"]},
-                      "sympt_code": {"multiple-spaces": ["A80_3", "B05_8"]},
+                      "sympt_code": {"multiple-spaces": ["A80_3", "B05_8", ""]},
                       "breastfeed": {"one": ["yes", "no"]},
                       "exclusive_breastfeed": {"one": ["yes", "no"]},
                       "formula": {"one": ["yes", "no"]}},

@@ -259,16 +259,22 @@ def table_data_from_csv(filename,
                             column = variable.column
                             if ";" in column or "," in column:
                                 column = column.split(";")[0].split(",")[0]
+                            category = variable.variable.category
+                            replace_value = None
+                            if category and "replace:" in category[0]:
+                                replace_column = category[0].split(":")[1]
+                                replace_value = insert_row.get(replace_column,
+                                                               None)
                             if column in insert_row:
                                 if insert_row[column]:
-                                    insert_row[column] = None
+                                    insert_row[column] = replace_value
                                     if column in removed:
                                         removed[column] += 1
                                     else:
                                         removed[column] = 1
                 except Exception as e:
                     print(e)
-
+                    
         if remove:
             continue
         
@@ -567,8 +573,12 @@ def import_clinics(csv_file, session, country_id,
                     location = result.first()
                     location.deviceid = location.deviceid + "," + row[
                         "deviceid"]
-                    if location.case_type != row.get("case_type", None):
-                        location.case_type = "multiple"
+                    new_case_type = row.get("case_type", None)
+                    if not location.case_type and new_case_type is not None:
+                        location.case_type = new_case_type
+                    elif new_case_type:
+                        if location.case_type != row.get("case_type", None):
+                            location.case_type = "multiple"
     session.commit()
 
 
