@@ -120,7 +120,7 @@ if config.mailing_root:
 # Each message type will need it's own sending schedule.
 # Add them from the country config to the celery schedule here.
 # Only add if the messaging root is set - empty env variable silences reports.
-if config.device_messaging_root:
+if config.device_messaging_api:
 
     schedule = config.country_config['device_message_schedule']
 
@@ -136,9 +136,9 @@ if config.device_messaging_root:
             send_time = crontab(
                 minute=0,
                 hour=4,
-                day_of_week=schedule[report]["send_day"]
+                day_of_week=schedule[message]["send_day"]
             )
-        elif schedule[report]["period"] == "month":
+        elif schedule[message]["period"] == "month":
             send_time = crontab(
                 minute=0,
                 hour=4,

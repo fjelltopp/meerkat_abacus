@@ -247,10 +247,10 @@ def send_device_messages(message, content, distribution):
                          str(target) + " using url: " + str(url) +
                          " and headers: " + str(headers))
 
-            data = ({'to': str(target), 'message':str(content)}):
+            data = ({'to': str(target), 'message': str(content)})
             # Make the request and handle the response.
             r = requests.put(url, json=data, headers=headers)
-            logging.info(pre + "Received device messaging reponse: " + str(r))
+            logging.info(pre + "Received device messaging response: " + str(r))
 
             # If the response is not a 200 OK, raise an Exception so that we can
             # handle it properly.
