@@ -116,5 +116,47 @@ if config.mailing_root:
                 'args': ('test_' + report, language, location)
             }
 
+
+# Each message type will need it's own sending schedule.
+# Add them from the country config to the celery schedule here.
+# Only add if the messaging root is set - empty env variable silences reports.
+if config.device_messaging_root:
+
+    schedule = config.country_config['device_message_schedule']
+
+    for message in schedule:
+        # Set up parameters
+        task_name = 'send_device_message_' + message
+        content = schedule[message]['message']
+        distribution = schedule[message]['distribution']
+
+
+        # Create correct crontab denoting the time the message is to be sent out.
+        if schedule[message]["period"] == "week":
+            send_time = crontab(
+                minute=0,
+                hour=4,
+                day_of_week=schedule[report]["send_day"]
+            )
+        elif schedule[report]["period"] == "month":
+            send_time = crontab(
+                minute=0,
+                hour=4,
+                day_of_month=schedule[message]["send_day"]
+            )
+        else:
+            send_time = crontab(
+                minute=0,
+                hour=4,
+                day_of_week=1
+            )
+        # Add the message sending process to the celery schedule.
+        CELERYBEAT_SCHEDULE[task_name] = {
+            'task': 'task_queue.send_device_messages',
+            'schedule': send_time,
+            'args': (message, content, distribution)
+        }
+
+
 logging.warning("Celery is set up with the following beat schedule:\n" +
                 str(CELERYBEAT_SCHEDULE))

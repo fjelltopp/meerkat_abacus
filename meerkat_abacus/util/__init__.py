@@ -400,18 +400,25 @@ def hermes(url, method, data=None):
        data: data to send
     """
 
-    # If we are in the dev envirnoment only allow publishing to specially
-    # selected topics.
-    if data.get('topics', []):
+    # Handle Google Cloud Messages and emails separately
+    if url == 'gcm':
+        # In dev env, allow sending data only to Demo topic or to individual devices
+        if config.hermes_dev and data['to'].startswith('/topics') and not data['to'].startswith('/topics/demo'):
+            return {"message": ("No allowed to send GCM messages to topics other than demo, perhaps because "
+                                    "system is in hermes dev mode.")}
+    else:
+        # If we are in the dev envirnoment only allow publishing to specially
+        # selected topics.
+        if data.get('topics', []):
 
-        topics = refine_hermes_topics(data.get('topics', []))
-        # Return a error message if we have tried to publish a mass email from
-        # the dev envirnoment.
-        if not topics:
-            return {"message": ("No topics to publish to, perhaps because "
-                                "system is in hermes dev mode.")}
-        else:
-            data['topics'] = topics
+            topics = refine_hermes_topics(data.get('topics', []))
+            # Return a error message if we have tried to publish a mass email from
+            # the dev envirnoment.
+            if not topics:
+                return {"message": ("No topics to publish to, perhaps because "
+                                    "system is in hermes dev mode.")}
+            else:
+                data['topics'] = topics
 
     # Add the API key and turn into JSON.
     data["api_key"] = config.hermes_api_key

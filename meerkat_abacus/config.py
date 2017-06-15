@@ -61,6 +61,7 @@ hermes_dev = int(from_env("HERMES_DEV", False))
 hermes_dev_topics = []  # ['test-emails', 'error-reporting', 'notify-dev']
 mailing_key = from_env("MAILING_KEY", "")
 mailing_root = from_env("MAILING_ROOT", "")
+device_messaging_api = from_env("DEVICE_MESSAGING_API", "")
 auth_root = from_env('MEERKAT_AUTH_ROOT', 'http://dev_nginx_1/auth')
 send_test_emails = from_env('MEERKAT_TEST_EMAILS', False)
 

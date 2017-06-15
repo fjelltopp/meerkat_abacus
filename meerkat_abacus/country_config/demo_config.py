@@ -125,5 +125,12 @@ country_config = {
         "communicable_diseases": {"period": "week", "send_day": "0", "language": "en"},
         "non_communicable_diseases": {"period": "month", "send_day": "1", "language": "en"}
     },
+    "device_message_schedule": {
+            "thank_you": {
+                "period": "week", 
+                "send_day": "0", 
+                "message": "Thank you for all your work this week in sending data and please keep up the good work!", 
+                "distribution": ["/topics/demo"]}
+    },
     "translation_dir": "/var/www/meerkat_frontend/country_config/translations"
 }
