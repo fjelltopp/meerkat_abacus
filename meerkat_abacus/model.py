@@ -80,6 +80,8 @@ class Data(Base):
     type = Column(String, index=True)
     type_name = Column(String)
     date = Column(DateTime, index=True)
+    epi_week = Column(Integer)
+    epi_year = Column(Integer)
     country = Column(Integer, index=True)
     zone = Column(Integer, index=True)
     region = Column(Integer, index=True)
