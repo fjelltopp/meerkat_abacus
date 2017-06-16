@@ -247,13 +247,13 @@ def send_device_messages(message, content, distribution):
                          str(target))
 
             data = {'destination': str(target), 'message': str(content)}
-            
+
             # Make the request and handle the response.
             r = util.hermes(url='gcm',method='PUT',data=data)
 
             logging.info(pre + "Received device messaging response: " + str(r))
 
-            elif r.status_code != 200:
+            if r.status_code != 200:
                 raise Exception(
                     "Device messaging returned not-ok response code: " +
                     str(r.status_code)
