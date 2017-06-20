@@ -260,6 +260,9 @@ class DbTest(unittest.TestCase):
         number_of_totals = 0
         number_of_female = 0
         for row in results:
+            epi_year, epi_week= util.epi_week(row.date)
+            self.assertEqual(epi_week, row.epi_week)
+            self.assertEqual(epi_year, row.epi_year)
             if "tot_1" in row.variables.keys():
                 number_of_totals += 1
             if str(agg_var_female) in row.variables.keys():

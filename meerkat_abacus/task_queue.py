@@ -30,7 +30,7 @@ class Celery(celery.Celery):
 app = Celery()
 app.config_from_object(celeryconfig)
 
-from api_background.export_data import export_form, export_category, export_data
+from api_background.export_data import export_form, export_category, export_data, export_data_table
 
 
 # When we start celery we run the set_up_db command
