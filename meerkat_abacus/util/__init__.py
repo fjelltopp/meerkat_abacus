@@ -399,7 +399,7 @@ def hermes(url, method, data=None):
        method: post/get http method
        data: data to send
     """
-
+    
     # If we are in the dev envirnoment only allow publishing to specially
     # selected topics.
     if data.get('topics', []):
@@ -420,6 +420,8 @@ def hermes(url, method, data=None):
         url = config.hermes_api_root + "/" + url
         headers = {'content-type': 'application/json'}
         r = requests.request(method, url, json=data, headers=headers)
+        return r
+        return {'method':method,'url':url,'data':data}
 
     except Exception as e:
         logging.warning("HERMES REQUEST FAILED: " + str(e))
