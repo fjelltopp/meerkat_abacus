@@ -121,7 +121,7 @@ if config.mailing_root:
 # Only add if the messaging root is set - empty env variable silences reports.
 if config.device_messaging_api:
 
-    schedule = config.country_config['device_message_schedule']
+    schedule = config.country_config.get('device_message_schedule',{})
 
     for message in schedule.keys():
         # Set up parameters
@@ -134,7 +134,7 @@ if config.device_messaging_api:
         if schedule[message]["period"] == "week":
             send_time = crontab(
                 minute=0,
-                hour=4,
+                hour=8,
                 day_of_week=schedule[message]["send_day"]
             )
         elif schedule[message]["period"] == "month":
@@ -156,23 +156,23 @@ if config.device_messaging_api:
             'args': (message, content, distribution)
         }
 
-        if int(config.send_test_device_messages):
-            # Add the test message sending process to the celery schedule.
-            task_name = 'send_test_device_message'
-            send_time = datetime.now() + timedelta(minutes=10)
-            send_time = crontab(
-                    minute=send_time.minute,
-                    hour=send_time.hour,
-                    day_of_month=send_time.day,
-                    month_of_year=send_time.month
-            )
-            content = "Test " + str(datetime.now())
-            distribution = ['/topics/demo']
-            CELERYBEAT_SCHEDULE[task_name] = {
-                'task': 'task_queue.send_device_messages',
-                'schedule': send_time,
-                'args': ('send_device_message_test', content, distribution)
-            }
+    if int(config.send_test_device_messages):
+        # Add the test message sending process to the celery schedule.
+        task_name = 'send_test_device_message'
+        send_time = datetime.now() + timedelta(minutes=10)
+        send_time = crontab(
+                minute=send_time.minute,
+                hour=send_time.hour,
+                day_of_month=send_time.day,
+                month_of_year=send_time.month
+        )
+        content = "Test " + str(datetime.now())
+        distribution = ['/topics/demo']
+        CELERYBEAT_SCHEDULE[task_name] = {
+            'task': 'task_queue.send_device_messages',
+            'schedule': send_time,
+            'args': ('send_device_message_test', content, distribution)
+        }
 
 
 logging.warning("Celery is set up with the following beat schedule:\n" +
