@@ -1,17 +1,17 @@
 """
 Various utility functions for meerkat abacus
 """
-import csv
-import requests
-import itertools
-import logging
-import json
-from datetime import datetime, timedelta
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
 from meerkat_abacus.model import Locations, AggregationVariables, Devices
 from meerkat_abacus.config import country_config
+from datetime import datetime, timedelta
+from sqlalchemy.orm import sessionmaker
 import meerkat_abacus.config as config
+from sqlalchemy import create_engine
+import itertools
+import requests
+import logging
+import json
+import csv
 
 
 def is_child(parent, child, locations):
@@ -38,6 +38,7 @@ def is_child(parent, child, locations):
         if loc_id == parent:
             return True
     return False
+
 
 def epi_week(date):
     """
@@ -354,72 +355,66 @@ def read_csv(file_path):
             yield row
 
 
-def authenticate_server():
+def authenticate(username=config.server_auth_username,
+                 password=config.server_auth_password):
     """
-    Makes an authentication request to meerkat_auth using the server username
-    and password.
+    Makes an authentication request to meerkat_auth using the specified
+    username and password, or the server username and password by default by
+    default.
 
     Returns:
-        dict: a dictionary containing the authorisation headers required for
-            a request e.g. {'Authorization': 'Bearer withTokenHere'}
+        str The JWT token.
     """
-    # TODO: Store token locally and only re-authenticate upon token expiry
-
     # Assemble auth request params
     url = config.auth_root + '/api/login'
-    data = {
-        'username': config.server_auth_username,
-        'password': config.server_auth_password
-    }
+    data = {'username': username, 'password': password}
     headers = {'content-type': 'application/json'}
+
+    # Make the auth request and log the result
     r = requests.request('POST', url, json=data, headers=headers)
-    logging.warning("Received authentication response: " + str(r))
+    logging.info("Received authentication response: " + str(r))
 
-    # We need authentication to work, so raise an exception if it doesn't.
+    # Log an error if authentication fails, and return an empty token
     if r.status_code != 200:
-        raise Exception(
-            "Authentication request returned not-ok response code: " +
-            str(r.status_code)
-        )
+        logging.error('Authentication as {} failed'.format(username))
+        return ''
 
-    # Create the headers for a properly authenticated request.
-    token = r.cookies['meerkat_jwt']
-    return {'Authorization': 'Bearer ' + token}
+    # Return the token
+    return r.cookies.get('meerkat_jwt', '')
 
 
-def hermes(url, method, data=None):
+def hermes(url, method, data={}):
     """
-    Makes a Hermes API request
-
+    Makes a Hermes API request.
     Args:
-       url: hermes url to send the request to
-       method: post/get http method
-       data: data to send
+       url (str): The Meerkat Hermes url for the desired function.
+       method (str):  The desired HTML function: GET, POST or PUT.
+       data (optional dict): The data to be sent to the url. Defaults
+       to ```{}```.
+    Returns:
+       dict: a dictionary formed from the json data in the response.
     """
+    # Assemble the request params.
+    url = config.hermes_api_root + url
+    headers = {'content-type': 'application/json',
+               'authorization': 'Bearer {}'.format(authenticate())}
 
-    # Assemble hermes params
-    headers = {'content-type': 'application/json', **authenticate_server()}
-    logging.warning("Sending json: " + json.dumps(data) + "\nTo url: " + url)
+    # Log the request
+    logging.info("Sending json: {}\nTo url: {}\nwith headers: {}".format(
+                  json.dumps(data), url, headers))
 
-
+    # Make the request and handle the response.
     try:
-        url = config.hermes_api_root + "/" + url
-        headers = {'content-type': 'application/json'}
         r = requests.request(method, url, json=data, headers=headers)
-        return r
-        return {'method':method,'url':url,'data':data}
-
-    except Exception as e:
-        logging.warning("HERMES REQUEST FAILED: " + str(e))
-
-    output = ""
+    except requests.exceptions.RequestException as e:
+        logging.error("Failed to access Hermes.")
+        logging.error(e)
 
     try:
-        output = r.json()
+        return r.json()
     except Exception as e:
-        logging.warning("HERMES REQUEST FAILED TO CONVERT TO JSON: " + str(e))
-
-    return output
+        logging.error('Failed to convert Hermes response to json.')
+        logging.error(e)
 
 
 def create_topic_list(alert, locations):
@@ -592,8 +587,7 @@ def send_alert(alert_id, alert, variables, locations):
             "medium": ['email', 'sms']
         }
 
-        logging.warning("CREATED ALERT")
-        logging.warning(data)
+        logging.warning("CREATED ALERT {}".format(data['id']))
 
-        hermes('publish', 'PUT', data)
+        hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!
