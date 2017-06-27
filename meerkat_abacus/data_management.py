@@ -15,7 +15,7 @@ from meerkat_abacus import model
 from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
-from meerkat_abacus.util import create_fake_data
+from meerkat_abacus.util import create_fake_data, epi_week
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
 import inspect
@@ -168,8 +168,6 @@ def get_data_from_s3(bucket):
         s3.meta.client.download_file(bucket, "data/" + file_name,
                                      config.data_directory + file_name)
 
-import time
-
 def table_data_from_csv(filename,
                         table,
                         directory,
@@ -259,16 +257,22 @@ def table_data_from_csv(filename,
                             column = variable.column
                             if ";" in column or "," in column:
                                 column = column.split(";")[0].split(",")[0]
+                            category = variable.variable.category
+                            replace_value = None
+                            if category and len(category) > 0 and "replace:" in category[0]:
+                                replace_column = category[0].split(":")[1]
+                                replace_value = insert_row.get(replace_column,
+                                                               None)
                             if column in insert_row:
                                 if insert_row[column]:
-                                    insert_row[column] = None
+                                    insert_row[column] = replace_value
                                     if column in removed:
                                         removed[column] += 1
                                     else:
                                         removed[column] = 1
                 except Exception as e:
                     print(e)
-
+                    
         if remove:
             continue
         
@@ -567,8 +571,12 @@ def import_clinics(csv_file, session, country_id,
                     location = result.first()
                     location.deviceid = location.deviceid + "," + row[
                         "deviceid"]
-                    if location.case_type != row.get("case_type", None):
-                        location.case_type = "multiple"
+                    new_case_type = row.get("case_type", None)
+                    if not location.case_type and new_case_type is not None:
+                        location.case_type = new_case_type
+                    elif new_case_type:
+                        if location.case_type != row.get("case_type", None):
+                            location.case_type = "multiple"
     session.commit()
 
 
@@ -1225,8 +1233,11 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                     "uuid"]][-country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1
             variable_data["data_entry"] = 1
+            epi_year, week = epi_week(date)
             new_data = {
                 "date": date,
+                "epi_week": week,
+                "epi_year": epi_year,
                 "type": data_type["type"],
                 "uuid": row[data_type["form"]][data_type["uuid"]],
                 "variables": variable_data,

@@ -38,6 +38,12 @@ if config.start_celery:
         'schedule': timedelta(seconds=config.interval)
     }
 
+CELERYBEAT_SCHEDULE['cleanup_downloads'] = {
+    'task': 'task_queue.cleanup_downloads',
+    'schedule': crontab(minute=16, hour='*')
+}
+
+
 # Each report will need it's own sending schedule.
 # Add them from the country config to the celery schedule here.
 # Only add if the mailing root is set - empty env variable silences reports.
@@ -109,6 +115,65 @@ if config.mailing_root:
                 'schedule': send_time,
                 'args': ('test_' + report, language, location)
             }
+
+# Each message type will need it's own sending schedule.
+# Add them from the country config to the celery schedule here.
+# Only add if the messaging root is set - empty env variable silences reports.
+if config.device_messaging_api:
+
+    schedule = config.country_config['device_message_schedule']
+
+    for message in schedule.keys():
+        # Set up parameters
+        task_name = 'send_device_message_' + message
+        content = schedule[message]['message']
+        distribution = schedule[message]['distribution']
+
+
+        # Create correct crontab denoting the time the message is to be sent out.
+        if schedule[message]["period"] == "week":
+            send_time = crontab(
+                minute=0,
+                hour=4,
+                day_of_week=schedule[message]["send_day"]
+            )
+        elif schedule[message]["period"] == "month":
+            send_time = crontab(
+                minute=0,
+                hour=4,
+                day_of_month=schedule[message]["send_day"]
+            )
+        else:
+            send_time = crontab(
+                minute=0,
+                hour=4,
+                day_of_week=1
+            )
+        # Add the message sending process to the celery schedule.
+        CELERYBEAT_SCHEDULE[task_name] = {
+            'task': 'task_queue.send_device_messages',
+            'schedule': send_time,
+            'args': (message, content, distribution)
+        }
+
+        if int(config.send_test_device_messages):
+            # Add the test message sending process to the celery schedule.
+            task_name = 'send_test_device_message'
+            send_time = datetime.now() + timedelta(minutes=10)
+            send_time = crontab(
+                    minute=send_time.minute,
+                    hour=send_time.hour,
+                    day_of_month=send_time.day,
+                    month_of_year=send_time.month
+            )
+            content = "Test " + str(datetime.now())
+            distribution = ['/topics/demo']
+            CELERYBEAT_SCHEDULE[task_name] = {
+                'task': 'task_queue.send_device_messages',
+                'schedule': send_time,
+                'args': ('send_device_message_test', content, distribution)
+            }
+
 
 logging.warning("Celery is set up with the following beat schedule:\n" +
                 str(CELERYBEAT_SCHEDULE))

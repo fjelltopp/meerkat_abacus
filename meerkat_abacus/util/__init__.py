@@ -401,10 +401,13 @@ def hermes(url, method, data=None):
     headers = {'content-type': 'application/json', **authenticate_server()}
     logging.warning("Sending json: " + json.dumps(data) + "\nTo url: " + url)
 
+
     try:
         url = config.hermes_api_root + "/" + url
         headers = {'content-type': 'application/json'}
         r = requests.request(method, url, json=data, headers=headers)
+        return r
+        return {'method':method,'url':url,'data':data}
 
     except Exception as e:
         logging.warning("HERMES REQUEST FAILED: " + str(e))

@@ -173,7 +173,17 @@ class DbTest(unittest.TestCase):
                 category=["discard"],
                 calculation='Variable.to_date(pt./visit_date)',
                 condition="1388527200,2019679200"
+            ),
+            model.AggregationVariables(
+                id="qul_3",
+                type="import",
+                form="demo_case",
+                db_column="pt./visit_date",
+                method="match",
+                category=["replace:SubmissionDate"],
+                condition="15-Apr-2016"
             )
+
         ]
         
         self.session.query(model.AggregationVariables).delete()
@@ -205,6 +215,8 @@ class DbTest(unittest.TestCase):
             else:
                 self.assertNotEqual(r.data["results./bmi_height"], None)
                 self.assertNotEqual(r.data["results./bmi_weight"], None)
+            if r.uuid == "5":
+                self.assertEqual(r.data["pt./visit_date"], "2016-04-17T02:43:31.306860")
             self.assertIn(r.uuid, ["3", "4", "5", "1"])
             
     @mock.patch('meerkat_abacus.util.requests')
@@ -248,6 +260,9 @@ class DbTest(unittest.TestCase):
         number_of_totals = 0
         number_of_female = 0
         for row in results:
+            epi_year, epi_week= util.epi_week(row.date)
+            self.assertEqual(epi_week, row.epi_week)
+            self.assertEqual(epi_year, row.epi_year)
             if "tot_1" in row.variables.keys():
                 number_of_totals += 1
             if str(agg_var_female) in row.variables.keys():

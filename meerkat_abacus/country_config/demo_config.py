@@ -77,7 +77,7 @@ country_config = {
                       "vaccination": {"one": ["yes", "no"]},
                       "risk_code": {"multiple-spaces":  ["A80_5", "D67-67-2",
                                                   "E10-14_9"]},
-                      "sympt_code": {"multiple-spaces": ["A80_3", "B05_8"]},
+                      "sympt_code": {"multiple-spaces": ["A80_3", "B05_8", ""]},
                       "breastfeed": {"one": ["yes", "no"]},
                       "exclusive_breastfeed": {"one": ["yes", "no"]},
                       "formula": {"one": ["yes", "no"]}},
@@ -124,6 +124,13 @@ country_config = {
         "ncd_public_health": {"period": "month", "send_day": "1", "language": "en"},
         "communicable_diseases": {"period": "week", "send_day": "0", "language": "en"},
         "non_communicable_diseases": {"period": "month", "send_day": "1", "language": "en"}
+    },
+    "device_message_schedule": {
+            "thank_you": {
+                "period": "week", 
+                "send_day": "0", 
+                "message": "Thank you for all your work this week in sending data and please keep up the good work!", 
+                "distribution": ["/topics/demo"]}
     },
     "translation_dir": "/var/www/meerkat_frontend/country_config/translations"
 }
