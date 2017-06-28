@@ -380,12 +380,14 @@ def authenticate(username=config.server_auth_username,
             logging.error('Authentication as {} failed'.format(username))
             return ''
 
+        # Return the token
+        return r.cookies.get('meerkat_jwt', '')
+
     except requests.exceptions.RequestException as e:
         logging.error("Failed to access Auth.")
         logging.error(e)
 
-    # Return the token
-    return r.cookies.get('meerkat_jwt', '')
+
 
 
 def hermes(url, method, data={}):
