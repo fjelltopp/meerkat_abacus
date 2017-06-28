@@ -39,7 +39,7 @@ class DbTest(unittest.TestCase):
             drop_database(config.DATABASE_URL)
 
     def test_create_db(self):
-        if database_exists(config.DATABASE_URL):    
+        if database_exists(config.DATABASE_URL):
             drop_database(config.DATABASE_URL)
         self.assertFalse(database_exists(config.DATABASE_URL))
         manage.create_db(config.DATABASE_URL, model.Base, drop=True)
@@ -78,7 +78,7 @@ class DbTest(unittest.TestCase):
                     list(Polygon([(0, 0), (0, 0.4), (0.2, 0.4), (0.2, 0), (0, 0)]).exterior.coords),
                     list(to_shape(r.area).geoms[0].exterior.coords)
                     )
-                
+
         # This file has a clinic with a non existent district
         old_clinic_file = manage.country_config["locations"]["clinics"]
         manage.country_config["locations"][
@@ -105,13 +105,13 @@ class DbTest(unittest.TestCase):
                 category="test"
             ),
         ]
-        
+
         self.session.query(model.AggregationVariables).delete()
         self.session.commit()
         for v in variables:
             self.session.add(v)
         self.session.commit()
-        
+
         old_locs = manage.country_config["locations"]
         manage.country_config["locations"] = {
             "clinics": "demo_clinics.csv",
@@ -144,13 +144,13 @@ class DbTest(unittest.TestCase):
         N_cases = len(self.session.query(model.Data).all())
 
         self.assertEqual(N_cases, 2)
-        
+
         # Clean up
         manage.country_config["types_file"] = old_file
         manage.config.config_directory = old_dir
-        manage.country_config["locations"] = old_locs        
-        
-        
+        manage.country_config["locations"] = old_locs
+
+
     def test_table_data_from_csv(self):
         """Test table_data_from_csv"""
 
@@ -185,13 +185,13 @@ class DbTest(unittest.TestCase):
             )
 
         ]
-        
+
         self.session.query(model.AggregationVariables).delete()
         self.session.commit()
         for v in variables:
             self.session.add(v)
         self.session.commit()
-        
+
         manage.table_data_from_csv(
             "demo_case",
             model.form_tables["demo_case"],
@@ -207,7 +207,7 @@ class DbTest(unittest.TestCase):
         # Only 6 of the cases have deviceids in 1-6
         # One has to early submission date and one
         # is discarded by qul_2 above
-        
+
         for r in results:
             if r.uuid in ["1", "3"]:
                 self.assertEqual(r.data["results./bmi_height"], None)
@@ -218,7 +218,7 @@ class DbTest(unittest.TestCase):
             if r.uuid == "5":
                 self.assertEqual(r.data["pt./visit_date"], "2016-04-17T02:43:31.306860")
             self.assertIn(r.uuid, ["3", "4", "5", "1"])
-            
+
     @mock.patch('meerkat_abacus.util.requests')
     def test_db_setup(self, requests):
         old_manual = task_queue.config.country_config["manual_test_data"]
@@ -230,7 +230,7 @@ class DbTest(unittest.TestCase):
         #Locations
         results = session.query(model.Locations)
         country_test.test_locations(results)
-        
+
         if config.fake_data:
             for table in model.form_tables:
                 results = session.query(model.form_tables[table])
@@ -247,7 +247,7 @@ class DbTest(unittest.TestCase):
 
         n_disregarded_cases =  len(
             session.query(model.DisregardedData).filter(model.Data.type == "case").all())
-        
+
         t = model.form_tables[config.country_config["tables"][0]]
         n_expected_cases = len(
             session.query(t).filter(t.data["intro./visit"].astext == "new")
@@ -310,7 +310,6 @@ class DbTest(unittest.TestCase):
         task_queue.config.fake_data = old_fake
         task_queue.config.get_data_from_s3 = old_s3
         task_queue.config.country_config["manual_test_data"] = old_manual
-
 
     def test_get_new_data_initial_visit_control(self):
         """

@@ -374,14 +374,15 @@ def authenticate(username=config.server_auth_username,
     try:
         r = requests.request('POST', url, json=data, headers=headers)
         logging.info("Received authentication response: " + str(r))
+
+        # Log an error if authentication fails, and return an empty token
+        if r.status_code != 200:
+            logging.error('Authentication as {} failed'.format(username))
+            return ''
+
     except requests.exceptions.RequestException as e:
         logging.error("Failed to access Auth.")
         logging.error(e)
-
-    # Log an error if authentication fails, and return an empty token
-    if r.status_code != 200:
-        logging.error('Authentication as {} failed'.format(username))
-        return ''
 
     # Return the token
     return r.cookies.get('meerkat_jwt', '')
