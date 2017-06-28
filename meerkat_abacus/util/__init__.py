@@ -371,8 +371,12 @@ def authenticate(username=config.server_auth_username,
     headers = {'content-type': 'application/json'}
 
     # Make the auth request and log the result
-    r = requests.request('POST', url, json=data, headers=headers)
-    logging.info("Received authentication response: " + str(r))
+    try:
+        r = requests.request('POST', url, json=data, headers=headers)
+        logging.info("Received authentication response: " + str(r))
+    except requests.exceptions.RequestException as e:
+        logging.error("Failed to access Auth.")
+        logging.error(e)
 
     # Log an error if authentication fails, and return an empty token
     if r.status_code != 200:
