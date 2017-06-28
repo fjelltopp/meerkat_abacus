@@ -12,6 +12,7 @@ from meerkat_abacus.config import country_config
 from unittest import mock
 from collections import namedtuple
 
+
 class UtilTest(unittest.TestCase):
 
     def setUp(self):
@@ -172,13 +173,19 @@ class UtilTest(unittest.TestCase):
             handle.write.assert_any_call('a2,b2,c2\r\n')
 
     @mock.patch('meerkat_abacus.util.requests')
-    def test_hermes(self, mock_requests):
+    @mock.patch('meerkat_abacus.util.authenticate')
+    def test_hermes(self, mock_authenticate, mock_requests):
+        # Set things up
         config.hermes_dev = False
+        headers = {'content-type': 'application/json',
+                   'authorization': 'Bearer meerkatjwt'}
+        mock_authenticate.return_value = 'meerkatjwt'
+
+        # Call the function
         util.hermes("/test", "POST", {})
-        headers = {
-            'content-type': 'application/json',
-            'authorization': 'Bearer '
-        }
+
+        # Check the function behaves as expected
+        mock_authenticate.assert_called_with()
         mock_requests.request.assert_called_with(
             "POST",
             config.hermes_api_root + "/test",
@@ -186,9 +193,10 @@ class UtilTest(unittest.TestCase):
             headers=headers
         )
 
-
     @mock.patch('meerkat_abacus.util.requests')
-    def test_send_alert(self, mock_requests):
+    @mock.patch('meerkat_abacus.util.authenticate')
+    def test_send_alert(self, mock_authenticate, mock_requests):
+        mock_authenticate.return_value = 'meerkatjwt'
         alert = model.Data(**{"region": 2,
                               "clinic": 3,
                               "district": 4,
@@ -221,12 +229,13 @@ class UtilTest(unittest.TestCase):
 
         util.country_config["messaging_silent"] = False
         util.send_alert("abcdef", alert, variables, locations)
+        self.assertTrue(mock_authenticate.called)
         self.assertTrue(mock_requests.request.called)
         call_args = mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "PUT")
         self.assertEqual(call_args[0][1],
                          config.hermes_api_root + "/publish")
-        self.assertTrue( len(call_args[1]["json"]["sms-message"]) < 160 ) #160 characters in a single sms
+        self.assertTrue(len(call_args[1]["json"]["sms-message"]) < 160 ) #160 characters in a single sms
         self.assertIn("Rabies", call_args[1]["json"]["html-message"])
         self.assertIn("Rabies", call_args[1]["json"]["sms-message"])
         self.assertIn("Rabies", call_args[1]["json"]["message"])
