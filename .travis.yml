@@ -1,5 +1,6 @@
 language: python
-dist: 
+group: deprecated-2017Q2
+dist:
    - trusty
 python:
   - '3.6'

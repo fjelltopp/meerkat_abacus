@@ -1,17 +1,17 @@
 """
 Various utility functions for meerkat abacus
 """
-import csv
-import requests
-import json
-import itertools
-import logging
-from datetime import datetime, timedelta
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
 from meerkat_abacus.model import Locations, AggregationVariables, Devices
 from meerkat_abacus.config import country_config
+from datetime import datetime, timedelta
+from sqlalchemy.orm import sessionmaker
 import meerkat_abacus.config as config
+from sqlalchemy import create_engine
+import itertools
+import requests
+import logging
+import json
+import csv
 
 
 def is_child(parent, child, locations):
@@ -38,6 +38,7 @@ def is_child(parent, child, locations):
         if loc_id == parent:
             return True
     return False
+
 
 def epi_week(date):
     """
@@ -321,7 +322,7 @@ def write_csv(rows, file_path, mode = 'w'):
     Args:
         rows: list of dicts with data
         file_path: path to write file to
-        mode: 'w' for writing to a new file, 'a' for 
+        mode: 'w' for writing to a new file, 'a' for
          appending without overwriting
 
     """
@@ -333,7 +334,7 @@ def write_csv(rows, file_path, mode = 'w'):
 
             if mode == 'w':
                 out.writeheader()
-            
+
             for row in rows:
                 out.writerow(row)
 
@@ -354,86 +355,73 @@ def read_csv(file_path):
             yield row
 
 
-def refine_hermes_topics(topics):
+def authenticate(username=config.server_auth_username,
+                 password=config.server_auth_password):
     """
-    We don't want mass emails to be sent from the dev environment, but we do
-    want the ability to test.
-
-    This function takes a list of hermes topics, and if we are in the
-    development/testing environment (determined by config "hermes_dev") this
-    function strips them back to only those topics in the config variable
-    "hermes_dev_topics".
-
-    Args:
-        topics ([str]) A list of topic ids that a message is initially intended
-        to be published to.
+    Makes an authentication request to meerkat_auth using the specified
+    username and password, or the server username and password by default by
+    default.
 
     Returns:
-        [str] A refined list of topic ids containing only those topics from
-        config "hermes_dev_topics", if config "hermes_dev" == 1.
+        str The JWT token.
     """
+    # Assemble auth request params
+    url = config.auth_root + '/api/login'
+    data = {'username': username, 'password': password}
+    headers = {'content-type': 'application/json'}
 
-    # Make topics a copied (don't edit original) list if it isn't already one.
-    topics = list([topics]) if not isinstance(topics, list) else list(topics)
+    # Make the auth request and log the result
+    try:
+        r = requests.request('POST', url, json=data, headers=headers)
+        logging.info("Received authentication response: " + str(r))
 
-    logging.info("Initial topics: " + str(topics))
+        # Log an error if authentication fails, and return an empty token
+        if r.status_code != 200:
+            logging.error('Authentication as {} failed'.format(username))
+            return ''
 
-    # If in development/testing environment...
-    # Remove topics that aren't pre-specified as allowed.
-    if config.hermes_dev:
-        for t in range(len(topics)-1, -1, -1):
-            if topics[t] not in config.hermes_dev_topics:
-                del topics[t]
+        # Return the token
+        return r.cookies.get('meerkat_jwt', '')
 
-    logging.info("Refined topics: " + str(topics))
-
-    return topics
+    except requests.exceptions.RequestException as e:
+        logging.error("Failed to access Auth.")
+        logging.error(e)
 
 
-def hermes(url, method, data=None):
+
+
+def hermes(url, method, data={}):
     """
-    Makes a Hermes API request
-
+    Makes a Hermes API request.
     Args:
-       url: hermes url to send the request to
-       method: post/get http method
-       data: data to send
+       url (str): The Meerkat Hermes url for the desired function.
+       method (str):  The desired HTML function: GET, POST or PUT.
+       data (optional dict): The data to be sent to the url. Defaults
+       to ```{}```.
+    Returns:
+       dict: a dictionary formed from the json data in the response.
     """
-    
-    # If we are in the dev envirnoment only allow publishing to specially
-    # selected topics.
-    if data.get('topics', []):
+    # Assemble the request params.
+    url = config.hermes_api_root + url
+    headers = {'content-type': 'application/json',
+               'authorization': 'Bearer {}'.format(authenticate())}
 
-        topics = refine_hermes_topics(data.get('topics', []))
-        # Return a error message if we have tried to publish a mass email from
-        # the dev envirnoment.
-        if not topics:
-            return {"message": ("No topics to publish to, perhaps because "
-                                "system is in hermes dev mode.")}
-        else:
-            data['topics'] = topics
+    # Log the request
+    logging.info("Sending json: {}\nTo url: {}\nwith headers: {}".format(
+                  json.dumps(data), url, headers))
 
-    # Add the API key and turn into JSON.
-    data["api_key"] = config.hermes_api_key
-
+    # Make the request and handle the response.
     try:
-        url = config.hermes_api_root + "/" + url
-        headers = {'content-type': 'application/json'}
         r = requests.request(method, url, json=data, headers=headers)
-        return r
-        return {'method':method,'url':url,'data':data}
-
-    except Exception as e:
-        logging.warning("HERMES REQUEST FAILED: " + str(e))
-
-    output = ""
+    except requests.exceptions.RequestException as e:
+        logging.error("Failed to access Hermes.")
+        logging.error(e)
 
     try:
-        output = r.json()
+        return r.json()
     except Exception as e:
-        logging.warning("HERMES REQUEST FAILED TO CONVERT TO JSON: " + str(e))
-
-    return output
+        logging.error('Failed to convert Hermes response to json.')
+        logging.error(e)
 
 
 def create_topic_list(alert, locations):
@@ -497,7 +485,7 @@ def send_alert(alert_id, alert, variables, locations):
         district = ""
         if alert.district:
             district = locations[alert.district].name
-        
+
         text_strings = {
             'date': "Date: " + alert.date.strftime("%d %b %Y") + "\n",
             'clinic': "Clinic: " + locations[alert.clinic].name + "\n",
@@ -606,8 +594,7 @@ def send_alert(alert_id, alert, variables, locations):
             "medium": ['email', 'sms']
         }
 
-        logging.warning("CREATED ALERT")
-        logging.warning(data)
+        logging.warning("CREATED ALERT {}".format(data['id']))
 
-        hermes('publish', 'PUT', data)
+        hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!

@@ -12,11 +12,12 @@ from meerkat_abacus.config import country_config
 from unittest import mock
 from collections import namedtuple
 
+
 class UtilTest(unittest.TestCase):
 
     def setUp(self):
         pass
-    
+
     def tearDown(self):
         pass
 
@@ -39,7 +40,7 @@ class UtilTest(unittest.TestCase):
         }
         assert datetime(2016, 1, 2)  == epi_week_start_date(2016, test_config)
         assert datetime(2016, 12, 30)  == epi_week_start_date(2017, test_config)
-        
+
     def test_create_fake_data_get_value(self):
         """Test get value"""
         for i in range(100):
@@ -111,7 +112,7 @@ class UtilTest(unittest.TestCase):
         for result in tests.values():
             self.assertEqual(result, True)
         data = {"deviceids": [1, 3]}
-        
+
         records = create_fake_data.create_form(fields,
                                                N=50,
                                                data=data,
@@ -170,23 +171,32 @@ class UtilTest(unittest.TestCase):
             handle.write.assert_any_call('A,B,C\r\n')
             handle.write.assert_any_call('a1,b1,c1\r\n')
             handle.write.assert_any_call('a2,b2,c2\r\n')
-            
+
     @mock.patch('meerkat_abacus.util.requests')
-    def test_hermes(self, mock_requests):
-        config.hermes_dev = True
-        util.hermes("test", "POST", {"topics":["test-topic"]})
-        self.assertFalse( mock_requests.request.called )
+    @mock.patch('meerkat_abacus.util.authenticate')
+    def test_hermes(self, mock_authenticate, mock_requests):
+        # Set things up
         config.hermes_dev = False
-        util.hermes("test", "POST", {})
-        headers = {'content-type': 'application/json'}
-        mock_requests.request.assert_called_with( "POST",
-                                                  config.hermes_api_root + "/test",
-                                                  json={'api_key': config.hermes_api_key},
-                                                  headers=headers )
+        headers = {'content-type': 'application/json',
+                   'authorization': 'Bearer meerkatjwt'}
+        mock_authenticate.return_value = 'meerkatjwt'
 
+        # Call the function
+        util.hermes("/test", "POST", {})
+
+        # Check the function behaves as expected
+        mock_authenticate.assert_called_with()
+        mock_requests.request.assert_called_with(
+            "POST",
+            config.hermes_api_root + "/test",
+            json={},
+            headers=headers
+        )
 
     @mock.patch('meerkat_abacus.util.requests')
-    def test_send_alert(self, mock_requests):
+    @mock.patch('meerkat_abacus.util.authenticate')
+    def test_send_alert(self, mock_authenticate, mock_requests):
+        mock_authenticate.return_value = 'meerkatjwt'
         alert = model.Data(**{"region": 2,
                               "clinic": 3,
                               "district": 4,
@@ -209,33 +219,34 @@ class UtilTest(unittest.TestCase):
 
         district_mock = mock.Mock()
         district_mock.configure_mock(name="District")
-        
+
         variables = {"1": var_mock}
         locations = {
             2: region_mock,
             3: clinic_mock,
             4: district_mock
         }
-                                        
+
         util.country_config["messaging_silent"] = False
         util.send_alert("abcdef", alert, variables, locations)
+        self.assertTrue(mock_authenticate.called)
         self.assertTrue(mock_requests.request.called)
         call_args = mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "PUT")
         self.assertEqual(call_args[0][1],
                          config.hermes_api_root + "/publish")
-        self.assertTrue( len(call_args[1]["json"]["sms-message"]) < 160 ) #160 characters in a single sms
+        self.assertTrue(len(call_args[1]["json"]["sms-message"]) < 160 ) #160 characters in a single sms
         self.assertIn("Rabies", call_args[1]["json"]["html-message"])
         self.assertIn("Rabies", call_args[1]["json"]["sms-message"])
         self.assertIn("Rabies", call_args[1]["json"]["message"])
-       
+
         prefix = util.country_config["messaging_topic_prefix"]
         self.assertIn(prefix + "-1-allDis", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-2-allDis", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-1-1", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-2-1", call_args[1]["json"]["topics"])
         self.assertEqual("abcdef", call_args[1]["json"]["id"])
-    
+
         # The date is now too early
         mock_requests.reset_mock()
         alert.date = datetime.now() - timedelta(days=8)
@@ -251,11 +262,11 @@ class UtilTest(unittest.TestCase):
 
         #Call the method
         rv = util.create_topic_list(alert, locations)
-        
+
         #Check the return value is as expected.
         def pref(string):
             return country_config["messaging_topic_prefix"] + "-" + string
-        expected = [ 
+        expected = [
             pref("4-rea_1"),
             pref("3-rea_1"),
             pref("2-rea_1"),
@@ -266,11 +277,11 @@ class UtilTest(unittest.TestCase):
             pref("1-allDis")
         ]
         self.assertEqual( set(rv), set(expected) )
-            
+
         #If the parent location of the clinic is a region, check that no district is included.
         locations = { "4": LocationStruct( parent_location="2" ) }
         rv = util.create_topic_list(alert, locations)
-        expected = [ 
+        expected = [
             pref("4-rea_1"),
             pref("2-rea_1"),
             pref("1-rea_1"),
@@ -279,9 +290,9 @@ class UtilTest(unittest.TestCase):
             pref("1-allDis")
         ]
         self.assertEqual( set(rv), set(expected) )
-            
-        
 
-        
+
+
+
 if __name__ == "__main__":
     unittest.main()
