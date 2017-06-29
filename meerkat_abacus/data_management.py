@@ -16,7 +16,7 @@ from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data, epi_week
-from meerkat_libs import hermes
+import meerkat_libs as libs
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
 import inspect
@@ -728,7 +728,7 @@ def set_up_everything(leave_if_data, drop_db, N):
         print("Add alerts")
         add_alerts(session)
         print("Notifying developer")
-        print(hermes('/notify', 'PUT', data={
+        print(libs.hermes('/notify', 'PUT', data={
             'message': 'Abacus is set up and good to go for {}.'.format(
                 country_config['country_name']
             )

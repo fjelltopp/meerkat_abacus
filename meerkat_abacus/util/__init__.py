@@ -6,7 +6,7 @@ from meerkat_abacus.config import country_config
 from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from meerkat_libs import hermes
+import meerkat_libs as libs
 import meerkat_abacus.config as config
 import itertools
 import logging
@@ -524,5 +524,5 @@ def send_alert(alert_id, alert, variables, locations):
 
         logging.warning("CREATED ALERT {}".format(data['id']))
 
-        hermes('/publish', 'PUT', data)
+        libs.hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!

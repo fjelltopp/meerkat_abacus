@@ -24,7 +24,7 @@ class CeleryTaskTest(unittest.TestCase):
         pass
 
     @mock.patch('meerkat_abacus.task_queue.requests')
-    @mock.patch('meerkat_abacus.util.authenticate')
+    @mock.patch('meerkat_libs.authenticate')
     def test_send_email_report(self, mock_authenticate, request_mock):
         mock_authenticate.return_value = 'meerkatjwt'
         report = 'test_report'

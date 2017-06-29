@@ -219,8 +219,7 @@ class DbTest(unittest.TestCase):
                 self.assertEqual(r.data["pt./visit_date"], "2016-04-17T02:43:31.306860")
             self.assertIn(r.uuid, ["3", "4", "5", "1"])
 
-    @mock.patch('meerkat_abacus.util.requests')
-    def test_db_setup(self, requests):
+    def test_db_setup(self):
         old_manual = task_queue.config.country_config["manual_test_data"]
         task_queue.config.country_config["manual_test_data"] = {}
         task_queue.set_up_db.apply().get()
