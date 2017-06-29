@@ -9,6 +9,7 @@ import io
 from meerkat_abacus.util import create_fake_data, epi_week_start_date
 from meerkat_abacus import util, model, config
 from meerkat_abacus.config import country_config
+from meerkat_libs import hermes
 from unittest import mock
 from collections import namedtuple
 
@@ -182,7 +183,7 @@ class UtilTest(unittest.TestCase):
         mock_authenticate.return_value = 'meerkatjwt'
 
         # Call the function
-        util.hermes("/test", "POST", {})
+        hermes("/test", "POST", {})
 
         # Check the function behaves as expected
         mock_authenticate.assert_called_with()

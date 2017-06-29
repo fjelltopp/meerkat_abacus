@@ -16,6 +16,7 @@ from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data, epi_week
+from meerkat_libs import hermes
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
 import inspect
@@ -272,10 +273,10 @@ def table_data_from_csv(filename,
                                         removed[column] = 1
                 except Exception as e:
                     print(e)
-                    
+
         if remove:
             continue
-        
+
         if deviceids:
             if should_row_be_added(insert_row, table_name, deviceids,
                                    start_dates, allow_enketo=allow_enketo):
@@ -540,7 +541,7 @@ def import_clinics(csv_file, session, country_id,
                 if other_info:
                     for field in other_info:
                         other[field] = row.get(field, None)
-                        
+
                 # If two clinics have the same name and the same
                 # parent_location, we are dealing with two tablets from the
                 # same clinic, so we combine them.
@@ -636,7 +637,7 @@ def import_regions(csv_file, session, column_name,
 
     session.commit()
 
-    
+
 def import_locations(engine, session):
     """
     Imports all locations from csv-files.
@@ -727,7 +728,7 @@ def set_up_everything(leave_if_data, drop_db, N):
         print("Add alerts")
         add_alerts(session)
         print("Notifying developer")
-        print(util.hermes('/notify', 'PUT', data={
+        print(hermes('/notify', 'PUT', data={
             'message': 'Abacus is set up and good to go for {}.'.format(
                 country_config['country_name']
             )
