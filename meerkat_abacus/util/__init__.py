@@ -5,12 +5,11 @@ from meerkat_abacus.model import Locations, AggregationVariables, Devices
 from meerkat_abacus.config import country_config
 from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
-import meerkat_abacus.config as config
 from sqlalchemy import create_engine
+import meerkat_libs as libs
+import meerkat_abacus.config as config
 import itertools
-import requests
 import logging
-import json
 import csv
 
 
@@ -59,7 +58,6 @@ def epi_week(date):
 def get_db_engine():
     """
     Returns a db engine and session
-
     """
     engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
@@ -354,76 +352,6 @@ def read_csv(file_path):
         for row in reader:
             yield row
 
-
-def authenticate(username=config.server_auth_username,
-                 password=config.server_auth_password):
-    """
-    Makes an authentication request to meerkat_auth using the specified
-    username and password, or the server username and password by default by
-    default.
-
-    Returns:
-        str The JWT token.
-    """
-    # Assemble auth request params
-    url = config.auth_root + '/api/login'
-    data = {'username': username, 'password': password}
-    headers = {'content-type': 'application/json'}
-
-    # Make the auth request and log the result
-    try:
-        r = requests.request('POST', url, json=data, headers=headers)
-        logging.info("Received authentication response: " + str(r))
-
-        # Log an error if authentication fails, and return an empty token
-        if r.status_code != 200:
-            logging.error('Authentication as {} failed'.format(username))
-            return ''
-
-        # Return the token
-        return r.cookies.get('meerkat_jwt', '')
-
-    except requests.exceptions.RequestException as e:
-        logging.error("Failed to access Auth.")
-        logging.error(e)
-
-
-
-
-def hermes(url, method, data={}):
-    """
-    Makes a Hermes API request.
-    Args:
-       url (str): The Meerkat Hermes url for the desired function.
-       method (str):  The desired HTML function: GET, POST or PUT.
-       data (optional dict): The data to be sent to the url. Defaults
-       to ```{}```.
-    Returns:
-       dict: a dictionary formed from the json data in the response.
-    """
-    # Assemble the request params.
-    url = config.hermes_api_root + url
-    headers = {'content-type': 'application/json',
-               'authorization': 'Bearer {}'.format(authenticate())}
-
-    # Log the request
-    logging.info("Sending json: {}\nTo url: {}\nwith headers: {}".format(
-                  json.dumps(data), url, headers))
-
-    # Make the request and handle the response.
-    try:
-        r = requests.request(method, url, json=data, headers=headers)
-    except requests.exceptions.RequestException as e:
-        logging.error("Failed to access Hermes.")
-        logging.error(e)
-
-    try:
-        return r.json()
-    except Exception as e:
-        logging.error('Failed to convert Hermes response to json.')
-        logging.error(e)
-
-
 def create_topic_list(alert, locations):
     """
     Assemble the appropriate topic ID list for a given alert. Make sure the
@@ -596,5 +524,5 @@ def send_alert(alert_id, alert, variables, locations):
 
         logging.warning("CREATED ALERT {}".format(data['id']))
 
-        hermes('/publish', 'PUT', data)
+        libs.hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!

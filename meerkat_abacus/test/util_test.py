@@ -9,6 +9,7 @@ import io
 from meerkat_abacus.util import create_fake_data, epi_week_start_date
 from meerkat_abacus import util, model, config
 from meerkat_abacus.config import country_config
+import meerkat_libs as libs
 from unittest import mock
 from collections import namedtuple
 
@@ -172,8 +173,8 @@ class UtilTest(unittest.TestCase):
             handle.write.assert_any_call('a1,b1,c1\r\n')
             handle.write.assert_any_call('a2,b2,c2\r\n')
 
-    @mock.patch('meerkat_abacus.util.requests')
-    @mock.patch('meerkat_abacus.util.authenticate')
+    @mock.patch('meerkat_libs.requests')
+    @mock.patch('meerkat_libs.authenticate')
     def test_hermes(self, mock_authenticate, mock_requests):
         # Set things up
         config.hermes_dev = False
@@ -182,7 +183,7 @@ class UtilTest(unittest.TestCase):
         mock_authenticate.return_value = 'meerkatjwt'
 
         # Call the function
-        util.hermes("/test", "POST", {})
+        libs.hermes("/test", "POST", {})
 
         # Check the function behaves as expected
         mock_authenticate.assert_called_with()
@@ -193,8 +194,8 @@ class UtilTest(unittest.TestCase):
             headers=headers
         )
 
-    @mock.patch('meerkat_abacus.util.requests')
-    @mock.patch('meerkat_abacus.util.authenticate')
+    @mock.patch('meerkat_libs.requests')
+    @mock.patch('meerkat_libs.authenticate')
     def test_send_alert(self, mock_authenticate, mock_requests):
         mock_authenticate.return_value = 'meerkatjwt'
         alert = model.Data(**{"region": 2,

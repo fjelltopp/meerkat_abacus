@@ -1,11 +1,12 @@
 """
 Celery setup and wraper tasks to periodically update the database.
 """
-from meerkat_abacus import config, util, data_management
+from meerkat_abacus import config, data_management
 from celery.signals import worker_ready
 from datetime import datetime
 from raven.contrib.celery import register_signal, register_logger_signal
 from meerkat_abacus import celeryconfig
+import meerkat_libs as libs
 import requests
 import logging
 import traceback
@@ -220,7 +221,8 @@ def send_report_email(report, language, location):
                 deployment=config.DEPLOYMENT
             )
         }
-        util.hermes('/error', 'PUT', data)
+        libs.hermes('/error', 'PUT', data)
+
 
 @app.task
 def send_device_messages(message, content, distribution):
@@ -249,7 +251,7 @@ def send_device_messages(message, content, distribution):
             data = {'destination': str(target), 'message': str(content)}
 
             # Make the request and handle the response.
-            r = util.hermes(url='gcm',method='PUT',data=data)
+            r = libs.hermes(url='gcm',method='PUT',data=data)
 
             logging.info(pre + "Received device messaging response: " + str(r))
 
@@ -285,4 +287,4 @@ def send_device_messages(message, content, distribution):
                 deployment=config.DEPLOYMENT
             )
         }
-        util.hermes('/error', 'PUT', data)
+        libs.hermes('/error', 'PUT', data)
