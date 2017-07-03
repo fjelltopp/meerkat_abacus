@@ -28,8 +28,10 @@ class CeleryTaskTest(unittest.TestCase):
     def test_send_email_report(self, mock_authenticate, request_mock):
         mock_authenticate.return_value = 'meerkatjwt'
         report = 'test_report'
+        config.mailing_root = ''
         # First check that no email is sent when mailing root is false.
         task_queue.send_report_email(report, 'fr', "1")
+        print(config.mailing_root)
         self.assertFalse(mock_authenticate.called)
         self.assertFalse(request_mock.request.called)
         # Then check that the email request is made when mailing root is set
