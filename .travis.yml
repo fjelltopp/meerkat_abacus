@@ -34,7 +34,7 @@ install:
  - git clone https://github.com/meerkat-code/meerkat_libs.git
  - cd meerkat_libs
  - pip install .
- - cd ../../
+ - cd ../
 script: nosetests -v
 notifications:
   slack:
