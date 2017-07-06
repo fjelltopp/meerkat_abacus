@@ -3,7 +3,7 @@ Database model definition
 """
 from sqlalchemy import Column, Integer, String, DateTime, DDL, Float, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from sqlalchemy.orm import validates
 from sqlalchemy.event import listen
 from geoalchemy2 import Geometry
@@ -47,8 +47,10 @@ class Locations(Base):
     __tablename__ = 'locations'
 
     id = Column(Integer, primary_key=True)
+    country_location_id = Column(String)
     name = Column(String)
-    parent_location = Column(Integer, index=True)
+    parent_location = Column(ARRAY(Integer))
+    children = Column(ARRAY(Integer))
     point_location = Column(Geometry("POINT"))
     area = Column(Geometry("MULTIPOLYGON"))
     other = Column(JSONB)
@@ -80,13 +82,13 @@ class Data(Base):
     type = Column(String, index=True)
     type_name = Column(String)
     date = Column(DateTime, index=True)
-    epi_week = Column(Integer)
-    epi_year = Column(Integer)
-    country = Column(Integer, index=True)
-    zone = Column(Integer, index=True)
-    region = Column(Integer, index=True)
-    district = Column(Integer, index=True)
-    clinic = Column(Integer, index=True)
+    epi_week = Column(Integer, index=True)
+    epi_year = Column(Integer, index=True)
+    country = Column(ARRAY(Integer), index=True)
+    zone = Column(ARRAY(Integer), index=True)
+    region = Column(ARRAY(Integer), index=True)
+    district = Column(ARRAY(Integer), index=True)
+    clinic = Column(ARRAY(Integer), index=True)
     clinic_type = Column(String)
     case_type = Column(String)
     links = Column(JSONB)
@@ -103,6 +105,19 @@ create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
 listen(Data.__table__, 'after_create', create_index)
 create_index2 = DDL("CREATE INDEX categories_gin ON data USING gin(categories);")
 listen(Data.__table__, 'after_create', create_index2)
+create_index3 = DDL("CREATE INDEX index_clinic ON data USING GIN(clinic gin__int_ops);")
+listen(Data.__table__, 'after_create', create_index3)
+create_index4 = DDL("CREATE INDEX index_district ON data USING GIN(district gin__int_ops);")
+listen(Data.__table__, 'after_create', create_index4)
+create_index5 = DDL("CREATE INDEX index_region ON data USING GIN(region gin__int_ops);")
+listen(Data.__table__, 'after_create', create_index5)
+create_index6 = DDL("CREATE INDEX index_zone ON data USING GIN(zone gin__int_ops);")
+listen(Data.__table__, 'after_create', create_index6)
+create_index6 = DDL("CREATE INDEX index_country ON data USING GIN(country gin__int_ops);")
+listen(Data.__table__, 'after_create', create_index6)
+
+
+
 
 class DisregardedData(Base):
     __tablename__ = 'disregarded_data'
@@ -112,11 +127,14 @@ class DisregardedData(Base):
     type = Column(String, index=True)
     type_name = Column(String)
     date = Column(DateTime, index=True)
-    country = Column(Integer, index=True)
-    region = Column(Integer, index=True)
-    district = Column(Integer, index=True)
-    zone = Column(Integer, index=True)
-    clinic = Column(Integer, index=True)
+    epi_week = Column(Integer, index=True)
+    epi_year = Column(Integer, index=True)
+    country = Column(ARRAY(Integer), index=True)
+    zone = Column(ARRAY(Integer), index=True)
+    region = Column(ARRAY(Integer), index=True)
+    district = Column(ARRAY(Integer), index=True)
+    clinic = Column(ARRAY(Integer), index=True)
+    clinic = Column(ARRAY(Integer), index=True)
     clinic_type = Column(String)
     case_type = Column(String)
     links = Column(JSONB)

@@ -57,13 +57,14 @@ class DbTest(unittest.TestCase):
         }
         manage.import_locations(self.engine, self.session)
         results = self.session.query(model.Locations).all()
+        print(results)
         self.assertEqual(
             len(results),
-            14)  # Important as we should not merge the final Clinic 1
+            21)  # Important as we should not merge the final Clinic 1
         for r in results:
             #Checking that devideids are handled properly
             if r.name == "Clinic 1":
-                if r.parent_location == 6:
+                if r.parent_location == [8, 18]:
                     self.assertEqual(r.deviceid, "1,6")
                 else:
                     self.assertEqual(r.deviceid, "7")

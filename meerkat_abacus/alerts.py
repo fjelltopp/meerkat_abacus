@@ -29,7 +29,7 @@ def threshold(var_id, limits, session, hospital_limits=None):
 
     conditions = [Data.variables.has_key(var_id)]
     data = pd.read_sql(
-        session.query(Data.region, Data.district, Data.clinic, Data.date, Data.clinic_type,
+        session.query(Data.region, Data.district, Data.clinic[1].label("clinic"), Data.date, Data.clinic_type,
                       Data.uuid, Data.variables[var_id].label(var_id)).filter(
                           *conditions).statement, session.bind)
     if len(data) == 0:
@@ -38,7 +38,6 @@ def threshold(var_id, limits, session, hospital_limits=None):
     
     daily = data.groupby(["clinic", pd.TimeGrouper(
         key="date", freq="1D")]).sum()[var_id]
-
     daily_over_threshold = daily[daily >= limits[0]]
     alerts = []
     for clinic_date in daily_over_threshold.index:
@@ -120,7 +119,7 @@ def double_double(var_id, session):
     """
     conditions = [Data.variables.has_key(var_id)]
     data = pd.read_sql(
-        session.query(Data.region, Data.district, Data.clinic, Data.date,
+        session.query(Data.region, Data.district, Data.clinic[1].label("clinic"), Data.date,
                       Data.uuid, Data.variables[var_id].label(var_id)).filter(
                           *conditions).statement, session.bind)
 

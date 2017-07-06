@@ -118,28 +118,22 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         if locations[clinic_id].point_location is not None:
             clinic_gps = locations[clinic_id].point_location.desc
         ret_location = {
-            "clinic": clinic_id,
+            "clinic": [clinic_id],
             "clinic_type": locations[clinic_id].clinic_type,
             "case_type": locations[clinic_id].case_type,
             "tags": devices.get(row[location_form].get("deviceid", None), None),
-            "country": 1,
             "geolocation": clinic_gps
         }
-        if locations[clinic_id].parent_location in districts:
-            ret_location["district"] = locations[clinic_id].parent_location
-            ret_location["region"] = (
-                locations[ret_location["district"]].parent_location)
-            ret_location["zone"] = (
-                 locations[ret_location["region"]].parent_location)
-        elif locations[clinic_id].parent_location in regions:
-            ret_location["district"] = None
-            ret_location["region"] = locations[clinic_id].parent_location
-            ret_location["zone"] = (
-                 locations[ret_location["region"]].parent_location)
-        else:
-            ret_location["district"] = None
-            ret_location["region"] = None
-            ret_location["zone"] = None
+
+        for parent in locations[clinic_id].parent_location:
+            while parent:
+                current_loc = locations[parent]
+                ret_location.setdefault(current_loc.level, [])
+#                print(ret_location)
+                ret_location[current_loc.level].append(current_loc.id)
+                parent = current_loc.parent_location
+                if parent:
+                    parent = parent[0]
         row[location_form]["clinic_type"] = locations[clinic_id].clinic_type
         row[location_form]["service_provider"] = locations[clinic_id].service_provider
         if locations[clinic_id].other:
@@ -157,15 +151,22 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                 if loc.level == "district":
                     if loc.area is not None and to_shape(loc.area).contains(point):
                         ret_location = {
-                            "clinic": None,
+                            "clinic": [],
                             "clinic_type": None,
                             "case_type": None, 
                             "tags": None,
-                            "country": 1,
-                            "district": loc.id,
-                            "region": locations[loc.parent_location].id,
+                            "district": [loc.id],
                             "geolocation": from_shape(point).desc
                         }
+                        for parent in locations[loc.id].parent_location:
+                            while parent:
+                                current_loc = locations[parent]
+                                ret_location.setdefault(current_loc.level, [])
+                                #                print(ret_location)
+                                ret_location[current_loc.level].append(current_loc.id)
+                                parent = current_loc.parent_location
+                                if parent:
+                                    parent = parent[0]
                         found = True
                         break
             if not found:

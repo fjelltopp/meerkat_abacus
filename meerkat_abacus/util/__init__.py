@@ -28,16 +28,13 @@ def is_child(parent, child, locations):
     """
     parent = int(parent)
     child = int(child)
-
-    if child == parent or parent == 1:
-        return True
-    loc_id = child
-
-    while loc_id != 1:
-        loc_id = locations[loc_id].parent_location
-        if loc_id == parent:
-            return True
-    return False
+    ret = False
+    children = locations[parent].children
+    if child == parent:
+        ret =  True
+    if children and child in children:
+        ret = True
+    return ret
 
 def epi_week(date):
     """
@@ -451,14 +448,18 @@ def create_topic_list(alert, locations):
 
     prefix = [country_config["messaging_topic_prefix"]]
     reason = [alert.variables["alert_reason"], 'allDis']
-    locs = [alert.clinic, alert.region, 1]
 
-    # The district isn't stored in the alert model, so calulate it as the
-    # parent of the clinic.
-    district = locations[alert.clinic].parent_location
-    if(district != alert.region):
-        locs.append(district)
-
+    base_clinic = alert.clinic[0]
+    print(locations)
+    locs = [locations[base_clinic].country_location_id, "country"]
+    for parent in locations[base_clinic].parent_location:
+        while parent:
+            current_loc = locations[parent]
+            locs.append(current_loc.country_location_id)
+            parent = current_loc.parent_location
+            if parent:
+                print(parent)
+                parent = parent[0]
     combinations = itertools.product(prefix, locs, reason)
 
     topics = []
@@ -494,13 +495,13 @@ def send_alert(alert_id, alert, variables, locations):
         # List the possible strings that construct an alert sms message
         district = ""
         if alert.district:
-            district = locations[alert.district].name
+            district = locations[alert.district[0]].name
         
         text_strings = {
             'date': "Date: " + alert.date.strftime("%d %b %Y") + "\n",
-            'clinic': "Clinic: " + locations[alert.clinic].name + "\n",
+            'clinic': "Clinic: " + locations[alert.clinic[0]].name + "\n",
             'district': "District: " + district + "\n",
-            'region': "Region: " + locations[alert.region].name + "\n",
+            'region': "Region: " + locations[alert.region[0]].name + "\n",
             'patient': "Patient ID: " + alert.uuid + "\n",
             'age': "Age: " + str(alert.variables["alert_age"]) + "\n",
             'id': "Alert ID: " + alert_id + "\n",
@@ -518,11 +519,11 @@ def send_alert(alert_id, alert, variables, locations):
             'date': ("<tr><td><b>Date:</b></td><td>" +
                      alert.date.strftime("%d %b %Y") + "</td></tr>"),
             'clinic': ("<tr><td><b>Clinic:</b></td><td>" +
-                       locations[alert.clinic].name + "</td></tr>"),
+                       locations[alert.clinic[0]].name + "</td></tr>"),
             'district': ("<tr><td><b>District:</b></td><td>" +
                          district + "</td></tr>"),
             'region': ("<tr><td><b>Region:</b></td><td>" +
-                       locations[alert.region].name + "</td></tr>"),
+                       locations[alert.region[0]].name + "</td></tr>"),
             'patient': ("<tr><td><b>Patient ID:</b></td><td>" +
                         alert.uuid + "</td></tr>"),
             'gender': ("<tr><td><b>Gender:</b></td><td>" +

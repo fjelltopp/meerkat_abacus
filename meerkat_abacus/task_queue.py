@@ -6,6 +6,7 @@ from celery.signals import worker_ready
 from datetime import datetime
 from raven.contrib.celery import register_signal, register_logger_signal
 from meerkat_abacus import celeryconfig
+from meerkat_abacus import model
 import requests
 import logging
 import traceback
@@ -14,6 +15,7 @@ import raven
 import time
 import os
 import shutil
+
 
 
 class Celery(celery.Celery):
@@ -28,9 +30,10 @@ class Celery(celery.Celery):
 
 
 app = Celery()
-app.config_from_object(celeryconfig)
 
+app.config_from_object(celeryconfig)
 from api_background.export_data import export_form, export_category, export_data, export_data_table
+
 
 
 # When we start celery we run the set_up_db command
@@ -41,7 +44,7 @@ def set_up_task(**kwargs):
     """
     set_up_db.delay()
 
-
+    
 @app.task
 def set_up_db():
     """

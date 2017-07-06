@@ -15,7 +15,7 @@ from meerkat_abacus import model
 from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
-from meerkat_abacus.util import create_fake_data, epi_week
+from meerkat_abacus.util import create_fake_data, epi_week, get_locations
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
 import inspect
@@ -63,6 +63,7 @@ def create_db(url, base, drop=False):
     engine = create_engine(url)
     connection = engine.connect()
     connection.execute("CREATE EXTENSION IF NOT EXISTS postgis")
+    connection.execute("CREATE EXTENSION IF NOT EXISTS intarray")
     connection.close()
     base.metadata.create_all(engine)
     return True
@@ -289,13 +290,13 @@ def table_data_from_csv(filename,
         i += 1
         if i % 10000 == 0:
             print(removed)
-            conn.execute(table.__table__.insert(), dicts)
+            conn.execute(table.__table__.insert().values(dicts))
             dicts = []
 
     if to_check:
         print("Quality Controll performed: ")
         print(removed)
-    conn.execute(table.__table__.insert(), dicts)
+    conn.execute(table.__table__.insert().values(dicts))
     conn.close()
     print(i)
     return new_rows
@@ -346,6 +347,7 @@ def import_variables(session):
     session.query(model.AggregationVariables).delete()
     session.commit()
     #check if the coding_list parameter exists. If not, use the legacy parameter codes_file instead
+    rows = []
     if 'coding_list' in country_config.keys():
         for coding_file_name in country_config['coding_list']:
             codes_file = config.config_directory + 'variable_codes/' + coding_file_name
@@ -464,15 +466,19 @@ def import_clinics(csv_file, session, country_id,
 
     result = session.query(model.Locations)
     regions = {}
+    locations = {}
     for region in result:
         if region.level == "region":
             regions[region.name] = region.id
+        locations[region.id] = region
     districts = {}
     for district in result:
         if district.level == "district":
             districts[district.name] = district.id
 
     deviceids = []
+
+    clinics = []
     with open(csv_file) as f:
         clinics_csv = csv.DictReader(f)
         for row in clinics_csv:
@@ -519,17 +525,18 @@ def import_clinics(csv_file, session, country_id,
                 population = 0
                 if "population" in row and row["population"]:
                     population = int(row["population"])
-                    pop_parent_location = parent_location
+                    pop_parent_location = [parent_location]
+                    
                     while pop_parent_location:
                         r = session.query(model.Locations).filter(
-                            model.Locations.id == pop_parent_location).first()
+                            model.Locations.id.in_(pop_parent_location)).first()
                         r.population += population
                         pop_parent_location = r.parent_location
                         session.commit()
 
                 result = session.query(model.Locations).filter(
                     model.Locations.name == row["clinic"],
-                    model.Locations.parent_location == parent_location,
+                    model.Locations.parent_location == [parent_location],
                     model.Locations.clinic_type is not None
                 )
 
@@ -553,20 +560,34 @@ def import_clinics(csv_file, session, country_id,
                         start_date = parse(row["start_date"], dayfirst=True)
                     else:
                         start_date = country_config["default_start_date"]
-                    session.add(
-                        model.Locations(
-                            name=row["clinic"],
-                            parent_location=parent_location,
-                            point_location=point,
-                            deviceid=row["deviceid"],
-                            clinic_type=row["clinic_type"].strip(),
-                            case_report=case_report,
-                            case_type=row.get("case_type", None),
-                            level="clinic",
-                            population=population,
-                            other=other,
-                            service_provider=row.get("service_provider", None),
-                            start_date=start_date))
+
+                    clinic = model.Locations(
+                        name=row["clinic"],
+                        parent_location=[parent_location],
+                        point_location=point,
+                        deviceid=row["deviceid"],
+                        clinic_type=row["clinic_type"].strip(),
+                        case_report=case_report,
+                        case_type=row.get("case_type", None),
+                        level="clinic",
+                        population=population,
+                        other=other,
+                        service_provider=row.get("service_provider", None),
+                        country_location_id=row.get("country_location_id", None),
+                        start_date=start_date)
+                    
+                    session.add(clinic)
+                    session.commit()
+                    parent_id = parent_location
+                    while parent_id:
+                        current_loc = locations[parent_id]
+                        current_loc.children.append(clinic.id)
+                        flag_modified(current_loc,
+                                      "children")
+                        parent_id = None
+                        if current_loc.parent_location:
+                            parent_id = current_loc.parent_location[0]
+                    clinics.append((clinic, row))
                 else:
                     location = result.first()
                     location.deviceid = location.deviceid + "," + row[
@@ -578,7 +599,7 @@ def import_clinics(csv_file, session, country_id,
                         if location.case_type != row.get("case_type", None):
                             location.case_type = "multiple"
     session.commit()
-
+    return clinics
 
 
 def import_geojson(geo_json, session):
@@ -601,12 +622,12 @@ def import_geojson(geo_json, session):
             else:
                 print(shapely_shapes.geom_type)
             name = g["properties"]["Name"]
-            location = session.query(model.Locations).filter(
+            locations = session.query(model.Locations).filter(
                 model.Locations.name == name,
                 model.Locations.level.in_(["district",
-                                           "region", "country"])).first()
-            if location is not None:
-                location.area = from_shape(shapely_shapes)
+                                           "region", "country"])).all()
+            for l in locations:
+                l.area = from_shape(shapely_shapes)
             session.commit()
 
 
@@ -619,23 +640,39 @@ def import_regions(csv_file, session, column_name,
         csv_file: path to csv file with districts
         session: SQLAlchemy session
     """
+    regions = {}
     parents = {}
+    locations = {}
     for instance in session.query(model.Locations):
         parents[instance.name] = instance.id
+        locations[instance.id] = instance
     with open(csv_file) as f:
         districts_csv = csv.DictReader(f)
         for row in districts_csv:
-            session.add(
-                model.Locations(
-                    name=row[column_name],
-                    parent_location=parents[row[parent_column_name].strip()],
-                    level=level_name,
-                    population=row.get("population", 0)
-                )
+            regions[row[column_name]] = row
+            new_loc = model.Locations(
+                name=row[column_name],
+                parent_location=[parents[row[parent_column_name].strip()]],
+                level=level_name,
+                children=[],
+                population=row.get("population", 0),
+                country_location_id=row.get("country_location_id", None)
             )
 
-    session.commit()
+            session.add(new_loc)
+            session.commit()
+            parent_id = parents[row[parent_column_name].strip()]
+            while parent_id:
+                current_loc = locations[parent_id]
+                current_loc.children.append(new_loc.id)
+                flag_modified(current_loc,
+                              "children")
+                parent_id = None
+                if current_loc.parent_location:
+                    parent_id = current_loc.parent_location[0]
 
+    session.commit()
+    return regions
     
 def import_locations(engine, session):
     """
@@ -649,14 +686,27 @@ def import_locations(engine, session):
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
     session.add(
         model.Locations(
-            name=country_config["country_name"], level="country"))
-
+            name=country_config["country_name"], children = [], level="country",
+            country_location_id = "country"))
+    top_levels = []
+    for extra_roots in country_config.get("location_tree_roots", []):
+        level, name = extra_roots
+        top_level = model.Locations(
+                name=name,
+                parent_location=[],
+                level=level,
+                children=[],
+            )
+        session.add(top_level)
+        session.commit()
+        top_levels.append(top_level)
+    # Create full tree
     session.query(model.Devices).delete()
     session.commit()
     zone_file = None
     if "zones" in country_config["locations"]:
         zone_file = (config.config_directory + "locations/" +
-                    country_config["locations"]["zones"])
+                     country_config["locations"]["zones"])
     regions_file = (config.config_directory + "locations/" +
                     country_config["locations"]["regions"])
     districts_file = (config.config_directory + "locations/" +
@@ -665,14 +715,102 @@ def import_locations(engine, session):
                     country_config["locations"]["clinics"])
 
     if zone_file:
-        import_regions(zone_file, session, "zone", "country", "zone")
-        import_regions(regions_file, session, "region", "zone", "region")
+        zones = import_regions(zone_file, session, "zone", "country", "zone")
+        regions = import_regions(regions_file, session,
+                                 "region", "zone", "region")
     else:
-        import_regions(regions_file, session, "region", "country", "region")
-    import_regions(districts_file, session, "district", "region", "district")
-    import_clinics(clinics_file, session, 1,
-                   other_info=country_config.get("other_location_information", None),
-                   other_condition=country_config.get("other_location_condition", None))
+        zones = {}
+        regions = import_regions(regions_file, session,
+                                 "region", "country", "region")
+    districts = import_regions(districts_file, session,
+                               "district", "region", "district")
+    clinics = import_clinics(clinics_file, session, 1,
+                             other_info=country_config.get(
+                                 "other_location_information", None),
+                             other_condition=country_config.get(
+                                 "other_location_condition", None))
+
+    level_data = {"zone": zones,
+                  "region": regions,
+                  "district": districts
+    }
+    for i, extra_roots in enumerate(country_config.get("location_tree_roots", [])):
+        level, name = extra_roots
+        top_level_data = level_data[level]
+
+        sublevels = {"zone": ["region", "district"],
+                     "region": ["district"],
+                     "district": [],
+                     }[level]
+        if name in top_level_data.keys():
+            top_level = top_levels[i]
+            top_level.population = top_level_data[name].get("population", 0)
+            top_level.country_location_id = top_level_data[name].get("country_location_id", "") + "_" + str(i + 1)
+            existing_tree = {}
+            existing_tree[level] = {name: top_level}
+            for s in sublevels:
+                existing_tree[s] = {}
+                
+            for clinic, clinic_info in clinics:
+                parent_id = top_level.id
+                if clinic_info.get(level, None) == name:
+                    if clinic.id not in top_level.children:
+                        top_level.children.append(clinic.id)
+                        flag_modified(top_level,
+                                      "children")
+
+                    for sublevel in sublevels:
+                        sublevel_name = clinic_info.get(sublevel)
+                        if sublevel_name in existing_tree.get(sublevel, None):
+                            parent_id = existing_tree[sublevel][sublevel_name].id
+                            if parent_id not in existing_tree[sublevel][sublevel_name].children:
+                                existing_tree[sublevel][sublevel_name].children.append(clinic.id)
+                                flag_modified(existing_tree[sublevel][sublevel_name],
+                                              "children")
+                        else:
+                            sublevel_data = level_data.get(sublevel,
+                                                           {}).get(sublevel_name,
+                                                                   None)
+                            if sublevel_data:
+                                new_loc = model.Locations(
+                                    name=sublevel_name,
+                                    parent_location=[parent_id],
+                                    level=sublevel,
+                                    children=[clinic.id],
+                                    population=sublevel_data.get("population", 0),
+                                    country_location_id = sublevel_data.get("country_location_id", "") + "_" + str(i + 1)
+                                )
+                                
+                                session.add(new_loc)
+                                session.commit()
+                                locations = get_locations(session)
+                                tmp_parent_id = parent_id
+                                while tmp_parent_id:
+                                    current_loc = locations[tmp_parent_id]
+                                    current_loc.children.append(new_loc.id)
+                                    flag_modified(current_loc,
+                                                  "children")
+                                    tmp_parent_id = None
+                                    if current_loc.parent_location:
+                                        tmp_parent_id = current_loc.parent_location[0]
+                                if new_loc.id not in top_level.children:
+                                    top_level.children.append(new_loc.id)
+                                    flag_modified(top_level,
+                                                  "children")
+
+                                existing_tree[sublevel][sublevel_name] = new_loc
+                                parent_id = new_loc.id
+                    clinic.parent_location.append(parent_id)
+                    flag_modified(clinic,
+                                  "parent_location")
+
+            session.commit()
+
+
+
+
+
+
     for geosjon_file in config.country_config["geojson_files"]:
         import_geojson(config.config_directory + geosjon_file,
                        session)
@@ -724,14 +862,14 @@ def set_up_everything(leave_if_data, drop_db, N):
         new_data_to_codes(engine)
         Session = sessionmaker(bind=engine)
         session = Session()
-        print("Add alerts")
-        add_alerts(session)
-        print("Notifying developer")
-        print(util.hermes('/notify', 'PUT', data={
-            'message': 'Abacus is set up and good to go for {}.'.format(
-                country_config['country_name']
-            )
-        }))
+        #print("Add alerts")
+        #add_alerts(session)
+        #print("Notifying developer")
+        #print(util.hermes('/notify', 'PUT', data={
+        #    'message': 'Abacus is set up and good to go for {}.'.format(
+        #        country_config['country_name']
+        #    )
+        #}))
     return set_up
 
 
@@ -1067,7 +1205,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
 
         added = 0
         while True:
-            chunk = res.fetchmany(500)
+            chunk = res.fetchmany(1000)
             if not chunk:
                 break
             else:
@@ -1091,7 +1229,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                         data, link_names, links_by_name, data_type, locations,
                         variables)
                     newly_added = data_to_db(
-                        conn2, data_dicts,
+                        conn2,
+                        data_dicts,
                         disregarded_data_dicts,
                         data_type["type"]
                     )
@@ -1104,8 +1243,10 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
                 variables)
-            newly_added = data_to_db(conn2, data_dicts,
-                                     disregarded_data_dicts, data_type["type"])
+            newly_added = data_to_db(conn2,
+                                     data_dicts,
+                                     disregarded_data_dicts,
+                                     data_type["type"])
             added += newly_added
             if not no_print:
                 print("Added {} records".format(added))
@@ -1116,11 +1257,11 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
 
     return True
 
+
 def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
     """
     Adds a list of data_dicts to the database. We make sure we do
     not add any duplicates by deleting any possible duplicates first
-
     Args:
         conn: Db connection
         data_dicts: List of data dictionaries

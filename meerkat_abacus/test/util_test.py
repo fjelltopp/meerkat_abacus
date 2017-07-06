@@ -187,9 +187,9 @@ class UtilTest(unittest.TestCase):
 
     @mock.patch('meerkat_abacus.util.requests')
     def test_send_alert(self, mock_requests):
-        alert = model.Data(**{"region": 2,
-                              "clinic": 3,
-                              "district": 4,
+        alert = model.Data(**{"region": [2],
+                              "clinic": [3],
+                              "district": [4],
                               "uuid": "uuid:1",
                               "variables": {"alert_reason": "1",
                                             "alert_id": "abcdef",
@@ -202,19 +202,30 @@ class UtilTest(unittest.TestCase):
         var_mock.configure_mock(name='Rabies')
 
         region_mock = mock.Mock()
-        region_mock.configure_mock(name="Region")
+        region_mock.configure_mock(name="Region",
+                                   parent_location=[1],
+                                   country_location_id="11")
 
         clinic_mock = mock.Mock()
-        clinic_mock.configure_mock(name="Clinic")
+        clinic_mock.configure_mock(name="Clinic",
+                                   parent_location=[3],
+                                   country_location_id="1111")
 
         district_mock = mock.Mock()
-        district_mock.configure_mock(name="District")
-        
+        district_mock.configure_mock(name="District",
+                                     parent_location=[2],
+                                     country_location_id="111")
+        country_mock = mock.Mock()
+        country_mock.configure_mock(name="Country",
+                                     parent_location=[None],
+                                     country_location_id="1")
         variables = {"1": var_mock}
         locations = {
+            1: country_mock,
             2: region_mock,
-            3: clinic_mock,
-            4: district_mock
+            3: district_mock,
+            4: clinic_mock
+
         }
                                         
         util.country_config["messaging_silent"] = False
@@ -231,9 +242,9 @@ class UtilTest(unittest.TestCase):
        
         prefix = util.country_config["messaging_topic_prefix"]
         self.assertIn(prefix + "-1-allDis", call_args[1]["json"]["topics"])
-        self.assertIn(prefix + "-2-allDis", call_args[1]["json"]["topics"])
+        self.assertIn(prefix + "-11-allDis", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-1-1", call_args[1]["json"]["topics"])
-        self.assertIn(prefix + "-2-1", call_args[1]["json"]["topics"])
+        self.assertIn(prefix + "-11-1", call_args[1]["json"]["topics"])
         self.assertEqual("abcdef", call_args[1]["json"]["id"])
     
         # The date is now too early
@@ -243,42 +254,63 @@ class UtilTest(unittest.TestCase):
         self.assertFalse(mock_requests.request.called)
 
     def test_create_topic_list(self):
-        #Create the mock arguments that include all necessary data to complete the function.
-        AlertStruct = namedtuple("AlertStruct", 'variables clinic region')
-        LocationStruct = namedtuple( "LocationStruct", "parent_location" )
-        alert = AlertStruct( variables={"alert_reason":"rea_1"}, clinic="4", region="2" )
-        locations = { "4": LocationStruct( parent_location="3" ) }
+        # Create the mock arguments that include all necessary data to complete the function.
+        AlertStruct = namedtuple("AlertStruct", 'variables clinic')
+        LocationStruct = namedtuple("LocationStruct",
+                                    "parent_location country_location_id")
+        alert = AlertStruct(variables={"alert_reason": "rea_1"},
+                            clinic=["7"])
+        locations = {"7": LocationStruct(parent_location=["6", "5"],
+                                         country_location_id="111"),
+                     "6": LocationStruct(parent_location=["4"],
+                                         country_location_id="11_1"),
+                     "5": LocationStruct(parent_location=["3"],
+                                         country_location_id="11"),
+                     "4": LocationStruct(parent_location=["2"],
+                                         country_location_id="1_1"),
+                     "3": LocationStruct(parent_location=["1"],
+                                         country_location_id="1"),
+                     "2": LocationStruct(parent_location=[],
+                                         country_location_id="1"),
+                     "1": LocationStruct(parent_location=[],
+                                         country_location_id="country")}
 
-        #Call the method
+        # Call the method
         rv = util.create_topic_list(alert, locations)
         
-        #Check the return value is as expected.
+        # Check the return value is as expected.
         def pref(string):
             return country_config["messaging_topic_prefix"] + "-" + string
-        expected = [ 
-            pref("4-rea_1"),
-            pref("3-rea_1"),
-            pref("2-rea_1"),
+        expected = [
+            pref("111-rea_1"),
+            pref("11-rea_1"),
+            pref("11_1-rea_1"),
             pref("1-rea_1"),
-            pref("4-allDis"),
-            pref("3-allDis"),
-            pref("2-allDis"),
-            pref("1-allDis")
+            pref("1_1-rea_1"),
+            pref("country-rea_1"),
+            pref("country-allDis"),
+            pref("1-allDis"),
+            pref("11-allDis"),
+            pref("1_1-allDis"),
+            pref("11_1-allDis"),
+            pref("111-allDis"),
         ]
-        self.assertEqual( set(rv), set(expected) )
+        print(rv)
+        self.assertEqual(set(rv), set(expected))
             
-        #If the parent location of the clinic is a region, check that no district is included.
-        locations = { "4": LocationStruct( parent_location="2" ) }
+        # If the parent location of the clinic is a region, check that no district is included.
+        locations["7"] = LocationStruct(parent_location=["3"],
+                                         country_location_id="111")
         rv = util.create_topic_list(alert, locations)
-        expected = [ 
-            pref("4-rea_1"),
-            pref("2-rea_1"),
+        expected = [
+            pref("111-rea_1"),
             pref("1-rea_1"),
-            pref("4-allDis"),
-            pref("2-allDis"),
-            pref("1-allDis")
+            pref("country-rea_1"),
+            pref("111-allDis"),
+            pref("1-allDis"),
+            pref("country-allDis")
         ]
-        self.assertEqual( set(rv), set(expected) )
+        self.assertEqual(set(rv), set(expected))
             
         
 

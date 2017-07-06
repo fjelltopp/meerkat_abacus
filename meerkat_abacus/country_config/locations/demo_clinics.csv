@@ -1,7 +1,7 @@
-"who_code","deviceid","sim_id","clinic","clinic_type","case_report","device_tags","district","region","longitude","latitude","start_date","population"
-1,1,1,"Clinic 1","Primary","Yes","CD","District 1","Region 1",0.1,0.1,"01/02/16",10000
-2,2,2,"Clinic 2","Primary","Yes","CD","District 1","Region 1",0.2,0.2,"01/02/16",5000
-3,3,3,"Clinic 3","Focal","No","CD,NCD","District 1","Region 1",0.3,0.2,"01/02/16",4000
-4,4,4,"Clinic 4","Primary","Yes","CD,NCD","District 2","Region 1",0.2,0.3,"01/02/16",10000
-5,5,5,"Clinic 5","Hospital","Yes","CD,NCD","District 3","Region 2",0.4,-0.1,,10000
-6,6,6,"Clinic 1","Primary","Yes","NCD","District 1","Region 1",0.1,0.1,,1000
+who_code,deviceid,sim_id,clinic,clinic_type,case_report,device_tags,zone,district,region,longitude,latitude,start_date,population,country_location_id
+1,1,1,Clinic 1,Primary,Yes,CD,Zone 1,District 1,Region 1,0.1,0.1,01/02/16,10000,1111
+2,2,2,Clinic 2,Primary,Yes,CD,Zone 1,District 1,Region 1,0.2,0.2,01/02/16,5000,1112
+3,3,3,Clinic 3,Focal,No,"CD,NCD",Zone 1,District 1,Region 1,0.3,0.2,01/02/16,4000,1114
+4,4,4,Clinic 4,Primary,Yes,"CD,NCD",Zone 2,District 2,Region 1,0.2,0.3,01/02/16,10000,1115
+5,5,5,Clinic 5,Hospital,Yes,"CD,NCD",Zone 2,District 3,Region 2,0.4,-0.1,,10000,2231
+6,6,6,Clinic 1,Primary,Yes,NCD,Zone 1,District 1,Region 1,0.1,0.1,,1000,1111

@@ -30,6 +30,7 @@ country_config = {
     "links_file": "demo_links.csv",
     "types_file": "data_types.csv",
     "country_tests": "demo_test.py",
+    "location_tree_roots": [("zone", "Zone 1"), ("zone", "Zone 2")],
     "epi_week": "day:0",
     "locations": {
         "clinics": "demo_clinics.csv",
