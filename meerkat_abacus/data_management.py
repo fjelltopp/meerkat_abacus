@@ -702,7 +702,7 @@ def import_parameters(engine, session):
                     file) as json_data:
                 parameter_data = json.load(json_data)
                 session.add(
-                    model.calculationParameters(
+                    model.CalculationParameters(
                         name=file_name,
                         type=file_extension,
                         parameters = parameter_data

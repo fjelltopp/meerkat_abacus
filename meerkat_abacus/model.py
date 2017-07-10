@@ -197,7 +197,7 @@ class AggregationVariables(Base):
         else:
             return disregard
 
-class calculationParameters(Base):
+class CalculationParameters(Base):
         __tablename__ = 'calculation_parameters'
         id = Column(Integer, primary_key = True)
         name = Column(String)
