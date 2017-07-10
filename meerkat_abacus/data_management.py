@@ -26,6 +26,8 @@ import copy
 import json
 import time
 import os
+import os.path
+import logging
 
 
 country_config = config.country_config
@@ -691,18 +693,23 @@ def import_parameters(engine, session):
 
     parameter_files = config.country_config.get("calculation_parameters",[])
 
-    for csv_file in parameter_files:
-        with open(csv_file) as f:
-            districts_csv = csv.DictReader(f)
-            for row in districts_csv:
+    for file in parameter_files:
+        logging.warning("Importing parameter file " + file)
+        file_name = os.path.splitext(file)[0]
+        file_extension = os.path.splitext(file)[-1]
+        if file_extension == '.json':
+            with open(config.config_directory + "calculation_parameters/" +
+                    file) as json_data:
+                parameter_data = json.load(json_data)
                 session.add(
                     model.calculationParameters(
-                        name=row[column_name],
-                        parent_location=parents[row[parent_column_name].strip()],
-                        level=level_name,
-                        population=row.get("population", 0)
-                    )
-            )
+                        name=file_name,
+                        type=file_extension,
+                        parameters = parameter_data
+                    ))
+        elif file_extension == '.csv':
+            # TODO: CSV implementation
+            pass
 
     session.commit()
 
