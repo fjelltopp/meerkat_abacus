@@ -688,7 +688,7 @@ def import_parameters(engine, session):
         engine: SQLAlchemy connection engine
         session: db session
     """
-    session.query(model.calculationParameters).delete()
+    session.query(model.CalculationParameters).delete()
     engine.execute("ALTER SEQUENCE calculation_parameters_id_seq RESTART WITH 1;")
 
     parameter_files = config.country_config.get("calculation_parameters",[])
