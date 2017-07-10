@@ -38,6 +38,7 @@ country_config = {
         "zones": "demo_zones.csv"
     },
     "geojson_files": ["demo_json.json"],
+    "calculation_parameters": ["vaccination_vials.csv","medicine_kits.csv"],
     "form_dates": {
         "case": "pt./visit_date",
         "alert": "end",

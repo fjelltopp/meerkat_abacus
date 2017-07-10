@@ -678,6 +678,33 @@ def import_locations(engine, session):
         import_geojson(config.config_directory + geosjon_file,
                        session)
 
+def import_parameters(engine, session):
+    """
+    Imports additional calculation parameters from csv-files.
+
+    Args:
+        engine: SQLAlchemy connection engine
+        session: db session
+    """
+    session.query(model.calculationParameters).delete()
+    engine.execute("ALTER SEQUENCE calculation_parameters_id_seq RESTART WITH 1;")
+
+    parameter_files = config.country_config.get("calculation_parameters",[])
+
+    for csv_file in parameter_files:
+        with open(csv_file) as f:
+            districts_csv = csv.DictReader(f)
+            for row in districts_csv:
+                session.add(
+                    model.calculationParameters(
+                        name=row[column_name],
+                        parent_location=parents[row[parent_column_name].strip()],
+                        level=level_name,
+                        population=row.get("population", 0)
+                    )
+            )
+
+    session.commit()
 
 def set_up_everything(leave_if_data, drop_db, N):
     """
@@ -705,6 +732,8 @@ def set_up_everything(leave_if_data, drop_db, N):
         session = Session()
         print("Import Locations")
         import_locations(engine, session)
+        print("Import calculation parameters")
+        import_parameters(engine, session)
         if config.fake_data:
             print("Generate fake data")
             add_fake_data(session, N=N, append=False, from_files=True)
