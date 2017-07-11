@@ -26,6 +26,8 @@ import copy
 import json
 import time
 import os
+import os.path
+import logging
 
 
 country_config = config.country_config
@@ -678,6 +680,38 @@ def import_locations(engine, session):
         import_geojson(config.config_directory + geosjon_file,
                        session)
 
+def import_parameters(engine, session):
+    """
+    Imports additional calculation parameters from csv-files.
+
+    Args:
+        engine: SQLAlchemy connection engine
+        session: db session
+    """
+    session.query(model.CalculationParameters).delete()
+    engine.execute("ALTER SEQUENCE calculation_parameters_id_seq RESTART WITH 1;")
+
+    parameter_files = config.country_config.get("calculation_parameters",[])
+
+    for file in parameter_files:
+        logging.warning("Importing parameter file " + file)
+        file_name = os.path.splitext(file)[0]
+        file_extension = os.path.splitext(file)[-1]
+        if file_extension == '.json':
+            with open(config.config_directory + "calculation_parameters/" +
+                    file) as json_data:
+                parameter_data = json.load(json_data)
+                session.add(
+                    model.CalculationParameters(
+                        name=file_name,
+                        type=file_extension,
+                        parameters = parameter_data
+                    ))
+        elif file_extension == '.csv':
+            # TODO: CSV implementation
+            pass
+
+    session.commit()
 
 def set_up_everything(leave_if_data, drop_db, N):
     """
@@ -705,6 +739,8 @@ def set_up_everything(leave_if_data, drop_db, N):
         session = Session()
         print("Import Locations")
         import_locations(engine, session)
+        print("Import calculation parameters")
+        import_parameters(engine, session)
         if config.fake_data:
             print("Generate fake data")
             add_fake_data(session, N=N, append=False, from_files=True)

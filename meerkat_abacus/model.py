@@ -196,3 +196,10 @@ class AggregationVariables(Base):
             return 0
         else:
             return disregard
+
+class CalculationParameters(Base):
+        __tablename__ = 'calculation_parameters'
+        id = Column(Integer, primary_key = True)
+        name = Column(String)
+        type = Column(String)
+        parameters = Column(JSONB)
