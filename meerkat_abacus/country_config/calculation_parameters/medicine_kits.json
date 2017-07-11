@@ -1,0 +1,47 @@
+{
+    "barcode_albe": {
+        "total":2,
+        "dose":1,
+        "tablets_in_kit":200
+    },
+    "barcode_magn": {
+        "total":1,
+        "dose":2,
+        "tablets_in_kit":1000
+    },
+    "barcode_amox": {
+        "total":30,
+        "dose":2,
+        "tablets_in_kit":3000
+    },
+    "barcode_fefu": {
+        "total":2,
+        "dose":2,
+        "tablets_in_kit":2000
+    },
+    "barcode_ibup": {
+        "total":20,
+        "dose":2,
+        "tablets_in_kit":200
+    },
+    "barcode_orsl": {
+        "total":2,
+        "dose":2,
+        "tablets_in_kit":200
+    },
+    "barcode_par1": {
+        "total":10,
+        "dose":20,
+        "tablets_in_kit":1000
+    },
+    "barcode_par5": {
+        "total":20,
+        "dose":1,
+        "tablets_in_kit":2000
+    },
+    "barcode_zinc": {
+        "total":10,
+        "dose":2,
+        "tablets_in_kit":1000
+    }
+}
