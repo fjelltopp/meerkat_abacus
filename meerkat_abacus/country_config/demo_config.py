@@ -39,6 +39,7 @@ country_config = {
     },
     "geojson_files": ["demo_json.json"],
     "calculation_parameters": ["vaccination_vials.json","medicine_kits.json"],
+    "exclusion_list":"demo_exclusion.csv",
     "form_dates": {
         "case": "pt./visit_date",
         "alert": "end",
@@ -108,6 +109,11 @@ country_config = {
         "demo_case_duplicate_initial_visits_test_data"
         ]
     },
+    "exclusion_lists": {
+      "demo_case":[
+        "demo_case_exclusion_list_test_data.csv"
+      ]
+    }
     "alert_data": {"demo_case": {"age": "pt1./age", "gender": "pt1./gender"}},
     "alert_id_length": 6,
     "alert_text_content": [ 'reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id' ],
