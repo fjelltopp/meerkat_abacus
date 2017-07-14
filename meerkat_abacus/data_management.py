@@ -751,6 +751,8 @@ def set_up_everything(leave_if_data, drop_db, N):
         import_variables(session)
         print("Import Data")
         import_data(engine, session)
+        print("Applying exclusion lists")
+        apply_exclusion_lists(session)
         print("Controlling initial visits")
         initial_visit_control()
         print("To codes")
@@ -771,6 +773,8 @@ def set_up_everything(leave_if_data, drop_db, N):
         }))
     return set_up
 
+def apply_exclusion_lists(session):
+    pass
 
 def add_alerts(session):
     """
@@ -1408,18 +1412,6 @@ def correct_initial_visits(session, table,
     ret = session.execute(duplicate_removal_update)
 
     session.commit()
-
-    """
-    The SQLAlchemy ORM objects emulate the following SQL statement:
-    with jor_case_ranked as (
-    select id, data->>'patientid' patientid, data->>'icd_code' icd_code,
-    rank() over (PARTITION BY data->>'patientid', data->>'icd_code' ORDER BY (data->>'pt./visit_date')::date, id ASC) rnk
-    from jor_case where data->>'intro./visit' = 'new' and data->>'patientid' <> '' and data->>'icd_code' <> '')
-    update jor_case as c
-    set data = jsonb_set(data,'{intro./visit}','"return"',false)
-    from jor_case_ranked c_r
-    where c.id = c_r.id and c_r.rnk>1;
-    """
 
     return ret
 
