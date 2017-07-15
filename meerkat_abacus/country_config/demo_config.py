@@ -106,14 +106,15 @@ country_config = {
     "manual_test_data": {
       "demo_case":[
         "demo_case_link_test_data",
-        "demo_case_duplicate_initial_visits_test_data"
+        "demo_case_duplicate_initial_visits_test_data",
+        "demo_case_exclusion_list_test_data"
         ]
     },
     "exclusion_lists": {
       "demo_case":[
-        "demo_case_exclusion_list_test_data.csv"
+        "demo_case_exclusion_list.csv"
       ]
-    }
+    },
     "alert_data": {"demo_case": {"age": "pt1./age", "gender": "pt1./gender"}},
     "alert_id_length": 6,
     "alert_text_content": [ 'reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id' ],
