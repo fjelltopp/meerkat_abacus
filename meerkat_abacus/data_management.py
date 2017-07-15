@@ -774,7 +774,22 @@ def set_up_everything(leave_if_data, drop_db, N):
     return set_up
 
 def apply_exclusion_lists(session):
-    pass
+    """
+    Delete excluded rows from the raw data before it is processed
+
+    Args:
+        session: db session
+    """
+    exclusion_lists = config.country_config.get("exclusion_lists",[])
+    for form in exclusion_lists:
+        for exclusion_list_file in config.country_config["exclusion_lists"][form]:
+            exclusion_list = util.read_csv(config.config_directory + exclusion_list_file)
+            for uuid_to_be_removed in exclusion_list:
+                session.query(model.form_tables[form]).\
+                    filter(model.form_tables[form].uuid == uuid_to_be_removed["uuid"]).\
+                    delete()
+            session.commit()
+
 
 def add_alerts(session):
     """
