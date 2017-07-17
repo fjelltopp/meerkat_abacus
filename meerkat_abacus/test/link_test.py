@@ -4,13 +4,12 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists
 
-from meerkat_abacus import model
-from meerkat_abacus import config
+from meerkat_abacus import model, config, util
 from meerkat_abacus.codes.to_codes import to_code
 from meerkat_abacus.codes.variable import Variable
 from meerkat_abacus.data_management import set_up_everything, create_db,\
  add_fake_data,create_links,import_locations, import_variables,\
- import_data, new_data_to_codes
+ import_data, new_data_to_codes, apply_exclusion_lists
 
 data_type_definitions = [
   {
@@ -49,6 +48,7 @@ class LinkTest(unittest.TestCase):
         import_variables(self.session)
         add_fake_data(self.session, N=0, append=False, from_files=True)
         import_data(engine=self.engine,session=self.session)
+        apply_exclusion_lists(self.session)
         
         for data_type in data_type_definitions:
           create_links(data_type=data_type, input_conditions=[],
@@ -64,6 +64,25 @@ class LinkTest(unittest.TestCase):
         self.conn.close()
         self.session.close()
         self.engine.dispose()
+
+
+    #nosetests -v --nocapture meerkat_abacus.test.link_test:LinkTest.test_exclusion_lists`…`nosetests -v --nocapture`
+    def test_exclusion_lists(self):
+        """
+        Check that the uuids in the exclusion lists are actually removed
+        """
+        for form in config.country_config.get("exclusion_lists",[]):
+          print(str(form))
+          for exclusion_list_file in config.country_config["exclusion_lists"][form]:
+            print(str(exclusion_list_file))
+            exclusion_list = util.read_csv(config.config_directory + exclusion_list_file)
+            for uuid_to_be_removed in exclusion_list:
+                query = self.session.query(model.form_tables[form]).\
+                    filter(model.form_tables[form].uuid == uuid_to_be_removed["uuid"])
+                res = self.conn.execute(query.statement).fetchall()
+                print(str(res))
+                print(str(len(res)))
+                self.assertEqual(len(res),0)
 
     def test_links(self):
         """
