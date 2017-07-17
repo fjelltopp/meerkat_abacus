@@ -74,14 +74,11 @@ class LinkTest(unittest.TestCase):
         for form in config.country_config.get("exclusion_lists",[]):
           print(str(form))
           for exclusion_list_file in config.country_config["exclusion_lists"][form]:
-            print(str(exclusion_list_file))
             exclusion_list = util.read_csv(config.config_directory + exclusion_list_file)
             for uuid_to_be_removed in exclusion_list:
                 query = self.session.query(model.form_tables[form]).\
                     filter(model.form_tables[form].uuid == uuid_to_be_removed["uuid"])
                 res = self.conn.execute(query.statement).fetchall()
-                print(str(res))
-                print(str(len(res)))
                 self.assertEqual(len(res),0)
 
     def test_links(self):
