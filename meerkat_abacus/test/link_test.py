@@ -9,7 +9,7 @@ from meerkat_abacus.codes.to_codes import to_code
 from meerkat_abacus.codes.variable import Variable
 from meerkat_abacus.data_management import set_up_everything, create_db,\
  add_fake_data,create_links,import_locations, import_variables,\
- import_data, new_data_to_codes, apply_exclusion_lists
+ import_data, new_data_to_codes
 
 data_type_definitions = [
   {
@@ -48,7 +48,6 @@ class LinkTest(unittest.TestCase):
         import_variables(self.session)
         add_fake_data(self.session, N=0, append=False, from_files=True)
         import_data(engine=self.engine,session=self.session)
-        apply_exclusion_lists(self.session)
         
         for data_type in data_type_definitions:
           create_links(data_type=data_type, input_conditions=[],
