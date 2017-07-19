@@ -787,10 +787,11 @@ def get_exclusion_list(session, form):
         session: db session
         form: which form to get the exclusion list for
     """
-    exclusion_lists = config.country_config.get("exclusion_lists",[])
+    exclusion_lists = config.country_config.get("exclusion_lists",{})
     ret = []
 
-    for exclusion_list_file in config.country_config["exclusion_lists"].get(form,[]):
+
+    for exclusion_list_file in exclusion_lists.get(form,[]):
         exclusion_list = util.read_csv(config.config_directory + exclusion_list_file)
         for uuid_to_be_removed in exclusion_list:
             ret.append(uuid_to_be_removed["uuid"])
