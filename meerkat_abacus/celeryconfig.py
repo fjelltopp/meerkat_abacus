@@ -61,20 +61,20 @@ if config.mailing_root:
         # Create correct crontab denoting the time the email is to be sent out.
         if schedule[report]["period"] == "week":
             send_time = crontab(
-                minute=0,
-                hour=4,
+                minute=schedule[report].get("minute", 0),
+                hour=schedule[report].get("hour", 4),
                 day_of_week=schedule[report]["send_day"]
             )
         elif schedule[report]["period"] == "month":
             send_time = crontab(
-                minute=0,
-                hour=4,
+                minute=schedule[report].get("minute", 0),
+                hour=schedule[report].get("hour", 4),
                 day_of_month=schedule[report]["send_day"]
             )
         else:
             send_time = crontab(
-                minute=0,
-                hour=4,
+                minute=schedule[report].get("minute", 0),
+                hour=schedule[report].get("hour", 4),
                 day_of_week=1
             )
 
