@@ -39,6 +39,8 @@ country_config = {
         "zones": "demo_zones.csv"
     },
     "geojson_files": ["demo_json.json"],
+    "calculation_parameters": ["vaccination_vials.json","medicine_kits.json"],
+    "exclusion_list":"demo_exclusion.csv",
     "form_dates": {
         "case": "pt./visit_date",
         "alert": "end",
@@ -105,8 +107,14 @@ country_config = {
     "manual_test_data": {
       "demo_case":[
         "demo_case_link_test_data",
-        "demo_case_duplicate_initial_visits_test_data"
+        "demo_case_duplicate_initial_visits_test_data",
+        "demo_case_exclusion_list_test_data"
         ]
+    },
+    "exclusion_lists": {
+      "demo_case":[
+        "demo_case_exclusion_list.csv"
+      ]
     },
     "alert_data": {"demo_case": {"age": "pt1./age", "gender": "pt1./gender"}},
     "alert_id_length": 6,
@@ -125,6 +133,13 @@ country_config = {
         "ncd_public_health": {"period": "month", "send_day": "1", "language": "en"},
         "communicable_diseases": {"period": "week", "send_day": "0", "language": "en"},
         "non_communicable_diseases": {"period": "month", "send_day": "1", "language": "en"}
+    },
+    "device_message_schedule": {
+            "thank_you": {
+                "period": "week", 
+                "send_day": "0", 
+                "message": "Thank you for all your work this week in sending data and please keep up the good work!", 
+                "distribution": ["/topics/demo"]}
     },
     "translation_dir": "/var/www/meerkat_frontend/country_config/translations"
 }

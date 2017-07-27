@@ -16,6 +16,7 @@ from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data, epi_week, get_locations
+import meerkat_libs as libs
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
 import inspect
@@ -25,7 +26,9 @@ import copy
 import json
 import time
 import os
-
+import os.path
+import logging
+import random
 
 country_config = config.country_config
 
@@ -181,7 +184,9 @@ def table_data_from_csv(filename,
                         row_function=None,
                         quality_control=None,
                         allow_enketo=False,
-                        start_dates=None):
+                        start_dates=None,
+                        exclusion_list=[],
+                        fraction=None):
     """
     Adds all the data from a csv file. We delete all old data first
     and then add new data.
@@ -204,6 +209,7 @@ def table_data_from_csv(filename,
         start_dates: Clinic start dates, we do not add any data submitted
                      before these dates
         quality_control: If we are performing quality controll on the data.
+        exclusion_list: A list of uuid's that are restricted from entering
     """
 
     if only_new:
@@ -237,7 +243,11 @@ def table_data_from_csv(filename,
                 to_check_test[variable] = variable.test
     removed = {}
     for row in util.read_csv(directory + filename + ".csv"):
-
+        if fraction:
+            if random.random() > fraction:
+                continue
+        if row[uuid_field] in exclusion_list:
+            continue # The row is in the exclusion list 
         if only_new and row[uuid_field] in uuids:
             continue # In this case we only add new data
         if "_index" in row:
@@ -273,10 +283,10 @@ def table_data_from_csv(filename,
                                         removed[column] = 1
                 except Exception as e:
                     print(e)
-                    
+
         if remove:
             continue
-        
+
         if deviceids:
             if should_row_be_added(insert_row, table_name, deviceids,
                                    start_dates, allow_enketo=allow_enketo):
@@ -402,6 +412,7 @@ def import_data(engine, session):
         allow_enketo = False
         if form in country_config.get("allow_enketo", []):
             allow_enketo = country_config["allow_enketo"][form]
+        exclusion_list = get_exclusion_list(session, form)
         table_data_from_csv(
             form,
             model.form_tables[form],
@@ -413,7 +424,9 @@ def import_data(engine, session):
             table_name=form,
             start_dates=start_dates,
             quality_control=quality_control,
-            allow_enketo=allow_enketo)
+            allow_enketo=allow_enketo,
+            exclusion_list=exclusion_list,
+            fraction=config.import_fraction)
 
 
 def import_new_data():
@@ -437,7 +450,7 @@ def import_new_data():
         if "quality_control" in country_config:
             if form in country_config["quality_control"]:
                 quality_control = True
-
+        exclusion_list = get_exclusion_list(session, form)
         new_records += table_data_from_csv(
             form,
             model.form_tables[form],
@@ -448,7 +461,9 @@ def import_new_data():
             deviceids=form_deviceids,
             table_name=form,
             start_dates=start_dates,
-            quality_control=quality_control)
+            quality_control=quality_control,
+            exclusion_list=exclusion_list,
+            fraction=config.import_fraction)
 
     return new_records
 
@@ -547,7 +562,7 @@ def import_clinics(csv_file, session, country_id,
                 if other_info:
                     for field in other_info:
                         other[field] = row.get(field, None)
-                        
+
                 # If two clinics have the same name and the same
                 # parent_location, we are dealing with two tablets from the
                 # same clinic, so we combine them.
@@ -815,6 +830,38 @@ def import_locations(engine, session):
         import_geojson(config.config_directory + geosjon_file,
                        session)
 
+def import_parameters(engine, session):
+    """
+    Imports additional calculation parameters from csv-files.
+
+    Args:
+        engine: SQLAlchemy connection engine
+        session: db session
+    """
+    session.query(model.CalculationParameters).delete()
+    engine.execute("ALTER SEQUENCE calculation_parameters_id_seq RESTART WITH 1;")
+
+    parameter_files = config.country_config.get("calculation_parameters",[])
+
+    for file in parameter_files:
+        logging.warning("Importing parameter file " + file)
+        file_name = os.path.splitext(file)[0]
+        file_extension = os.path.splitext(file)[-1]
+        if file_extension == '.json':
+            with open(config.config_directory + "calculation_parameters/" +
+                    file) as json_data:
+                parameter_data = json.load(json_data)
+                session.add(
+                    model.CalculationParameters(
+                        name=file_name,
+                        type=file_extension,
+                        parameters = parameter_data
+                    ))
+        elif file_extension == '.csv':
+            # TODO: CSV implementation
+            pass
+
+    session.commit()
 
 def set_up_everything(leave_if_data, drop_db, N):
     """
@@ -842,6 +889,8 @@ def set_up_everything(leave_if_data, drop_db, N):
         session = Session()
         print("Import Locations")
         import_locations(engine, session)
+        print("Import calculation parameters")
+        import_parameters(engine, session)
         if config.fake_data:
             print("Generate fake data")
             add_fake_data(session, N=N, append=False, from_files=True)
@@ -852,6 +901,8 @@ def set_up_everything(leave_if_data, drop_db, N):
         import_variables(session)
         print("Import Data")
         import_data(engine, session)
+        #print("Applying exclusion lists")
+        #apply_exclusion_lists(session)
         print("Controlling initial visits")
         initial_visit_control()
         print("To codes")
@@ -870,7 +921,27 @@ def set_up_everything(leave_if_data, drop_db, N):
         #        country_config['country_name']
         #    )
         #}))
+
     return set_up
+
+def get_exclusion_list(session, form):
+    """
+    Get exclusion list for a form
+
+    Args:
+        session: db session
+        form: which form to get the exclusion list for
+    """
+    exclusion_lists = config.country_config.get("exclusion_lists",{})
+    ret = []
+
+
+    for exclusion_list_file in exclusion_lists.get(form,[]):
+        exclusion_list = util.read_csv(config.config_directory + exclusion_list_file)
+        for uuid_to_be_removed in exclusion_list:
+            ret.append(uuid_to_be_removed["uuid"])
+
+    return ret
 
 
 def add_alerts(session):
@@ -1512,18 +1583,6 @@ def correct_initial_visits(session, table,
     ret = session.execute(duplicate_removal_update)
 
     session.commit()
-
-    """
-    The SQLAlchemy ORM objects emulate the following SQL statement:
-    with jor_case_ranked as (
-    select id, data->>'patientid' patientid, data->>'icd_code' icd_code,
-    rank() over (PARTITION BY data->>'patientid', data->>'icd_code' ORDER BY (data->>'pt./visit_date')::date, id ASC) rnk
-    from jor_case where data->>'intro./visit' = 'new' and data->>'patientid' <> '' and data->>'icd_code' <> '')
-    update jor_case as c
-    set data = jsonb_set(data,'{intro./visit}','"return"',false)
-    from jor_case_ranked c_r
-    where c.id = c_r.id and c_r.rnk>1;
-    """
 
     return ret
 

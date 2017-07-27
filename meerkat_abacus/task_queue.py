@@ -1,12 +1,13 @@
 """
 Celery setup and wraper tasks to periodically update the database.
 """
-from meerkat_abacus import config, util, data_management
+from meerkat_abacus import config, data_management
 from celery.signals import worker_ready
 from datetime import datetime
 from raven.contrib.celery import register_signal, register_logger_signal
 from meerkat_abacus import celeryconfig
 from meerkat_abacus import model
+import meerkat_libs as libs
 import requests
 import logging
 import traceback
@@ -223,4 +224,60 @@ def send_report_email(report, language, location):
                 deployment=config.DEPLOYMENT
             )
         }
-        util.hermes('/error', 'PUT', data)
+        libs.hermes('/error', 'PUT', data)
+
+
+@app.task
+def send_device_messages(message, content, distribution):
+    """send the device messages"""
+
+    # If the device message root isn't set, don't send the device messages.
+    if not config.device_messaging_api:
+        logging.info("Device messaging root not set. Message {} not sent.".format(message))
+        return
+
+    # Important to log so we can debug if something goes wrong in deployment.
+    pre = "DEVICE MESSAGE " + str(message) + ":  "
+    logging.info(pre + "Trying to send device messages.")
+
+    try:
+        # Assemble params.
+        url = config.device_messaging_api
+
+        for target in distribution:
+            # Log the full request so we can debug later if necessary.
+            logging.info(pre + "Sending device message: " +
+                         str(message) + " with content: '" +
+                         str(content) + "' to " +
+                         str(target))
+
+            data = {'destination': str(target), 'message': str(content)}
+
+            # Make the request and handle the response.
+            r = libs.hermes(url='/gcm',method='PUT',data=data)
+            logging.info(pre + "Received device messaging response: " + str(r))
+
+    except Exception:
+        # Log the exception properly.
+        logging.exception(pre + "Device message request failed.")
+
+        # Notify the developers that there has been a problem.
+        data = {
+            "subject": "FAILED: {} device message".format(message),
+            "message": "Device message failed to send from {} deployment.".format(
+                config.DEPLOYMENT
+            ),
+            "html-message": (
+                "<p>Hi <<first_name>> <<last_name>>,</p><p>There's been a "
+                "problem sending the {message} device message. Here's the "
+                "traceback...</p><p>{traceback}</p><p>The problem occured "
+                "at {time} for the {deployment} deployment.</p><p><b>Hope you "
+                "can fix it soon!</b></p>"
+            ).format(
+                message=message,
+                traceback=traceback.format_exc(),
+                time=datetime.now().isoformat(),
+                deployment=config.DEPLOYMENT
+            )
+        }
+        libs.hermes('/error', 'PUT', data)

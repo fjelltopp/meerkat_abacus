@@ -1,17 +1,16 @@
 """
 Various utility functions for meerkat abacus
 """
-import csv
-import requests
-import json
-import itertools
-import logging
+from meerkat_abacus.model import Locations, AggregationVariables, Devices
+from meerkat_abacus.config import country_config
 from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from meerkat_abacus.model import Locations, AggregationVariables, Devices
-from meerkat_abacus.config import country_config
+import meerkat_libs as libs
 import meerkat_abacus.config as config
+import itertools
+import logging
+import csv
 
 
 def is_child(parent, child, locations):
@@ -36,6 +35,7 @@ def is_child(parent, child, locations):
         ret = True
     return ret
 
+
 def epi_week(date):
     """
     calculate epi week
@@ -55,7 +55,6 @@ def epi_week(date):
 def get_db_engine():
     """
     Returns a db engine and session
-
     """
     engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
@@ -318,7 +317,7 @@ def write_csv(rows, file_path, mode = 'w'):
     Args:
         rows: list of dicts with data
         file_path: path to write file to
-        mode: 'w' for writing to a new file, 'a' for 
+        mode: 'w' for writing to a new file, 'a' for
          appending without overwriting
 
     """
@@ -330,7 +329,7 @@ def write_csv(rows, file_path, mode = 'w'):
 
             if mode == 'w':
                 out.writeheader()
-            
+
             for row in rows:
                 out.writerow(row)
 
@@ -349,87 +348,6 @@ def read_csv(file_path):
         reader = csv.DictReader(f)
         for row in reader:
             yield row
-
-
-def refine_hermes_topics(topics):
-    """
-    We don't want mass emails to be sent from the dev environment, but we do
-    want the ability to test.
-
-    This function takes a list of hermes topics, and if we are in the
-    development/testing environment (determined by config "hermes_dev") this
-    function strips them back to only those topics in the config variable
-    "hermes_dev_topics".
-
-    Args:
-        topics ([str]) A list of topic ids that a message is initially intended
-        to be published to.
-
-    Returns:
-        [str] A refined list of topic ids containing only those topics from
-        config "hermes_dev_topics", if config "hermes_dev" == 1.
-    """
-
-    # Make topics a copied (don't edit original) list if it isn't already one.
-    topics = list([topics]) if not isinstance(topics, list) else list(topics)
-
-    logging.info("Initial topics: " + str(topics))
-
-    # If in development/testing environment...
-    # Remove topics that aren't pre-specified as allowed.
-    if config.hermes_dev:
-        for t in range(len(topics)-1, -1, -1):
-            if topics[t] not in config.hermes_dev_topics:
-                del topics[t]
-
-    logging.info("Refined topics: " + str(topics))
-
-    return topics
-
-
-def hermes(url, method, data=None):
-    """
-    Makes a Hermes API request
-
-    Args:
-       url: hermes url to send the request to
-       method: post/get http method
-       data: data to send
-    """
-
-    # If we are in the dev envirnoment only allow publishing to specially
-    # selected topics.
-    if data.get('topics', []):
-
-        topics = refine_hermes_topics(data.get('topics', []))
-        # Return a error message if we have tried to publish a mass email from
-        # the dev envirnoment.
-        if not topics:
-            return {"message": ("No topics to publish to, perhaps because "
-                                "system is in hermes dev mode.")}
-        else:
-            data['topics'] = topics
-
-    # Add the API key and turn into JSON.
-    data["api_key"] = config.hermes_api_key
-
-    try:
-        url = config.hermes_api_root + "/" + url
-        headers = {'content-type': 'application/json'}
-        r = requests.request(method, url, json=data, headers=headers)
-
-    except Exception as e:
-        logging.warning("HERMES REQUEST FAILED: " + str(e))
-
-    output = ""
-
-    try:
-        output = r.json()
-    except Exception as e:
-        logging.warning("HERMES REQUEST FAILED TO CONVERT TO JSON: " + str(e))
-
-    return output
-
 
 def create_topic_list(alert, locations):
     """
@@ -605,8 +523,7 @@ def send_alert(alert_id, alert, variables, locations):
             "medium": ['email', 'sms']
         }
 
-        logging.warning("CREATED ALERT")
-        logging.warning(data)
+        logging.warning("CREATED ALERT {}".format(data['id']))
 
-        hermes('publish', 'PUT', data)
+        libs.hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!
