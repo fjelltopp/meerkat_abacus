@@ -25,51 +25,38 @@ START_CELERY: if we want to star the celery hourly tasks
 import os
 import importlib.util
 
-
-def from_env(env_var, default):
-    """ Gets value from envrionment variable or uses default
-
-    Args:
-        env_var: name of envrionment variable
-        default: the default value
-    """
-    new = os.environ.get(env_var)
-    if new:
-        return new
-    else:
-        return default
-
-
 # Application config
-DEPLOYMENT = from_env("DEPLOYMENT", "unknown")
+DEPLOYMENT = os.environ.get("DEPLOYMENT", "unknown")
 current_directory = os.path.dirname(os.path.realpath(__file__))
-DATABASE_URL = from_env(
+DATABASE_URL = os.environ.get(
     "MEERKAT_ABACUS_DB_URL",
     'postgresql+psycopg2://postgres:postgres@db/meerkat_db'
 )
-data_directory = from_env("DATA_DIRECTORY",
-                          current_directory + "/data/")
-config_directory = from_env("COUNTRY_CONFIG_DIR",
-                            current_directory + "/country_config/")
-fake_data = int(from_env("NEW_FAKE_DATA", True))
-start_celery = from_env("START_CELERY", False)
-get_data_from_s3 = int(from_env("GET_DATA_FROM_S3", False))
+data_directory = os.environ.get("DATA_DIRECTORY",
+                                current_directory + "/data/")
+config_directory = os.environ.get("COUNTRY_CONFIG_DIR",
+                                  current_directory + "/country_config/")
+fake_data = int(os.environ.get("NEW_FAKE_DATA", True))
+start_celery = os.environ.get("START_CELERY", False)
+get_data_from_s3 = int(os.environ.get("GET_DATA_FROM_S3", False))
 interval = 3600  # Seconds
-hermes_api_key = from_env("HERMES_API_KEY", "")
-hermes_api_root = from_env("HERMES_API_ROOT", "")
-hermes_dev = int(from_env("HERMES_DEV", False))
-mailing_key = from_env("MAILING_KEY", "")
-mailing_root = from_env("MAILING_ROOT", "")
-device_messaging_api = from_env("DEVICE_MESSAGING_API", "")
-auth_root = from_env('MEERKAT_AUTH_ROOT', 'http://dev_nginx_1/auth')
-send_test_emails = from_env('MEERKAT_TEST_EMAILS', False)
+hermes_api_key = os.environ.get("HERMES_API_KEY", "")
+hermes_api_root = os.environ.get("HERMES_API_ROOT", "")
+hermes_dev = int(os.environ.get("HERMES_DEV", False))
+mailing_key = os.environ.get("MAILING_KEY", "")
+mailing_root = os.environ.get("MAILING_ROOT", "")
+device_messaging_api = os.environ.get("DEVICE_MESSAGING_API", "")
+auth_root = os.environ.get('MEERKAT_AUTH_ROOT', 'http://dev_nginx_1/auth')
+send_test_emails = os.environ.get('MEERKAT_TEST_EMAILS', False)
 server_auth_username = os.environ.get('SERVER_AUTH_USERNAME', 'root')
 server_auth_password = os.environ.get('SERVER_AUTH_PASSWORD', 'password')
-send_test_device_messages = from_env('MEERKAT_TEST_DEVICE_MESSAGES', False)
-sentry_dns = from_env('SENTRY_DNS', '')
+send_test_device_messages = os.environ.get('MEERKAT_TEST_DEVICE_MESSAGES',
+                                           False)
+sentry_dns = os.environ.get('SENTRY_DNS', '')
 
+import_fraction = float(os.environ.get("IMPORT_FRACTION", 0))
 # Country config
-country_config_file = from_env("COUNTRY_CONFIG", "demo_config.py")
+country_config_file = os.environ.get("COUNTRY_CONFIG", "demo_config.py")
 
 spec = importlib.util.spec_from_file_location(
     "country_config_module",
