@@ -209,6 +209,7 @@ def table_data_from_csv(filename,
                      before these dates
         quality_control: If we are performing quality controll on the data.
         exclusion_list: A list of uuid's that are restricted from entering
+        fraction: If present imports a randomly selected subset of data.
     """
 
     if only_new:
