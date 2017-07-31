@@ -28,7 +28,7 @@ import time
 import os
 import os.path
 import logging
-
+import random
 
 country_config = config.country_config
 
@@ -184,7 +184,8 @@ def table_data_from_csv(filename,
                         quality_control=None,
                         allow_enketo=False,
                         start_dates=None,
-                        exclusion_list=[]):
+                        exclusion_list=[],
+                        fraction=None):
     """
     Adds all the data from a csv file. We delete all old data first
     and then add new data.
@@ -208,6 +209,7 @@ def table_data_from_csv(filename,
                      before these dates
         quality_control: If we are performing quality controll on the data.
         exclusion_list: A list of uuid's that are restricted from entering
+        fraction: If present imports a randomly selected subset of data.
     """
 
     if only_new:
@@ -241,6 +243,9 @@ def table_data_from_csv(filename,
                 to_check_test[variable] = variable.test
     removed = {}
     for row in util.read_csv(directory + filename + ".csv"):
+        if fraction:
+            if random.random() > fraction:
+                continue
         if row[uuid_field] in exclusion_list:
             continue # The row is in the exclusion list 
         if only_new and row[uuid_field] in uuids:
@@ -419,7 +424,8 @@ def import_data(engine, session):
             start_dates=start_dates,
             quality_control=quality_control,
             allow_enketo=allow_enketo,
-            exclusion_list=exclusion_list)
+            exclusion_list=exclusion_list,
+            fraction=config.import_fraction)
 
 
 def import_new_data():
@@ -455,7 +461,8 @@ def import_new_data():
             table_name=form,
             start_dates=start_dates,
             quality_control=quality_control,
-            exclusion_list=exclusion_list)
+            exclusion_list=exclusion_list,
+            fraction=config.import_fraction)
 
     return new_records
 
