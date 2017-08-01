@@ -48,16 +48,13 @@ def set_up_db():
     """
     Run the set_up_everything command from data_management.
     """
-    print("Setting up DB for {}".format(
-        config.country_config["country_name"]))
-    data_management.set_up_everything(False,
-                                      True,
-                                      500)
-    print("Finished setting up DB")
+    logging.debug("Setting up DB for %s", config.country_config["country_name"])
+    data_management.set_up_everything(leave_if_data=False, drop_db=True, N=500)
+    logging.debug("Finished setting up DB")
 
 
 @app.task
-def get_proccess_data(print_progress=False):
+def get_proccess_data(debug_enabled=False):
     """Get/create new data and proccess it."""
     if config.fake_data:
         if config.country_config.get('manual_test_data', None):
@@ -66,17 +63,17 @@ def get_proccess_data(print_progress=False):
             add_new_fake_data(5)
     if config.get_data_from_s3:
         get_new_data_from_s3()
-    if print_progress:
-        print("Import new data")
+    if debug_enabled:
+        logging.debug("Import new data")
     new_records = import_new_data()
-    if print_progress:
-        print("Validating initial visits")
+    if debug_enabled:
+        logging.debug("Validating initial visits")
     changed_records = correct_initial_visits()
-    if print_progress:
-        print("To Code")
+    if debug_enabled:
+        logging.debug("To Code")
     new_data_to_codes(restrict_uuids=list(set(changed_records + new_records)))
-    if print_progress:
-        print("Finished")
+    if debug_enabled:
+        logging.debug("Finished")
 
 
 @app.task
@@ -116,7 +113,7 @@ def new_data_to_codes(restrict_uuids=None):
     Add any new data in form tables to data table.
     """
     return data_management.new_data_to_codes(
-        no_print=True,
+        debug_enabled=True,
         restrict_uuids=restrict_uuids
     )
 
@@ -141,12 +138,12 @@ def send_report_email(report, language, location):
 
     # If the mailing root isn't set, don't send the email.
     if not config.mailing_root:
-        logging.info("Mailing root not set. Email {} not sent.".format(report))
+        logging.info("Mailing root not set. Email %s not sent.".format(report))
         return
 
     # Important to log so we can debug if something goes wrong in deployment.
     pre = "EMAIL " + str(report) + ":  "
-    logging.warning(pre + "Trying to send report email.")
+    logging.warning("%sTrying to send report email.", pre)
 
     try:
         # Authenticate the email sending
@@ -154,12 +151,9 @@ def send_report_email(report, language, location):
         data = {'username': 'report-emails', 'password': config.mailing_key}
         headers = {'content-type': 'application/json'}
 
-        logging.warning(
-            pre + "Sending authentication request to " +
-            str(url) + " with headers: " + str(headers)
-        )
+        logging.warning("%sSending authentication request to %s with headers: %s", pre, str(url), str(headers) )
         r = requests.request('POST', url, json=data, headers=headers)
-        logging.warning(pre + "Received authentication response: " + str(r))
+        logging.warning("%sReceived authentication response: %s", pre,  str(r))
 
         # We need authentication to work, so raise an exception if it doesn't.
         if r.status_code != 200:
@@ -178,14 +172,12 @@ def send_report_email(report, language, location):
         url = url.replace('/en/', '/' + language + '/')
 
         # Log the full request so we can debug later if necessary.
-        logging.info(pre + "Sending report email for location: " +
-                     str(location) + " with language: " +
-                     str(language) + " using url: " + str(url) +
-                     " and headers: " + str(headers))
+        logging.info("%sSending report email for location: %s with language: using url: %s and headers: %s",
+                     pre, str(location), str(language), str(url), str(headers))
 
         # Make the request and handle the response.
         r = requests.post(url, json=data, headers=headers)
-        logging.info(pre + "Received email request reponse: " + str(r))
+        logging.info("%sReceived email request reponse: %s", pre, str(r))
 
         # If the response is not a 200 OK, raise an Exception so that we can
         # handle it properly.
@@ -195,12 +187,10 @@ def send_report_email(report, language, location):
                 str(r.status_code)
                 )
 
-        # Report success
-        logging.info(pre + "Successfully sent " + str(report) + " email.")
+        logging.info("%sSuccessfully sent %s email.", pre, str(report))
 
     except Exception:
-        # Log the exception properly.
-        logging.exception(pre + "Report email request failed.")
+        logging.exception("%sReport email request failed.", pre, exc_info=True)
 
         # Notify the developers that there has been a problem.
         data = {
@@ -230,12 +220,12 @@ def send_device_messages(message, content, distribution):
 
     # If the device message root isn't set, don't send the device messages.
     if not config.device_messaging_api:
-        logging.info("Device messaging root not set. Message {} not sent.".format(message))
+        logging.info("Device messaging root not set. Message %s not sent.", message)
         return
 
     # Important to log so we can debug if something goes wrong in deployment.
     pre = "DEVICE MESSAGE " + str(message) + ":  "
-    logging.info(pre + "Trying to send device messages.")
+    logging.info("%sTrying to send device messages.", pre)
 
     try:
         # Assemble params.
@@ -243,20 +233,17 @@ def send_device_messages(message, content, distribution):
 
         for target in distribution:
             # Log the full request so we can debug later if necessary.
-            logging.info(pre + "Sending device message: " +
-                         str(message) + " with content: '" +
-                         str(content) + "' to " +
-                         str(target))
+            logging.info("%sSending device message: %s with content: '%s' to %s",
+                         pre, str(message), str(content), str(target))
 
             data = {'destination': str(target), 'message': str(content)}
 
             # Make the request and handle the response.
             r = libs.hermes(url='/gcm',method='PUT',data=data)
-            logging.info(pre + "Received device messaging response: " + str(r))
+            logging.info("%sReceived device messaging response: %s", pre, str(r))
 
     except Exception:
-        # Log the exception properly.
-        logging.exception(pre + "Device message request failed.")
+        logging.exception("%sDevice message request failed.", pre, exc_info=True)
 
         # Notify the developers that there has been a problem.
         data = {
