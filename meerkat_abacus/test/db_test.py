@@ -1,4 +1,6 @@
 import unittest
+
+import os
 from sqlalchemy_utils import database_exists, drop_database
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -30,6 +32,7 @@ class DbTest(unittest.TestCase):
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.conn = self.engine.connect()
+        self.current_directory = current_directory = os.path.dirname(os.path.realpath(__file__))
 
     def tearDown(self):
         self.session.commit()
@@ -47,7 +50,7 @@ class DbTest(unittest.TestCase):
 
     def test_locations(self):
         old_dir = manage.config.config_directory
-        manage.config.config_directory = "meerkat_abacus/test/test_data/"
+        manage.config.config_directory = self.current_directory + "/test_data/"
         old_locs = manage.country_config["locations"]
         manage.country_config["locations"] = {
             "clinics": "demo_clinics.csv",
@@ -137,7 +140,7 @@ class DbTest(unittest.TestCase):
         old_file = manage.country_config["types_file"]
         manage.country_config["types_file"] = "data_types_multi.csv"
         old_dir = manage.config.config_directory
-        manage.config.config_directory = "meerkat_abacus/test/test_data/"
+        manage.config.config_directory = self.current_directory + "/test_data/"
 
         manage.new_data_to_codes(self.engine)
 
@@ -195,7 +198,7 @@ class DbTest(unittest.TestCase):
         manage.table_data_from_csv(
             "demo_case",
             model.form_tables["demo_case"],
-            "meerkat_abacus/test/test_data/",
+            self.current_directory + "/test_data/",
             self.session,
             self.engine,
             deviceids=["1", "2", "3", "4", "5", "6"],
