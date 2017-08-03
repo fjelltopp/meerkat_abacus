@@ -37,7 +37,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.action == "create-db":
-        create_db(config.DATABASE_URL, model.Base, args.drop_db)
+        create_db(config.DATABASE_URL, args.drop_db)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
     if args.action == "import-locations":
         engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)

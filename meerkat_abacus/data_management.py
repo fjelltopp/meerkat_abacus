@@ -29,11 +29,12 @@ import os
 import os.path
 import logging
 import random
+import subprocess
 
 country_config = config.country_config
 
 
-def create_db(url, base, drop=False):
+def create_db(url, drop=False):
     """
     The function creates the database
 
@@ -49,17 +50,17 @@ def create_db(url, base, drop=False):
     while counter < 5:
         try:
             if drop and database_exists(url):
-                print('Dropping database.')
+                logging.info('Dropping database.')
                 drop_database(url)
             if not database_exists(url):
-                print('Creating database.')
+                logging.info('Creating database.')
                 create_database(url)
                 break
 
         except exc.OperationalError as e:
-            print('There was an error connecting to the db.')
-            print(e)
-            print('Trying again in 5 seconds...')
+            logging.info('There was an error connecting to the db.')
+            logging.info(e)
+            logging.info('Trying again in 5 seconds...')
             time.sleep(5)
             counter = counter + 1
 
@@ -67,7 +68,6 @@ def create_db(url, base, drop=False):
     connection = engine.connect()
     connection.execute("CREATE EXTENSION IF NOT EXISTS postgis")
     connection.close()
-    base.metadata.create_all(engine)
     return True
 
 
@@ -84,7 +84,7 @@ def export_data(session):
             for r in session.query(obj):
                 columns = dict((col, getattr(r, col))
                                for col in r.__table__.columns.keys())
-                print(name + "(**" + str(columns) + "),")
+                logging.info(name + "(**" + str(columns) + "),")
 
 
 def add_fake_data(session, N=500, append=False, from_files=False):
@@ -104,13 +104,13 @@ def add_fake_data(session, N=500, append=False, from_files=False):
        from_files: whether to add data from the manual test case
                    files defined in country_config
     """
-    print("fake data")
+    logging.info("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
     forms = country_config["tables"]
     # Make sure the case report form is handled before the alert form
     for form in forms:
-        print(form)
+        logging.info(form)
         form_name = form
         file_name = config.data_directory + form_name + ".csv"
         current_form = []
@@ -130,7 +130,7 @@ def add_fake_data(session, N=500, append=False, from_files=False):
             current_directory = os.path.dirname(os.path.realpath(__file__))
             for fake_data_file in country_config.get("manual_test_data", {})[form]:
                 manual_test_data[fake_data_file] = []
-                print("adding test data from file: " + fake_data_file + ".csv")
+                logging.info("adding test data from file: " + fake_data_file + ".csv")
                 manual_test_data[fake_data_file] = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
                     fake_data_file + ".csv")
 
@@ -230,10 +230,10 @@ def table_data_from_csv(filename,
     new_rows = []
     to_check = []
     to_check_test = {} # For speed
-    print(filename)
+    logging.info(filename)
 
     if quality_control:
-        print("Doing Quality Control")
+        logging.info("Doing Quality Control")
         (variables, variable_forms, variable_tests,
          variables_group, variables_match) = to_codes.get_variables(session, "import")
         if variables:
@@ -247,7 +247,7 @@ def table_data_from_csv(filename,
             if random.random() > fraction:
                 continue
         if row[uuid_field] in exclusion_list:
-            continue # The row is in the exclusion list 
+            continue # The row is in the exclusion list
         if only_new and row[uuid_field] in uuids:
             continue # In this case we only add new data
         if "_index" in row:
@@ -282,7 +282,7 @@ def table_data_from_csv(filename,
                                     else:
                                         removed[column] = 1
                 except Exception as e:
-                    print(e)
+                    logging.info(e)
 
         if remove:
             continue
@@ -299,16 +299,16 @@ def table_data_from_csv(filename,
             new_rows.append(insert_row[uuid_field])
         i += 1
         if i % 10000 == 0:
-            print(removed)
+            logging.info(removed)
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
 
     if to_check:
-        print("Quality Controll performed: ")
-        print(removed)
+        logging.info("Quality Controll performed: ")
+        logging.info(removed)
     conn.execute(table.__table__.insert(), dicts)
     conn.close()
-    print(i)
+    logging.info(i)
     return new_rows
 
 
@@ -615,7 +615,7 @@ def import_geojson(geo_json, session):
                     new_polys.append(new_poly)
                 shapely_shapes = MultiPolygon(new_polys)
             else:
-                print(shapely_shapes.geom_type)
+                logging.info(shapely_shapes.geom_type)
             name = g["properties"]["Name"]
             location = session.query(model.Locations).filter(
                 model.Locations.name == name,
@@ -726,6 +726,15 @@ def import_parameters(engine, session):
 
     session.commit()
 
+
+def import_dump(dump_file):
+    path = config.db_dump_folder + dump_file
+    logging.info("Loading DB dump: {}".format(path))
+    with open(path, 'r') as f:
+        command = ['psql', '-U',  'postgres', '-h', 'db', 'meerkat_db']
+        proc = subprocess.Popen(command, stdin=f)
+        stdout, stderr = proc.communicate()
+
 def set_up_everything(leave_if_data, drop_db, N):
     """
     Sets up the db and imports all the data. This should leave
@@ -745,30 +754,35 @@ def set_up_everything(leave_if_data, drop_db, N):
             if len(session.query(model.Data).all()) > 0:
                 set_up = False
     if set_up:
-        print("Create DB")
-        create_db(config.DATABASE_URL, model.Base, drop=drop_db)
+        logging.info("Create DB")
+        create_db(config.DATABASE_URL, drop=drop_db)
+        if config.db_dump:
+            import_dump(config.db_dump)
+            return set_up
         engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
         session = Session()
-        print("Import Locations")
+        logging.info("Populating DB")
+        model.Base.metadata.create_all(engine)
+        logging.info("Import Locations")
         import_locations(engine, session)
-        print("Import calculation parameters")
+        logging.info("Import calculation parameters")
         import_parameters(engine, session)
         if config.fake_data:
-            print("Generate fake data")
+            logging.info("Generate fake data")
             add_fake_data(session, N=N, append=False, from_files=True)
         if config.get_data_from_s3:
-            print("Get data from s3")
+            logging.info("Get data from s3")
             get_data_from_s3(config.s3_bucket)
-        print("Import Variables")
+        logging.info("Import Variables")
         import_variables(session)
-        print("Import Data")
+        logging.info("Import Data")
         import_data(engine, session)
-        #print("Applying exclusion lists")
+        #logging.info("Applying exclusion lists")
         #apply_exclusion_lists(session)
-        print("Controlling initial visits")
+        logging.info("Controlling initial visits")
         initial_visit_control()
-        print("To codes")
+        logging.info("To codes")
         session.query(model.Data).delete()
         engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
         session.commit()
@@ -776,10 +790,10 @@ def set_up_everything(leave_if_data, drop_db, N):
         new_data_to_codes(engine)
         Session = sessionmaker(bind=engine)
         session = Session()
-        print("Add alerts")
+        logging.info("Add alerts")
         add_alerts(session)
-        print("Notifying developer")
-        print(libs.hermes('/notify', 'PUT', data={
+        logging.info("Notifying developer")
+        logging.info(libs.hermes('/notify', 'PUT', data={
             'message': 'Abacus is set up and good to go for {}.'.format(
                 country_config['country_name']
             )
@@ -1074,7 +1088,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
 
     if restrict_uuids is not None:
         if restrict_uuids == []:
-            print("No new data to add")
+            logging.info("No new data to add")
             return True
     if not engine:
         engine = create_engine(config.DATABASE_URL)
@@ -1098,7 +1112,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
         if not no_print:
-            print(data_type["type"])
+            logging.info(data_type["type"])
         variables = to_codes.get_variables(session,
                                            match_on_type=data_type["type"],
                                            match_on_form=data_type["form"])
@@ -1170,7 +1184,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                     alerts += new_alerts
                 data = {uuid: last_data}
             if not no_print:
-                print("Added {} records".format(added))
+                logging.info("Added {} records".format(added))
         if data:
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
@@ -1179,7 +1193,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                                      disregarded_data_dicts, data_type["type"])
             added += newly_added
             if not no_print:
-                print("Added {} records".format(added))
+                logging.info("Added {} records".format(added))
             alerts += new_alerts
     send_alerts(alerts, session)
     conn.close()
@@ -1287,13 +1301,13 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 multiple_forms, data_type["location"]
                 )
             if location_data is None:
-                print("Missing loc data")
+                logging.info("Missing loc data")
                 continue
             try:
                 date = parse(row[data_type["form"]][data_type["date"]])
                 date = datetime(date.year, date.month, date.day)
             except:
-                print("Invalid Date",
+                logging.info("Invalid Date",
                       row[data_type["form"]][data_type["date"]])
                 continue
 

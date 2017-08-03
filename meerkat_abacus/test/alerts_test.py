@@ -14,7 +14,9 @@ from meerkat_abacus import config
 
 class UtilTest(unittest.TestCase):
     def setUp(self):
-        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
         self.engine = create_engine(config.DATABASE_URL)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()

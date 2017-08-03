@@ -25,7 +25,9 @@ class DbTest(unittest.TestCase):
     """
 
     def setUp(self):
-        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
         self.engine = create_engine(config.DATABASE_URL)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
@@ -42,7 +44,9 @@ class DbTest(unittest.TestCase):
         if database_exists(config.DATABASE_URL):
             drop_database(config.DATABASE_URL)
         self.assertFalse(database_exists(config.DATABASE_URL))
-        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
         self.assertTrue(database_exists(config.DATABASE_URL))
 
     def test_locations(self):
@@ -291,7 +295,9 @@ class DbTest(unittest.TestCase):
         task_queue.config.get_data_from_s3 = False
         old_manual = task_queue.config.country_config["manual_test_data"]
         task_queue.config.country_config["manual_test_data"] = {}
-        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
 
         numbers = {}
         manage.import_locations(self.engine, self.session)
@@ -318,7 +324,9 @@ class DbTest(unittest.TestCase):
         old_s3 = task_queue.config.get_data_from_s3
         task_queue.config.fake_data = True
         task_queue.config.get_data_from_s3 = False
-        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
 
         numbers = {}
         manage.import_locations(self.engine, self.session)
