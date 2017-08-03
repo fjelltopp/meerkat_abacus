@@ -50,17 +50,16 @@ def create_db(url, drop=False):
     while counter < 5:
         try:
             if drop and database_exists(url):
-                logging.info('Dropping database.')
+                logging.debug('Dropping database.')
                 drop_database(url)
             if not database_exists(url):
-                logging.info('Creating database.')
+                logging.debug('Creating database.')
                 create_database(url)
                 break
 
-        except exc.OperationalError as e:
-            logging.info('There was an error connecting to the db.')
-            logging.info(e)
-            logging.info('Trying again in 5 seconds...')
+        except exc.OperationalError:
+            logging.exception('There was an error connecting to the db.', exc_info=True)
+            logging.error('Trying again in 5 seconds...')
             time.sleep(5)
             counter = counter + 1
 
@@ -84,7 +83,7 @@ def export_data(session):
             for r in session.query(obj):
                 columns = dict((col, getattr(r, col))
                                for col in r.__table__.columns.keys())
-                logging.info(name + "(**" + str(columns) + "),")
+                logging.debug(name + "(**" + str(columns) + "),")
 
 
 def add_fake_data(session, N=500, append=False, from_files=False):
@@ -104,15 +103,14 @@ def add_fake_data(session, N=500, append=False, from_files=False):
        from_files: whether to add data from the manual test case
                    files defined in country_config
     """
-    logging.info("fake data")
+    logging.debug("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
     forms = country_config["tables"]
     # Make sure the case report form is handled before the alert form
     for form in forms:
-        logging.info(form)
-        form_name = form
-        file_name = config.data_directory + form_name + ".csv"
+        logging.debug("Processing form: %s", form)
+        file_name = config.data_directory + form + ".csv"
         current_form = []
         if form not in country_config["fake_data"]:
             continue
@@ -130,7 +128,7 @@ def add_fake_data(session, N=500, append=False, from_files=False):
             current_directory = os.path.dirname(os.path.realpath(__file__))
             for fake_data_file in country_config.get("manual_test_data", {})[form]:
                 manual_test_data[fake_data_file] = []
-                logging.info("adding test data from file: " + fake_data_file + ".csv")
+                logging.debug("Adding test data from file: %s.csv", fake_data_file)
                 manual_test_data[fake_data_file] = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
                     fake_data_file + ".csv")
 
@@ -230,10 +228,10 @@ def table_data_from_csv(filename,
     new_rows = []
     to_check = []
     to_check_test = {} # For speed
-    logging.info(filename)
+    logging.debug("Filename: %s", filename)
 
     if quality_control:
-        logging.info("Doing Quality Control")
+        logging.debug("Doing Quality Control")
         (variables, variable_forms, variable_tests,
          variables_group, variables_match) = to_codes.get_variables(session, "import")
         if variables:
@@ -281,8 +279,8 @@ def table_data_from_csv(filename,
                                         removed[column] += 1
                                     else:
                                         removed[column] = 1
-                except Exception as e:
-                    logging.info(e)
+                except Exception:
+                    logging.exception(exc_info=True)
 
         if remove:
             continue
@@ -299,16 +297,16 @@ def table_data_from_csv(filename,
             new_rows.append(insert_row[uuid_field])
         i += 1
         if i % 10000 == 0:
-            logging.info(removed)
+            logging.debug("Removed batch %d.", i/10000)
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
 
     if to_check:
-        logging.info("Quality Controll performed: ")
-        logging.info(removed)
+        logging.debug("Quality Controll performed: ")
+        logging.debug("removed value: %s", removed)
     conn.execute(table.__table__.insert(), dicts)
     conn.close()
-    logging.info(i)
+    logging.debug("i = %s", i)
     return new_rows
 
 
@@ -615,7 +613,7 @@ def import_geojson(geo_json, session):
                     new_polys.append(new_poly)
                 shapely_shapes = MultiPolygon(new_polys)
             else:
-                logging.info(shapely_shapes.geom_type)
+                logging.debug("shapely_shapes.geom_type : %s", shapely_shapes.geom_type)
             name = g["properties"]["Name"]
             location = session.query(model.Locations).filter(
                 model.Locations.name == name,
@@ -707,7 +705,7 @@ def import_parameters(engine, session):
     parameter_files = config.country_config.get("calculation_parameters",[])
 
     for file in parameter_files:
-        logging.warning("Importing parameter file " + file)
+        logging.warning("Importing parameter file %s", file)
         file_name = os.path.splitext(file)[0]
         file_extension = os.path.splitext(file)[-1]
         if file_extension == '.json':
@@ -778,8 +776,6 @@ def set_up_everything(leave_if_data, drop_db, N):
         import_variables(session)
         logging.info("Import Data")
         import_data(engine, session)
-        #logging.info("Applying exclusion lists")
-        #apply_exclusion_lists(session)
         logging.info("Controlling initial visits")
         initial_visit_control()
         logging.info("To codes")
@@ -799,6 +795,7 @@ def set_up_everything(leave_if_data, drop_db, N):
             )
         }))
     return set_up
+
 
 def get_exclusion_list(session, form):
     """
@@ -1073,14 +1070,14 @@ def create_links(data_type, input_conditions, table, session, conn):
     return link_names
 
 
-def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
+def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
     """
     Run all the raw data through the to_codes
     function to translate it into structured data
 
     Args:
         engine: db engine
-        no_print: Do not print
+        debug_enabled: enables debug logging of operations
         restrict_uuids: If we should only update data related to
                        uuids in this list
 
@@ -1088,7 +1085,7 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
 
     if restrict_uuids is not None:
         if restrict_uuids == []:
-            logging.info("No new data to add")
+            logging.debug("No new data to add")
             return True
     if not engine:
         engine = create_engine(config.DATABASE_URL)
@@ -1111,8 +1108,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
 
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
-        if not no_print:
-            logging.info(data_type["type"])
+        if debug_enabled:
+            logging.debug("Data type: %s", data_type["type"])
         variables = to_codes.get_variables(session,
                                            match_on_type=data_type["type"],
                                            match_on_form=data_type["form"])
@@ -1183,8 +1180,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
                     added += newly_added
                     alerts += new_alerts
                 data = {uuid: last_data}
-            if not no_print:
-                logging.info("Added {} records".format(added))
+            if debug_enabled:
+                logging.debug("Added %s records", added)
         if data:
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
@@ -1192,8 +1189,8 @@ def new_data_to_codes(engine=None, no_print=False, restrict_uuids=None):
             newly_added = data_to_db(conn2, data_dicts,
                                      disregarded_data_dicts, data_type["type"])
             added += newly_added
-            if not no_print:
-                logging.info("Added {} records".format(added))
+            if debug_enabled:
+                logging.debug("Added %s records", added)
             alerts += new_alerts
     send_alerts(alerts, session)
     conn.close()
@@ -1301,14 +1298,13 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 multiple_forms, data_type["location"]
                 )
             if location_data is None:
-                logging.info("Missing loc data")
+                logging.warning("Missing loc data")
                 continue
             try:
                 date = parse(row[data_type["form"]][data_type["date"]])
                 date = datetime(date.year, date.month, date.day)
             except:
-                logging.info("Invalid Date",
-                      row[data_type["form"]][data_type["date"]])
+                logging.error("Invalid Date: %s", row[data_type["form"]][data_type["date"]])
                 continue
 
             # if date < locations[0][location_data["clinic"]].start_date:
