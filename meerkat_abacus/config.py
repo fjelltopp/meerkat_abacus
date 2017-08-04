@@ -59,7 +59,7 @@ db_dump_folder = '/var/www/db_dumps/'
 import_fraction = float(os.environ.get("IMPORT_FRACTION", 0))
 # Country config
 country_config_file = os.environ.get("COUNTRY_CONFIG", "demo_config.py")
-dhis2_config_file = os.getenv("DHIS2_CONFIG", "demo_dhis2_config.py")
+dhis2_config_file = os.getenv("DHIS2_CONFIG", "demo_dhis2.py")
 
 spec = importlib.util.spec_from_file_location(
     "country_config_module",
