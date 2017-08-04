@@ -70,6 +70,12 @@ country_config = {
                                                         "tetanus", "pertussis",
                                                         "polio", "hib", "measles",
                                                         "mumps", "rubella"]},
+                      "pip./namru": {"one": range(1, 400)},
+                      "patientid": {"one": range(1, 20)},
+                      "sari": {"one": ["yes", "no"]},
+                      "pip_fu5./icu": {"one": ["yes", "no"]},
+                      "pip_fu5./ventilated": {"one": ["yes", "no"]},
+                      "pip_fu7./outcome": {"one": ["death", "not"]},
                       "results./bp_systolic": {"integer": [0, 200]},
                       "results./bp_diastolic": {"integer": [0, 100]},
                       "results./bmi_weight": {"integer": [40, 120]},
@@ -95,6 +101,15 @@ country_config = {
                                                       "case_management",
                                                       "contact_tracing",
                                                       "return_lab"]}},
+        "demo_labs": {
+            "labs./namru": {"one": range(1, 400)},
+            "pcr./flu_a_pcr": {"one": ["positive", "negative"]},
+            "pcr./h1_pcr": {"one": ["positive", "negative"]},
+            "pcr./h3_pcr": {"one": ["positive", "negative"]},
+            "pcr./h1n1_pcr": {"one": ["positive", "negative"]},
+            "pcr./sw_n1_pcr": {"one": ["positive", "negative"]},
+            "pcr./flu_b_pcr": {"one": ["positive", "negative"]}
+        },
         "plague_data": {
             "pt./visit_date": {"date": "year"},
             "lat": {"range": [0, 0.4]},
@@ -135,9 +150,9 @@ country_config = {
     },
     "device_message_schedule": {
             "thank_you": {
-                "period": "week", 
-                "send_day": "0", 
-                "message": "Thank you for all your work this week in sending data and please keep up the good work!", 
+                "period": "week",
+                "send_day": "0",
+                "message": "Thank you for all your work this week in sending data and please keep up the good work!",
                 "distribution": ["/topics/demo"]}
     },
     "translation_dir": "/var/www/meerkat_frontend/country_config/translations"
