@@ -11,8 +11,6 @@ dhis2_config = {
             "name": "demo_case",
             "event_date": "pt./visit_date",
             "completed_date": "end",
-            "organisation_unit_id": "wZxJHG0MUNz",
-            "organisation_code": "deviceid",
             "program_id": "ZU7Z7ouwbba",
             "stored_by": "admin",
             "status": "COMPLETED"

@@ -579,6 +579,7 @@ def import_clinics(csv_file, session, country_id,
                             population=population,
                             other=other,
                             service_provider=row.get("service_provider", None),
+                            country_location_id=row.get("country_location_id", None),
                             start_date=start_date))
                 else:
                     location = result.first()
