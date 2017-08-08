@@ -46,13 +46,15 @@ hermes_dev = int(os.environ.get("HERMES_DEV", False))
 mailing_key = os.environ.get("MAILING_KEY", "")
 mailing_root = os.environ.get("MAILING_ROOT", "")
 device_messaging_api = os.environ.get("DEVICE_MESSAGING_API", "")
-auth_root = os.environ.get('MEERKAT_AUTH_ROOT', 'http://dev_nginx_1/auth')
+auth_root = os.environ.get('MEERKAT_AUTH_ROOT', 'http://nginx/auth')
 send_test_emails = os.environ.get('MEERKAT_TEST_EMAILS', False)
 server_auth_username = os.environ.get('SERVER_AUTH_USERNAME', 'root')
 server_auth_password = os.environ.get('SERVER_AUTH_PASSWORD', 'password')
 send_test_device_messages = os.environ.get('MEERKAT_TEST_DEVICE_MESSAGES',
                                            False)
 sentry_dns = os.environ.get('SENTRY_DNS', '')
+db_dump = os.environ.get('DB_DUMP', '')
+db_dump_folder = '/var/www/db_dumps/'
 
 import_fraction = float(os.environ.get("IMPORT_FRACTION", 0))
 # Country config

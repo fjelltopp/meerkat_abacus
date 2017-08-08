@@ -39,7 +39,9 @@ class LinkTest(unittest.TestCase):
 
     def setUp(self):
     	# Link processing is done in the database, so the database needs to be set up
-        create_db(config.DATABASE_URL, model.Base, drop=True)
+        create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
         self.engine = create_engine(config.DATABASE_URL)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
@@ -48,7 +50,7 @@ class LinkTest(unittest.TestCase):
         import_variables(self.session)
         add_fake_data(self.session, N=0, append=False, from_files=True)
         import_data(engine=self.engine,session=self.session)
-        
+
         for data_type in data_type_definitions:
           create_links(data_type=data_type, input_conditions=[],
            table=model.form_tables[data_type["form"]], session=self.session, conn=self.conn)
@@ -130,4 +132,3 @@ class LinkTest(unittest.TestCase):
 
           self.assertEqual(len(res),1)
           self.assertEqual(res[0]["variables"][test_case[1]],1)
-        

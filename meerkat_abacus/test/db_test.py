@@ -1,4 +1,6 @@
 import unittest
+
+import os
 from sqlalchemy_utils import database_exists, drop_database
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -25,11 +27,14 @@ class DbTest(unittest.TestCase):
     """
 
     def setUp(self):
-        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
         self.engine = create_engine(config.DATABASE_URL)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.conn = self.engine.connect()
+        self.current_directory = current_directory = os.path.dirname(os.path.realpath(__file__))
 
     def tearDown(self):
         self.session.commit()
@@ -42,12 +47,14 @@ class DbTest(unittest.TestCase):
         if database_exists(config.DATABASE_URL):
             drop_database(config.DATABASE_URL)
         self.assertFalse(database_exists(config.DATABASE_URL))
-        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
         self.assertTrue(database_exists(config.DATABASE_URL))
 
     def test_locations(self):
         old_dir = manage.config.config_directory
-        manage.config.config_directory = "meerkat_abacus/test/test_data/"
+        manage.config.config_directory = self.current_directory + "/test_data/"
         old_locs = manage.country_config["locations"]
         manage.country_config["locations"] = {
             "clinics": "demo_clinics.csv",
@@ -137,7 +144,7 @@ class DbTest(unittest.TestCase):
         old_file = manage.country_config["types_file"]
         manage.country_config["types_file"] = "data_types_multi.csv"
         old_dir = manage.config.config_directory
-        manage.config.config_directory = "meerkat_abacus/test/test_data/"
+        manage.config.config_directory = self.current_directory + "/test_data/"
 
         manage.new_data_to_codes(self.engine)
 
@@ -195,7 +202,7 @@ class DbTest(unittest.TestCase):
         manage.table_data_from_csv(
             "demo_case",
             model.form_tables["demo_case"],
-            "meerkat_abacus/test/test_data/",
+            self.current_directory + "/test_data/",
             self.session,
             self.engine,
             deviceids=["1", "2", "3", "4", "5", "6"],
@@ -291,7 +298,9 @@ class DbTest(unittest.TestCase):
         task_queue.config.get_data_from_s3 = False
         old_manual = task_queue.config.country_config["manual_test_data"]
         task_queue.config.country_config["manual_test_data"] = {}
-        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
 
         numbers = {}
         manage.import_locations(self.engine, self.session)
@@ -318,7 +327,9 @@ class DbTest(unittest.TestCase):
         old_s3 = task_queue.config.get_data_from_s3
         task_queue.config.fake_data = True
         task_queue.config.get_data_from_s3 = False
-        manage.create_db(config.DATABASE_URL, model.Base, drop=True)
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
 
         numbers = {}
         manage.import_locations(self.engine, self.session)
