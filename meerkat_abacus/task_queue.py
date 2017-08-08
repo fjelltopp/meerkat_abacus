@@ -172,7 +172,7 @@ def send_report_email(report, language, location):
         url = url.replace('/en/', '/' + language + '/')
 
         # Log the full request so we can debug later if necessary.
-        logging.info("%sSending report email for location: %s with language: using url: %s and headers: %s",
+        logging.info("%sSending report email for location: %s with language: %s using url: %s and headers: %s",
                      pre, str(location), str(language), str(url), str(headers))
 
         # Make the request and handle the response.
