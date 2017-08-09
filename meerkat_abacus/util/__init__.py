@@ -162,10 +162,10 @@ def all_location_data(session):
     """
     locations = get_locations(session)
     locations_by_deviceid = get_locations_by_deviceid(session)
-    regions, districts = get_regions_districts(session)
+    zones, regions, districts = get_zones_regions_districts(session)
 
     devices = get_device_tags(session)
-    return (locations, locations_by_deviceid, regions, districts, devices)
+    return (locations, locations_by_deviceid, zones, regions, districts, devices)
 
 
 def get_variables(session):
@@ -202,7 +202,7 @@ def get_device_tags(session):
     return devices
 
 
-def get_regions_districts(session):
+def get_zones_regions_districts(session):
     """
     get list of ids for regions and districts
 
@@ -210,18 +210,21 @@ def get_regions_districts(session):
         session: db session
 
     Returns:
-        regions_district(tuple): (regions,districts)
+        regions_district(tuple): (zones, regions, districts)
     """
     locations = get_locations(session)
+    zones = []
     regions = []
     districts = []
     for l in locations.keys():
-        if locations[l].level == "region":
+        if locations[l].level == "zone":
+            zones.append(l)
+        elif locations[l].level == "region":
             regions.append(l)
     for l in locations.keys():
         if locations[l].parent_location in regions and locations[l].level == "district":
             districts.append(l)
-    return (regions, districts)
+    return zones, regions, districts
 
 
 def get_locations_by_deviceid(session):
