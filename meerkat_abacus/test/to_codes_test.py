@@ -30,6 +30,7 @@ locations = {1: model.Locations(name="Demo", id=1),
              8: model.Locations(
                  name="Clinic with no district", parent_location=2, id=8)}
 locations_by_deviceid = {"1": 6, "2": 7, "3": 8}
+zones = []
 regions = [2, 3]
 districts = [4, 5]
 agg_variables = [
@@ -67,7 +68,7 @@ alert_data = {"form1": {"column1": "column1"}}
 
 devices = {"1": [], "2": [], "3": [], "4": [], "5": [],
            "6": [], "7": [], "8": []}
-all_locations = (locations, locations_by_deviceid, regions, districts, devices)
+all_locations = (locations, locations_by_deviceid, zones, regions, districts, devices)
 
 variables = {"case": {1: {}, 2: {}, 3: {}, 4: {}}}
 variables_forms = {}
