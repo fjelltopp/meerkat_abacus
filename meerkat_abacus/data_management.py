@@ -228,7 +228,7 @@ def table_data_from_csv(filename,
     new_rows = []
     to_check = []
     to_check_test = {} # For speed
-    logging.debug("Filename: %s", filename)
+    logging.info("Filename: %s", filename)
 
     if quality_control:
         logging.debug("Doing Quality Control")
@@ -241,6 +241,7 @@ def table_data_from_csv(filename,
                 to_check_test[variable] = variable.test
     removed = {}
     for row in util.read_csv(directory + filename + ".csv"):
+       
         if fraction:
             if random.random() > fraction:
                 continue
@@ -273,15 +274,14 @@ def table_data_from_csv(filename,
                                 replace_value = insert_row.get(replace_column,
                                                                None)
                             if column in insert_row:
+                                insert_row[column] = replace_value
                                 if insert_row[column]:
-                                    insert_row[column] = replace_value
                                     if column in removed:
                                         removed[column] += 1
                                     else:
                                         removed[column] = 1
-                except Exception:
-                    logging.exception(exc_info=True)
-
+                except Exception as e:
+                    logging.exception("Quality Controll error", exc_info=True)
         if remove:
             continue
 
@@ -297,16 +297,16 @@ def table_data_from_csv(filename,
             new_rows.append(insert_row[uuid_field])
         i += 1
         if i % 10000 == 0:
-            logging.debug("Removed batch %d.", i/10000)
+            logging.info("Imported batch %d.", i / 10000)
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
 
     if to_check:
-        logging.debug("Quality Controll performed: ")
-        logging.debug("removed value: %s", removed)
+        logging.info("Quality Controll performed: ")
+        logging.info("removed value: %s", removed)
     conn.execute(table.__table__.insert(), dicts)
     conn.close()
-    logging.debug("i = %s", i)
+    logging.info("Number of records %s", i)
     return new_rows
 
 
@@ -613,7 +613,7 @@ def import_geojson(geo_json, session):
                     new_polys.append(new_poly)
                 shapely_shapes = MultiPolygon(new_polys)
             else:
-                logging.debug("shapely_shapes.geom_type : %s", shapely_shapes.geom_type)
+                logging.info("shapely_shapes.geom_type : %s", shapely_shapes.geom_type)
             name = g["properties"]["Name"]
             location = session.query(model.Locations).filter(
                 model.Locations.name == name,
@@ -1085,7 +1085,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
 
     if restrict_uuids is not None:
         if restrict_uuids == []:
-            logging.debug("No new data to add")
+            logging.info("No new data to add")
             return True
     if not engine:
         engine = create_engine(config.DATABASE_URL)
@@ -1109,7 +1109,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
     for data_type in data_types:
         table = model.form_tables[data_type["form"]]
         if debug_enabled:
-            logging.debug("Data type: %s", data_type["type"])
+            logging.info("Data type: %s", data_type["type"])
         variables = to_codes.get_variables(session,
                                            match_on_type=data_type["type"],
                                            match_on_form=data_type["form"])
@@ -1181,7 +1181,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
                     alerts += new_alerts
                 data = {uuid: last_data}
             if debug_enabled:
-                logging.debug("Added %s records", added)
+                logging.info("Added %s records", added)
         if data:
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
@@ -1190,7 +1190,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
                                      disregarded_data_dicts, data_type["type"])
             added += newly_added
             if debug_enabled:
-                logging.debug("Added %s records", added)
+                logging.info("Added %s records", added)
             alerts += new_alerts
     send_alerts(alerts, session)
     conn.close()

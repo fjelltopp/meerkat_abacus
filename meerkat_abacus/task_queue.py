@@ -33,6 +33,9 @@ app.config_from_object(celeryconfig)
 
 from api_background.export_data import export_form, export_category, export_data, export_data_table
 
+logging.basicConfig(level=logging.INFO)
+
+
 
 # When we start celery we run the set_up_db command
 @worker_ready.connect
