@@ -644,7 +644,8 @@ def import_regions(csv_file, session, column_name,
                     name=row[column_name],
                     parent_location=parents[row[parent_column_name].strip()],
                     level=level_name,
-                    population=row.get("population", 0)
+                    population=row.get("population", 0),
+                    country_location_id=row.get("country_location_id", None)
                 )
             )
 
@@ -663,7 +664,11 @@ def import_locations(engine, session):
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
     session.add(
         model.Locations(
-            name=country_config["country_name"], level="country"))
+            name=country_config["country_name"],
+            level="country",
+            country_location_id=""
+        )
+    )
 
     session.query(model.Devices).delete()
     session.commit()
