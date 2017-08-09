@@ -99,7 +99,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
     """
-    locations, locations_by_deviceid, regions, districts, devices = locations
+    locations, locations_by_deviceid, zones, regions, districts, devices = locations
 
     if "deviceid" in location:
         column = "deviceid"
