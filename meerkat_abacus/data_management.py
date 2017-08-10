@@ -241,7 +241,6 @@ def table_data_from_csv(filename,
                 to_check_test[variable] = variable.test
     removed = {}
     for row in util.read_csv(directory + filename + ".csv"):
-       
         if fraction:
             if random.random() > fraction:
                 continue
@@ -281,7 +280,7 @@ def table_data_from_csv(filename,
                                     else:
                                         removed[column] = 1
                 except Exception as e:
-                    logging.exception("Quality Controll error", exc_info=True)
+                    logging.exception("Quality Controll error for code %s",variable.variable.id, exc_info=True)
         if remove:
             continue
 
