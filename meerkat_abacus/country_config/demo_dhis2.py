@@ -1,5 +1,6 @@
 dhis2_config = {
-    "url": "http://54.76.53.0:8080",
+    # "url": "http://54.76.53.0:8080",
+    "url": "http://localhost:8085",
     "apiResource": "/api/26/",
     "credentials": ('admin', 'district'),
     "headers": {
@@ -8,7 +9,8 @@ dhis2_config = {
     },
     "loggingLevel": "DEBUG",
     # "country_id": "k83FUJTHUel",
-    "countryId": "EebWN0q7GpT", # Null Island
+    # "countryId": "EebWN0q7GpT", # Null Island
+    "countryId": "ImspTQPwCqd", # Sierra Leone
     "forms": [
         {
             "name": "demo_case",
