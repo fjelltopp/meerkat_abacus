@@ -59,7 +59,6 @@ db_dump_folder = '/var/www/db_dumps/'
 import_fraction = float(os.environ.get("IMPORT_FRACTION", 0))
 # Country config
 country_config_file = os.environ.get("COUNTRY_CONFIG", "demo_config.py")
-dhis2_config_file = os.getenv("DHIS2_CONFIG", "demo_dhis2.py")
 
 spec = importlib.util.spec_from_file_location(
     "country_config_module",
@@ -72,11 +71,4 @@ country_config = country_config_module.country_config
 if hermes_dev:
     country_config["messaging_silent"] = True
 
-dhis2_spec = importlib.util.spec_from_file_location(
-    "dhis2_config_module",
-    config_directory + dhis2_config_file
-)
-dhis2_config_module = importlib.util.module_from_spec(dhis2_spec)
-dhis2_spec.loader.exec_module(dhis2_config_module)
-dhis2_config = dhis2_config_module.dhis2_config
 s3_bucket = country_config_module.s3_bucket
