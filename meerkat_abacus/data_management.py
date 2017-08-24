@@ -86,6 +86,9 @@ def export_data(session):
                 logging.debug(name + "(**" + str(columns) + "),")
 
 
+
+
+
 def add_fake_data(session, N=500, append=False, from_files=False):
     """
     Creates a csv file with fake data for each form. We make
@@ -169,11 +172,8 @@ def get_data_from_s3(bucket):
         s3.meta.client.download_file(bucket, "data/" + file_name,
                                      config.data_directory + file_name)
 
-def table_data_from_csv(filename,
-                        table,
-                        directory,
-                        session,
-                        engine,
+
+def add_rows_to_db(form, form_data, session, engine,
                         uuid_field="meta/instanceID",
                         only_new=False,
                         deviceids=None,
@@ -184,19 +184,15 @@ def table_data_from_csv(filename,
                         start_dates=None,
                         exclusion_list=[],
                         fraction=None):
-    """
-    Adds all the data from a csv file. We delete all old data first
-    and then add new data.
-
+    """ Add form_data to DB
     If quality_control is true we look among the aggregation variables
     for variables of the import type. If this variable is not true the
     corresponding value is set to zero. If the variable has the disregard
     category we remove the whole row.
 
     Args:
-        filename: name of table
-        table: table class
-        directory: directory where the csv file is
+        form: form_name
+        form_data: list of data to be added
         session: SqlAlchemy session
         engine: SqlAlchemy engine
         only_new: If we should add only new data
@@ -209,26 +205,18 @@ def table_data_from_csv(filename,
         exclusion_list: A list of uuid's that are restricted from entering
         fraction: If present imports a randomly selected subset of data.
     """
-
-    if only_new:
-        result = session.query(table.uuid)
-        uuids = []
-        for r in result:
-            uuids.append(r.uuid)
-        uuids = set(uuids)
-    else:
-        session.query(table).delete()
-        engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(
-            filename))
-        session.commit()
-
-    i = 0
-    dicts = []
     conn = engine.connect()
+    uuids = [row[uuid_field] for row in form_data]
+    table = model.form_tables[form]
+    
+    conn.execute(table.__table__.delete().where(
+            table.__table__.c.uuid.in_(uuids)))
+    dicts = []
+
     new_rows = []
     to_check = []
     to_check_test = {} # For speed
-    logging.info("Filename: %s", filename)
+    logging.info("Formname: %s", form)
 
     if quality_control:
         logging.debug("Doing Quality Control")
@@ -236,11 +224,12 @@ def table_data_from_csv(filename,
          variables_group, variables_match) = to_codes.get_variables(session, "import")
         if variables:
             to_check = [variables["import"][x][x]
-                        for x in variables["import"].keys() if variables["import"][x][x].variable.form == filename]
+                        for x in variables["import"].keys() if variables["import"][x][x].variable.form == form]
             for variable in to_check:
                 to_check_test[variable] = variable.test
     removed = {}
-    for row in util.read_csv(directory + filename + ".csv"):
+    i = 0
+    for row in form_data:
         if fraction:
             if random.random() > fraction:
                 continue
@@ -285,7 +274,7 @@ def table_data_from_csv(filename,
             continue
 
         if deviceids:
-            if should_row_be_added(insert_row, table_name, deviceids,
+            if should_row_be_added(insert_row, form, deviceids,
                                    start_dates, allow_enketo=allow_enketo):
                 dicts.append({"data": insert_row,
                               "uuid": insert_row[uuid_field]})
@@ -303,9 +292,72 @@ def table_data_from_csv(filename,
     if to_check:
         logging.info("Quality Controll performed: ")
         logging.info("removed value: %s", removed)
-    conn.execute(table.__table__.insert(), dicts)
+    if len(dicts) > 0:
+        conn.execute(table.__table__.insert(), dicts)
     conn.close()
     logging.info("Number of records %s", i)
+    return new_rows
+
+    
+
+def table_data_from_csv(filename,
+                        table,
+                        directory,
+                        session,
+                        engine,
+                        **kwargs):
+
+    """
+    Adds all the data from a csv file. We delete all old data first
+    and then add new data.
+
+    If quality_control is true we look among the aggregation variables
+    for variables of the import type. If this variable is not true the
+    corresponding value is set to zero. If the variable has the disregard
+    category we remove the whole row.
+
+    Args:
+        filename: name of table
+        table: table class
+        directory: directory where the csv file is
+        session: SqlAlchemy session
+        engine: SqlAlchemy engine
+        only_new: If we should add only new data
+        deviceids: if we should only add rows with a one of the deviceids
+        table_name: name of table if different from filename
+        row_function: function to appy to the rows before inserting
+        start_dates: Clinic start dates, we do not add any data submitted
+                     before these dates
+        quality_control: If we are performing quality controll on the data.
+        exclusion_list: A list of uuid's that are restricted from entering
+        fraction: If present imports a randomly selected subset of data.
+    """
+
+    session.query(table).delete()
+    engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(
+        filename))
+    session.commit()
+
+    i = 0
+    dicts = []
+    new_rows = []
+    for row in util.read_csv(directory + filename + ".csv"):
+        i += 1
+        dicts.append(row)
+        if i % 10000 == 0:
+            new_rows += add_rows_to_db(filename,
+                                       dicts,
+                                       session,
+                                       engine,
+                                       **kwargs)
+            dicts = []
+
+    new_rows += add_rows_to_db(filename,
+                               dicts,
+                               session,
+                               engine,
+                               **kwargs)
+
     return new_rows
 
 
@@ -423,45 +475,6 @@ def import_data(engine, session):
             allow_enketo=allow_enketo,
             exclusion_list=exclusion_list,
             fraction=config.import_fraction)
-
-
-def import_new_data():
-    """
-    Import only new data from csv files.
-    """
-    engine = create_engine(config.DATABASE_URL)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    new_records = []
-    deviceids_case = util.get_deviceids(session, case_report=True)
-    deviceids = util.get_deviceids(session)
-    start_dates = util.get_start_date_by_deviceid(session)
-    for form in model.form_tables.keys():
-        if form in country_config["require_case_report"]:
-            form_deviceids = deviceids_case
-        else:
-            form_deviceids = deviceids
-
-        quality_control = False
-        if "quality_control" in country_config:
-            if form in country_config["quality_control"]:
-                quality_control = True
-        exclusion_list = get_exclusion_list(session, form)
-        new_records += table_data_from_csv(
-            form,
-            model.form_tables[form],
-            config.data_directory,
-            session,
-            engine,
-            only_new=True,
-            deviceids=form_deviceids,
-            table_name=form,
-            start_dates=start_dates,
-            quality_control=quality_control,
-            exclusion_list=exclusion_list,
-            fraction=config.import_fraction)
-
-    return new_records
 
 
 def import_clinics(csv_file, session, country_id,

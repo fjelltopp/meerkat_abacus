@@ -32,12 +32,6 @@ CELERYD_MAX_TASKS_PER_CHILD = 1  # To help with memory constraints
 
 
 CELERYBEAT_SCHEDULE = {}
-if config.start_celery:
-    CELERYBEAT_SCHEDULE['get_and_proccess_data'] = {
-        'task': 'task_queue.get_proccess_data',
-        'schedule': timedelta(seconds=config.interval)
-    }
-
 CELERYBEAT_SCHEDULE['cleanup_downloads'] = {
     'task': 'task_queue.cleanup_downloads',
     'schedule': crontab(minute=16, hour='*')

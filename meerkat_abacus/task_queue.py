@@ -7,15 +7,22 @@ from datetime import datetime
 from raven.contrib.celery import register_signal, register_logger_signal
 from meerkat_abacus import celeryconfig
 import meerkat_libs as libs
+from meerkat_abacus import model
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from meerkat_abacus import util
+
 import requests
 import logging
 import traceback
 import celery
 import raven
 import time
+import json
 import os
 import shutil
-
+import boto3
+from botocore.exceptions import ClientError
 
 class Celery(celery.Celery):
 
@@ -27,14 +34,39 @@ class Celery(celery.Celery):
             # hook into the Celery error handler
             register_signal(client)
 
+logger = logging.getLogger(__name__)
+logger.setLevel(level=logging.INFO)
 
+
+region_name = "eu-west-1"
+logger.info("Connecting to SQS")
+sqs_client = boto3.client('sqs', region_name=region_name,
+                          endpoint_url=config.SQS_ENDPOINT)
+
+logger.info("Getting SQS url")
+try: 
+    queue_url = sqs_client.get_queue_url(
+        QueueName=config.sqs_queue,
+        QueueOwnerAWSAccountId=""
+    )['QueueUrl']
+    logger.info("Subscribed to %s.", queue_url)
+except ClientError as e:
+    print(e)
+    logger.info("Creating Queue")
+    response = sqs_client.create_queue(
+        QueueName=config.sqs_queue
+    )
+    queue_url = sqs_client.get_queue_url(
+        QueueName=config.sqs_queue,
+        QueueOwnerAWSAccountId=""
+    )['QueueUrl']
+    logger.info("Subscribed to %s.", queue_url)
+    
 app = Celery()
 app.config_from_object(celeryconfig)
 
+
 from api_background.export_data import export_form, export_category, export_data, export_data_table
-
-logging.basicConfig(level=logging.INFO)
-
 
 
 # When we start celery we run the set_up_db command
@@ -44,8 +76,74 @@ def set_up_task(**kwargs):
     Start the set_up_db task as soon as workers are ready
     """
     set_up_db.delay()
+    #poll_queue.delay()
 
 
+@app.task
+def poll_queue():
+    """ Get's messages from SQS queue"""
+    logging.info("Running Poll Queue")
+    messages = sqs_client.receive_message(QueueUrl=queue_url,
+                                          WaitTimeSeconds=19)
+    if "Messages" in messages:
+        for message in messages["Messages"]:
+            logging.info("Message %s",message)
+            receipt_handle = message["ReceiptHandle"]
+            logging.info("Deleting message %s", receipt_handle)
+            try:
+                message_body = json.loads(message["Body"])
+                form = message_body["formId"]
+                form_data = message_body["data"]
+                add_data_row.delay(form, form_data)
+                sqs_client.delete_message(QueueUrl=queue_url,
+                                          ReceiptHandle=receipt_handle)
+            except Exception as e:
+                logging.exception("Error", exc_info=True)
+    poll_queue.delay()
+
+
+@app.task
+def add_data_row(form, form_data):
+    if form not in model.form_tables:
+        return None
+    engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    deviceids_case = util.get_deviceids(session, case_report=True)
+    deviceids = util.get_deviceids(session)
+    start_dates = util.get_start_date_by_deviceid(session)
+    uuid_field = "meta/instanceID"
+    if "tables_uuid" in config.country_config:
+        uuid_field = config.country_config["tables_uuid"].get(form, uuid_field)
+    if form in config.country_config["require_case_report"]:
+        form_deviceids = deviceids_case
+    else:
+        form_deviceids = deviceids
+    if "no_deviceid" in config.country_config and form in config.country_config["no_deviceid"]:
+        form_deviceids = []
+    quality_control = False
+    if "quality_control" in config.country_config:
+        if form in config.country_config["quality_control"]:
+            quality_control = True
+    allow_enketo = False
+    if form in config.country_config.get("allow_enketo", []):
+        allow_enketo = config.country_config["allow_enketo"][form]
+    exclusion_list = data_management.get_exclusion_list(session, form)
+    restrict_uuids = data_management.add_rows_to_db(
+        form,
+        [form_data],
+        session,
+        engine,
+        uuid_field=uuid_field,
+        deviceids=form_deviceids,
+        table_name=form,
+        start_dates=start_dates,
+        quality_control=quality_control,
+        allow_enketo=allow_enketo,
+        exclusion_list=exclusion_list,
+        fraction=config.import_fraction)
+    new_data_to_codes.delay(restrict_uuids=restrict_uuids)
+    
 @app.task
 def set_up_db():
     """
@@ -54,29 +152,8 @@ def set_up_db():
     logging.debug("Setting up DB for %s", config.country_config["country_name"])
     data_management.set_up_everything(leave_if_data=False, drop_db=True, N=500)
     logging.debug("Finished setting up DB")
+    poll_queue.delay()
 
-
-@app.task
-def get_proccess_data(debug_enabled=False):
-    """Get/create new data and proccess it."""
-    if config.fake_data:
-        if config.country_config.get('manual_test_data', None):
-            add_new_fake_data(5, from_files = True)
-        else:
-            add_new_fake_data(5)
-    if config.get_data_from_s3:
-        get_new_data_from_s3()
-    if debug_enabled:
-        logging.debug("Import new data")
-    new_records = import_new_data()
-    if debug_enabled:
-        logging.debug("Validating initial visits")
-    changed_records = correct_initial_visits()
-    if debug_enabled:
-        logging.debug("To Code")
-    new_data_to_codes(restrict_uuids=list(set(changed_records + new_records)))
-    if debug_enabled:
-        logging.debug("Finished")
 
 
 @app.task
