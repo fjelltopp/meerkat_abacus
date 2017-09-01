@@ -37,7 +37,16 @@ data_directory = os.environ.get("DATA_DIRECTORY",
 config_directory = os.environ.get("COUNTRY_CONFIG_DIR",
                                   current_directory + "/country_config/")
 fake_data = int(os.environ.get("NEW_FAKE_DATA", True))
+internal_fake_data = int(os.environ.get("INTERNAL_FAKE_DATA", False))
+
+aggregate_password = os.environ.get("AGGREGATE_PASSWORD", "password")
+aggregate_username = os.environ.get("AGGREGATE_PASSWORD", "test")
+aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")
+
 start_celery = os.environ.get("START_CELERY", False)
+
+initial_data = "CSV"
+setup = True
 get_data_from_s3 = int(os.environ.get("GET_DATA_FROM_S3", False))
 interval = 3600  # Seconds
 hermes_api_key = os.environ.get("HERMES_API_KEY", "")
@@ -52,6 +61,7 @@ server_auth_username = os.environ.get('SERVER_AUTH_USERNAME', 'root')
 server_auth_password = os.environ.get('SERVER_AUTH_PASSWORD', 'password')
 send_test_device_messages = os.environ.get('MEERKAT_TEST_DEVICE_MESSAGES',
                                            False)
+connect_sqs = True
 SQS_ENDPOINT = 'http://172.18.0.1:9324'
 sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo')
 sentry_dns = os.environ.get('SENTRY_DNS', '')

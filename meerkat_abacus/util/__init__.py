@@ -11,6 +11,12 @@ import meerkat_abacus.config as config
 import itertools
 import logging
 import csv
+import boto3
+from botocore.exceptions import ClientError
+from xmljson import badgerfish as bf
+from lxml.html import Element, tostring
+import requests
+from requests.auth import HTTPDigestAuth
 
 
 def is_child(parent, child, locations):
@@ -316,7 +322,7 @@ def get_deviceids(session, case_report=False):
     return deviceids
 
 
-def write_csv(rows, file_path, mode = 'w'):
+def write_csv(rows, file_path, mode='w'):
     """
     Writes rows to csvfile
 
@@ -339,6 +345,96 @@ def write_csv(rows, file_path, mode = 'w'):
             for row in rows:
                 out.writerow(row)
 
+                
+def get_exclusion_list(session, form):
+    """
+    Get exclusion list for a form
+
+    Args:
+        session: db session
+        form: which form to get the exclusion list for
+    """
+    exclusion_lists = config.country_config.get("exclusion_lists", {})
+    ret = []
+
+    for exclusion_list_file in exclusion_lists.get(form, []):
+        exclusion_list = read_csv(config.config_directory + exclusion_list_file)
+        for uuid_to_be_removed in exclusion_list:
+            ret.append(uuid_to_be_removed["uuid"])
+
+    return ret
+
+
+def read_csv_filename(filename, config=None):
+    """ Read a csv file from the filename"""
+    file_path = config.data_directory + filename + ".csv"
+    for row in read_csv(file_path):
+        yield row
+
+
+def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
+    """ Subscribes to an sqs_enpoint with the sqs_queue_name"""
+    logging.info("Connecting to SQS")
+    region_name = "eu-west-1"
+    sqs_client = boto3.client('sqs', region_name=region_name,
+                              endpoint_url=sqs_endpoint)
+
+    logging.info("Getting SQS url")
+    try:
+        queue_url = sqs_client.get_queue_url(
+            QueueName=sqs_queue_name,
+            QueueOwnerAWSAccountId=""
+        )['QueueUrl']
+        logging.info("Subscribed to %s.", queue_url)
+    except ClientError as e:
+        print(e)
+        logging.info("Creating Queue")
+        response = sqs_client.create_queue(
+            QueueName=config.sqs_queue
+        )
+        queue_url = sqs_client.get_queue_url(
+            QueueName=sqs_queue_name,
+            QueueOwnerAWSAccountId=""
+        )['QueueUrl']
+        logging.info("Subscribed to %s.", queue_url)
+    return sqs_client, queue_url
+
+
+def groupify(data):
+    """
+    Takes a dict with groups identified by ./ and turns it into a nested dict
+    """
+    new = {}
+    for key in data.keys():
+        if "./" in key:
+            group, field = key.split("./")
+            if group not in new:
+                new[group] = {}
+            new[group][field] = data[key]
+        else:
+            new[key] = data[key]
+
+    return new
+
+
+def submit_data_to_aggregate(data, form_id, config):
+    """ Submitts data to aggregate """
+    data.pop("meta/instanceID", None)
+    grouped_json = groupify(data)
+    grouped_json["@id"] = form_id
+    result = bf.etree(grouped_json, root=Element(form_id))
+    aggregate_user = config.aggregate_username
+    
+    aggregate_password = config.aggregate_password
+    auth = HTTPDigestAuth(aggregate_user, aggregate_password)
+    aggregate_url = config.aggregate_url
+    r = requests.post(aggregate_url + "/submission", auth=auth,
+                      files={
+                          "xml_submission_file":  ("tmp.xml", tostring(result), "text/xml")
+                      })
+    logging.info(r.status_code)
+    return r.status_code
+
 
 def read_csv(file_path):
     """
@@ -350,6 +446,7 @@ def read_csv(file_path):
     Returns:
         rows(list): list of rows
     """
+
     with open(file_path, "r", encoding='utf-8', errors="replace") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -386,7 +483,7 @@ def create_topic_list(alert, locations):
     for comb in combinations:
         topics.append(str(comb[0]) + "-" + str(comb[1]) + "-" + str(comb[2]))
 
-    logging.warning("Sending alert to topic list: {}".format(topics))
+    logging.debug("Sending alert to topic list: {}".format(topics))
 
     return topics
 
@@ -525,7 +622,7 @@ def send_alert(alert_id, alert, variables, locations):
             "medium": ['email', 'sms']
         }
 
-        logging.warning("CREATED ALERT {}".format(data['id']))
+        logging.debug("CREATED ALERT {}".format(data['id']))
 
         libs.hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!
