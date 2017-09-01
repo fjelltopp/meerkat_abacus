@@ -420,6 +420,7 @@ def groupify(data):
 def submit_data_to_aggregate(data, form_id, config):
     """ Submitts data to aggregate """
     data.pop("meta/instanceID", None)
+    data.pop("SubmissionDate", None)
     grouped_json = groupify(data)
     grouped_json["@id"] = form_id
     result = bf.etree(grouped_json, root=Element(form_id))

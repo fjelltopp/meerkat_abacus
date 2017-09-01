@@ -1141,7 +1141,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             epi_year, week = epi_week(date)
             submission_date = None
             if "SubmissionDate" in row[data_type["form"]]:
-                submission_date = parse(row[data_type["form"]].get("SubmissionDate", None))
+                submission_date = parse(row[data_type["form"]].get("SubmissionDate", None)).replace(tzinfo=None)
             new_data = {
                 "date": date,
                 "epi_week": week,
