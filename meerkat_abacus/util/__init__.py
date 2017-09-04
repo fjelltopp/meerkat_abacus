@@ -48,12 +48,12 @@ def epi_week(date):
     Returns epi_week
     """
     start_date = epi_week_start_date(date.year)
-    year = start_date.year
-    # If the date is before the start date, include in week 1.
+    year = date.year
+    # If the date is before the start date, it is in the last week of a previous year
     if date < start_date:
-        return year, 1
+        week_of_prev_year = (date - epi_week_start_date(date.year - 1)).days // 7 + 1
+        return year - 1, week_of_prev_year
     return year, (date - start_date).days // 7 + 1
-
 
 def get_db_engine():
     """
@@ -73,7 +73,7 @@ def epi_week_start_date(year, epi_config=country_config["epi_week"]):
 
     if epi_config== day:X then the first epi_week start on the first weekday
     X after 1st of January
-    X=0 is Sunday
+    X=0 is Monday
 
     Args:
         year: year
