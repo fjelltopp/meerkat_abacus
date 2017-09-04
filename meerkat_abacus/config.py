@@ -84,3 +84,5 @@ if hermes_dev:
     country_config["messaging_silent"] = True
 
 s3_bucket = country_config_module.s3_bucket
+
+fake_data_interval = 30
