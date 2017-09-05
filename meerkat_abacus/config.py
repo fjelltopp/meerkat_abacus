@@ -80,6 +80,10 @@ spec = importlib.util.spec_from_file_location(
 country_config_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(country_config_module)
 country_config = country_config_module.country_config
+if hasattr(country_config_module, 'dhis2_config'):
+    # dhis2 export is feature toggled for now
+    # proper country configs will be added after feature launch
+    dhis2_config = country_config_module.dhis2_config
 
 if hermes_dev:
     country_config["messaging_silent"] = True

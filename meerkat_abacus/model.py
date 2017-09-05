@@ -47,6 +47,7 @@ class Locations(Base):
     __tablename__ = 'locations'
 
     id = Column(Integer, primary_key=True)
+    country_location_id = Column(String)
     name = Column(String)
     parent_location = Column(Integer, index=True)
     point_location = Column(Geometry("POINT"))
