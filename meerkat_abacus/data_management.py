@@ -204,7 +204,7 @@ def table_data_from_csv(filename,
         i += 1
         dicts.append(row)
         if i % 10000 == 0:
-            new_rows += add_rows_to_db(filename,
+            new_rows += tasks.add_rows_to_db(filename,
                                        dicts,
                                        session,
                                        engine,

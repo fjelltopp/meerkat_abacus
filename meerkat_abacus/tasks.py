@@ -26,10 +26,16 @@ sqs_queue_url = None
 
 worker_buffer = Queue(maxsize=1000)
 
+@task
+def set_up_db():
+    data_management.set_up_database(leave_if_data=False,
+                                    drop_db=True)
 
 @task
 def initial_data_setup():
     logging.info("Starting initial setup")
+    while not worker_buffer.empty():
+        worker_buffer.get()
     engine, session = util.get_db_engine()
     if config.initial_data == "S3":
         data_import.download_data_from_s3(config)
@@ -41,6 +47,7 @@ def initial_data_setup():
         data_import.read_stationary_data(get_function, worker_buffer,
                                          config, process_buffer, session, engine)
         process_buffer(internal_buffer=worker_buffer, start=False)
+    process_buffer(internal_buffer=worker_buffer, start=False)
     session.close()
     engine.dispose()
 
@@ -53,7 +60,7 @@ def process_buffer(start=True, internal_buffer=None):
     process_chunk(internal_buffer, session, engine)
     if start:
         process_buffer.apply_async(countdown=30,
-                                   kwargs={"start":True})
+                                   kwargs={"start": True})
     session.close()
     engine.dispose()
 

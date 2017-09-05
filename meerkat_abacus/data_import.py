@@ -3,9 +3,12 @@ Main functionality for importing data into abacus
 
 """
 import logging
-from meerkat_abacus import model
-from dateutil.parser import parse
+import boto3
 from queue import Full
+from dateutil.parser import parse
+
+from meerkat_abacus import model
+from meerkat_abacus.codes import to_codes
 
 
 def read_stationary_data(get_function, internal_buffer,
@@ -13,11 +16,13 @@ def read_stationary_data(get_function, internal_buffer,
     """
     Read stationary data using the get_function to determine the source
     """
+    i = 0
     for form in config.country_config["tables"]:
         logging.info(form)
         uuid_field = "meta/instanceID"
         for element in get_function(form, config=config):
             try:
+                i += 1
                 uuid_field_current = config.country_config.get("tables_uuid",
                                                                {}).get(form,
                                                                        uuid_field)
@@ -25,12 +30,12 @@ def read_stationary_data(get_function, internal_buffer,
                                             "uuid": element[uuid_field_current],
                                             "data": element})
             except Full:
+                i = 0
                 # Reached max_size of buffer
                 buffer_proccesser_function(internal_buffer=internal_buffer,
                                            start=False)
                 internal_buffer.put({"form": form,
-                                     "uuid": element[uuid_field_current],
-                                     "data": element})
+                                     "uuid": element[uuid_field_current],"data": element})
 
 def download_data_from_s3(config):
     """
@@ -49,16 +54,16 @@ def download_data_from_s3(config):
 
 
 def add_rows_to_db(form, form_data, session, engine,
-                        uuid_field="meta/instanceID",
-                        only_new=False,
-                        deviceids=None,
-                        table_name=None,
-                        row_function=None,
-                        quality_control=None,
-                        allow_enketo=False,
-                        start_dates=None,
-                        exclusion_list=[],
-                        fraction=None):
+                   uuid_field="meta/instanceID",
+                   only_new=False,
+                   deviceids=None,
+                   table_name=None,
+                   row_function=None,
+                   quality_control=None,
+                   allow_enketo=False,
+                   start_dates=None,
+                   exclusion_list=[],
+                   fraction=None):
     """ Add form_data to DB
     If quality_control is true we look among the aggregation variables
     for variables of the import type. If this variable is not true the
@@ -83,14 +88,14 @@ def add_rows_to_db(form, form_data, session, engine,
     conn = engine.connect()
     uuids = [row[uuid_field] for row in form_data]
     table = model.form_tables[form]
-    
+    exclusion_list = set(exclusion_list)
     conn.execute(table.__table__.delete().where(
             table.__table__.c.uuid.in_(uuids)))
     dicts = []
 
     new_rows = []
     to_check = []
-    to_check_test = {} # For speed
+    to_check_test = {}  # For speed
     logging.info("Formname: %s", form)
 
     if quality_control:

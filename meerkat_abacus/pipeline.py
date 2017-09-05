@@ -64,11 +64,14 @@ def process_chunk(internal_buffer, session, engine):
 
     uuids = []
     tables = defaultdict(list)
-    while not internal_buffer.empty():
+    logging.info(internal_buffer.qsize())
+    while internal_buffer.qsize() > 0:
+
         element = internal_buffer.get()
         tables[element["form"]].append(element["data"])
     for form in tables:
         kwargs = prepare_add_rows_arguments(form, session)
+        logging.info(kwargs["exclusion_list"])
         uuids += data_import.add_rows_to_db(
             form,
             tables[form],
