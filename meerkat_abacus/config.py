@@ -54,7 +54,7 @@ send_test_device_messages = os.environ.get('MEERKAT_TEST_DEVICE_MESSAGES',
                                            False)
 sentry_dns = os.environ.get('SENTRY_DNS', '')
 db_dump = os.environ.get('DB_DUMP', '')
-db_dump_folder = '/var/www/db_dumps/'
+db_dump_folder = '/var/www/dumps/'
 
 import_fraction = float(os.environ.get("IMPORT_FRACTION", 0))
 # Country config
