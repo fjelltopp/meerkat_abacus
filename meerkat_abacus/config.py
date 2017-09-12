@@ -62,9 +62,9 @@ server_auth_username = os.environ.get('SERVER_AUTH_USERNAME', 'root')
 server_auth_password = os.environ.get('SERVER_AUTH_PASSWORD', 'password')
 send_test_device_messages = os.environ.get('MEERKAT_TEST_DEVICE_MESSAGES',
                                            False)
-connect_sqs = False
-SQS_ENDPOINT = 'http://172.18.0.1:9324'
-sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo')
+connect_sqs = True
+SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", 'http://172.18.0.1:9324')
+sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo') + '-' + os.environ.get("TUNNEL_SUBSCRIBER_ID", 'dummy')
 sentry_dns = os.environ.get('SENTRY_DNS', '')
 db_dump = os.environ.get('DB_DUMP', '')
 db_dump_folder = '/var/www/db_dumps/'

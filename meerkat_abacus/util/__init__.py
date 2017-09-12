@@ -376,8 +376,13 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
     """ Subscribes to an sqs_enpoint with the sqs_queue_name"""
     logging.info("Connecting to SQS")
     region_name = "eu-west-1"
-    sqs_client = boto3.client('sqs', region_name=region_name,
-                              endpoint_url=sqs_endpoint)
+
+    if sqs_endpoint == 'DEFAULT':
+        sqs_client = boto3.client('sqs', region_name=region_name)
+    else:
+        sqs_client = boto3.client('sqs', region_name=region_name,
+                                  endpoint_url=sqs_endpoint)
+    sts_client = boto3.client('sts', region_name=region_name)
 
     logging.info("Getting SQS url")
     try:
@@ -394,7 +399,7 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
         )
         queue_url = sqs_client.get_queue_url(
             QueueName=sqs_queue_name,
-            QueueOwnerAWSAccountId=""
+            QueueOwnerAWSAccountId=sts_client.get_caller_identity()["Account"]
         )['QueueUrl']
         logging.info("Subscribed to %s.", queue_url)
     return sqs_client, queue_url
