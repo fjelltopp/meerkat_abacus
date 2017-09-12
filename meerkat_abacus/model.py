@@ -1,35 +1,28 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, DDL, Float, LargeBinary
+from sqlalchemy import Column, Integer, String, DateTime, DDL, Float, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import validates
 from sqlalchemy.event import listen
 from geoalchemy2 import Geometry
-
 from meerkat_abacus.config import country_config
 
-from psycopg2.extensions import adapt, register_adapter, AsIs
-from geoalchemy2.elements import WKBElement
-
-# def WKBElementAdapter(element):
-#     return AsIs(adapt(element.desc).getquoted())
-
-# register_adapter(WKBElement, WKBElementAdapter)
 
 Base = declarative_base()
-
-
 form_tables = {}
 
 for table in country_config["tables"]:
-    form_tables[table] = type(table, (Base, ),
-                              {"__tablename__": table,
-                               "id": Column(Integer, primary_key=True),
-                               "uuid": Column(String, index=True),
-                               "data": Column(JSONB)})
-    create_index = DDL("CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table))
+    form_tables[table] = type(table, (Base, ), {
+        "__tablename__": table,
+        "id": Column(Integer, primary_key=True),
+        "uuid": Column(String, index=True),
+        "data": Column(JSONB)
+    })
+    create_index = DDL(
+        "CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table)
+    )
     listen(form_tables[table].__table__, 'after_create', create_index)
 
 
@@ -58,7 +51,7 @@ class Locations(Base):
     case_report = Column(Integer, index=True)
     level = Column(String, index=True)
     start_date = Column(DateTime)
-    case_type = Column(String, index=True)
+    case_type = Column(ARRAY(String), index=True)
     population = Column(Integer, default=0)
     service_provider = Column(String)
 
@@ -97,13 +90,13 @@ class Data(Base):
     geolocation = Column(Geometry("POINT"))
 
     def __repr__(self):
-        return "<Data(uuid='%s', id='%s'>" % (
-            self.uuid, self.id )
+        return "<Data(uuid='{}', id='{}'>".format(self.uuid, self.id)
 
 create_index = DDL("CREATE INDEX variables_gin ON data USING gin(variables);")
 listen(Data.__table__, 'after_create', create_index)
 create_index2 = DDL("CREATE INDEX categories_gin ON data USING gin(categories);")
 listen(Data.__table__, 'after_create', create_index2)
+
 
 class DisregardedData(Base):
     __tablename__ = 'disregarded_data'
@@ -136,6 +129,7 @@ listen(DisregardedData.__table__, 'after_create', create_index3)
 create_index4 = DDL("CREATE INDEX disregarded_category_gin ON disregarded_data USING gin(categories);")
 listen(DisregardedData.__table__, 'after_create', create_index4)
 
+
 class Links(Base):
     __tablename__ = 'links'
     id = Column(Integer, primary_key=True)
@@ -144,10 +138,11 @@ class Links(Base):
     type = Column(String, index=True)
     data_to = Column(JSONB)
 
+
 class AggregationVariables(Base):
     __tablename__ = 'aggregation_variables'
 
-    id_pk = Column(Integer, primary_key = True)
+    id_pk = Column(Integer, primary_key=True)
     id = Column(String)
     name = Column(String)
     type = Column(String)
@@ -198,9 +193,10 @@ class AggregationVariables(Base):
         else:
             return disregard
 
+
 class CalculationParameters(Base):
         __tablename__ = 'calculation_parameters'
-        id = Column(Integer, primary_key = True)
+        id = Column(Integer, primary_key=True)
         name = Column(String)
         type = Column(String)
         parameters = Column(JSONB)
