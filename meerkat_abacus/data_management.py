@@ -383,13 +383,15 @@ def import_clinics(csv_file, session, country_id,
                     model.Locations.clinic_type is not None
                 )
 
-
                 # Construct other information from config
-
                 other = {}
                 if other_info:
                     for field in other_info:
                         other[field] = row.get(field, None)
+
+                # Case type can be a comma seperated list.
+                case_type = row.get("case_type", "")
+                case_type = list(map(str.strip, case_type.split(',')))
 
                 # If two clinics have the same name and the same
                 # parent_location, we are dealing with two tablets from the
@@ -403,6 +405,9 @@ def import_clinics(csv_file, session, country_id,
                         start_date = parse(row["start_date"], dayfirst=True)
                     else:
                         start_date = country_config["default_start_date"]
+
+                    logging.warning('Case type: {}'.format(case_type))
+
                     session.add(
                         model.Locations(
                             name=row["clinic"],
@@ -411,23 +416,24 @@ def import_clinics(csv_file, session, country_id,
                             deviceid=row["deviceid"],
                             clinic_type=row["clinic_type"].strip(),
                             case_report=case_report,
-                            case_type=row.get("case_type", None),
+                            case_type=case_type,
                             level="clinic",
                             population=population,
                             other=other,
                             service_provider=row.get("service_provider", None),
-                            country_location_id=row.get("country_location_id", None),
-                            start_date=start_date))
+                            start_date=start_date,
+                            country_location_id=row.get(
+                                "country_location_id",
+                                None
+                            )
+                        )
+                    )
                 else:
                     location = result.first()
-                    location.deviceid = location.deviceid + "," + row[
-                        "deviceid"]
-                    new_case_type = row.get("case_type", None)
-                    if not location.case_type and new_case_type is not None:
-                        location.case_type = new_case_type
-                    elif new_case_type:
-                        if location.case_type != row.get("case_type", None):
-                            location.case_type = "multiple"
+                    location.deviceid += "," + row["deviceid"]
+                    location.case_type = list(
+                        set(location.case_type) | set(case_type)
+                    )   # Combine case types with no duplicates
     session.commit()
 
 

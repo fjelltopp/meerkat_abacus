@@ -67,7 +67,7 @@ SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", 'http://172.18.0.1:9324')
 sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo') + '-' + os.environ.get("TUNNEL_SUBSCRIBER_ID", 'dummy')
 sentry_dns = os.environ.get('SENTRY_DNS', '')
 db_dump = os.environ.get('DB_DUMP', '')
-db_dump_folder = '/var/www/db_dumps/'
+db_dump_folder = '/var/www/dumps/'
 
 import_fraction = float(os.environ.get("IMPORT_FRACTION", 0))
 # Country config
