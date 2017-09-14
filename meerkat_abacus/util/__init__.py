@@ -438,7 +438,7 @@ def submit_data_to_aggregate(data, form_id, config):
                       files={
                           "xml_submission_file":  ("tmp.xml", tostring(result), "text/xml")
                       })
-    logging.info(r.status_code)
+    logging.info("Aggregate submission status code: " + r.status_code)
     return r.status_code
 
 
