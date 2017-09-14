@@ -1,9 +1,9 @@
 """
 Database model definition
 """
-from sqlalchemy import Column, Integer, String, DateTime, DDL, Float, ARRAY
+from sqlalchemy import Column, Integer, String, DateTime, DDL, Float, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from sqlalchemy.orm import validates
 from sqlalchemy.event import listen
 from geoalchemy2 import Geometry
@@ -51,7 +51,7 @@ class Locations(Base):
     case_report = Column(Integer, index=True)
     level = Column(String, index=True)
     start_date = Column(DateTime)
-    case_type = Column(ARRAY(String), index=True)
+    case_type = Column(ARRAY(Text), index=True)
     population = Column(Integer, default=0)
     service_provider = Column(String)
 
@@ -82,7 +82,7 @@ class Data(Base):
     district = Column(Integer, index=True)
     clinic = Column(Integer, index=True)
     clinic_type = Column(String)
-    case_type = Column(String)
+    case_type = Column(ARRAY(Text), index=True)
     links = Column(JSONB)
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)
@@ -112,7 +112,7 @@ class DisregardedData(Base):
     zone = Column(Integer, index=True)
     clinic = Column(Integer, index=True)
     clinic_type = Column(String)
-    case_type = Column(String)
+    case_type = Column(ARRAY(Text), index=True)
     links = Column(JSONB)
     tags = Column(JSONB, index=True)
     variables = Column(JSONB, index=True)

@@ -55,11 +55,11 @@ def epi_week(date):
     return year, (date - start_date).days // 7 + 1
 
 
-def get_db_engine():
+def get_db_engine(db_url=config.DATABASE_URL):
     """
     Returns a db engine and session
     """
-    engine = create_engine(config.DATABASE_URL)
+    engine = create_engine(db_url)
     Session = sessionmaker(bind=engine)
     session = Session()
     return engine, session
