@@ -423,7 +423,7 @@ def groupify(data):
 
 
 def submit_data_to_aggregate(data, form_id, config):
-    """ Submitts data to aggregate """
+    """ Submits data to aggregate """
     data.pop("meta/instanceID", None)
     data.pop("SubmissionDate", None)
     grouped_json = groupify(data)
