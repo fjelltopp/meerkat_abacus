@@ -119,7 +119,7 @@ def add_fake_data(N=10, countdown_time=None, dates_is_now=False):
     logging.info("Adding fake data")
     engine, session = util.get_db_engine()
     for form in config.country_config["tables"]:
-        logging.info(form)
+        logging.info("Generating fake data for form:" + form)
         new_data = create_fake_data.get_new_fake_data(form, session, N, config,
                                                       dates_is_now=dates_is_now)
         for row, uuid in new_data:
