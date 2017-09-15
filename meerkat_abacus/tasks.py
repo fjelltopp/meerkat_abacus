@@ -138,7 +138,7 @@ def add_fake_data(N=10, countdown_time=None, dates_is_now=False):
                          "data": row})
             elif config.aggregate_url:
                 logging.info("Submitting fake data for form {0} to Aggregate".format(form))
-                util.submit_data_to_aggregate(row, form, config)
+                # util.submit_data_to_aggregate(row, form, config)
     if countdown_time:
         add_fake_data.apply_async(countdown=countdown_time,
                                   kwargs={"countdown_time": countdown_time,

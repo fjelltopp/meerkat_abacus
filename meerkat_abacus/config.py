@@ -38,7 +38,7 @@ config_directory = os.environ.get("COUNTRY_CONFIG_DIR",
                                   current_directory + "/country_config/")
 fake_data = int(os.environ.get("NEW_FAKE_DATA", True))
 internal_fake_data = int(os.environ.get("INTERNAL_FAKE_DATA", True))
-fake_data_interval = int(os.environ.get("INTERNAL_FAKE_DATA_INTERVAL", 60*5))
+fake_data_interval = int(os.environ.get("FAKE_DATA_INTERVAL", 60*5))
 
 aggregate_password = os.environ.get("AGGREGATE_PASSWORD", "password")
 aggregate_username = os.environ.get("AGGREGATE_PASSWORD", "test")
@@ -90,4 +90,4 @@ if hermes_dev:
 
 s3_bucket = country_config_module.s3_bucket
 
-fake_data_interval = 30
+# fake_data_interval = 30
