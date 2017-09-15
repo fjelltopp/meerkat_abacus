@@ -52,10 +52,12 @@ if config.connect_sqs:
 tasks.process_buffer.delay(start=True)
 
 if config.fake_data:
-    tasks.add_fake_data.apply_async(eta=tz.localize(datetime.now()) + timedelta(seconds=config.fake_data_interval),
-                              kwargs={"interval_next": config.fake_data_interval,
-                                      "N": 4,
-                                      "dates_is_now": True})
+    tasks.add_fake_data.apply_async(countdown=config.fake_data_interval,
+                                    kwargs={"interval_next": config.fake_data_interval,
+                                            "N": 4,
+                                            "dates_is_now": True,
+                                            "internal_fake_data": config.internal_fake_data,
+                                            "aggregate_url": config.aggregate_url})
               
 while True:
     sleep(120)

@@ -116,16 +116,15 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True):
 
 
 @task
-def add_fake_data(N=10, interval_next=None, dates_is_now=False):
+def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, aggregate_url=None):
     logging.info("Adding fake data")
     engine, session = util.get_db_engine()
-    tz = pytz.timezone(config.timezone)
     for form in config.country_config["tables"]:
         logging.info("Generating fake data for form:" + form)
         new_data = create_fake_data.get_new_fake_data(form, session, N, config,
                                                       dates_is_now=dates_is_now)
         for row, uuid in new_data:
-            if config.internal_fake_data:
+            if internal_fake_data:
                 try:
                     worker_buffer.put_nowait(
                         {"form": form,
@@ -138,14 +137,16 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False):
                         {"form": form,
                          "uuid": uuid,
                          "data": row})
-            elif config.aggregate_url:
+            elif aggregate_url:
                 logging.info("Submitting fake data for form {0} to Aggregate".format(form))
                 # util.submit_data_to_aggregate(row, form, config)
     if interval_next:
-        add_fake_data.apply_async(eta=tz.localize(datetime.now()) + timedelta(seconds=interval_next),
-                                  kwargs={"interval_next": config.fake_data_interval,
+        add_fake_data.apply_async(countdown=interval_next,
+                                  kwargs={"interval_next": interval_next,
                                           "N": N,
-                                          "dates_is_now": dates_is_now})
+                                          "dates_is_now": dates_is_now,
+                                          "internal_fake_data": internal_fake_data,
+                                          "aggregate_url": aggregate_url})
                     
     session.close()
     engine.dispose()
