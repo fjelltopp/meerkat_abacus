@@ -569,8 +569,6 @@ def import_clinics(csv_file, session, country_id,
                     else:
                         start_date = country_config["default_start_date"]
 
-                    logging.warning('Case type: {}'.format(case_type))
-
                     session.add(
                         model.Locations(
                             name=row["clinic"],
