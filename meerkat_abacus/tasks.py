@@ -11,7 +11,8 @@ import os
 from queue import Full
 import shutil
 from multiprocessing import Queue
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 
 from meerkat_abacus import config, data_management
 import meerkat_libs as libs
@@ -115,9 +116,10 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True):
 
 
 @task
-def add_fake_data(N=10, countdown_time=None, dates_is_now=False):
+def add_fake_data(N=10, interval_next=None, dates_is_now=False):
     logging.info("Adding fake data")
     engine, session = util.get_db_engine()
+    tz = pytz.timezone(config.timezone)
     for form in config.country_config["tables"]:
         logging.info("Generating fake data for form:" + form)
         new_data = create_fake_data.get_new_fake_data(form, session, N, config,
@@ -139,9 +141,9 @@ def add_fake_data(N=10, countdown_time=None, dates_is_now=False):
             elif config.aggregate_url:
                 logging.info("Submitting fake data for form {0} to Aggregate".format(form))
                 # util.submit_data_to_aggregate(row, form, config)
-    if countdown_time:
-        add_fake_data.apply_async(countdown=countdown_time,
-                                  kwargs={"countdown_time": countdown_time,
+    if interval_next:
+        add_fake_data.apply_async(eta=tz.localize(datetime.now()) + timedelta(seconds=interval_next),
+                                  kwargs={"interval_next": config.fake_data_interval,
                                           "N": N,
                                           "dates_is_now": dates_is_now})
                     

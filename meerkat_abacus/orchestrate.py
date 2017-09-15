@@ -2,7 +2,7 @@ from time import sleep
 import celery
 import logging
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 import raven
 
 from meerkat_abacus import tasks
@@ -35,7 +35,7 @@ logging.info("Setting up DB for %s", config.country_config["country_name"])
 global engine
 global session
 
-my_tz = pytz.timezone(config.timezone)
+tz = pytz.timezone(config.timezone)
 
 tasks.set_up_db.delay().get()
 
@@ -52,9 +52,8 @@ if config.connect_sqs:
 tasks.process_buffer.delay(start=True)
 
 if config.fake_data:
-    tasks.add_fake_data.add_async()
-    tasks.add_fake_data.delay(N=4, eta=my_tz.localize(datetime.now()) + timedelta(seconds=config.fake_data_interval),
-                              dates_is_now=True)
+    tasks.add_fake_data.delay(N=4, eta=tz.localize(datetime.now()) + timedelta(seconds=config.fake_data_interval),
+                              dates_is_now=True, interval_next=config.fake_data_interval)
               
 while True:
     sleep(120)
