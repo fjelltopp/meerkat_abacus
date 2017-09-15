@@ -52,7 +52,7 @@ if config.connect_sqs:
 tasks.process_buffer.delay(start=True)
 
 if config.fake_data:
-    tasks.add_fake_data.delay(N=4, eta=tz.localize(datetime.now()) + timedelta(seconds=config.fake_data_interval),
+    tasks.add_fake_data.delay(N=4, interval_next=config.fake_data_interval,
                               dates_is_now=True, interval_next=config.fake_data_interval)
               
 while True:
