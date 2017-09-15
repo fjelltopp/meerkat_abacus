@@ -35,7 +35,7 @@ logging.info("Setting up DB for %s", config.country_config["country_name"])
 global engine
 global session
 
-my_tz = pytz.timezone('Europe/Dublin')
+my_tz = pytz.timezone(config.timezone)
 
 tasks.set_up_db.delay().get()
 

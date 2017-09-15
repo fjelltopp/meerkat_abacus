@@ -37,6 +37,7 @@ data_directory = os.environ.get("DATA_DIRECTORY",
 config_directory = os.environ.get("COUNTRY_CONFIG_DIR",
                                   current_directory + "/country_config/")
 fake_data = int(os.environ.get("NEW_FAKE_DATA", True))
+timezone = os.environ.get('TIMEZONE', 'Europe/Dublin')
 internal_fake_data = int(os.environ.get("INTERNAL_FAKE_DATA", True))
 fake_data_interval = int(os.environ.get("FAKE_DATA_INTERVAL", 60*5))
 
