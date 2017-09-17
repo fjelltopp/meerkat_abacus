@@ -422,18 +422,18 @@ def groupify(data):
     return new
 
 
-def submit_data_to_aggregate(data, form_id, config):
+def submit_data_to_aggregate(data, form_id, aggregate_config):
     """ Submits data to aggregate """
     data.pop("meta/instanceID", None)
     data.pop("SubmissionDate", None)
     grouped_json = groupify(data)
     grouped_json["@id"] = form_id
     result = bf.etree(grouped_json, root=Element(form_id))
-    aggregate_user = config.aggregate_username
+    aggregate_user = aggregate_config.aggregate_username
     
-    aggregate_password = config.aggregate_password
+    aggregate_password = aggregate_config.aggregate_password
     auth = HTTPDigestAuth(aggregate_user, aggregate_password)
-    aggregate_url = config.aggregate_url
+    aggregate_url = aggregate_config.aggregate_url
     r = requests.post(aggregate_url + "/submission", auth=auth,
                       files={
                           "xml_submission_file":  ("tmp.xml", tostring(result), "text/xml")

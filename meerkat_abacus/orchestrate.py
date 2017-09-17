@@ -57,7 +57,11 @@ if config.fake_data:
                                             "N": 4,
                                             "dates_is_now": True,
                                             "internal_fake_data": config.internal_fake_data,
-                                            "aggregate_url": config.aggregate_url})
+                                            "aggregate_config": {
+                                                "aggregate_url": config.aggregate_url,
+                                                "aggregate_username": config.aggregate_username,
+                                                "aggregate_password": config.aggregate_password}
+                                            })
               
 while True:
     sleep(120)

@@ -116,7 +116,7 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True):
 
 
 @task
-def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, aggregate_url=None):
+def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, aggregate_config=None):
     logging.info("Adding fake data")
     engine, session = util.get_db_engine()
     for form in config.country_config["tables"]:
@@ -146,7 +146,7 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_da
                                           "N": N,
                                           "dates_is_now": dates_is_now,
                                           "internal_fake_data": internal_fake_data,
-                                          "aggregate_url": aggregate_url})
+                                          "aggregate_config": aggregate_config})
                     
     session.close()
     engine.dispose()
