@@ -4,6 +4,7 @@ import logging
 import pytz
 from datetime import datetime, timedelta
 import raven
+import copy
 
 from meerkat_abacus import tasks
 from meerkat_abacus import celeryconfig
@@ -52,15 +53,15 @@ if config.connect_sqs:
 tasks.process_buffer.delay(start=True)
 
 if config.fake_data:
-    tasks.add_fake_data.apply_async(countdown=config.fake_data_interval,
-                                    kwargs={"interval_next": config.fake_data_interval,
+    tasks.add_fake_data.apply_async(countdown=copy.deepcopy(config.fake_data_interval),
+                                    kwargs={"interval_next": copy.deepcopy(config.fake_data_interval),
                                             "N": 4,
                                             "dates_is_now": True,
-                                            "internal_fake_data": config.internal_fake_data,
+                                            "internal_fake_data": copy.deepcopy(config.internal_fake_data),
                                             "aggregate_config": {
-                                                "aggregate_url": config.aggregate_url,
-                                                "aggregate_username": config.aggregate_username,
-                                                "aggregate_password": config.aggregate_password}
+                                                "aggregate_url": copy.deepcopy(config.aggregate_url),
+                                                "aggregate_username": copy.deepcopy(config.aggregate_username),
+                                                "aggregate_password": copy.deepcopy(config.aggregate_password)}
                                             })
               
 while True:
