@@ -429,11 +429,11 @@ def submit_data_to_aggregate(data, form_id, aggregate_config):
     grouped_json = groupify(data)
     grouped_json["@id"] = form_id
     result = bf.etree(grouped_json, root=Element(form_id))
-    aggregate_user = aggregate_config.aggregate_username
+    aggregate_user = aggregate_config.get('aggregate_username', None)
     
-    aggregate_password = aggregate_config.aggregate_password
+    aggregate_password = aggregate_config.get('aggregate_password', None)
     auth = HTTPDigestAuth(aggregate_user, aggregate_password)
-    aggregate_url = aggregate_config.aggregate_url
+    aggregate_url = aggregate_config.get('aggregate_url', None)
     r = requests.post(aggregate_url + "/submission", auth=auth,
                       files={
                           "xml_submission_file":  ("tmp.xml", tostring(result), "text/xml")
