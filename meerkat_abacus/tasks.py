@@ -139,7 +139,7 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_da
                          "data": row})
             elif aggregate_url:
                 logging.info("Submitting fake data for form {0} to Aggregate".format(form))
-                # util.submit_data_to_aggregate(row, form, config)
+                util.submit_data_to_aggregate(row, form, config)
     if interval_next:
         add_fake_data.apply_async(countdown=interval_next,
                                   kwargs={"interval_next": interval_next,
