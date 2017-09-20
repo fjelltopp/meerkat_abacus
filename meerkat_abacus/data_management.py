@@ -854,7 +854,7 @@ def add_alerts(session):
         model.AggregationVariables.alert == 1)
     for a in alerts.all():
         new_alerts = []
-
+        data_type = a.type
         if a.alert_type and "threshold:" in a.alert_type:
             var_id = a.id
             limits = [int(x) for x in a.alert_type.split(":")[1].split(",")]
@@ -883,7 +883,8 @@ def add_alerts(session):
                     model.Data, model.form_tables[a.form]).join(
                         (model.form_tables[a.form],
                          model.form_tables[a.form].uuid == model.Data.uuid
-                         )).filter(model.Data.uuid.in_(new_alert["uuids"]))
+                         )).filter(model.Data.uuid.in_(new_alert["uuids"]),
+                                   model.Data.type == data_type)
                 data_records_by_uuid = {}
                 form_records_by_uuid = {}
                 for r in records.all():
