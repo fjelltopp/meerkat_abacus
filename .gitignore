@@ -60,6 +60,9 @@ target/
 *~
 #*#
 
+# JetBraings
+.idea
+
 # Application specific
 data/forms/*
 celerybeat-schedule*
