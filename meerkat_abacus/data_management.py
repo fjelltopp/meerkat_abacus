@@ -10,6 +10,8 @@ from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
 from dateutil.parser import parse
 from datetime import datetime
+
+from meerkat_libs import consul_client as consul
 from meerkat_abacus import alerts as alert_functions
 from meerkat_abacus import model
 from meerkat_abacus import config
@@ -289,10 +291,12 @@ def table_data_from_csv(filename,
                                    start_dates, allow_enketo=allow_enketo):
                 dicts.append({"data": insert_row,
                               "uuid": insert_row[uuid_field]})
+                consul.send_dhis2_events(uuid=insert_row[uuid_field], form_id=filename, raw_row=insert_row)
                 new_rows.append(insert_row[uuid_field])
         else:
             dicts.append({"data": insert_row,
                           "uuid": insert_row[uuid_field]})
+            consul.send_dhis2_events(uuid=insert_row[uuid_field], form_id=filename, raw_row=insert_row)
             new_rows.append(insert_row[uuid_field])
         i += 1
         if i % 10000 == 0:
@@ -305,6 +309,7 @@ def table_data_from_csv(filename,
         logging.info("removed value: %s", removed)
     conn.execute(table.__table__.insert(), dicts)
     conn.close()
+    consul.flush_dhis2_events()
     logging.info("Number of records %s", i)
     return new_rows
 
@@ -670,7 +675,7 @@ def import_locations(engine, session):
         model.Locations(
             name=country_config["country_name"],
             level="country",
-            country_location_id=""
+            country_location_id="the_country_location_id"
         )
     )
 
