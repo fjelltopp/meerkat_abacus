@@ -37,6 +37,7 @@ def read_stationary_data(get_function, internal_buffer,
                 internal_buffer.put({"form": form,
                                      "uuid": element[uuid_field_current],"data": element})
 
+
 def download_data_from_s3(config):
     """
     Get csv-files with data from s3 bucket
@@ -179,7 +180,6 @@ def add_rows_to_db(form, form_data, session, engine,
     conn.close()
     logging.info("Number of records %s", i)
     return new_rows
-
 
 
 def should_row_be_added(row, form_name, deviceids, start_dates, allow_enketo=False):

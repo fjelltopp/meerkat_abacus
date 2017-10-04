@@ -1,7 +1,7 @@
 """
 Various utility functions for meerkat abacus
 """
-from meerkat_abacus.model import Locations, AggregationVariables, Devices
+from meerkat_abacus.model import Locations, AggregationVariables, Devices, form_tables
 from meerkat_abacus.config import country_config
 from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
@@ -66,6 +66,16 @@ def get_db_engine():
     Returns a db engine and session
     """
     engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    return engine, session
+
+
+def get_persistent_db_engine():
+    """
+    Returns a db engine and session
+    """
+    engine = create_engine(config.PERSISTENT_DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
     return engine, session
@@ -372,6 +382,16 @@ def read_csv_filename(filename, config=None):
         yield row
 
 
+def get_data_from_rds_persistent_storage(form, config=None):
+    """ Get data from RDS persistent storage"""
+    session, engine = get_persistent_db_engine()
+    q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
+    while q is not None:
+        for row in q:
+            yield row
+        q = session.query(form).yield_per(1000).enable_eagerloads(False)
+
+
 def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
     """ Subscribes to an sqs_enpoint with the sqs_queue_name"""
     logging.info("Connecting to SQS")
@@ -457,6 +477,7 @@ def read_csv(file_path):
         reader = csv.DictReader(f)
         for row in reader:
             yield row
+
 
 def create_topic_list(alert, locations):
     """

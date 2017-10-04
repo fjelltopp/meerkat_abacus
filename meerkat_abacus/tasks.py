@@ -35,19 +35,22 @@ def set_up_db():
 @task
 def initial_data_setup():
     logging.info("Starting initial setup")
-    while not worker_buffer.empty():
+    while not worker_buffer.empty():  # Make sure that the buffer is empty
         worker_buffer.get()
+
     engine, session = util.get_db_engine()
+
     if config.initial_data == "S3":
         data_import.download_data_from_s3(config)
         get_function = util.read_csv_filename
     elif config.initial_data == "CSV":
         get_function = util.read_csv_filename
         data_management.add_fake_data(session)
+    elif config.initial_data == "RDS":
+        get_function = util.get_data_from_rds_persistent_storage
     
-        data_import.read_stationary_data(get_function, worker_buffer,
-                                         config, process_buffer, session, engine)
-        process_buffer(internal_buffer=worker_buffer, start=False)
+    data_import.read_stationary_data(get_function, worker_buffer,
+                                     config, process_buffer, session, engine)
     process_buffer(internal_buffer=worker_buffer, start=False)
     session.close()
     engine.dispose()

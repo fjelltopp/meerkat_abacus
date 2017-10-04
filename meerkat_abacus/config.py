@@ -32,6 +32,11 @@ DATABASE_URL = os.environ.get(
     "MEERKAT_ABACUS_DB_URL",
     'postgresql+psycopg2://postgres:postgres@db/meerkat_db'
 )
+PERSISTENT_DATABASE_URL = os.environ.get(
+    "PERSISTENT_DB_URL",
+    'postgresql+psycopg2://' + \
+    'postgres:postgres@meerkat-tunnel-persistent-database.cq6mmduyy7fo.eu-west-1.rds.amazonaws.com:5432/demo_db'
+)
 data_directory = os.environ.get("DATA_DIRECTORY",
                                 current_directory + "/data/")
 config_directory = os.environ.get("COUNTRY_CONFIG_DIR",
