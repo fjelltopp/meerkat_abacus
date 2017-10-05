@@ -6,10 +6,10 @@ python:
   - '3.6'
 env:
  - MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
-   PERSISTENT_DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost/persistent_demo_db
-   HERMES_API_ROOT='http://testapiroot'
-   DATA_DIRECTORY='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/data/'
-   COUNTRY_CONFIG_DIR='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/country_config/'
+ - PERSISTENT_DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost/persistent_demo_db
+ - HERMES_API_ROOT='http://testapiroot'
+ - DATA_DIRECTORY='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/data/'
+ - COUNTRY_CONFIG_DIR='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/country_config/'
 
 addons:
   postgresql: '9.6'
