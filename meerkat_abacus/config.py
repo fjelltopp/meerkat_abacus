@@ -51,7 +51,7 @@ aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")
 
 start_celery = os.environ.get("START_CELERY", False)
 
-initial_data = "RDS"
+initial_data = "CSV"
 setup = True
 get_data_from_s3 = int(os.environ.get("GET_DATA_FROM_S3", False))
 interval = 3600  # Seconds
