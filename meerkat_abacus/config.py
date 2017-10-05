@@ -33,7 +33,7 @@ DATABASE_URL = os.environ.get(
     'postgresql+psycopg2://postgres:postgres@db/meerkat_db'
 )
 PERSISTENT_DATABASE_URL = os.environ.get(
-    "PERSISTENT_DB_URL",
+    "PERSISTENT_DATABASE_URL",
     'postgresql+psycopg2://postgres:postgres@db/persistent_demo_db'
 )
 data_directory = os.environ.get("DATA_DIRECTORY",
