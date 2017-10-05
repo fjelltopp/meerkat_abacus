@@ -582,6 +582,21 @@ def import_dump(dump_file):
         stdout, stderr = proc.communicate()
 
 
+def set_up_persistent_database():
+    """
+    Sets up the test persistent db if it doesn't exist yet.
+    """
+    logging.info("Create Persistent DB")
+    if not database_exists(config.PERSISTENT_DATABASE_URL):
+        create_db(config.PERSISTENT_DATABASE_URL, drop=False)
+        engine = create_engine(config.PERSISTENT_DATABASE_URL)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        logging.info("Creating persistent database tables")
+        model.Base.metadata.create_all(engine)
+        engine.dispose()
+
+
 def set_up_database(leave_if_data, drop_db):
     """
     Sets up the db and imports static data.

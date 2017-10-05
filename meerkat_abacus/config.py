@@ -34,8 +34,7 @@ DATABASE_URL = os.environ.get(
 )
 PERSISTENT_DATABASE_URL = os.environ.get(
     "PERSISTENT_DB_URL",
-    'postgresql+psycopg2://' + \
-    'postgres:postgres@meerkat-tunnel-persistent-database.cq6mmduyy7fo.eu-west-1.rds.amazonaws.com:5432/demo_db'
+    'postgresql+psycopg2://postgres:postgres@db/persistent_demo_db'
 )
 data_directory = os.environ.get("DATA_DIRECTORY",
                                 current_directory + "/data/")
@@ -52,7 +51,7 @@ aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")
 
 start_celery = os.environ.get("START_CELERY", False)
 
-initial_data = "CSV"
+initial_data = "RDS"
 setup = True
 get_data_from_s3 = int(os.environ.get("GET_DATA_FROM_S3", False))
 interval = 3600  # Seconds

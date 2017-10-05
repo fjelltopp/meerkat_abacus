@@ -71,7 +71,7 @@ def get_db_engine():
     return engine, session
 
 
-def get_persistent_db_engine():
+def get_persistent_db_engine(config):
     """
     Returns a db engine and session
     """
@@ -384,12 +384,13 @@ def read_csv_filename(filename, config=None):
 
 def get_data_from_rds_persistent_storage(form, config=None):
     """ Get data from RDS persistent storage"""
-    session, engine = get_persistent_db_engine()
+    engine, session = get_persistent_db_engine(config)
     q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
-    while q is not None:
+    print(str(q))
+    while q.count() >0:
         for row in q:
             yield row
-        q = session.query(form).yield_per(1000).enable_eagerloads(False)
+        q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
 
 
 def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
