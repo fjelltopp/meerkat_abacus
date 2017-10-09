@@ -51,7 +51,7 @@ aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")
 
 start_celery = os.environ.get("START_CELERY", False)
 
-initial_data = "CSV"
+initial_data = os.environ.get("INITIAL_DATA", "CSV")
 setup = True
 get_data_from_s3 = int(os.environ.get("GET_DATA_FROM_S3", False))
 interval = 3600  # Seconds
@@ -99,6 +99,6 @@ if connect_sqs_type == "LOCAL":
     sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo')
 elif connect_sqs_type == "PRODUCTION":
     SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", "DEFAULT")
-    sqs_queue = 'nest-queue-' + country_config["country_name"] + DEPLOYMENT
+    sqs_queue = 'nest-queue-' + country_config["country_name"] + '-' + DEPLOYMENT
 
 # fake_data_interval = 30
