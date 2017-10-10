@@ -4,6 +4,7 @@ Various utility functions for meerkat abacus
 from meerkat_abacus.model import Locations, AggregationVariables, Devices
 from meerkat_abacus.config import country_config
 from datetime import datetime, timedelta
+from dateutil.parser import parse
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import meerkat_libs as libs
@@ -417,8 +418,16 @@ def send_alert(alert_id, alert, variables, locations):
         if alert.district:
             district = locations[alert.district].name
 
+        # Get the time and date the alert was received by the system
+        received = alert.variables.get('submission_date')
+        if received:
+            received = parse(received).strftime("%H:%M %d %b %Y")
+        else:
+            received = "Not recorded"
+
         text_strings = {
             'date': "Date: " + alert.date.strftime("%d %b %Y") + "\n",
+            'received': "Received: " + received + "\n",
             'clinic': "Clinic: " + locations[alert.clinic].name + "\n",
             'district': "District: " + district + "\n",
             'region': "Region: " + locations[alert.region].name + "\n",
@@ -438,6 +447,8 @@ def send_alert(alert_id, alert, variables, locations):
                        "</td></tr>"),
             'date': ("<tr><td><b>Date:</b></td><td>" +
                      alert.date.strftime("%d %b %Y") + "</td></tr>"),
+            'received': ("<tr><td><b>Received:</b></td><td>" +
+                         received + "</td></tr>"),
             'clinic': ("<tr><td><b>Clinic:</b></td><td>" +
                        locations[alert.clinic].name + "</td></tr>"),
             'district': ("<tr><td><b>District:</b></td><td>" +
@@ -459,7 +470,8 @@ def send_alert(alert_id, alert, variables, locations):
         # config.
         sms_data = country_config.get(
             'alert_sms_content',
-            ['reason', 'date', 'clinic', 'region', 'gender', 'age', 'id']
+            ['reason', 'date', 'clinic',
+             'region', 'gender', 'age', 'received', 'id']
         )
 
         # Assemble alert info for sms message from configs.
@@ -472,7 +484,7 @@ def send_alert(alert_id, alert, variables, locations):
         text_data = country_config.get(
             'alert_text_content',
             ['reason', 'date', 'clinic', 'region',
-                'patient', 'gender', 'age', 'id']
+                'patient', 'gender', 'age', 'received', 'id']
         )
 
         # Assemble the alert info for a plain text email message.
@@ -484,8 +496,8 @@ def send_alert(alert_id, alert, variables, locations):
         # config.
         html_data = country_config.get(
             'alert_email_content',
-            ['reason', 'date', 'clinic', 'region', 'breaker',
-                'patient', 'gender', 'age', 'breaker', 'id']
+            ['reason', 'date', 'received', 'clinic', 'region', 'breaker',
+                'patient', 'gender', 'age', 'breaker', 'received', 'id']
         )
 
         # Assemble alert info for email message from configs.
@@ -525,7 +537,7 @@ def send_alert(alert_id, alert, variables, locations):
             "medium": ['email', 'sms']
         }
 
-        logging.warning("CREATED ALERT {}".format(data['id']))
+        logging.warning("CREATED ALERT {}".format(data['sms-message']))
 
         libs.hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!
