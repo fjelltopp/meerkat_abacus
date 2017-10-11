@@ -32,7 +32,7 @@ CELERYD_MAX_TASKS_PER_CHILD = 1  # To help with memory constraints
 
 CELERYBEAT_SCHEDULE = {}
 CELERYBEAT_SCHEDULE['cleanup_downloads'] = {
-    'task': 'task_queue.cleanup_downloads',
+    'task': 'tasks.cleanup_downloads',
     'schedule': crontab(minute=16, hour='*')
 }
 
@@ -73,7 +73,7 @@ if config.mailing_root:
 
         # Add the email sending process to the celery schedule.
         CELERYBEAT_SCHEDULE[task_name] = {
-            'task': 'task_queue.send_report_email',
+            'task': 'tasks.send_report_email',
             'schedule': send_time,
             'args': (report, language, location)
         }
@@ -91,7 +91,7 @@ if config.mailing_root:
                     month_of_year=send_time.month
             )
             CELERYBEAT_SCHEDULE[task_name] = {
-                'task': 'task_queue.send_report_email',
+                'task': 'tasks.send_report_email',
                 'schedule': send_time,
                 'args': ('test_'+report, language, location)
             }
@@ -104,7 +104,7 @@ if config.mailing_root:
                 day_of_week=4
             )
             CELERYBEAT_SCHEDULE[task_name] = {
-                'task': 'task_queue.send_report_email',
+                'task': 'tasks.send_report_email',
                 'schedule': send_time,
                 'args': ('test_' + report, language, location)
             }
@@ -144,7 +144,7 @@ if config.device_messaging_api:
             )
         # Add the message sending process to the celery schedule.
         CELERYBEAT_SCHEDULE[task_name] = {
-            'task': 'task_queue.send_device_messages',
+            'task': 'tasks.send_device_messages',
             'schedule': send_time,
             'args': (message, content, distribution)
         }
@@ -162,7 +162,7 @@ if config.device_messaging_api:
         content = "Test " + str(datetime.now())
         distribution = ['/topics/demo']
         CELERYBEAT_SCHEDULE[task_name] = {
-            'task': 'task_queue.send_device_messages',
+            'task': 'tasks.send_device_messages',
             'schedule': send_time,
             'args': ('send_device_message_test', content, distribution)
         }
