@@ -93,11 +93,11 @@ if hermes_dev:
 s3_bucket = country_config_module.s3_bucket
 
 # Configure SQS for data import
-connect_sqs_type = os.environ.get("CONNECT_SQS_TYPE", None)
-if connect_sqs_type == "LOCAL":
+stream_data_source = os.environ.get("STREAM_DATA_SOURCE", "LOCAL_SQS")
+if stream_data_source == "LOCAL_SQS":
     SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", 'http://172.18.0.1:9324')
     sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo')
-elif connect_sqs_type == "PRODUCTION":
+elif stream_data_source == "AWS_SQS":
     SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", "DEFAULT")
     sqs_queue = 'nest-queue-' + country_config["country_name"] + '-' + DEPLOYMENT
 

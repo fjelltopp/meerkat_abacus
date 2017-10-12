@@ -48,7 +48,8 @@ initial_data = tasks.initial_data_setup.delay()
 result = initial_data.get()
 logging.info("Load data task finished")
 logging.info("Starting Real time")
-if config.connect_sqs_type in ["LOCAL", "PRODUCTION"]:
+
+if config.stream_data_source in ["LOCAL_SQS", "AWS_SQS"]:
     tasks.poll_queue.delay(config.sqs_queue, config.SQS_ENDPOINT, start=True)
 tasks.process_buffer.delay(start=True)
 
