@@ -7,8 +7,9 @@ from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from sqlalchemy.orm import validates
 from sqlalchemy.event import listen
 from geoalchemy2 import Geometry
-from meerkat_abacus.config import country_config
+from meerkat_abacus.config import config
 
+country_config = config.country_config
 
 Base = declarative_base()
 form_tables = {}

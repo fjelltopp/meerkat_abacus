@@ -8,7 +8,7 @@ import copy
 
 from meerkat_abacus import tasks
 from meerkat_abacus import celeryconfig
-from meerkat_abacus import config
+from meerkat_abacus.config import config
 from meerkat_abacus import util
 from meerkat_abacus import data_management
 from meerkat_abacus import data_import
@@ -54,7 +54,7 @@ logging.info("Starting Real time")
 if config.stream_data_source in ["LOCAL_SQS", "AWS_SQS"]:
     tasks.poll_queue.delay(config.sqs_queue, config.SQS_ENDPOINT, start=True)
 elif config.stream_data_source == "S3":
-    tasks.initial_data_setup.delay(source=config.stream_data_source)
+    tasks.initial_data_setup.delay(source=config.stream_data_source, config=copy.deepcopy(config))
 tasks.process_buffer.delay(start=True)
 
 

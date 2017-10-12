@@ -7,11 +7,13 @@ from datetime import datetime, timedelta
 from dateutil import parser
 import io
 from meerkat_abacus.util import create_fake_data, epi_week_start_date
-from meerkat_abacus import util, model, config
-from meerkat_abacus.config import country_config
+from meerkat_abacus import util, model
+from meerkat_abacus.config import config
 import meerkat_libs as libs
 from unittest import mock
 from collections import namedtuple
+
+country_config = config.country_config
 
 
 class UtilTest(unittest.TestCase):

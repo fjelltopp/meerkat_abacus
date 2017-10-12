@@ -12,7 +12,7 @@ from unittest import mock
 from shapely.geometry import Polygon
 from meerkat_abacus import data_management as manage
 from meerkat_abacus import model, util, tasks, data_import
-from meerkat_abacus import config
+from meerkat_abacus.config import config
 from geoalchemy2.shape import to_shape
 spec = importlib.util.spec_from_file_location(
     "country_test",

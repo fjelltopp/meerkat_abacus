@@ -4,7 +4,7 @@ Meerkat Abacus Test
 Unit tests Meerkat Abacus
 """
 
-from meerkat_abacus import config
+from meerkat_abacus.config import config
 from unittest import mock
 import unittest
 from meerkat_abacus import tasks

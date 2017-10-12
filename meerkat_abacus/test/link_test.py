@@ -4,7 +4,8 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists
 import os
-from meerkat_abacus import model, config, util, tasks
+from meerkat_abacus import model, util, tasks
+from meerkat_abacus.config import config
 from meerkat_abacus.test import util as test_util
 from meerkat_abacus import data_management
 

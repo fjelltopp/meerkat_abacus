@@ -1,6 +1,8 @@
 import pyxform
 
-from meerkat_abacus.config import country_config
+from meerkat_abacus.config import config
+
+country_config = config.country_config
 
 from pyxform import builder, xls2json
 from pyxform.utils import has_external_choices, sheet_to_csv

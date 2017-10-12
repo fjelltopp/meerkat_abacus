@@ -6,7 +6,7 @@ from raven.contrib.celery import register_signal, register_logger_signal
 import celery
 import raven
 from meerkat_abacus import celeryconfig
-from meerkat_abacus import config
+from meerkat_abacus.config import config
 
 
 class Celery(celery.Celery):

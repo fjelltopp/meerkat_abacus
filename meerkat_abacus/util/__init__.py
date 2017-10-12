@@ -2,12 +2,11 @@
 Various utility functions for meerkat abacus
 """
 from meerkat_abacus.model import Locations, AggregationVariables, Devices, form_tables
-from meerkat_abacus.config import country_config
 from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import meerkat_libs as libs
-import meerkat_abacus.config as config
+from meerkat_abacus.config import config
 import itertools
 import logging
 import csv
@@ -18,6 +17,7 @@ from lxml.html import Element, tostring
 import requests
 from requests.auth import HTTPDigestAuth
 
+country_config = config.country_config
 
 def is_child(parent, child, locations):
     """
@@ -66,16 +66,6 @@ def get_db_engine(db_url=config.DATABASE_URL):
     Returns a db engine and session
     """
     engine = create_engine(db_url)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    return engine, session
-
-
-def get_persistent_db_engine(config):
-    """
-    Returns a db engine and session
-    """
-    engine = create_engine(config.PERSISTENT_DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
     return engine, session
@@ -384,7 +374,7 @@ def read_csv_filename(filename, config=None):
 
 def get_data_from_rds_persistent_storage(form, config=None):
     """ Get data from RDS persistent storage"""
-    engine, session = get_persistent_db_engine(config)
+    engine, session = get_db_engine(config.PERSISTENT_DATABASE_URL)
     q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
     print(str(q))
     while q.count() >0:

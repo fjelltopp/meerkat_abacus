@@ -14,7 +14,9 @@ from multiprocessing import Queue
 from datetime import datetime, timedelta
 import pytz
 
-from meerkat_abacus import config, data_management
+from meerkat_abacus import\
+    data_management
+from meerkat_abacus.config import config
 import meerkat_libs as libs
 from meerkat_abacus import data_import
 from meerkat_abacus import util

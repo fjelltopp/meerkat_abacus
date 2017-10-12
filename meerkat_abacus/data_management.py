@@ -12,7 +12,7 @@ from dateutil.parser import parse
 from datetime import datetime
 from meerkat_abacus import alerts as alert_functions
 from meerkat_abacus import model
-from meerkat_abacus import config
+from meerkat_abacus.config import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data, epi_week
