@@ -42,17 +42,23 @@ tasks.set_up_db.delay().get()
 
 logging.info("Finished setting up DB")
 
+# Set up data initialisation
 logging.info("Load data task started")
-initial_data = tasks.initial_data_setup.delay()
+initial_data = tasks.initial_data_setup.delay(source=config.initial_data_source)
 
 result = initial_data.get()
 logging.info("Load data task finished")
 logging.info("Starting Real time")
 
+# Set up data stream source
 if config.stream_data_source in ["LOCAL_SQS", "AWS_SQS"]:
     tasks.poll_queue.delay(config.sqs_queue, config.SQS_ENDPOINT, start=True)
+elif config.stream_data_source == "S3":
+    tasks.initial_data_setup.delay(source=config.stream_data_source)
 tasks.process_buffer.delay(start=True)
 
+
+# Set up fake data generation
 if config.fake_data:
     tasks.add_fake_data.apply_async(countdown=copy.deepcopy(config.fake_data_interval),
                                     kwargs={"interval_next": copy.deepcopy(config.fake_data_interval),
