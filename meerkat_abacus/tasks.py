@@ -31,7 +31,7 @@ worker_buffer = Queue(maxsize=1000)
 def set_up_db():
     data_management.set_up_database(leave_if_data=False,
                                     drop_db=True)
-    data_management.set_up_persistent_database()
+    # data_management.set_up_persistent_database()
 
 @task
 def initial_data_setup():

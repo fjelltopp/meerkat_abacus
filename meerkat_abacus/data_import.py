@@ -50,7 +50,7 @@ def download_data_from_s3(config):
     s3 = boto3.resource('s3')
     for form in config.country_config["tables"]:
         file_name = form + ".csv"
-        s3.meta.client.download_file(config.bucket, "data/" + file_name,
+        s3.meta.client.download_file(config.s3_bucket, "data/" + file_name,
                                      config.data_directory + file_name)
 
 

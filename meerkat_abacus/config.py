@@ -32,29 +32,15 @@ DATABASE_URL = os.environ.get(
     "MEERKAT_ABACUS_DB_URL",
     'postgresql+psycopg2://postgres:postgres@db/meerkat_db'
 )
-PERSISTENT_DATABASE_URL = os.environ.get(
-    "PERSISTENT_DATABASE_URL",
-    'postgresql+psycopg2://postgres:postgres@db/persistent_demo_db'
-)
 data_directory = os.environ.get("DATA_DIRECTORY",
                                 current_directory + "/data/")
 config_directory = os.environ.get("COUNTRY_CONFIG_DIR",
                                   current_directory + "/country_config/")
-fake_data = int(os.environ.get("NEW_FAKE_DATA", True))
 timezone = os.environ.get('TIMEZONE', 'Europe/Dublin')
-internal_fake_data = int(os.environ.get("INTERNAL_FAKE_DATA", True))
-fake_data_interval = int(os.environ.get("FAKE_DATA_INTERVAL", 60*5))
-
-aggregate_password = os.environ.get("AGGREGATE_PASSWORD", "password")
-aggregate_username = os.environ.get("AGGREGATE_PASSWORD", "test")
-aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")
 
 start_celery = os.environ.get("START_CELERY", False)
 
-initial_data = os.environ.get("INITIAL_DATA", "CSV")
 setup = True
-get_data_from_s3 = int(os.environ.get("GET_DATA_FROM_S3", False))
-interval = 3600  # Seconds
 hermes_api_key = os.environ.get("HERMES_API_KEY", "")
 hermes_api_root = os.environ.get("HERMES_API_ROOT", "")
 hermes_dev = int(os.environ.get("HERMES_DEV", False))
@@ -92,7 +78,30 @@ if hermes_dev:
 
 s3_bucket = country_config_module.s3_bucket
 
-# Configure SQS for data import
+# Configure data initialisation
+initial_data_source = os.environ.get("INITIAL_DATA_SOURCE", "CSV")
+PERSISTENT_DATABASE_URL = None
+get_data_from_s3 = None
+interval = None
+initial_data = None
+if initial_data_source == "CSV":
+    initial_data = "CSV"
+elif initial_data_source == "RDS":
+    PERSISTENT_DATABASE_URL = os.environ.get(
+        "PERSISTENT_DATABASE_URL",
+        'postgresql+psycopg2://postgres:postgres@db/persistent_demo_db'
+    )
+    initial_data = "RDS"
+elif initial_data_source == "S3":
+    get_data_from_s3 = 1  # int(os.environ.get("GET_DATA_FROM_S3", False))
+    interval = 3600  # Seconds
+    initial_data = "S3"
+else:
+    raise ValueError('Valid initial_data_source not set as environment variable. Current value: '
+                     + initial_data_source)
+
+
+# Configure data streaming
 stream_data_source = os.environ.get("STREAM_DATA_SOURCE", "LOCAL_SQS")
 if stream_data_source == "LOCAL_SQS":
     SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", 'http://172.18.0.1:9324')
@@ -100,5 +109,30 @@ if stream_data_source == "LOCAL_SQS":
 elif stream_data_source == "AWS_SQS":
     SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", "DEFAULT")
     sqs_queue = 'nest-queue-' + country_config["country_name"] + '-' + DEPLOYMENT
+elif stream_data_source == "AWS_S3":
+    get_data_from_s3 = 1
+    interval = 3600
+else:
+    raise ValueError('Valid stream_data_source not set as environment variable. Current value: '
+                     + stream_data_source)
 
-# fake_data_interval = 30
+
+# Configure generating fake data
+fake_data = False
+internal_fake_data = None
+fake_data_interval = None
+aggregate_password = None
+aggregate_username = None
+aggregate_url = None
+fake_data_generation = os.environ.get("FAKE_DATA_GENERATION", None)
+if fake_data_generation == "INTERNAL":
+    fake_data = True
+    internal_fake_data = True
+    fake_data_interval = 60 * 5
+elif fake_data_generation == "SEND_TO_AGGREGATE":
+    fake_data = True
+    internal_fake_data = False
+    fake_data_interval = 60 * 5
+    aggregate_password = os.environ.get("AGGREGATE_PASSWORD", "password")
+    aggregate_username = os.environ.get("AGGREGATE_PASSWORD", "test")
+    aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")

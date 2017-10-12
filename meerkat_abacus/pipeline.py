@@ -1,5 +1,5 @@
 """
-Main pipelin for abacus
+Main pipeline for abacus
 
 """
 import logging
