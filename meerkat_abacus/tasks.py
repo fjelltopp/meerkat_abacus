@@ -30,14 +30,14 @@ sqs_queue_url = None
 worker_buffer = Queue(maxsize=1000)
 
 @task
-def set_up_db():
+def set_up_db(param_config):
     data_management.set_up_database(leave_if_data=False,
                                     drop_db=True)
     if config.initial_data_source == "LOCAL_RDS":
-        data_management.set_up_persistent_database()
+        data_management.set_up_persistent_database(param_config)
 
 @task
-def initial_data_setup(source):
+def initial_data_setup(source, param_config):
     logging.info("Starting initial setup")
     while not worker_buffer.empty():  # Make sure that the buffer is empty
         worker_buffer.get()
@@ -45,7 +45,7 @@ def initial_data_setup(source):
     engine, session = util.get_db_engine()
 
     if source == "S3":
-        data_import.download_data_from_s3(config)
+        data_import.download_data_from_s3(param_config)
         get_function = util.read_csv_filename
     elif source == "CSV":
         get_function = util.read_csv_filename
@@ -54,7 +54,7 @@ def initial_data_setup(source):
         get_function = util.get_data_from_rds_persistent_storage
     
     data_import.read_stationary_data(get_function, worker_buffer,
-                                     config, process_buffer, session, engine)
+                                     param_config, process_buffer, session, engine)
     process_buffer(internal_buffer=worker_buffer, start=False)
     session.close()
     engine.dispose()
@@ -123,12 +123,12 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True):
 
 
 @task
-def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, aggregate_config=None):
+def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, param_config=None, aggregate_config=None):
     logging.info("Adding fake data")
     engine, session = util.get_db_engine()
-    for form in config.country_config["tables"]:
+    for form in param_config.country_config["tables"]:
         logging.info("Generating fake data for form:" + form)
-        new_data = create_fake_data.get_new_fake_data(form, session, N, config,
+        new_data = create_fake_data.get_new_fake_data(form, session, N, param_config,
                                                       dates_is_now=dates_is_now)
         for row, uuid in new_data:
             if internal_fake_data:
@@ -153,6 +153,7 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_da
                                           "N": N,
                                           "dates_is_now": dates_is_now,
                                           "internal_fake_data": internal_fake_data,
+                                          "param_config": param_config,
                                           "aggregate_config": aggregate_config})
                     
     session.close()

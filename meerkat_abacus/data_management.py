@@ -580,14 +580,14 @@ def import_dump(dump_file):
         stdout, stderr = proc.communicate()
 
 
-def set_up_persistent_database():
+def set_up_persistent_database(param_config):
     """
     Sets up the test persistent db if it doesn't exist yet.
     """
     logging.info("Create Persistent DB")
-    if not database_exists(config.PERSISTENT_DATABASE_URL):
-        create_db(config.PERSISTENT_DATABASE_URL, drop=False)
-        engine = create_engine(config.PERSISTENT_DATABASE_URL)
+    if not database_exists(param_config.PERSISTENT_DATABASE_URL):
+        create_db(param_config.PERSISTENT_DATABASE_URL, drop=False)
+        engine = create_engine(param_config.PERSISTENT_DATABASE_URL)
         Session = sessionmaker(bind=engine)
         session = Session()
         logging.info("Creating persistent database tables")
