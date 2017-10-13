@@ -595,7 +595,7 @@ def set_up_persistent_database(param_config):
         engine.dispose()
 
 
-def set_up_database(leave_if_data, drop_db):
+def set_up_database(leave_if_data, drop_db, param_config=config):
     """
     Sets up the db and imports static data.
 
@@ -606,19 +606,19 @@ def set_up_database(leave_if_data, drop_db):
     """
     set_up = True
     if leave_if_data:
-        if database_exists(config.DATABASE_URL):
-            engine = create_engine(config.DATABASE_URL)
+        if database_exists(param_config.DATABASE_URL):
+            engine = create_engine(param_config.DATABASE_URL)
             Session = sessionmaker(bind=engine)
             session = Session()
             if len(session.query(model.Data).all()) > 0:
                 set_up = False
     if set_up:
         logging.info("Create DB")
-        create_db(config.DATABASE_URL, drop=drop_db)
-        if config.db_dump:
-            import_dump(config.db_dump)
+        create_db(param_config.DATABASE_URL, drop=drop_db)
+        if param_config.db_dump:
+            import_dump(param_config.db_dump)
             return set_up
-        engine = create_engine(config.DATABASE_URL)
+        engine = create_engine(param_config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
         session = Session()
         logging.info("Populating DB")
