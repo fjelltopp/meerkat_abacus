@@ -356,6 +356,7 @@ def read_csv(file_path):
         for row in reader:
             yield row
 
+
 def create_topic_list(alert, locations):
     """
     Assemble the appropriate topic ID list for a given alert. Make sure the
@@ -537,7 +538,7 @@ def send_alert(alert_id, alert, variables, locations):
             "medium": ['email', 'sms']
         }
 
-        logging.warning("CREATED ALERT {}".format(data['sms-message']))
+        logging.info("CREATED ALERT {}".format(data['sms-message']))
 
         libs.hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!
