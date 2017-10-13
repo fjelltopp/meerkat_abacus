@@ -84,8 +84,8 @@ PERSISTENT_DATABASE_URL = None
 get_data_from_s3 = None
 interval = None
 initial_data = None
-if initial_data_source == "CSV":
-    initial_data = "CSV"
+if initial_data_source == "FAKE_DATA":
+    initial_data = "FAKE_DATA"
 elif initial_data_source == "AWS_RDS":
     PERSISTENT_DATABASE_URL = os.environ.get(
         "PERSISTENT_DATABASE_URL", None
