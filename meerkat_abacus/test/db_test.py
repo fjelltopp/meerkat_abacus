@@ -11,7 +11,7 @@ import importlib.util
 from unittest import mock
 from shapely.geometry import Polygon
 from meerkat_abacus import data_management as manage
-from meerkat_abacus import model, util, tasks, data_import
+from meerkat_abacus import model, util, task_queue
 from meerkat_abacus import config
 from geoalchemy2.shape import to_shape
 spec = importlib.util.spec_from_file_location(
@@ -199,13 +199,10 @@ class DbTest(unittest.TestCase):
             self.session.add(v)
         self.session.commit()
 
-        form_data = []
-        for d in util.read_csv(self.current_directory + "/test_data/" + "demo_case.csv"):
-            form_data.append(d)
-        
-        data_import.add_rows_to_db(
+        manage.table_data_from_csv(
             "demo_case",
-            form_data,
+            model.form_tables["demo_case"],
+            self.current_directory + "/test_data/",
             self.session,
             self.engine,
             deviceids=["1", "2", "3", "4", "5", "6"],
@@ -230,10 +227,9 @@ class DbTest(unittest.TestCase):
             self.assertIn(r.uuid, ["3", "4", "5", "1"])
 
     def test_db_setup(self):
-        old_manual = tasks.config.country_config["manual_test_data"]
-        tasks.config.country_config["manual_test_data"] = {}
-        tasks.set_up_db.apply().get()
-        tasks.initial_data_setup.apply(kwargs={'source': config.initial_data}).get()
+        old_manual = task_queue.config.country_config["manual_test_data"]
+        task_queue.config.country_config["manual_test_data"] = {}
+        task_queue.set_up_db.apply().get()
         self.assertTrue(database_exists(config.DATABASE_URL))
         engine = self.engine
         session = self.session
@@ -292,38 +288,16 @@ class DbTest(unittest.TestCase):
         self.assertEqual(number_of_totals, len(total.all()))
         self.assertEqual(number_of_female, len(female.all()))
         session.close()
-        tasks.config.country_config["manual_test_data"] = old_manual
+        self.assertFalse(manage.set_up_everything(True, False, 100))
+        task_queue.config.country_config["manual_test_data"] = old_manual
 
     def test_get_proccess_data(self):
-        old_fake = tasks.config.fake_data
-        old_s3 = tasks.config.get_data_from_s3
-        tasks.config.fake_data = True
-        tasks.config.get_data_from_s3 = False
-        old_manual = tasks.config.country_config["manual_test_data"]
-        tasks.config.country_config["manual_test_data"] = {}
-        numbers = {}
-        tasks.set_up_db.apply().get()
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
-            numbers[table] = len(res.all())
-        tasks.add_fake_data()
-        tasks.process_buffer(start=False)
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
-            self.assertEqual(numbers[table] + 10, len(res.all()))
-        #Clean up
-        tasks.config.fake_data = old_fake
-        tasks.config.get_data_from_s3 = old_s3
-        tasks.config.country_config["manual_test_data"] = old_manual
-
-    def test_get_new_data_initial_visit_control(self):
-        """
-        Tests the initial visit control in case new data is brought in and it needs to be validated
-        """
-        old_fake = tasks.config.fake_data
-        old_s3 = tasks.config.get_data_from_s3
-        tasks.config.fake_data = True
-        tasks.config.get_data_from_s3 = False
+        old_fake = task_queue.config.fake_data
+        old_s3 = task_queue.config.get_data_from_s3
+        task_queue.config.fake_data = True
+        task_queue.config.get_data_from_s3 = False
+        old_manual = task_queue.config.country_config["manual_test_data"]
+        task_queue.config.country_config["manual_test_data"] = {}
         manage.create_db(config.DATABASE_URL, drop=True)
         engine = create_engine(config.DATABASE_URL)
         model.Base.metadata.create_all(engine)
@@ -332,17 +306,46 @@ class DbTest(unittest.TestCase):
         manage.import_locations(self.engine, self.session)
         manage.import_variables(self.session)
         manage.add_fake_data(self.session, N=500, append=False)
+        task_queue.get_proccess_data.apply().get()
         for table in model.form_tables:
             res = self.session.query(model.form_tables[table])
             numbers[table] = len(res.all())
-        tasks.add_fake_data()
-        tasks.process_buffer(start=False)
+        task_queue.get_proccess_data.apply().get()
         for table in model.form_tables:
             res = self.session.query(model.form_tables[table])
-            self.assertEqual(numbers[table] + 10, len(res.all()))
+            self.assertEqual(numbers[table] + 5, len(res.all()))
+        #Clean up
+        task_queue.config.fake_data = old_fake
+        task_queue.config.get_data_from_s3 = old_s3
+        task_queue.config.country_config["manual_test_data"] = old_manual
+
+    def test_get_new_data_initial_visit_control(self):
+        """
+        Tests the initial visit control in case new data is brought in and it needs to be validated
+        """
+        old_fake = task_queue.config.fake_data
+        old_s3 = task_queue.config.get_data_from_s3
+        task_queue.config.fake_data = True
+        task_queue.config.get_data_from_s3 = False
+        manage.create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.Base.metadata.create_all(engine)
+
+        numbers = {}
+        manage.import_locations(self.engine, self.session)
+        manage.import_variables(self.session)
+        manage.add_fake_data(self.session, N=500, append=False)
+        task_queue.get_proccess_data.apply().get()
+        for table in model.form_tables:
+            res = self.session.query(model.form_tables[table])
+            numbers[table] = len(res.all())
+        task_queue.get_proccess_data.apply().get()
+        for table in model.form_tables:
+            res = self.session.query(model.form_tables[table])
+            self.assertEqual(numbers[table] + 5, len(res.all()))
         #Reset configuration parameters
-        tasks.config.fake_data = old_fake
-        tasks.config.get_data_from_s3 = old_s3
+        task_queue.config.fake_data = old_fake
+        task_queue.config.get_data_from_s3 = old_s3
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,9 +5,6 @@ Functionality to create fake data
 import random
 import datetime
 import uuid
-import logging
-from meerkat_abacus import util
-from meerkat_abacus import model
 
 
 def get_value(field, data):
@@ -35,6 +32,7 @@ def get_value(field, data):
     """
     field_type = list(field)[0]
     argument = field[field_type]
+    
     if field_type == "integer":
         upper, lower = argument
         value = random.randint(upper, lower)
@@ -66,10 +64,7 @@ def get_value(field, data):
                              microsecond=0).isoformat()
     elif field_type == "data":
         if argument in data.keys():
-            if len(data[argument]) == 0:
-                value = None
-            else:
-                value = random.sample(data[argument], 1)[0]
+            value = random.sample(data[argument], 1)[0]
         else:
             print("{} not in data".format(argument))
     else:
@@ -77,7 +72,7 @@ def get_value(field, data):
     return value
 
 
-def create_form(fields, data=None, N=500, odk=True, dates_is_now=False):
+def create_form(fields, data=None, N=500,odk=True):
     """
     Creates a csv file with data form the given fields
 
@@ -137,62 +132,20 @@ def create_form(fields, data=None, N=500, odk=True, dates_is_now=False):
             row["index"] = i
             row["meta/instanceID"] = "uuid:" + str(uuid.uuid4())
             now = datetime.datetime.now()
-
-            if dates_is_now:
-                start = now - datetime.timedelta(minutes=1)
-                end = now
-                submission_date = now
-            else:
-                start = now - datetime.timedelta(days=21)
-                total_days = (now - start).days
-                start = start + datetime.timedelta(
-                    days=random.uniform(0, total_days))
-
-                end_total_days = (now - start).days
-                end = start + datetime.timedelta(
-                    days=random.uniform(0, end_total_days))
-
-                submission_days = (now - end).days
-                submission_date = end + datetime.timedelta(
-                    days=random.uniform(0, submission_days))
-
             
-            
-            row["end"] = end.isoformat()
+            start = now - datetime.timedelta(days=21)
+            total_days = (now - start).days
+            start = start + datetime.timedelta(
+                days=random.uniform(0, total_days))
             row["start"] = start.isoformat()
+            end_total_days = (now - start).days
+            end = start + datetime.timedelta(
+                days=random.uniform(0, end_total_days))
+            row["end"] = end.isoformat()
+            submission_days = (now - end).days
+            submission_date = end + datetime.timedelta(
+                days=random.uniform(0, submission_days))
             row["SubmissionDate"] = submission_date.isoformat()
         list_of_records.append(row)
 
     return list_of_records
-
-
-def get_new_fake_data(form, session, N, config, dates_is_now=False):
-    logging.debug("fake data")
-    deviceids = util.get_deviceids(session, case_report=True)
-
-    # Make sure the case report form is handled before the alert form
-    logging.debug("Processing form: %s", form)
-    if form not in config.country_config["fake_data"]:
-        return []
-    if "deviceids" in config.country_config["fake_data"][form]:
-        # This is a special way to limit the deviceids for a form in
-        # the config file
-        form_deviceids = config.country_config["fake_data"][form]["deviceids"]
-    else:
-        form_deviceids = deviceids
-    alert_ids = []
-    for value in config.country_config["fake_data"][form]:
-        if "data" in value and value["data"] == "uuids" and "from_form" in value:
-            from_form = value["from_form"]
-            table = model.form_tables[from_form]
-            uuids = [r[0] for r in session.query(table.uuid).all()]
-            for row in uuids:
-                alert_ids.append(row[-config.country_config["alert_id_length"]:])
-
-    data = create_form(
-        config.country_config["fake_data"][form],
-        data={"deviceids":
-              form_deviceids,
-              "uuids": alert_ids},
-        N=N, dates_is_now=dates_is_now)
-    return [(row, row["meta/instanceID"]) for row in data]

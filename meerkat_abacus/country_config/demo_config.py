@@ -100,8 +100,7 @@ country_config = {
             "surveillance./afp": {"integer": [1, 5]},
             "surveillance./measles": {"integer": [1, 5]}
         },
-        "demo_alert": {"pt./alert_id": {"data": "uuids",
-                                        "from_form": "demo_case"},
+        "demo_alert": {"pt./alert_id": {"data": "uuids"},
                        "alert_labs./return_lab": {"one": ["yes", "no", "unsure"]},
                        "pt./checklist": {"multiple": ["referral",
                                                       "case_management",

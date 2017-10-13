@@ -85,6 +85,7 @@ def export_data(session):
                                for col in r.__table__.columns.keys())
                 logging.debug(name + "(**" + str(columns) + "),")
 
+
 def add_fake_data(session, N=500, append=False, from_files=False):
     """
     Creates a csv file with fake data for each form. We make
@@ -153,19 +154,36 @@ def add_fake_data(session, N=500, append=False, from_files=False):
         util.write_csv(list(current_form) + list(manual_test_data_list) + generated_data, file_name)
 
 
+def get_data_from_s3(bucket):
+    """
+    Get csv-files with data from s3 bucket
 
+    Needs to be authenticated with AWS to run.
 
-
-
-    
+    Args:
+       bucket: bucket_name
+    """
+    s3 = boto3.resource('s3')
+    for form in country_config["tables"]:
+        file_name = form + ".csv"
+        s3.meta.client.download_file(bucket, "data/" + file_name,
+                                     config.data_directory + file_name)
 
 def table_data_from_csv(filename,
                         table,
                         directory,
                         session,
                         engine,
-                        **kwargs):
-
+                        uuid_field="meta/instanceID",
+                        only_new=False,
+                        deviceids=None,
+                        table_name=None,
+                        row_function=None,
+                        quality_control=None,
+                        allow_enketo=False,
+                        start_dates=None,
+                        exclusion_list=[],
+                        fraction=None):
     """
     Adds all the data from a csv file. We delete all old data first
     and then add new data.
@@ -192,32 +210,138 @@ def table_data_from_csv(filename,
         fraction: If present imports a randomly selected subset of data.
     """
 
-    session.query(table).delete()
-    engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(
-        filename))
-    session.commit()
+    if only_new:
+        result = session.query(table.uuid)
+        uuids = []
+        for r in result:
+            uuids.append(r.uuid)
+        uuids = set(uuids)
+    else:
+        session.query(table).delete()
+        engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(
+            filename))
+        session.commit()
 
     i = 0
     dicts = []
+    conn = engine.connect()
     new_rows = []
+    to_check = []
+    to_check_test = {} # For speed
+    logging.info("Filename: %s", filename)
+
+    if quality_control:
+        logging.debug("Doing Quality Control")
+        (variables, variable_forms, variable_tests,
+         variables_group, variables_match) = to_codes.get_variables(session, "import")
+        if variables:
+            to_check = [variables["import"][x][x]
+                        for x in variables["import"].keys() if variables["import"][x][x].variable.form == filename]
+            for variable in to_check:
+                to_check_test[variable] = variable.test
+    removed = {}
     for row in util.read_csv(directory + filename + ".csv"):
+        if fraction:
+            if random.random() > fraction:
+                continue
+        if row[uuid_field] in exclusion_list:
+            continue # The row is in the exclusion list
+        if only_new and row[uuid_field] in uuids:
+            continue # In this case we only add new data
+        if "_index" in row:
+            row["index"] = row.pop("_index")
+        if row_function:
+            insert_row = row_function(row)
+        else:
+            insert_row = row
+        # If we have quality checks
+        remove = False
+        if to_check:
+            for variable in to_check:
+                try:
+                    if not to_check_test[variable](insert_row):
+                        if variable.variable.category == ["discard"]:
+                            remove = True
+                        else:
+                            column = variable.column
+                            if ";" in column or "," in column:
+                                column = column.split(";")[0].split(",")[0]
+                            category = variable.variable.category
+                            replace_value = None
+                            if category and len(category) > 0 and "replace:" in category[0]:
+                                replace_column = category[0].split(":")[1]
+                                replace_value = insert_row.get(replace_column,
+                                                               None)
+                            if column in insert_row:
+                                insert_row[column] = replace_value
+                                if insert_row[column]:
+                                    if column in removed:
+                                        removed[column] += 1
+                                    else:
+                                        removed[column] = 1
+                except Exception as e:
+                    logging.exception("Quality Controll error for code %s",variable.variable.id, exc_info=True)
+        if remove:
+            continue
+
+        if deviceids:
+            if should_row_be_added(insert_row, table_name, deviceids,
+                                   start_dates, allow_enketo=allow_enketo):
+                dicts.append({"data": insert_row,
+                              "uuid": insert_row[uuid_field]})
+                new_rows.append(insert_row[uuid_field])
+        else:
+            dicts.append({"data": insert_row,
+                          "uuid": insert_row[uuid_field]})
+            new_rows.append(insert_row[uuid_field])
         i += 1
-        dicts.append(row)
         if i % 10000 == 0:
-            new_rows += tasks.add_rows_to_db(filename,
-                                       dicts,
-                                       session,
-                                       engine,
-                                       **kwargs)
+            logging.info("Imported batch %d.", i / 10000)
+            conn.execute(table.__table__.insert(), dicts)
             dicts = []
 
-    new_rows += add_rows_to_db(filename,
-                               dicts,
-                               session,
-                               engine,
-                               **kwargs)
-
+    if to_check:
+        logging.info("Quality Controll performed: ")
+        logging.info("removed value: %s", removed)
+    conn.execute(table.__table__.insert(), dicts)
+    conn.close()
+    logging.info("Number of records %s", i)
     return new_rows
+
+
+def should_row_be_added(row, form_name, deviceids, start_dates, allow_enketo=False):
+    """
+    Determines if a data row should be added.
+    If deviceid is not None, the reccord need to have one of the deviceids.
+    If start_dates is not None, the record needs to be dated
+    after the corresponding start date
+
+    Args:
+        row: row to be added
+        form_name: name of form
+        deviceids(list): the approved deviceid
+        start_dates(dict): Clinic start dates
+    Returns:
+        should_add(Bool)
+    """
+    ret = False
+    if deviceids is not None:
+        if row.get("deviceid", None) in deviceids:
+            ret = True
+        else:
+            if allow_enketo:
+                for url in allow_enketo:
+                    if url in row.get("deviceid", None):
+                        ret = True
+                        break
+    else:
+        ret = True
+    if start_dates and row.get("deviceid", None) in start_dates:
+        if not row["SubmissionDate"]:
+            ret = False
+        elif parse(row["SubmissionDate"]) < start_dates[row["deviceid"]]:
+            ret = False
+    return ret
 
 
 def import_variables(session):
@@ -299,6 +423,45 @@ def import_data(engine, session):
             allow_enketo=allow_enketo,
             exclusion_list=exclusion_list,
             fraction=config.import_fraction)
+
+
+def import_new_data():
+    """
+    Import only new data from csv files.
+    """
+    engine = create_engine(config.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    new_records = []
+    deviceids_case = util.get_deviceids(session, case_report=True)
+    deviceids = util.get_deviceids(session)
+    start_dates = util.get_start_date_by_deviceid(session)
+    for form in model.form_tables.keys():
+        if form in country_config["require_case_report"]:
+            form_deviceids = deviceids_case
+        else:
+            form_deviceids = deviceids
+
+        quality_control = False
+        if "quality_control" in country_config:
+            if form in country_config["quality_control"]:
+                quality_control = True
+        exclusion_list = get_exclusion_list(session, form)
+        new_records += table_data_from_csv(
+            form,
+            model.form_tables[form],
+            config.data_directory,
+            session,
+            engine,
+            only_new=True,
+            deviceids=form_deviceids,
+            table_name=form,
+            start_dates=start_dates,
+            quality_control=quality_control,
+            exclusion_list=exclusion_list,
+            fraction=config.import_fraction)
+
+    return new_records
 
 
 def import_clinics(csv_file, session, country_id,
@@ -551,7 +714,7 @@ def import_parameters(engine, session):
     parameter_files = config.country_config.get("calculation_parameters",[])
 
     for file in parameter_files:
-        logging.debug("Importing parameter file %s", file)
+        logging.warning("Importing parameter file %s", file)
         file_name = os.path.splitext(file)[0]
         file_extension = os.path.splitext(file)[-1]
         if file_extension == '.json':
@@ -579,25 +742,10 @@ def import_dump(dump_file):
         proc = subprocess.Popen(command, stdin=f)
         stdout, stderr = proc.communicate()
 
-
-def set_up_persistent_database():
+def set_up_everything(leave_if_data, drop_db, N):
     """
-    Sets up the test persistent db if it doesn't exist yet.
-    """
-    logging.info("Create Persistent DB")
-    if not database_exists(config.PERSISTENT_DATABASE_URL):
-        create_db(config.PERSISTENT_DATABASE_URL, drop=False)
-        engine = create_engine(config.PERSISTENT_DATABASE_URL)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        logging.info("Creating persistent database tables")
-        model.Base.metadata.create_all(engine)
-        engine.dispose()
-
-
-def set_up_database(leave_if_data, drop_db):
-    """
-    Sets up the db and imports static data.
+    Sets up the db and imports all the data. This should leave
+    the database completely ready to used by the API.
 
     Args:
         leave_if_data: do nothing if data is there
@@ -627,20 +775,14 @@ def set_up_database(leave_if_data, drop_db):
         import_locations(engine, session)
         logging.info("Import calculation parameters")
         import_parameters(engine, session)
-        logging.info("Import Variables")
-        import_variables(session)
-    return session, engine
-
-
-
-        
-    def other_stuff():
         if config.fake_data:
             logging.info("Generate fake data")
             add_fake_data(session, N=N, append=False, from_files=True)
         if config.get_data_from_s3:
             logging.info("Get data from s3")
             get_data_from_s3(config.s3_bucket)
+        logging.info("Import Variables")
+        import_variables(session)
         logging.info("Import Data")
         import_data(engine, session)
         logging.info("Controlling initial visits")
@@ -664,6 +806,24 @@ def set_up_database(leave_if_data, drop_db):
     return set_up
 
 
+def get_exclusion_list(session, form):
+    """
+    Get exclusion list for a form
+
+    Args:
+        session: db session
+        form: which form to get the exclusion list for
+    """
+    exclusion_lists = config.country_config.get("exclusion_lists",{})
+    ret = []
+
+
+    for exclusion_list_file in exclusion_lists.get(form,[]):
+        exclusion_list = util.read_csv(config.config_directory + exclusion_list_file)
+        for uuid_to_be_removed in exclusion_list:
+            ret.append(uuid_to_be_removed["uuid"])
+
+    return ret
 
 
 def add_alerts(session):
@@ -1165,14 +1325,10 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             variable_data[data_type["var"]] = 1
             variable_data["data_entry"] = 1
             epi_year, week = epi_week(date)
-            submission_date = None
-            if "SubmissionDate" in row[data_type["form"]]:
-                submission_date = parse(row[data_type["form"]].get("SubmissionDate", None)).replace(tzinfo=None)
             new_data = {
                 "date": date,
                 "epi_week": week,
                 "epi_year": epi_year,
-                "submission_date": submission_date,
                 "type": data_type["type"],
                 "uuid": row[data_type["form"]][data_type["uuid"]],
                 "variables": variable_data,
