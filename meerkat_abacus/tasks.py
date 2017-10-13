@@ -37,7 +37,7 @@ def set_up_db(param_config):
         data_management.set_up_persistent_database(param_config)
 
 @task
-def initial_data_setup(source, param_config):
+def initial_data_setup(source, param_config=config):
     logging.info("Starting initial setup")
     while not worker_buffer.empty():  # Make sure that the buffer is empty
         worker_buffer.get()
@@ -47,12 +47,14 @@ def initial_data_setup(source, param_config):
     if source == "S3":
         data_import.download_data_from_s3(param_config)
         get_function = util.read_csv_filename
-    elif source == "CSV":
+    elif source == "FAKE_DATA":
         get_function = util.read_csv_filename
         data_management.add_fake_data(session)
     elif source == "RDS":
         get_function = util.get_data_from_rds_persistent_storage
-    
+
+    else:
+        raise AttributeError("Invalid source")
     data_import.read_stationary_data(get_function, worker_buffer,
                                      param_config, process_buffer, session, engine)
     process_buffer(internal_buffer=worker_buffer, start=False)
