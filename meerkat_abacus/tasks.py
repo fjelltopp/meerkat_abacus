@@ -13,6 +13,7 @@ import shutil
 from multiprocessing import Queue
 from datetime import datetime, timedelta
 import pytz
+import yaml
 
 from meerkat_abacus import\
     data_management
@@ -30,14 +31,18 @@ sqs_queue_url = None
 worker_buffer = Queue(maxsize=1000)
 
 @task
-def set_up_db(param_config):
+def set_up_db(param_config_yaml):
+    param_config = yaml.load(param_config_yaml)
+    # print("param config YAML:" + param_config_yaml)
+    # print("param config:" + param_config)
     data_management.set_up_database(leave_if_data=False,
                                     drop_db=True, param_config=param_config)
-    if config.initial_data_source == "LOCAL_RDS":
+    if param_config.initial_data_source == "LOCAL_RDS":
         data_management.set_up_persistent_database(param_config)
 
 @task
-def initial_data_setup(source, param_config=config):
+def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
+    param_config = yaml.load(param_config_yaml)
     logging.info("Starting initial setup")
     while not worker_buffer.empty():  # Make sure that the buffer is empty
         worker_buffer.get()
@@ -49,7 +54,7 @@ def initial_data_setup(source, param_config=config):
         get_function = util.read_csv_filename
     elif source == "FAKE_DATA":
         get_function = util.read_csv_filename
-        data_management.add_fake_data(session)
+        data_management.add_fake_data(session, param_config)
     elif source == "RDS":
         get_function = util.get_data_from_rds_persistent_storage
 
@@ -125,7 +130,8 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True):
 
 
 @task
-def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, param_config=None, aggregate_config=None):
+def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, param_config_yaml=None, aggregate_config=None):
+    param_config = yaml.load(param_config_yaml)
     logging.info("Adding fake data")
     engine, session = util.get_db_engine()
     for form in param_config.country_config["tables"]:

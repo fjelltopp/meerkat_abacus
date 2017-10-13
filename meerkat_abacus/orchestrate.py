@@ -5,6 +5,7 @@ import pytz
 from datetime import datetime, timedelta
 import raven
 import copy
+import yaml
 
 from meerkat_abacus import tasks
 from meerkat_abacus import celeryconfig
@@ -38,7 +39,9 @@ global session
 
 tz = pytz.timezone(config.timezone)
 
-tasks.set_up_db.delay().get()
+param_config_yaml = yaml.dump(config)
+
+tasks.set_up_db.delay(param_config_yaml=param_config_yaml).get()
 
 logging.info("Finished setting up DB")
 
@@ -54,7 +57,7 @@ logging.info("Starting Real time")
 if config.stream_data_source in ["LOCAL_SQS", "AWS_SQS"]:
     tasks.poll_queue.delay(config.sqs_queue, config.SQS_ENDPOINT, start=True)
 elif config.stream_data_source == "S3":
-    tasks.initial_data_setup.delay(source=config.stream_data_source, config=copy.deepcopy(config))
+    tasks.initial_data_setup.delay(source=config.stream_data_source, param_config=param_config)
 tasks.process_buffer.delay(start=True)
 
 

@@ -85,7 +85,7 @@ def export_data(session):
                                for col in r.__table__.columns.keys())
                 logging.debug(name + "(**" + str(columns) + "),")
 
-def add_fake_data(session, N=500, append=False, from_files=False):
+def add_fake_data(session, N=500, append=False, from_files=False, param_config=config):
     """
     Creates a csv file with fake data for each form. We make
     sure that the forms have deviceids that match the imported locations.
@@ -602,7 +602,7 @@ def set_up_database(leave_if_data, drop_db, param_config=config):
     Args:
         leave_if_data: do nothing if data is there
         drop_db: shall db be dropped before created
-        N: number of data points to create
+        param_config: config object for Abacus in case the function is called in a Celery container
     """
     set_up = True
     if leave_if_data:
