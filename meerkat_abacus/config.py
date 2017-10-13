@@ -36,10 +36,11 @@ data_directory = os.environ.get("DATA_DIRECTORY",
                                 current_directory + "/data/")
 config_directory = os.environ.get("COUNTRY_CONFIG_DIR",
                                   current_directory + "/country_config/")
-fake_data = int(os.environ.get("NEW_FAKE_DATA", True))
+timezone = os.environ.get('TIMEZONE', 'Europe/Dublin')
+
 start_celery = os.environ.get("START_CELERY", False)
-get_data_from_s3 = int(os.environ.get("GET_DATA_FROM_S3", False))
-interval = 3600  # Seconds
+
+setup = True
 hermes_api_key = os.environ.get("HERMES_API_KEY", "")
 hermes_api_root = os.environ.get("HERMES_API_ROOT", "")
 hermes_dev = int(os.environ.get("HERMES_DEV", False))
@@ -76,3 +77,58 @@ if hermes_dev:
     country_config["messaging_silent"] = True
 
 s3_bucket = country_config_module.s3_bucket
+
+# Configure data initialisation
+initial_data_source = os.environ.get("INITIAL_DATA_SOURCE", "CSV")
+PERSISTENT_DATABASE_URL = None
+get_data_from_s3 = None
+interval = None
+initial_data = None
+if initial_data_source == "FAKE_DATA":
+    initial_data = "FAKE_DATA"
+elif initial_data_source == "AWS_RDS":
+    PERSISTENT_DATABASE_URL = os.environ.get(
+        "PERSISTENT_DATABASE_URL", None
+    )
+    initial_data = "RDS"
+elif initial_data_source == "LOCAL_RDS":
+    PERSISTENT_DATABASE_URL = os.environ.get(
+        "PERSISTENT_DATABASE_URL",
+        'postgresql+psycopg2://postgres:postgres@db/persistent_demo_db'
+    )
+    initial_data = "RDS"
+elif initial_data_source == "S3":
+    get_data_from_s3 = 1  # int(os.environ.get("GET_DATA_FROM_S3", False))
+    interval = 3600  # Seconds
+    initial_data = "S3"
+
+# Configure data streaming
+stream_data_source = os.environ.get("STREAM_DATA_SOURCE", "AWS_S3")
+if stream_data_source == "LOCAL_SQS":
+    SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", 'http://172.18.0.1:9324')
+    sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo')
+elif stream_data_source == "AWS_SQS":
+    SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", "DEFAULT")
+    sqs_queue = 'nest-queue-' + country_config["country_name"] + '-' + DEPLOYMENT
+elif stream_data_source == "AWS_S3":
+    get_data_from_s3 = 1
+    interval = 3600
+
+
+# Configure generating fake data
+fake_data = False
+internal_fake_data = None
+fake_data_interval = os.environ.get("FAKE_DATA_GENERATION", 60*5)
+aggregate_password = None
+aggregate_username = None
+aggregate_url = None
+fake_data_generation = os.environ.get("FAKE_DATA_GENERATION", None)
+if fake_data_generation == "INTERNAL":
+    fake_data = True
+    internal_fake_data = True
+elif fake_data_generation == "SEND_TO_AGGREGATE":
+    fake_data = True
+    internal_fake_data = False
+    aggregate_password = os.environ.get("AGGREGATE_PASSWORD", "password")
+    aggregate_username = os.environ.get("AGGREGATE_PASSWORD", "test")
+    aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")

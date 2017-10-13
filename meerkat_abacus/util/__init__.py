@@ -1,7 +1,7 @@
 """
 Various utility functions for meerkat abacus
 """
-from meerkat_abacus.model import Locations, AggregationVariables, Devices
+from meerkat_abacus.model import Locations, AggregationVariables, Devices, form_tables
 from meerkat_abacus.config import country_config
 from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
@@ -11,6 +11,12 @@ import meerkat_abacus.config as config
 import itertools
 import logging
 import csv
+import boto3
+from botocore.exceptions import ClientError
+from xmljson import badgerfish as bf
+from lxml.html import Element, tostring
+import requests
+from requests.auth import HTTPDigestAuth
 
 
 def is_child(parent, child, locations):
@@ -60,6 +66,16 @@ def get_db_engine(db_url=config.DATABASE_URL):
     Returns a db engine and session
     """
     engine = create_engine(db_url)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    return engine, session
+
+
+def get_persistent_db_engine(config):
+    """
+    Returns a db engine and session
+    """
+    engine = create_engine(config.PERSISTENT_DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
     return engine, session
@@ -316,7 +332,7 @@ def get_deviceids(session, case_report=False):
     return deviceids
 
 
-def write_csv(rows, file_path, mode = 'w'):
+def write_csv(rows, file_path, mode='w'):
     """
     Writes rows to csvfile
 
@@ -339,6 +355,113 @@ def write_csv(rows, file_path, mode = 'w'):
             for row in rows:
                 out.writerow(row)
 
+                
+def get_exclusion_list(session, form):
+    """
+    Get exclusion list for a form
+
+    Args:
+        session: db session
+        form: which form to get the exclusion list for
+    """
+    exclusion_lists = config.country_config.get("exclusion_lists", {})
+    ret = []
+
+    for exclusion_list_file in exclusion_lists.get(form, []):
+        exclusion_list = read_csv(config.config_directory + exclusion_list_file)
+        for uuid_to_be_removed in exclusion_list:
+            ret.append(uuid_to_be_removed["uuid"])
+
+    return ret
+
+
+def read_csv_filename(filename, config=None):
+    """ Read a csv file from the filename"""
+    file_path = config.data_directory + filename + ".csv"
+    for row in read_csv(file_path):
+        yield row
+
+
+def get_data_from_rds_persistent_storage(form, config=None):
+    """ Get data from RDS persistent storage"""
+    engine, session = get_persistent_db_engine(config)
+    q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
+    print(str(q))
+    while q.count() >0:
+        for row in q:
+            yield row
+        q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
+
+
+def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
+    """ Subscribes to an sqs_enpoint with the sqs_queue_name"""
+    logging.info("Connecting to SQS")
+    region_name = "eu-west-1"
+
+    if sqs_endpoint == 'DEFAULT':
+        sqs_client = boto3.client('sqs', region_name=region_name)
+    else:
+        sqs_client = boto3.client('sqs', region_name=region_name,
+                                  endpoint_url=sqs_endpoint)
+    sts_client = boto3.client('sts', region_name=region_name)
+
+    logging.info("Getting SQS url")
+    try:
+        queue_url = sqs_client.get_queue_url(
+            QueueName=sqs_queue_name,
+            QueueOwnerAWSAccountId=""
+        )['QueueUrl']
+        logging.info("Subscribed to %s.", queue_url)
+    except ClientError as e:
+        print(e)
+        logging.info("Creating Queue")
+        response = sqs_client.create_queue(
+            QueueName=config.sqs_queue
+        )
+        queue_url = sqs_client.get_queue_url(
+            QueueName=sqs_queue_name,
+            QueueOwnerAWSAccountId=sts_client.get_caller_identity()["Account"]
+        )['QueueUrl']
+        logging.info("Subscribed to %s.", queue_url)
+    return sqs_client, queue_url
+
+
+def groupify(data):
+    """
+    Takes a dict with groups identified by ./ and turns it into a nested dict
+    """
+    new = {}
+    for key in data.keys():
+        if "./" in key:
+            group, field = key.split("./")
+            if group not in new:
+                new[group] = {}
+            new[group][field] = data[key]
+        else:
+            new[key] = data[key]
+
+    return new
+
+
+def submit_data_to_aggregate(data, form_id, aggregate_config):
+    """ Submits data to aggregate """
+    data.pop("meta/instanceID", None)
+    data.pop("SubmissionDate", None)
+    grouped_json = groupify(data)
+    grouped_json["@id"] = form_id
+    result = bf.etree(grouped_json, root=Element(form_id))
+    aggregate_user = aggregate_config.get('aggregate_username', None)
+    
+    aggregate_password = aggregate_config.get('aggregate_password', None)
+    auth = HTTPDigestAuth(aggregate_user, aggregate_password)
+    aggregate_url = aggregate_config.get('aggregate_url', None)
+    r = requests.post(aggregate_url + "/submission", auth=auth,
+                      files={
+                          "xml_submission_file":  ("tmp.xml", tostring(result), "text/xml")
+                      })
+    logging.info("Aggregate submission status code: " + str(r.status_code))
+    return r.status_code
+
 
 def read_csv(file_path):
     """
@@ -350,10 +473,12 @@ def read_csv(file_path):
     Returns:
         rows(list): list of rows
     """
+
     with open(file_path, "r", encoding='utf-8', errors="replace") as f:
         reader = csv.DictReader(f)
         for row in reader:
             yield row
+
 
 def create_topic_list(alert, locations):
     """
@@ -386,7 +511,7 @@ def create_topic_list(alert, locations):
     for comb in combinations:
         topics.append(str(comb[0]) + "-" + str(comb[1]) + "-" + str(comb[2]))
 
-    logging.warning("Sending alert to topic list: {}".format(topics))
+    logging.debug("Sending alert to topic list: {}".format(topics))
 
     return topics
 
@@ -525,7 +650,7 @@ def send_alert(alert_id, alert, variables, locations):
             "medium": ['email', 'sms']
         }
 
-        logging.warning("CREATED ALERT {}".format(data['id']))
+        logging.debug("CREATED ALERT {}".format(data['id']))
 
         libs.hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!

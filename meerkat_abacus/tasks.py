@@ -1,127 +1,165 @@
 """
 Celery setup and wraper tasks to periodically update the database.
 """
-from meerkat_abacus import config, data_management
-from celery.signals import worker_ready
-from datetime import datetime
-from raven.contrib.celery import register_signal, register_logger_signal
-from meerkat_abacus import celeryconfig
-import meerkat_libs as libs
 import requests
 import logging
 import traceback
-import celery
-import raven
+from celery import task
 import time
+import json
 import os
+from queue import Full
 import shutil
+from multiprocessing import Queue
+from datetime import datetime, timedelta
+import pytz
+
+from meerkat_abacus import config, data_management
+import meerkat_libs as libs
+from meerkat_abacus import data_import
+from meerkat_abacus import util
+from meerkat_abacus.pipeline import process_chunk
+from meerkat_abacus.util import create_fake_data
 
 
-class Celery(celery.Celery):
+sqs_client = None
+sqs_queue_url = None
 
-    def on_configure(self):
-        if config.sentry_dns:
-            client = raven.Client(config.sentry_dns)
-            # register a custom filter to filter out duplicate logs
-            register_logger_signal(client)
-            # hook into the Celery error handler
-            register_signal(client)
+worker_buffer = Queue(maxsize=1000)
 
-
-app = Celery()
-app.config_from_object(celeryconfig)
-
-from api_background.export_data import export_form, export_category, export_data, export_data_table
-
-logging.basicConfig(level=logging.INFO)
-
-
-
-# When we start celery we run the set_up_db command
-@worker_ready.connect
-def set_up_task(**kwargs):
-    """
-    Start the set_up_db task as soon as workers are ready
-    """
-    set_up_db.delay()
-
-
-@app.task
+@task
 def set_up_db():
-    """
-    Run the set_up_everything command from data_management.
-    """
-    logging.debug("Setting up DB for %s", config.country_config["country_name"])
-    data_management.set_up_everything(leave_if_data=False, drop_db=True, N=500)
-    logging.debug("Finished setting up DB")
+    data_management.set_up_database(leave_if_data=False,
+                                    drop_db=True)
+    if config.initial_data_source == "LOCAL_RDS":
+        data_management.set_up_persistent_database()
+
+@task
+def initial_data_setup(source, config=config):
+    logging.info("Starting initial setup")
+    while not worker_buffer.empty():  # Make sure that the buffer is empty
+        worker_buffer.get()
+
+    engine, session = util.get_db_engine()
+
+    if source == "S3":
+        data_import.download_data_from_s3(config)
+        get_function = util.read_csv_filename
+    elif source == "FAKE_DATA":
+        get_function = util.read_csv_filename
+        data_management.add_fake_data(session)
+    elif source == "RDS":
+        get_function = util.get_data_from_rds_persistent_storage
+
+    else:
+        raise AttributeError("Invalid source")
+    data_import.read_stationary_data(get_function, worker_buffer,
+                                     config, process_buffer, session, engine)
+    process_buffer(internal_buffer=worker_buffer, start=False)
+    session.close()
+    engine.dispose()
 
 
-@app.task
-def get_proccess_data(debug_enabled=False):
-    """Get/create new data and proccess it."""
-    if config.fake_data:
-        if config.country_config.get('manual_test_data', None):
-            add_new_fake_data(5, from_files = True)
-        else:
-            add_new_fake_data(5)
-    if config.get_data_from_s3:
-        get_new_data_from_s3()
-    if debug_enabled:
-        logging.debug("Import new data")
-    new_records = import_new_data()
-    if debug_enabled:
-        logging.debug("Validating initial visits")
-    changed_records = correct_initial_visits()
-    if debug_enabled:
-        logging.debug("To Code")
-    new_data_to_codes(restrict_uuids=list(set(changed_records + new_records)))
-    if debug_enabled:
-        logging.debug("Finished")
+@task
+def process_buffer(start=True, internal_buffer=None):
+    if internal_buffer is None:
+        internal_buffer = worker_buffer
+    engine, session = util.get_db_engine()
+    process_chunk(internal_buffer, session, engine)
+    if start:
+        process_buffer.apply_async(countdown=30,
+                                   kwargs={"start": True})
+    session.close()
+    engine.dispose()
 
 
-@app.task
-def correct_initial_visits():
-    """
-    Make sure patients don't have several initial visits
-    for the same diagnosis and remove the data table
-    rows for amended rows
-    """
-    ret = data_management.initial_visit_control()
-    return ret
+@task(bind=True, default_retry_delay=300, max_retries=5)
+def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True):
+    """ Get's messages from SQS queue"""
+    logging.info("Running Poll Queue")
+
+    global sqs_client
+    global sqs_queue_url
+    if sqs_client is None:
+        sqs_client, sqs_queue_url = util.subscribe_to_sqs(sqs_endpoint,
+                                                          sqs_queue_name)
+    try:
+        messages = sqs_client.receive_message(QueueUrl=sqs_queue_url,
+                                              WaitTimeSeconds=19)
+    except:
+        self.retry()
+    if "Messages" in messages:
+        for message in messages["Messages"]:
+            logging.info("Message %s", message)
+            receipt_handle = message["ReceiptHandle"]
+            logging.info("Deleting message %s", receipt_handle)
+            try:
+                message_body = json.loads(message["Body"])
+                form = message_body["formId"]
+                form_data = message_body["data"]
+                uuid = message_body["uuid"]
+                try:
+                    worker_buffer.put_nowait(
+                        {"form": form,
+                         "uuid": uuid,
+                         "data": form_data}
+                    )
+                except Full:
+                    process_buffer(start=False)
+                    worker_buffer.put(
+                        {"form": form,
+                         "uuid": uuid,
+                         "data": form_data}
+                    )
+                logging.warning(worker_buffer)
+                logging.info(worker_buffer.qsize())
+                sqs_client.delete_message(QueueUrl=sqs_queue_url,
+                                          ReceiptHandle=receipt_handle)
+            except Exception as e:
+                logging.exception("Error in reading message", exc_info=True)
+                                    
+    if start:
+        poll_queue.delay(sqs_queue_name, sqs_endpoint, start=True)
 
 
-@app.task
-def get_new_data_from_s3():
-    """Get new data from s3."""
-    data_management.get_data_from_s3(config.s3_bucket)
+@task
+def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, aggregate_config=None):
+    logging.info("Adding fake data")
+    engine, session = util.get_db_engine()
+    for form in config.country_config["tables"]:
+        logging.info("Generating fake data for form:" + form)
+        new_data = create_fake_data.get_new_fake_data(form, session, N, config,
+                                                      dates_is_now=dates_is_now)
+        for row, uuid in new_data:
+            if internal_fake_data:
+                try:
+                    worker_buffer.put_nowait(
+                        {"form": form,
+                         "uuid": uuid,
+                         "data": row}
+                    )
+                except Full:
+                    process_buffer(start=False)
+                    worker_buffer.put(
+                        {"form": form,
+                         "uuid": uuid,
+                         "data": row})
+            elif aggregate_config.get('aggregate_url', None):
+                logging.info("Submitting fake data for form {0} to Aggregate".format(form))
+                util.submit_data_to_aggregate(row, form, aggregate_config)
+    if interval_next:
+        add_fake_data.apply_async(countdown=interval_next,
+                                  kwargs={"interval_next": interval_next,
+                                          "N": N,
+                                          "dates_is_now": dates_is_now,
+                                          "internal_fake_data": internal_fake_data,
+                                          "aggregate_config": aggregate_config})
+                    
+    session.close()
+    engine.dispose()
+        
 
-
-@app.task
-def import_new_data():
-    """
-    Task to check csv files and insert any new data.
-    """
-    return data_management.import_new_data()
-
-
-@app.task
-def add_new_fake_data(to_add, from_files=False):
-    """ Add new fake data """
-    return data_management.add_new_fake_data(to_add, from_files)
-
-
-@app.task
-def new_data_to_codes(restrict_uuids=None):
-    """
-    Add any new data in form tables to data table.
-    """
-    return data_management.new_data_to_codes(
-        debug_enabled=True,
-        restrict_uuids=restrict_uuids
-    )
-
-
-@app.task
+@task
 def cleanup_downloads():
     folder = '/var/www/meerkat_api/api_background/api_background/exported_data'
     downloads = os.listdir(folder)
@@ -135,7 +173,7 @@ def cleanup_downloads():
                 pass
 
 
-@app.task
+@task
 def send_report_email(report, language, location):
     """Send a report email."""
 
@@ -217,7 +255,7 @@ def send_report_email(report, language, location):
         libs.hermes('/error', 'PUT', data)
 
 
-@app.task
+@task
 def send_device_messages(message, content, distribution):
     """send the device messages"""
 
@@ -268,3 +306,4 @@ def send_device_messages(message, content, distribution):
             )
         }
         libs.hermes('/error', 'PUT', data)
+
