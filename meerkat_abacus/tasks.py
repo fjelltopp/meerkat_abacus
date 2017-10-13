@@ -32,7 +32,7 @@ worker_buffer = Queue(maxsize=1000)
 @task
 def set_up_db(param_config):
     data_management.set_up_database(leave_if_data=False,
-                                    drop_db=True)
+                                    drop_db=True, param_config=param_config)
     if config.initial_data_source == "LOCAL_RDS":
         data_management.set_up_persistent_database(param_config)
 
