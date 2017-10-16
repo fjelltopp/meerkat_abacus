@@ -65,6 +65,7 @@ def get_db_engine(db_url=config.DATABASE_URL):
     """
     Returns a db engine and session
     """
+    print("GETTING DB ENGINE FOR " + str(db_url))
     engine = create_engine(db_url)
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -372,9 +373,9 @@ def read_csv_filename(filename, config=None):
         yield row
 
 
-def get_data_from_rds_persistent_storage(form, config=None):
+def get_data_from_rds_persistent_storage(form, param_config=config):
     """ Get data from RDS persistent storage"""
-    engine, session = get_db_engine(config.PERSISTENT_DATABASE_URL)
+    engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
     q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
     print(str(q))
     while q.count() >0:

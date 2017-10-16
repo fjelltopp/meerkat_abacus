@@ -47,7 +47,7 @@ logging.info("Finished setting up DB")
 
 # Set up data initialisation
 logging.info("Load data task started")
-initial_data = tasks.initial_data_setup.delay(source=config.initial_data)
+initial_data = tasks.initial_data_setup.delay(source=config.initial_data, param_config_yaml=param_config_yaml)
 
 result = initial_data.get()
 logging.info("Load data task finished")
@@ -57,8 +57,8 @@ logging.info("Starting Real time")
 if config.stream_data_source in ["LOCAL_SQS", "AWS_SQS"]:
     tasks.poll_queue.delay(config.sqs_queue, config.SQS_ENDPOINT, start=True)
 elif config.stream_data_source == "S3":
-    tasks.initial_data_setup.delay(source=config.stream_data_source, param_config=param_config)
-tasks.process_buffer.delay(start=True)
+    tasks.initial_data_setup.delay(source=config.stream_data_source, param_config_yaml=param_config_yaml)
+tasks.process_buffer.delay(start=True, param_config_yaml=param_config_yaml)
 
 
 # Set up fake data generation

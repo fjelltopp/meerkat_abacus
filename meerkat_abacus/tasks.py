@@ -43,11 +43,11 @@ def set_up_db(param_config_yaml):
 @task
 def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
     param_config = yaml.load(param_config_yaml)
-    logging.info("Starting initial setup")
+    logging.info("Starting initial setup with param_config: " + str(param_config))
     while not worker_buffer.empty():  # Make sure that the buffer is empty
         worker_buffer.get()
 
-    engine, session = util.get_db_engine()
+    engine, session = util.get_db_engine(param_config.DATABASE_URL)
 
     if source == "S3":
         data_import.download_data_from_s3(param_config)
@@ -61,27 +61,28 @@ def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
     else:
         raise AttributeError("Invalid source")
     data_import.read_stationary_data(get_function, worker_buffer,
-                                     param_config, process_buffer, session, engine)
-    process_buffer(internal_buffer=worker_buffer, start=False)
+                                     process_buffer, session, engine, param_config=param_config)
+    process_buffer(internal_buffer=worker_buffer, start=False, param_config_yaml=param_config_yaml)
     session.close()
     engine.dispose()
 
 
 @task
-def process_buffer(start=True, internal_buffer=None):
+def process_buffer(start=True, internal_buffer=None, param_config_yaml=yaml.dump(config)):
+    param_config = yaml.load(param_config_yaml)
     if internal_buffer is None:
         internal_buffer = worker_buffer
-    engine, session = util.get_db_engine()
-    process_chunk(internal_buffer, session, engine)
+    engine, session = util.get_db_engine(param_config.DATABASE_URL)
+    process_chunk(internal_buffer, session, engine, param_config)
     if start:
         process_buffer.apply_async(countdown=30,
-                                   kwargs={"start": True})
+                                   kwargs={"start": True, "param_config_yaml": param_config_yaml})
     session.close()
     engine.dispose()
 
 
 @task(bind=True, default_retry_delay=300, max_retries=5)
-def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True):
+def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=yaml.dump(config)):
     """ Get's messages from SQS queue"""
     logging.info("Running Poll Queue")
 
@@ -112,7 +113,7 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True):
                          "data": form_data}
                     )
                 except Full:
-                    process_buffer(start=False)
+                    process_buffer(start=False, param_config_yaml=param_config_yaml)
                     worker_buffer.put(
                         {"form": form,
                          "uuid": uuid,
@@ -126,14 +127,14 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True):
                 logging.exception("Error in reading message", exc_info=True)
                                     
     if start:
-        poll_queue.delay(sqs_queue_name, sqs_endpoint, start=True)
+        poll_queue.delay(sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=param_config_yaml)
 
 
 @task
 def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, param_config_yaml=None, aggregate_config=None):
     param_config = yaml.load(param_config_yaml)
     logging.info("Adding fake data")
-    engine, session = util.get_db_engine()
+    engine, session = util.get_db_engine(param_config.DATABASE_URL)
     for form in param_config.country_config["tables"]:
         logging.info("Generating fake data for form:" + form)
         new_data = create_fake_data.get_new_fake_data(form, session, N, param_config,
@@ -147,7 +148,7 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_da
                          "data": row}
                     )
                 except Full:
-                    process_buffer(start=False)
+                    process_buffer(start=False, param_config_yaml=param_config_yaml)
                     worker_buffer.put(
                         {"form": form,
                          "uuid": uuid,

@@ -8,22 +8,23 @@ from queue import Full
 from dateutil.parser import parse
 
 from meerkat_abacus import model
+from meerkat_abacus.config import config
 from meerkat_abacus.codes import to_codes
 
 
 def read_stationary_data(get_function, internal_buffer,
-                         config, buffer_proccesser_function, session, engine):
+                         buffer_proccesser_function, session, engine, param_config=config):
     """
     Read stationary data using the get_function to determine the source
     """
     i = 0
-    for form in config.country_config["tables"]:
+    for form in param_config.country_config["tables"]:
         logging.info(form)
         uuid_field = "meta/instanceID"
-        for element in get_function(form, config=config):
+        for element in get_function(form, param_config=param_config):
             try:
                 i += 1
-                uuid_field_current = config.country_config.get("tables_uuid",
+                uuid_field_current = param_config.country_config.get("tables_uuid",
                                                                {}).get(form,
                                                                        uuid_field)
                 internal_buffer.put_nowait({"form": form,

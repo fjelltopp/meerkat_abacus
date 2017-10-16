@@ -15,7 +15,7 @@ start_dates = None
 exclusion_list = None
 
 
-def prepare_add_rows_arguments(form, session):
+def prepare_add_rows_arguments(form, session, param_config=config):
     global deviceids_case
     if deviceids_case is None:
         deviceids_case = util.get_deviceids(session, case_report=True)
@@ -30,21 +30,21 @@ def prepare_add_rows_arguments(form, session):
         exclusion_list = util.get_exclusion_list(session, form)
     
     uuid_field = "meta/instanceID"
-    if "tables_uuid" in config.country_config:
-        uuid_field = config.country_config["tables_uuid"].get(form, uuid_field)
-    if form in config.country_config["require_case_report"]:
+    if "tables_uuid" in param_config.country_config:
+        uuid_field = param_config.country_config["tables_uuid"].get(form, uuid_field)
+    if form in param_config.country_config["require_case_report"]:
         form_deviceids = deviceids_case
     else:
         form_deviceids = deviceids
-    if "no_deviceid" in config.country_config and form in config.country_config["no_deviceid"]:
+    if "no_deviceid" in param_config.country_config and form in param_config.country_config["no_deviceid"]:
         form_deviceids = []
     quality_control = False
-    if "quality_control" in config.country_config:
-        if form in config.country_config["quality_control"]:
+    if "quality_control" in param_config.country_config:
+        if form in param_config.country_config["quality_control"]:
             quality_control = True
     allow_enketo = False
-    if form in config.country_config.get("allow_enketo", []):
-        allow_enketo = config.country_config["allow_enketo"][form]
+    if form in param_config.country_param_config.get("allow_enketo", []):
+        allow_enketo = param_config.country_config["allow_enketo"][form]
     return {"uuid_field": uuid_field,
             "deviceids": form_deviceids,
             "table_name": form,
@@ -52,10 +52,10 @@ def prepare_add_rows_arguments(form, session):
             "quality_control": quality_control,
             "allow_enketo": allow_enketo,
             "exclusion_list": exclusion_list,
-            "fraction": config.import_fraction}
+            "fraction": param_config.import_fraction}
 
 
-def process_chunk(internal_buffer, session, engine):
+def process_chunk(internal_buffer, session, engine, param_config=config):
     """
     Processing a chunk of data from the internal buffer
 
@@ -70,7 +70,7 @@ def process_chunk(internal_buffer, session, engine):
         element = internal_buffer.get()
         tables[element["form"]].append(element["data"])
     for form in tables:
-        kwargs = prepare_add_rows_arguments(form, session)
+        kwargs = prepare_add_rows_arguments(form, session, param_config)
         uuids += data_import.add_rows_to_db(
             form,
             tables[form],
