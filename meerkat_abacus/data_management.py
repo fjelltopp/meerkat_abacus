@@ -1322,8 +1322,6 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 logging.error("Invalid Date: %s", row[data_type["form"]][data_type["date"]])
                 continue
 
-            # if date < locations[0][location_data["clinic"]].start_date:
-            #     next
             if "alert" in variable_data:
                 variable_data["alert_id"] = row[data_type["form"]][data_type[
                     "uuid"]][-country_config["alert_id_length"]:]
@@ -1341,8 +1339,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 "links": links,
                 "type_name": data_type["name"]
             }
-            for l in location_data.keys():
-                new_data[l] = location_data[l]
+            new_data.update(location_data)
             if disregard:
                 disregarded_data_rows.append(new_data)
             else:
