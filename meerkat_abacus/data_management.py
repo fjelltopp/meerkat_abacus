@@ -630,41 +630,6 @@ def set_up_database(leave_if_data, drop_db, param_config=config):
         import_variables(session)
     return session, engine
 
-
-
-        
-    def other_stuff():
-        if config.fake_data:
-            logging.info("Generate fake data")
-            add_fake_data(session, N=N, append=False, from_files=True)
-        if config.get_data_from_s3:
-            logging.info("Get data from s3")
-            get_data_from_s3(config.s3_bucket)
-        logging.info("Import Data")
-        import_data(engine, session)
-        logging.info("Controlling initial visits")
-        initial_visit_control()
-        logging.info("To codes")
-        session.query(model.Data).delete()
-        engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
-        session.commit()
-
-        new_data_to_codes(engine)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        logging.info("Add alerts")
-        add_alerts(session)
-        logging.info("Notifying developer")
-        logging.info(libs.hermes('/notify', 'PUT', data={
-            'message': 'Abacus is set up and good to go for {}.'.format(
-                country_config['country_name']
-            )
-        }))
-    return set_up
-
-
-
-
 def add_alerts(session):
     """
     Adds non indivdual alerts.

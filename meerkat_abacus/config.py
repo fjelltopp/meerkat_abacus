@@ -86,7 +86,7 @@ class Config:
         self.initial_data_source = os.environ.get("INITIAL_DATA_SOURCE", "CSV")
         self.PERSISTENT_DATABASE_URL = None
         self.get_data_from_s3 = 0
-        self.interval = None
+        self.s3_data_stream_interval = None
         self.initial_data = "CSV"
         if self.initial_data_source == "FAKE_DATA":
             self.initial_data = "FAKE_DATA"
@@ -101,9 +101,8 @@ class Config:
                 'postgresql+psycopg2://postgres:postgres@db/persistent_demo_db'
             )
             self.initial_data = "RDS"
-        elif self.initial_data_source == "S3":
+        elif self.initial_data_source == "AWS_S3":
             self.get_data_from_s3 = 1  # int(os.environ.get("GET_DATA_FROM_S3", False))
-            self.interval = 3600  # Seconds
             self.initial_data = "S3"
 
         # Configure data streaming
@@ -116,7 +115,7 @@ class Config:
             self.sqs_queue = 'nest-queue-' + self.country_config["country_name"] + '-' + self.DEPLOYMENT
         elif self.stream_data_source == "AWS_S3":
             self.get_data_from_s3 = 1
-            self.interval = 3600
+            self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL")
 
 
         # Configure generating fake data

@@ -66,6 +66,26 @@ def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
     session.close()
     engine.dispose()
 
+@task
+def stream_data_from_s3(param_config_yaml=yaml.dump(config)):
+    param_config = yaml.load(param_config_yaml)
+    logging.info("Getting new data from S3")
+    while not worker_buffer.empty():  # Make sure that the buffer is empty
+        worker_buffer.get()
+
+    engine, session = util.get_db_engine(param_config.DATABASE_URL)
+
+    data_import.download_data_from_s3(param_config)
+    get_function = util.read_csv_filename
+    data_import.read_stationary_data(get_function, worker_buffer,
+                                     process_buffer, session, engine, param_config=param_config)
+    process_buffer(internal_buffer=worker_buffer, start=False, param_config_yaml=param_config_yaml)
+    session.close()
+    engine.dispose()
+    stream_data_from_s3.apply_async(countdown=param_config.s3_data_stream_interval,
+                               kwargs={"param_config_yaml": param_config_yaml})
+
+
 
 @task
 def process_buffer(start=True, internal_buffer=None, param_config_yaml=yaml.dump(config)):

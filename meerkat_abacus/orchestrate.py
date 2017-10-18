@@ -56,8 +56,8 @@ logging.info("Starting Real time")
 # Set up data stream source
 if config.stream_data_source in ["LOCAL_SQS", "AWS_SQS"]:
     tasks.poll_queue.delay(config.sqs_queue, config.SQS_ENDPOINT, start=True)
-elif config.stream_data_source == "S3":
-    tasks.initial_data_setup.delay(source=config.stream_data_source, param_config_yaml=param_config_yaml)
+elif config.stream_data_source == "AWS_S3":
+    tasks.stream_data_from_s3.delay(param_config_yaml=param_config_yaml)
 tasks.process_buffer.delay(start=True, param_config_yaml=param_config_yaml)
 
 
@@ -68,11 +68,7 @@ if config.fake_data:
                                             "N": 4,
                                             "dates_is_now": True,
                                             "internal_fake_data": copy.deepcopy(config.internal_fake_data),
-                                            "param_config_yaml": param_config_yaml,
-                                            "aggregate_config": {
-                                                "aggregate_url": copy.deepcopy(config.aggregate_url),
-                                                "aggregate_username": copy.deepcopy(config.aggregate_username),
-                                                "aggregate_password": copy.deepcopy(config.aggregate_password)}
+                                            "param_config_yaml": param_config_yaml
                                             })
               
 while True:

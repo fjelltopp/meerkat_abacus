@@ -65,7 +65,6 @@ def get_db_engine(db_url=config.DATABASE_URL):
     """
     Returns a db engine and session
     """
-    print("GETTING DB ENGINE FOR " + str(db_url))
     engine = create_engine(db_url)
     Session = sessionmaker(bind=engine)
     session = Session()
