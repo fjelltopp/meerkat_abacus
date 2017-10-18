@@ -154,7 +154,7 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False,
                         {"form": form,
                          "uuid": uuid,
                          "data": row})
-            elif param_config.get('aggregate_url', None):
+            elif param_config.aggregate_url:
                 aggregate_config = {
                     'aggregate_url': param_config.aggregate_url,
                     'aggregate_username': param_config.aggregate_username,
