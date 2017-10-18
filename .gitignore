@@ -66,3 +66,4 @@ target/
 # Application specific
 data/forms/*
 celerybeat-schedule*
+celerybeat*

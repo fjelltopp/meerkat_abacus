@@ -14,6 +14,7 @@ from meerkat_abacus import data_management as manage
 from meerkat_abacus import model, util, tasks, data_import
 from meerkat_abacus.config import config
 from geoalchemy2.shape import to_shape
+import yaml
 spec = importlib.util.spec_from_file_location(
     "country_test",
     config.config_directory + config.country_config["country_tests"])
@@ -35,6 +36,7 @@ class DbTest(unittest.TestCase):
         self.session = self.Session()
         self.conn = self.engine.connect()
         self.current_directory = current_directory = os.path.dirname(os.path.realpath(__file__))
+        self.param_config_yaml = yaml.dump(config)
 
     def tearDown(self):
         self.session.commit()
@@ -232,7 +234,7 @@ class DbTest(unittest.TestCase):
     def test_db_setup(self):
         old_manual = tasks.config.country_config["manual_test_data"]
         tasks.config.country_config["manual_test_data"] = {}
-        tasks.set_up_db.apply().get()
+        tasks.set_up_db.apply(kwargs={"param_config_yaml": self.param_config_yaml}).get()
         tasks.initial_data_setup.apply(kwargs={'source': config.initial_data}).get()
         self.assertTrue(database_exists(config.DATABASE_URL))
         engine = self.engine
@@ -302,7 +304,7 @@ class DbTest(unittest.TestCase):
         old_manual = tasks.config.country_config["manual_test_data"]
         tasks.config.country_config["manual_test_data"] = {}
         numbers = {}
-        tasks.set_up_db.apply().get()
+        tasks.set_up_db.apply(kwargs={"param_config_yaml": self.param_config_yaml}).get()
         for table in model.form_tables:
             res = self.session.query(model.form_tables[table])
             numbers[table] = len(res.all())

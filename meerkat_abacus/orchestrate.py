@@ -63,8 +63,8 @@ tasks.process_buffer.delay(start=True, param_config_yaml=param_config_yaml)
 
 # Set up fake data generation
 if config.fake_data:
-    tasks.add_fake_data.apply_async(countdown=copy.deepcopy(config.fake_data_interval),
-                                    kwargs={"interval_next": copy.deepcopy(config.fake_data_interval),
+    tasks.add_fake_data.apply_async(countdown=copy.deepcopy(int(config.fake_data_interval)),
+                                    kwargs={"interval_next": int(copy.deepcopy(config.fake_data_interval)),
                                             "N": 4,
                                             "dates_is_now": True,
                                             "internal_fake_data": copy.deepcopy(config.internal_fake_data),

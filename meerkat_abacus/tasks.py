@@ -131,7 +131,8 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml
 
 
 @task
-def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_data=True, param_config_yaml=None, aggregate_config=None):
+def add_fake_data(N=10, interval_next=None, dates_is_now=False,
+                  internal_fake_data=True, param_config_yaml=yaml.dump(config)):
     param_config = yaml.load(param_config_yaml)
     logging.info("Adding fake data")
     engine, session = util.get_db_engine(param_config.DATABASE_URL)

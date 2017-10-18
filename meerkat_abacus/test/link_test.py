@@ -8,6 +8,7 @@ from meerkat_abacus import model, util, tasks
 from meerkat_abacus.config import config
 from meerkat_abacus.test import util as test_util
 from meerkat_abacus import data_management
+import yaml
 
 data_type_definitions = [
     {
@@ -37,8 +38,8 @@ class LinkTest(unittest.TestCase):
 
     def setUp(self):
     	# Link processing is done in the database, so the database needs to be set up
-
-        tasks.set_up_db()
+        self.param_config_yaml = yaml.dump(config)
+        tasks.set_up_db.apply(kwargs={"param_config_yaml": self.param_config_yaml})
         self.engine, self.session = util.get_db_engine()
         current_directory = os.path.dirname(os.path.realpath(__file__))
         test_util.add_data_from_file(
