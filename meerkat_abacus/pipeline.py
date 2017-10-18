@@ -43,7 +43,7 @@ def prepare_add_rows_arguments(form, session, param_config=config):
         if form in param_config.country_config["quality_control"]:
             quality_control = True
     allow_enketo = False
-    if form in param_config.country_param_config.get("allow_enketo", []):
+    if form in param_config.country_config.get("allow_enketo", []):
         allow_enketo = param_config.country_config["allow_enketo"][form]
     return {"uuid_field": uuid_field,
             "deviceids": form_deviceids,

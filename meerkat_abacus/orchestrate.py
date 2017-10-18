@@ -68,7 +68,7 @@ if config.fake_data:
                                             "N": 4,
                                             "dates_is_now": True,
                                             "internal_fake_data": copy.deepcopy(config.internal_fake_data),
-                                            "param_config": copy.deepcopy(config),
+                                            "param_config_yaml": param_config_yaml,
                                             "aggregate_config": {
                                                 "aggregate_url": copy.deepcopy(config.aggregate_url),
                                                 "aggregate_username": copy.deepcopy(config.aggregate_username),

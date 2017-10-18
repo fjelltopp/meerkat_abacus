@@ -6,6 +6,7 @@ import logging
 import boto3
 from queue import Full
 from dateutil.parser import parse
+import random
 
 from meerkat_abacus import model
 from meerkat_abacus.config import config

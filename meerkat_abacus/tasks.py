@@ -43,7 +43,7 @@ def set_up_db(param_config_yaml):
 @task
 def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
     param_config = yaml.load(param_config_yaml)
-    logging.info("Starting initial setup with param_config: " + str(param_config))
+    logging.info("Starting initial setup")
     while not worker_buffer.empty():  # Make sure that the buffer is empty
         worker_buffer.get()
 
@@ -54,7 +54,7 @@ def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
         get_function = util.read_csv_filename
     elif source == "FAKE_DATA":
         get_function = util.read_csv_filename
-        data_management.add_fake_data(session, param_config)
+        data_management.add_fake_data(session=session, param_config=param_config)
     elif source == "RDS":
         get_function = util.get_data_from_rds_persistent_storage
 
@@ -137,10 +137,10 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_da
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
     for form in param_config.country_config["tables"]:
         logging.info("Generating fake data for form:" + form)
-        new_data = create_fake_data.get_new_fake_data(form, session, N, param_config,
+        new_data = create_fake_data.get_new_fake_data(form=form, session=session, N=N, param_config=param_config,
                                                       dates_is_now=dates_is_now)
         for row, uuid in new_data:
-            if internal_fake_data:
+            if param_config.internal_fake_data:
                 try:
                     worker_buffer.put_nowait(
                         {"form": form,
@@ -153,7 +153,12 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False, internal_fake_da
                         {"form": form,
                          "uuid": uuid,
                          "data": row})
-            elif aggregate_config.get('aggregate_url', None):
+            elif param_config.get('aggregate_url', None):
+                aggregate_config = {
+                    'aggregate_url': param_config.aggregate_url,
+                    'aggregate_username': param_config.aggregate_username,
+                    'aggregate_password':param_config.aggregate_password
+                }
                 logging.info("Submitting fake data for form {0} to Aggregate".format(form))
                 util.submit_data_to_aggregate(row, form, aggregate_config)
     if interval_next:

@@ -366,9 +366,9 @@ def get_exclusion_list(session, form):
     return ret
 
 
-def read_csv_filename(filename, config=None):
+def read_csv_filename(filename, param_config=config):
     """ Read a csv file from the filename"""
-    file_path = config.data_directory + filename + ".csv"
+    file_path = param_config.data_directory + filename + ".csv"
     for row in read_csv(file_path):
         yield row
 

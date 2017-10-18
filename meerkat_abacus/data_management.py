@@ -131,11 +131,10 @@ def add_fake_data(session, N=500, append=False, from_files=False, param_config=c
                 manual_test_data[fake_data_file] = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
                     fake_data_file + ".csv")
 
-
-        generated_data = create_fake_data.create_form(
-            country_config["fake_data"][form], data={"deviceids":
-                                                     form_deviceids,
-                                                     "uuids": alert_ids}, N=N)
+        generated_data = create_fake_data.create_form(fields=country_config["fake_data"][form],
+                                                      data={"deviceids": form_deviceids,
+                                                            "uuids": alert_ids},
+                                                      N=N)
 
         if "case" in form:
             alert_ids = []
@@ -792,7 +791,7 @@ i
     engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
-    add_fake_data(session, to_add, append=True, from_files=from_files)
+    add_fake_data(session=session, N=to_add, append=True, from_files=from_files)
 
 
 def create_links(data_type, input_conditions, table, session, conn):

@@ -103,6 +103,8 @@ def create_form(fields, data=None, N=500, odk=True, dates_is_now=False):
         list_of_records(list): list of dicts with data
 
     """
+    print("Creating fields: " + str(fields))
+    print("number of records: " + str(N))
     list_of_records = []
     for i in range(N):
         row = {}
@@ -166,33 +168,34 @@ def create_form(fields, data=None, N=500, odk=True, dates_is_now=False):
     return list_of_records
 
 
-def get_new_fake_data(form, session, N, config, dates_is_now=False):
+def get_new_fake_data(form, session, N, param_config=None, dates_is_now=False):
     logging.debug("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
 
     # Make sure the case report form is handled before the alert form
     logging.debug("Processing form: %s", form)
-    if form not in config.country_config["fake_data"]:
+    if form not in param_config.country_config["fake_data"]:
         return []
-    if "deviceids" in config.country_config["fake_data"][form]:
+    if "deviceids" in param_config.country_config["fake_data"][form]:
         # This is a special way to limit the deviceids for a form in
         # the config file
-        form_deviceids = config.country_config["fake_data"][form]["deviceids"]
+        form_deviceids = param_config.country_config["fake_data"][form]["deviceids"]
     else:
         form_deviceids = deviceids
     alert_ids = []
-    for value in config.country_config["fake_data"][form]:
+    for value in param_config.country_config["fake_data"][form]:
         if "data" in value and value["data"] == "uuids" and "from_form" in value:
             from_form = value["from_form"]
             table = model.form_tables[from_form]
             uuids = [r[0] for r in session.query(table.uuid).all()]
             for row in uuids:
-                alert_ids.append(row[-config.country_config["alert_id_length"]:])
+                alert_ids.append(row[-param_config.country_config["alert_id_length"]:])
 
     data = create_form(
-        config.country_config["fake_data"][form],
+        fields=param_config.country_config["fake_data"][form],
         data={"deviceids":
               form_deviceids,
               "uuids": alert_ids},
-        N=N, dates_is_now=dates_is_now)
+        N=N,
+        dates_is_now=dates_is_now)
     return [(row, row["meta/instanceID"]) for row in data]

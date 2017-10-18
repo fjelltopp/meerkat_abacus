@@ -88,8 +88,8 @@ class Config:
         self.get_data_from_s3 = 0
         self.interval = None
         self.initial_data = "CSV"
-        if self.initial_data_source == "CSV":
-            self.initial_data = "CSV"
+        if self.initial_data_source == "FAKE_DATA":
+            self.initial_data = "FAKE_DATA"
         elif self.initial_data_source == "AWS_RDS":
             self.PERSISTENT_DATABASE_URL = os.environ.get(
                 "PERSISTENT_DATABASE_URL", None
