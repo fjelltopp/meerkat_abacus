@@ -67,3 +67,4 @@ target/
 data/forms/*
 celerybeat-schedule*
 celerybeat*
+meerkat_abacus/celerybeat*
