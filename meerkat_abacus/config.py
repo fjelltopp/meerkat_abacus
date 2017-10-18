@@ -115,7 +115,7 @@ class Config:
             self.sqs_queue = 'nest-queue-' + self.country_config["country_name"] + '-' + self.DEPLOYMENT
         elif self.stream_data_source == "AWS_S3":
             self.get_data_from_s3 = 1
-            self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL")
+            self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL", 3600)
 
 
         # Configure generating fake data
