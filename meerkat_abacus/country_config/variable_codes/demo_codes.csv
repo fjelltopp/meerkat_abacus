@@ -1,5 +1,6 @@
 "id","name","type","form","multiple_link","db_column","alert","alert_type","method","condition","category","calculation","disregard","calculation_group","calculation_priority","classification_casedef","source","source_link","alert_desc","case_def","risk_factors","symptoms","labs_diagnostics",,
 "submission_date","Submission Date","case","demo_case",,"SubmissionDate",,,"value",,,,,,,,,,,,,,,,
+"end_edit_date","End Edit date","case","demo_case",,"end",,,"value",,,,,,,,,,,,,,,,
 "nat_1","Null Island","case","demo_case",,"nationality",,,"match","null_island","nationality",,,"nationality",,,,,,,,,,,
 "nat_2","Demo","case","demo_case",,"nationality",,,"match","demo","nationality",,,"nationality",,,,,,,,,,,
 "nat_3","Other Nationality","case","demo_case",,"nationality",,,"match","other","nationality",,,"nationality",,,,,,,,,,,

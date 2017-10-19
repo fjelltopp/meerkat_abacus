@@ -137,10 +137,10 @@ country_config = {
     },
     "alert_data": {"demo_case": {"age": "pt1./age", "gender": "pt1./gender"}},
     "alert_id_length": 6,
-    "alert_text_content": ['reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id', 'received' ],
+    "alert_text_content": ['reason', 'date', 'clinic', 'region', 'patient', 'gender', 'age', 'id', 'submitted', 'received', 'id' ],
     "alert_sms_content": ['reason', 'date', 'clinic', 'region', 'gender', 'age', 'id'],
     "alert_email_content": [
-        'reason', 'date', 'clinic', 'region', 'breaker', 'patient', 'gender', 'age', 'breaker', 'id', 'received'
+        'reason', 'date', 'clinic', 'region', 'breaker', 'patient', 'gender', 'age', 'breaker', 'submitted', 'received', 'id'
     ],
     "messaging_start_date": datetime.datetime(2016, 2, 15),
     "messaging_topic_prefix": "null",
