@@ -421,14 +421,18 @@ def send_alert(alert_id, alert, variables, locations):
 
         # Get the time and date the alert was received by the system
         received = alert.variables.get('submission_date')
-        if received:
-            received = parse(received).strftime("%H:%M %d %b %Y")
-        else:
-            received = "Not recorded"
+        submitted = alert.variables.get('end_edit_date')
+
+        def tostr(date):
+            return parse(received).strftime("%H:%M %d %b %Y")
+
+        received = tostr(received) if received else "Not recorded"
+        submitted = tostr(submitted) if submitted else "Not recorded"
 
         text_strings = {
             'date': "Date: " + alert.date.strftime("%d %b %Y") + "\n",
             'received': "Received: " + received + "\n",
+            'submitted': "Submitted: " + submitted + "\n",
             'clinic': "Clinic: " + locations[alert.clinic].name + "\n",
             'district': "District: " + district + "\n",
             'region': "Region: " + locations[alert.region].name + "\n",
@@ -439,6 +443,7 @@ def send_alert(alert_id, alert, variables, locations):
                        variables[alert.variables["alert_reason"]].name + "\n"),
             'gender': ("Gender: " + alert.variables["alert_gender"].title() +
                        "\n"),
+            'breaker': "\n"
         }
 
         # List the possible strings that construct an alert email message
@@ -450,6 +455,8 @@ def send_alert(alert_id, alert, variables, locations):
                      alert.date.strftime("%d %b %Y") + "</td></tr>"),
             'received': ("<tr><td><b>Received:</b></td><td>" +
                          received + "</td></tr>"),
+            'submitted': ("<tr><td><b>Submitted:</b></td><td>" +
+                          submitted + "</td></tr>"),
             'clinic': ("<tr><td><b>Clinic:</b></td><td>" +
                        locations[alert.clinic].name + "</td></tr>"),
             'district': ("<tr><td><b>District:</b></td><td>" +
@@ -484,8 +491,9 @@ def send_alert(alert_id, alert, variables, locations):
         # config.
         text_data = country_config.get(
             'alert_text_content',
-            ['reason', 'date', 'clinic', 'region',
-                'patient', 'gender', 'age', 'received', 'id']
+            ['reason', 'date', 'clinic', 'region', 'breaker',
+             'patient', 'gender', 'age', 'breaker',
+             'submitted', 'received', 'id']
         )
 
         # Assemble the alert info for a plain text email message.
@@ -493,12 +501,13 @@ def send_alert(alert_id, alert, variables, locations):
         for item in text_data:
             alert_info += text_strings.get(item, "")
 
-        # Get which sms strings to be used and in which order from the country
+        # Get which html strings to be used and in which order from the country
         # config.
         html_data = country_config.get(
             'alert_email_content',
-            ['reason', 'date', 'received', 'clinic', 'region', 'breaker',
-                'patient', 'gender', 'age', 'breaker', 'received', 'id']
+            ['reason', 'date', 'clinic', 'region', 'breaker',
+             'patient', 'gender', 'age', 'breaker',
+             'submitted', 'received', 'id']
         )
 
         # Assemble alert info for email message from configs.
