@@ -424,7 +424,7 @@ def send_alert(alert_id, alert, variables, locations):
         submitted = alert.variables.get('end_edit_date')
 
         def tostr(date):
-            return parse(received).strftime("%H:%M %d %b %Y")
+            return parse(date).strftime("%H:%M %d %b %Y")
 
         received = tostr(received) if received else "Not recorded"
         submitted = tostr(submitted) if submitted else "Not recorded"
@@ -547,7 +547,7 @@ def send_alert(alert_id, alert, variables, locations):
             "medium": ['email', 'sms']
         }
 
-        logging.info("CREATED ALERT {}".format(data['sms-message']))
+        logging.info("CREATED ALERT {}".format(data['message']))
 
         libs.hermes('/publish', 'PUT', data)
         # TODO: Add some error handling here!
