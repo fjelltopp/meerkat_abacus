@@ -71,6 +71,7 @@ class Data(Base):
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String)
+    device_id = Column(String, index=True)
     type = Column(String, index=True)
     type_name = Column(String)
     date = Column(DateTime, index=True)
