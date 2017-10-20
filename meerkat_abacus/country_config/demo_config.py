@@ -150,9 +150,9 @@ country_config = {
     "default_start_date": datetime.datetime(2016, 1, 1),
     "reports_schedule" : {
         "cd_public_health": {"period": "week", "send_day": "0", "language": "en"},
-        "ncd_public_health": {"period": "month", "send_day": "1", "language": "en"},
-        "communicable_diseases": {"period": "week", "send_day": "0", "language": "en"},
-        "non_communicable_diseases": {"period": "month", "send_day": "1", "language": "en"}
+  #      "ncd_public_health": {"period": "month", "send_day": "1", "language": "en"},
+  #       "communicable_diseases": {"period": "week", "send_day": "0", "language": "en"},
+  #        "non_communicable_diseases": {"period": "month", "send_day": "1", "language": "en"}
     },
     "device_message_schedule": {
             "thank_you": {
@@ -161,7 +161,7 @@ country_config = {
                 "message": "Thank you for all your work this week in sending data and please keep up the good work!",
                 "distribution": ["/topics/demo"]}
     },
-    "translation_dir": "/var/www/meerkat_frontend/country_config/translations"
+    "translation_dir": "/var/www/meerkat_frontend/country_config/translations",
 }
 
 dhis2_config = {

@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 import raven
 import copy
 import yaml
+import backoff
+
 
 from meerkat_abacus import tasks
 from meerkat_abacus import celeryconfig
@@ -15,8 +17,20 @@ from meerkat_abacus import data_management
 from meerkat_abacus import data_import
 
 
-#from meerkat_abacus.internal_buffer import InternalBuffer
+# from meerkat_abacus.internal_buffer import InternalBuffer
 from queue import Queue
+
+
+@backoff.on_exception(backoff.expo,
+                      (celery.exceptions.TimeoutError,
+                       AttributeError, OSError),
+                      max_tries=8,
+                      max_value=30)
+def wait_for_celery_runner():
+    test_task = tasks.test_up.delay()
+    result = test_task.get(timeout=1)
+    return result
+
 
 
 class Celery(celery.Celery):
@@ -32,6 +46,7 @@ app = Celery()
 app.config_from_object(celeryconfig)
 logging.getLogger().setLevel(logging.INFO)
 
+wait_for_celery_runner()
 
 logging.info("Setting up DB for %s", config.country_config["country_name"])
 global engine

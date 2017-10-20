@@ -13,4 +13,5 @@ shapely==1.5.17
 raven==6.0.0
 lxml==3.8.0
 xmljson==0.1.9
+backoff==1.4.3
 # pygrowup==0.8.2
