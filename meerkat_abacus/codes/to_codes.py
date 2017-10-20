@@ -74,7 +74,6 @@ def get_variables(session, restrict=None, match_on_type=None, match_on_form=None
 
 multiple_method = {"last": -1, "first": 0}
 
-# @profile
 def to_code(row, variables, locations, data_type, location_form, alert_data,
             mul_forms, location):
     """
@@ -91,10 +90,12 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         row: row of raw data
         variables: dict of variables to check
         locations: list of locations
-        date_column: which column from the row determines the date
-        table_name: the name of the table/from the row comes from
+        data_type: type of row data e.g. case
+        location_form: Name of the main link which has location information (e.g. demo_case)
         alert_data: a dictionary of name:column pairs.
             For each alert we return the value of row[column] as name.
+        mul_form: set of links for row
+        location: tuple with locations
     return:
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
@@ -117,12 +118,14 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         clinic_gps = None
         if locations[clinic_id].point_location is not None:
             clinic_gps = locations[clinic_id].point_location.desc
+        deviceid = row[location_form].get("deviceid")
         ret_location = {
             "clinic": clinic_id,
             "clinic_type": locations[clinic_id].clinic_type,
             "case_type": locations[clinic_id].case_type,
-            "tags": devices.get(row[location_form].get("deviceid", None), None),
+            "tags": devices.get(deviceid),
             "country": 1,
+            "device_id": deviceid,
             "geolocation": clinic_gps
         }
         if locations[clinic_id].parent_location in districts:
