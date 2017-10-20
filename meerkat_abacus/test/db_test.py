@@ -235,7 +235,8 @@ class DbTest(unittest.TestCase):
         old_manual = tasks.config.country_config["manual_test_data"]
         tasks.config.country_config["manual_test_data"] = {}
         tasks.set_up_db.apply(kwargs={"param_config_yaml": self.param_config_yaml}).get()
-        tasks.initial_data_setup.apply(kwargs={'source': config.initial_data}).get()
+        tasks.initial_data_setup(source="FAKE_DATA",
+                                 param_config_yaml=self.param_config_yaml)
         self.assertTrue(database_exists(config.DATABASE_URL))
         engine = self.engine
         session = self.session
