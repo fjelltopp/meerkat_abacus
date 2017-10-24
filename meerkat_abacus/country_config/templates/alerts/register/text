@@ -1,0 +1,11 @@
+Alert: {{data.get("reason", "Not available")}}
+Date: {{data.get("date", "Not available")}}
+Clinic: {{data.get("clinic", "Not available")}}
+Region: {{data.get("region", "Not available")}}
+
+Received: {{data.get("received", "Not available")}}
+Submitted: {{data.get("submitted", "Not available")}}
+Alert ID: {{data.get("alert_id", "Not available")}}
+
+To unsubscribe from <<country>> public health surveillance notifications please copy and paste the following URL into your browser's address bar:
+https://hermes.aws.emro.info/unsubscribe/<<id>>
