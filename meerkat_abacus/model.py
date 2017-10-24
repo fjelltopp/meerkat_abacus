@@ -154,6 +154,7 @@ class AggregationVariables(Base):
     category = Column(JSONB, index=True)
     alert = Column(Integer, index=True)
     alert_type = Column(String, index=True)
+    alert_message = Column(String)
     calculation = Column(String)
     disregard = Column(Integer)
     calculation_group = Column(String)

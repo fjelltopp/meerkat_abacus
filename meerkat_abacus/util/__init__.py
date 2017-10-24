@@ -7,11 +7,18 @@ from datetime import datetime, timedelta
 from dateutil.parser import parse
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 import meerkat_libs as libs
 import meerkat_abacus.config as config
 import itertools
 import logging
 import csv
+
+# Alert messages are rendered with Jinja2, setup the Jinja2 env
+env = Environment(
+    loader=FileSystemLoader(config.config_directory + 'templates/'),
+    autoescape=select_autoescape(['html'])
+)
 
 
 def is_child(parent, child, locations):
@@ -412,135 +419,56 @@ def send_alert(alert_id, alert, variables, locations):
         variables: dict with variables
         locations: dict with locations
     """
+    print(alert.variables)
     if alert.date > datetime.now() - timedelta(days=7):
-
         # List the possible strings that construct an alert sms message
         district = ""
         if alert.district:
             district = locations[alert.district].name
 
-        # Get the time and date the alert was received by the system
-        received = alert.variables.get('submission_date')
-        submitted = alert.variables.get('end_edit_date')
-
+        # To display date-times
         def tostr(date):
-            return parse(date).strftime("%H:%M %d %b %Y")
+            try:
+                return parse(date).strftime("%H:%M %d %b %Y")
+            except AttributeError:
+                return "Not available"  # Catch if date not a date type
 
-        received = tostr(received) if received else "Not recorded"
-        submitted = tostr(submitted) if submitted else "Not recorded"
-
-        text_strings = {
-            'date': "Date: " + alert.date.strftime("%d %b %Y") + "\n",
-            'received': "Received: " + received + "\n",
-            'submitted': "Submitted: " + submitted + "\n",
-            'clinic': "Clinic: " + locations[alert.clinic].name + "\n",
-            'district': "District: " + district + "\n",
-            'region': "Region: " + locations[alert.region].name + "\n",
-            'patient': "Patient ID: " + alert.uuid + "\n",
-            'age': "Age: " + str(alert.variables["alert_age"]) + "\n",
-            'id': "Alert ID: " + alert_id + "\n",
-            'reason': ("Alert: " +
-                       variables[alert.variables["alert_reason"]].name + "\n"),
-            'gender': ("Gender: " + alert.variables["alert_gender"].title() +
-                       "\n"),
-            'breaker': "\n"
+        # Assemble the data to be shown in the messsage
+        data = {
+            "date": alert.date.strftime("%d %b %Y"),
+            "received": tostr(alert.variables.get('alert_received')),
+            "submitted": tostr(alert.variables.get('alert_submitted')),
+            "clinic": locations[alert.clinic].name,
+            "district": district,
+            "region": locations[alert.region].name,
+            "uuid": alert.uuid,
+            "alert_id": alert_id,
+            "reason": variables[alert.variables["alert_reason"]].name
         }
+        message_data = {**alert.variables, **data}
+        print(message_data)
 
-        # List the possible strings that construct an alert email message
-        html_strings = {
-            'reason': ("<tr><td><b>Alert:</b></td><td>" +
-                       variables[alert.variables["alert_reason"]].name +
-                       "</td></tr>"),
-            'date': ("<tr><td><b>Date:</b></td><td>" +
-                     alert.date.strftime("%d %b %Y") + "</td></tr>"),
-            'received': ("<tr><td><b>Received:</b></td><td>" +
-                         received + "</td></tr>"),
-            'submitted': ("<tr><td><b>Submitted:</b></td><td>" +
-                          submitted + "</td></tr>"),
-            'clinic': ("<tr><td><b>Clinic:</b></td><td>" +
-                       locations[alert.clinic].name + "</td></tr>"),
-            'district': ("<tr><td><b>District:</b></td><td>" +
-                         district + "</td></tr>"),
-            'region': ("<tr><td><b>Region:</b></td><td>" +
-                       locations[alert.region].name + "</td></tr>"),
-            'patient': ("<tr><td><b>Patient ID:</b></td><td>" +
-                        alert.uuid + "</td></tr>"),
-            'gender': ("<tr><td><b>Gender:</b></td><td>" +
-                       alert.variables["alert_gender"].title() + "</td></tr>"),
-            'age': ("<tr><td><b>Age:</b></td><td>" +
-                    str(alert.variables["alert_age"]) + "</td></tr>"),
-            'id': ("<tr><td><b>Alert ID:</b></td><td>" + alert_id +
-                   "</td></tr>"),
-            'breaker': "<tr style='height:10px'></tr>"
-        }
+        # Get the message template to use
+        template = variables[alert.variables['alert_reason']].alert_message
+        if not template:
+            template = "case"  # default to case message template
 
-        # Get which sms strings to be used and in which order from the country
-        # config.
-        sms_data = country_config.get(
-            'alert_sms_content',
-            ['reason', 'date', 'clinic',
-             'region', 'gender', 'age', 'received', 'id']
-        )
+        # Create the alert messages using the Jinja2 templates
+        text_template = env.get_template('alerts/{}/text'.format(template))
+        text_message = text_template.render(data=data)
 
-        # Assemble alert info for sms message from configs.
-        sms_alert_info = ""
-        for item in sms_data:
-            sms_alert_info += text_strings.get(item, "")
+        sms_template = env.get_template('alerts/{}/sms'.format(template))
+        sms_message = sms_template.render(data=data)
 
-        # Get which text strings to be used and in which order from the country
-        # config.
-        text_data = country_config.get(
-            'alert_text_content',
-            ['reason', 'date', 'clinic', 'region', 'breaker',
-             'patient', 'gender', 'age', 'breaker',
-             'submitted', 'received', 'id']
-        )
-
-        # Assemble the alert info for a plain text email message.
-        alert_info = ""
-        for item in text_data:
-            alert_info += text_strings.get(item, "")
-
-        # Get which html strings to be used and in which order from the country
-        # config.
-        html_data = country_config.get(
-            'alert_email_content',
-            ['reason', 'date', 'clinic', 'region', 'breaker',
-             'patient', 'gender', 'age', 'breaker',
-             'submitted', 'received', 'id']
-        )
-
-        # Assemble alert info for email message from configs.
-        html_alert_info = "<table style='border:none; margin-left: 20px;'>"
-        for item in html_data:
-            html_alert_info += html_strings.get(item, "")
-        html_alert_info += "</table>"
-
-        # Add to the alert info any other necessary information and store for
-        # sending to hermes.
-        message = (
-            alert_info + "To unsubscribe from <<country>> public health "
-            "surveillance notifications please copy and paste the following "
-            "url into your browser's address bar:\n"
-            "https://hermes.aws.emro.info/unsubscribe/<<id>>\n\n"
-        )
-        sms_message = (
-            "<<country>> Public Health Surveillance Alert:\n\n" +
-            sms_alert_info
-        )
-        html_message = (
-            html_alert_info +
-            "<p>To unsubscribe from <<country>> public health surveillance "
-            "notifications please <a href='https://hermes.aws.emro.info/"
-            "unsubscribe/<<id>>' target='_blank'>click here</a>.</p>"
-        )
+        html_template = env.get_template('alerts/{}/html'.format(template))
+        html_message = html_template.render(data=data)
 
         # Structure and send the hermes request
         data = {
             "from": country_config['messaging_sender'],
             "topics": create_topic_list(alert, locations),
             "id": alert_id,
-            "message": message,
+            "message": text_message,
             "sms-message": sms_message,
             "html-message": html_message,
             "subject": "Public Health Surveillance Alerts: #" + alert_id,
@@ -550,4 +478,3 @@ def send_alert(alert_id, alert, variables, locations):
         logging.info("CREATED ALERT {}".format(data['message']))
 
         libs.hermes('/publish', 'PUT', data)
-        # TODO: Add some error handling here!

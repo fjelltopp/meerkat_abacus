@@ -1,0 +1,7 @@
+<<country>> Public Health Surveillance Alert:
+
+Alert: {{data.get("reason", "Not available")}}
+Date: {{data.get("date", "Not available")}}
+Clinic: {{data.get("clinic", "Not available")}}
+Region: {{data.get("region", "Not available")}}
+Alert ID: {{data.get("alert_id", "Not available")}}
