@@ -133,7 +133,7 @@ class Config:
             self.fake_data = True
             self.internal_fake_data = False
             self.aggregate_password = os.environ.get("AGGREGATE_PASSWORD", "password")
-            self.aggregate_username = os.environ.get("AGGREGATE_PASSWORD", "test")
+            self.aggregate_username = os.environ.get("AGGREGATE_USERNAME", "test")
             self.aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")
 
     def __repr__(self):
