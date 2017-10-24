@@ -8,7 +8,7 @@ from meerkat_abacus.config import config
 from unittest import mock
 import unittest
 from meerkat_abacus import tasks
-
+import yaml
 
 class CeleryTaskTest(unittest.TestCase):
 
@@ -25,13 +25,13 @@ class CeleryTaskTest(unittest.TestCase):
         report = 'test_report'
         config.mailing_root = ''
         # First check that no email is sent when mailing root is false.
-        tasks.send_report_email(report, 'fr', "1")
+        tasks.send_report_email(report, 'fr', "1", yaml.dump(config))
         print(config.mailing_root)
         self.assertFalse(mock_authenticate.called)
         self.assertFalse(request_mock.request.called)
         # Then check that the email request is made when mailing root is set
         config.mailing_root = 'test_mailing_root'
-        tasks.send_report_email(report, 'fr', "1")
+        tasks.send_report_email(report, 'fr', "1", yaml.dump(config))
         self.assertTrue(mock_authenticate.called)
         self.assertTrue(request_mock.request.called)
         request_mock.request.assert_any_call(

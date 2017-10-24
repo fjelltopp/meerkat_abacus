@@ -65,7 +65,12 @@ def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
     process_buffer(internal_buffer=worker_buffer, start=False, param_config_yaml=param_config_yaml)
     session.close()
     engine.dispose()
+    
+@task
+def test_up():
+    return True
 
+    
 @task
 def stream_data_from_s3(param_config_yaml=yaml.dump(config)):
     param_config = yaml.load(param_config_yaml)
@@ -210,11 +215,11 @@ def cleanup_downloads():
 
 
 @task
-def send_report_email(report, language, location):
+def send_report_email(report, language, location, param_config_yaml=yaml.dump(config)):
     """Send a report email."""
-
+    param_config = yaml.load(param_config_yaml)
     # If the mailing root isn't set, don't send the email.
-    if not config.mailing_root:
+    if not param_config.mailing_root:
         logging.info("Mailing root not set. Email %s not sent.".format(report))
         return
 
@@ -224,8 +229,8 @@ def send_report_email(report, language, location):
 
     try:
         # Authenticate the email sending
-        url = config.auth_root + '/api/login'
-        data = {'username': 'report-emails', 'password': config.mailing_key}
+        url = param_config.auth_root + '/api/login'
+        data = {'username': 'report-emails', 'password': param_config.mailing_key}
         headers = {'content-type': 'application/json'}
 
         logging.warning("%sSending authentication request to %s with headers: %s", pre, str(url), str(headers) )
@@ -245,11 +250,11 @@ def send_report_email(report, language, location):
 
         # Assemble params.
         # We currently send all reports nationally for the default time period.
-        url = config.mailing_root + report + "/" + str(location) + "/"
+        url = param_config.mailing_root + report + "/" + str(location) + "/"
         url = url.replace('/en/', '/' + language + '/')
 
         # Log the full request so we can debug later if necessary.
-        logging.info("%sSending report email for location: %s with language: %s using url: %s and headers: %s",
+        logging.warning("%sSending report email for location: %s with language: %s using url: %s and headers: %s",
                      pre, str(location), str(language), str(url), str(headers))
 
         # Make the request and handle the response.
@@ -273,7 +278,7 @@ def send_report_email(report, language, location):
         data = {
             "subject": "FAILED: {} email".format(report),
             "message": "Email failed to send from {} deployment.".format(
-                config.DEPLOYMENT
+                param_config.DEPLOYMENT
             ),
             "html-message": (
                 "<p>Hi <<first_name>> <<last_name>>,</p><p>There's been a "
@@ -285,18 +290,20 @@ def send_report_email(report, language, location):
                 report=report,
                 traceback=traceback.format_exc(),
                 time=datetime.now().isoformat(),
-                deployment=config.DEPLOYMENT
+                deployment=param_config.DEPLOYMENT
             )
         }
         libs.hermes('/error', 'PUT', data)
 
 
 @task
-def send_device_messages(message, content, distribution):
-    """send the device messages"""
+def send_device_messages(message, content, distribution,
+                         param_config_yaml=yaml.dump(config)):
 
+    """send the device messages"""
+    param_config = yaml.load(param_config_yaml)
     # If the device message root isn't set, don't send the device messages.
-    if not config.device_messaging_api:
+    if not param_config.device_messaging_api:
         logging.info("Device messaging root not set. Message %s not sent.", message)
         return
 
@@ -306,7 +313,7 @@ def send_device_messages(message, content, distribution):
 
     try:
         # Assemble params.
-        url = config.device_messaging_api
+        url = param_config.device_messaging_api
 
         for target in distribution:
             # Log the full request so we can debug later if necessary.
@@ -326,7 +333,7 @@ def send_device_messages(message, content, distribution):
         data = {
             "subject": "FAILED: {} device message".format(message),
             "message": "Device message failed to send from {} deployment.".format(
-                config.DEPLOYMENT
+                param_config.DEPLOYMENT
             ),
             "html-message": (
                 "<p>Hi <<first_name>> <<last_name>>,</p><p>There's been a "
@@ -338,7 +345,7 @@ def send_device_messages(message, content, distribution):
                 message=message,
                 traceback=traceback.format_exc(),
                 time=datetime.now().isoformat(),
-                deployment=config.DEPLOYMENT
+                deployment=param_config.DEPLOYMENT
             )
         }
         libs.hermes('/error', 'PUT', data)
