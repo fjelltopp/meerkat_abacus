@@ -419,7 +419,6 @@ def send_alert(alert_id, alert, variables, locations):
         variables: dict with variables
         locations: dict with locations
     """
-    print(alert.variables)
     if alert.date > datetime.now() - timedelta(days=7):
         # List the possible strings that construct an alert sms message
         district = ""
@@ -436,7 +435,7 @@ def send_alert(alert_id, alert, variables, locations):
         # Assemble the data to be shown in the messsage
         data = {
             "date": alert.date.strftime("%d %b %Y"),
-            "received": tostr(alert.variables.get('alert_received')),
+            "received": tostr(alert.variables.get('received')),
             "submitted": tostr(alert.variables.get('alert_submitted')),
             "clinic": locations[alert.clinic].name,
             "district": district,
@@ -446,7 +445,6 @@ def send_alert(alert_id, alert, variables, locations):
             "reason": variables[alert.variables["alert_reason"]].name
         }
         message_data = {**alert.variables, **data}
-        print(message_data)
 
         # Get the message template to use
         template = variables[alert.variables['alert_reason']].alert_message
