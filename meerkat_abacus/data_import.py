@@ -1,6 +1,5 @@
 """
 Main functionality for importing data into abacus
-
 """
 import logging
 import boto3
@@ -37,7 +36,7 @@ def read_stationary_data(get_function, internal_buffer,
                 buffer_proccesser_function(internal_buffer=internal_buffer,
                                            start=False)
                 internal_buffer.put({"form": form,
-                                     "uuid": element[uuid_field_current],"data": element})
+                                     "uuid": element[uuid_field_current], "data": element})
 
 
 def download_data_from_s3(config):
