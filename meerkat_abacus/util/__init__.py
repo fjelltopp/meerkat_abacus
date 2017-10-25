@@ -20,6 +20,9 @@ env = Environment(
     autoescape=select_autoescape(['html'])
 )
 
+if country_config["messaging_silent"]:
+    logging.warning("Abacus messaging in silent mode.")
+
 
 def is_child(parent, child, locations):
     """
@@ -475,7 +478,5 @@ def send_alert(alert_id, alert, variables, locations):
 
         logging.info("CREATED ALERT {}".format(data['message']))
 
-        if country_config["messaging_silent"]:
-            logging.info("Alert not sent. Abacus messaging has been silenced.")
-        else:
+        if not country_config["messaging_silent"]:
             libs.hermes('/publish', 'PUT', data)
