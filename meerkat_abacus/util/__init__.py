@@ -435,7 +435,7 @@ def send_alert(alert_id, alert, variables, locations):
         # Assemble the data to be shown in the messsage
         data = {
             "date": alert.date.strftime("%d %b %Y"),
-            "received": tostr(alert.variables.get('received')),
+            "received": tostr(alert.variables.get('alert_received')),
             "submitted": tostr(alert.variables.get('alert_submitted')),
             "clinic": locations[alert.clinic].name,
             "district": district,
@@ -475,4 +475,7 @@ def send_alert(alert_id, alert, variables, locations):
 
         logging.info("CREATED ALERT {}".format(data['message']))
 
-        libs.hermes('/publish', 'PUT', data)
+        if country_config["messaging_silent"]:
+            logging.info("Alert not sent. Abacus messaging has been silenced.")
+        else:
+            libs.hermes('/publish', 'PUT', data)
