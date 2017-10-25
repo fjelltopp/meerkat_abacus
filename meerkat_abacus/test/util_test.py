@@ -234,10 +234,9 @@ class UtilTest(unittest.TestCase):
         self.assertTrue(mock_requests.request.called)
         call_args = mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "PUT")
-        self.assertEqual(call_args[0][1],
-                         config.hermes_api_root + "/publish")
-
-        self.assertTrue(len(call_args[1]["json"]["sms-message"]) < 160 ) #160 characters in a single sms
+        self.assertEqual(call_args[0][1], config.hermes_api_root + "/publish")
+        # 160 characters in a single sms
+        self.assertTrue(len(call_args[1]["json"]["sms-message"]) < 160)
         self.assertIn("Rabies", call_args[1]["json"]["html-message"])
         self.assertIn("Rabies", call_args[1]["json"]["sms-message"])
         self.assertIn("Rabies", call_args[1]["json"]["message"])
@@ -248,6 +247,27 @@ class UtilTest(unittest.TestCase):
         self.assertIn(prefix + "-1-1", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-2-1", call_args[1]["json"]["topics"])
         self.assertEqual("abcdef", call_args[1]["json"]["id"])
+
+        # Test a register alert
+        var_mock = mock.Mock()
+        var_mock.configure_mock(name='Diarrhoea', alert_message='register')
+        variables = {"1": var_mock}
+        util.send_alert("abcdef", alert, variables, locations)
+
+        self.assertTrue(mock_authenticate.called)
+        self.assertTrue(mock_requests.request.called)
+        call_args = mock_requests.request.call_args
+        self.assertEqual(call_args[0][0], "PUT")
+        self.assertEqual(call_args[0][1], config.hermes_api_root + "/publish")
+
+        msgs = (call_args[1]["json"]["html-message"] +
+                call_args[1]["json"]["sms-message"] +
+                call_args[1]["json"]["message"])
+
+        # 160 characters in a single sms
+        self.assertTrue(len(call_args[1]["json"]["sms-message"]) < 160)
+        self.assertIn("Diarrhoea", msgs)
+        self.assertFalse(any(x in msgs for x in ['Patient', 'Age', 'Gender']))
 
         # The date is now too early
         mock_requests.reset_mock()
