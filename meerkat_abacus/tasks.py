@@ -107,7 +107,7 @@ def process_buffer(start=True, internal_buffer=None, param_config_yaml=yaml.dump
 
 
 @task(bind=True, default_retry_delay=300, max_retries=5)
-def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=yaml.dump(config)):
+def poll_queue(sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=yaml.dump(config)):
     """ Get's messages from SQS queue"""
     logging.info("Running Poll Queue")
 
@@ -193,8 +193,7 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False,
                                           "N": N,
                                           "dates_is_now": dates_is_now,
                                           "internal_fake_data": internal_fake_data,
-                                          "param_config": param_config,
-                                          "aggregate_config": aggregate_config})
+                                          "param_config_yaml": param_config_yaml})
                     
     session.close()
     engine.dispose()
