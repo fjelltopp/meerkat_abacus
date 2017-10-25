@@ -131,14 +131,14 @@ country_config = {
         ]
     },
     "exclusion_lists": {
-      "demo_case":[
+      "demo_case": [
         "demo_case_exclusion_list.csv"
       ]
     },
     "alert_data": {
         "demo_case": {
-            "age": "pt./age",
-            "gender": "pt./gender",
+            "age": "pt1./age",
+            "gender": "pt1./gender",
             "submitted": "SubmissionDate",
             "received": "end"
         }
