@@ -376,11 +376,8 @@ def get_data_from_rds_persistent_storage(form, param_config=config):
     """ Get data from RDS persistent storage"""
     engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
     q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
-    print(str(q))
-    while q.count() > 0:
-        for row in q:
-            yield row.__dict__['data']
-        q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
+    for row in session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
+        yield row.__dict__['data']
 
 
 def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
