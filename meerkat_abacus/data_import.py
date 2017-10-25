@@ -23,6 +23,7 @@ def read_stationary_data(get_function, internal_buffer,
         uuid_field = "meta/instanceID"
         for element in get_function(form, param_config=param_config):
             try:
+                print("get_function yielded: " + str(element))
                 i += 1
                 uuid_field_current = param_config.country_config.get("tables_uuid",
                                                                {}).get(form,

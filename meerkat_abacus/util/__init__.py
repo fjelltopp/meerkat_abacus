@@ -379,8 +379,7 @@ def get_data_from_rds_persistent_storage(form, param_config=config):
     print(str(q))
     while q.count() > 0:
         for row in q:
-            print(row.__dict__)
-            yield row.__dict__
+            yield row.__dict__['data']
         q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
 
 
