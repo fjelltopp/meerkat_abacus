@@ -210,7 +210,7 @@ class UtilTest(unittest.TestCase):
                               "date": datetime.now()
         })
         var_mock = mock.Mock()
-        var_mock.configure_mock(name='Rabies')
+        var_mock.configure_mock(name='Rabies', alert_message='case')
 
         region_mock = mock.Mock()
         region_mock.configure_mock(name="Region")
@@ -236,6 +236,7 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(call_args[0][0], "PUT")
         self.assertEqual(call_args[0][1],
                          config.hermes_api_root + "/publish")
+
         self.assertTrue(len(call_args[1]["json"]["sms-message"]) < 160 ) #160 characters in a single sms
         self.assertIn("Rabies", call_args[1]["json"]["html-message"])
         self.assertIn("Rabies", call_args[1]["json"]["sms-message"])

@@ -444,7 +444,7 @@ def send_alert(alert_id, alert, variables, locations):
             "alert_id": alert_id,
             "reason": variables[alert.variables["alert_reason"]].name
         }
-        message_data = {**alert.variables, **data}
+        data = {**alert.variables, **data}
 
         # Get the message template to use
         template = variables[alert.variables['alert_reason']].alert_message
