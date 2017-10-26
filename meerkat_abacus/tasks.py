@@ -107,7 +107,7 @@ def process_buffer(start=True, internal_buffer=None, param_config_yaml=yaml.dump
 
 
 @task(bind=True, default_retry_delay=300, max_retries=5)
-def poll_queue(sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=yaml.dump(config)):
+def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=yaml.dump(config)):
     """ Get's messages from SQS queue"""
     logging.info("Running Poll Queue")
 
@@ -152,7 +152,8 @@ def poll_queue(sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=yaml.
                 logging.exception("Error in reading message", exc_info=True)
                                     
     if start:
-        poll_queue.delay(sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=param_config_yaml)
+        poll_queue.delay(sqs_queue_name=sqs_queue_name, sqs_endpoint=sqs_endpoint,
+                         start=start, param_config_yaml=param_config_yaml)
 
 
 @task
