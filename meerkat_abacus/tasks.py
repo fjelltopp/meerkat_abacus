@@ -114,8 +114,12 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml
     global sqs_client
     global sqs_queue_url
     if sqs_client is None:
-        sqs_client, sqs_queue_url = util.subscribe_to_sqs(sqs_endpoint,
-                                                          sqs_queue_name)
+        try:
+            sqs_client, sqs_queue_url = util.subscribe_to_sqs(sqs_endpoint,
+                                                              sqs_queue_name)
+        except Exception as e:
+            logging.error(str(e))
+            self.retry()
     try:
         messages = sqs_client.receive_message(QueueUrl=sqs_queue_url,
                                               WaitTimeSeconds=19)
