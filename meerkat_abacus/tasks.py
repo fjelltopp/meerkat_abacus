@@ -110,13 +110,14 @@ def process_buffer(start=True, internal_buffer=None, param_config_yaml=yaml.dump
 def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=yaml.dump(config)):
     """ Get's messages from SQS queue"""
     logging.info("Running Poll Queue")
+    param_config = yaml.load(param_config_yaml)
 
     global sqs_client
     global sqs_queue_url
     if sqs_client is None:
         try:
-            sqs_client, sqs_queue_url = util.subscribe_to_sqs(sqs_endpoint,
-                                                              sqs_queue_name)
+            sqs_client, sqs_queue_url = util.subscribe_to_sqs(param_config.SQS_ENDPOINT,
+                                                              param_config.sqs_queue)
         except Exception as e:
             logging.error(str(e))
             self.retry()

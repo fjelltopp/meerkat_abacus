@@ -403,7 +403,7 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
         print(e)
         logging.info("Creating Queue")
         response = sqs_client.create_queue(
-            QueueName=config.sqs_queue
+            QueueName=sqs_queue_name
         )
         queue_url = sqs_client.get_queue_url(
             QueueName=sqs_queue_name,
