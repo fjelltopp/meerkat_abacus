@@ -114,6 +114,7 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(ret_location["region"], 2)
         self.assertEqual(ret_location["district"], 4)
         self.assertEqual(ret_location["clinic"], 6)
+        self.assertEqual(ret_location["device_id"], '1')
 
         row["form1"]["deviceid"] = "2"
         var, category, ret_location, disregard = to_code(
@@ -123,6 +124,7 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(ret_location["country"], 1)
         self.assertEqual(ret_location["region"], 3)
         self.assertEqual(ret_location["district"], 5)
+        self.assertEqual(ret_location["device_id"], '2')
 
         row["form1"]["deviceid"] = "3"
         var, category, ret_location, disregard = to_code(
@@ -132,6 +134,7 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(ret_location["country"], 1)
         self.assertEqual(ret_location["region"], 2)
         self.assertEqual(ret_location["district"], None)
+        self.assertEqual(ret_location["device_id"], '3')
         row["form1"]["deviceid"] = "99"
         var, category, ret_location, disregard = to_code(
             row,

@@ -1,0 +1,34 @@
+<table style='border:none; margin-left: 20px;'>
+    <tr>
+        <td><b>Alert:</b></td>
+        <td>{{data.get("reason", "Not available")}}</td>
+    </tr>
+    <tr>
+        <td><b>Date:</b></td>
+        <td>{{data.get("date", "Not available")}}</td>
+    </tr>
+    <tr>
+        <td><b>Clinic:</b></td>
+        <td>{{data.get("clinic", "Not available")}}</td>
+    </tr>
+    <tr>
+        <td><b>Region:</b></td>
+        <td>{{data.get("region", "Not available")}}</td>
+    </tr>
+    <tr style='height:10px'></tr>
+    <tr>
+        <td><b>Submitted:</b></td>
+        <td>{{data.get("submitted", "Not available")}}</td>
+    </tr>
+    <tr>
+        <td><b>Received:</b></td>
+        <td>{{data.get("received", "Not available")}}</td>
+    </tr>
+    <tr>
+        <td><b>Alert ID:</b></td>
+        <td>{{data.get("alert_id", "Not available")}}</td>
+    </tr>
+</table>
+<p>
+    To unsubscribe from <<country>> public health surveillance notifications please <a href='https://hermes.aws.emro.info/unsubscribe/<<id>>' target='_blank'>click here</a>.
+</p>

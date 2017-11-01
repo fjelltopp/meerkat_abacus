@@ -42,7 +42,6 @@ get_data_from_s3 = int(os.environ.get("GET_DATA_FROM_S3", False))
 interval = 3600  # Seconds
 hermes_api_key = os.environ.get("HERMES_API_KEY", "")
 hermes_api_root = os.environ.get("HERMES_API_ROOT", "")
-hermes_dev = int(os.environ.get("HERMES_DEV", False))
 mailing_key = os.environ.get("MAILING_KEY", "")
 mailing_root = os.environ.get("MAILING_ROOT", "")
 device_messaging_api = os.environ.get("DEVICE_MESSAGING_API", "")
@@ -72,7 +71,5 @@ if hasattr(country_config_module, 'dhis2_config'):
     # proper country configs will be added after feature launch
     dhis2_config = country_config_module.dhis2_config
 
-if hermes_dev:
-    country_config["messaging_silent"] = True
 
 s3_bucket = country_config_module.s3_bucket

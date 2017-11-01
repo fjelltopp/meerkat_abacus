@@ -10,6 +10,8 @@ from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
 from dateutil.parser import parse
 from datetime import datetime
+
+from meerkat_libs import consul_client as consul
 from meerkat_abacus import alerts as alert_functions
 from meerkat_abacus import model
 from meerkat_abacus import config
@@ -289,10 +291,12 @@ def table_data_from_csv(filename,
                                    start_dates, allow_enketo=allow_enketo):
                 dicts.append({"data": insert_row,
                               "uuid": insert_row[uuid_field]})
+                consul.send_dhis2_events(uuid=insert_row[uuid_field], form_id=filename, raw_row=insert_row)
                 new_rows.append(insert_row[uuid_field])
         else:
             dicts.append({"data": insert_row,
                           "uuid": insert_row[uuid_field]})
+            consul.send_dhis2_events(uuid=insert_row[uuid_field], form_id=filename, raw_row=insert_row)
             new_rows.append(insert_row[uuid_field])
         i += 1
         if i % 10000 == 0:
@@ -305,6 +309,7 @@ def table_data_from_csv(filename,
         logging.info("removed value: %s", removed)
     conn.execute(table.__table__.insert(), dicts)
     conn.close()
+    consul.flush_dhis2_events()
     logging.info("Number of records %s", i)
     return new_rows
 
@@ -670,7 +675,7 @@ def import_locations(engine, session):
         model.Locations(
             name=country_config["country_name"],
             level="country",
-            country_location_id=""
+            country_location_id="the_country_location_id"
         )
     )
 
@@ -1317,8 +1322,6 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 logging.error("Invalid Date: %s", row[data_type["form"]][data_type["date"]])
                 continue
 
-            # if date < locations[0][location_data["clinic"]].start_date:
-            #     next
             if "alert" in variable_data:
                 variable_data["alert_id"] = row[data_type["form"]][data_type[
                     "uuid"]][-country_config["alert_id_length"]:]
@@ -1336,8 +1339,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 "links": links,
                 "type_name": data_type["name"]
             }
-            for l in location_data.keys():
-                new_data[l] = location_data[l]
+            new_data.update(location_data)
             if disregard:
                 disregarded_data_rows.append(new_data)
             else:
