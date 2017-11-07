@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import timedelta, datetime
 import numpy as np
 from meerkat_abacus.model import Data
-from meerkat_abacus.util import epi_week_start_date
+from meerkat_abacus.util import epi_year_start_date
 
 
 def threshold(var_id, limits, session, hospital_limits=None):
@@ -66,7 +66,7 @@ def threshold(var_id, limits, session, hospital_limits=None):
             })
 
     today = datetime.now()
-    epi_year_weekday = epi_week_start_date(today.year).weekday()
+    epi_year_weekday = epi_year_start_date(today.year).weekday()
     freq = ["W-MON", "W-TUE", "W-WED", "W-THU", "W-FRI", "W-SAT",
             "W-SUN"][epi_year_weekday]
     # Group by clinic and epi week
@@ -128,7 +128,7 @@ def double_double(var_id, session):
         return None
 
     today = datetime.now()
-    epi_year_weekday = epi_week_start_date(today.year).weekday()
+    epi_year_weekday = epi_year_start_date(today.year).weekday()
     freq = ["W-MON", "W-TUE", "W-WED", "W-THU", "W-FRI", "W-SAT",
             "W-SUN"][epi_year_weekday]
     weekly = data.groupby(["clinic", pd.TimeGrouper(

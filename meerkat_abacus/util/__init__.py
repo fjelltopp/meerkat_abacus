@@ -58,7 +58,7 @@ def epi_week(date):
         date
     Returns tuple epi_year, epi_week
     """
-    start_date = epi_week_start_date(date.year)
+    start_date = epi_year_start_date(date.year)
     year = start_date.year
     # If the date is before the start date, include in week 1.
     if date < start_date:
@@ -76,7 +76,7 @@ def get_db_engine(db_url=config.DATABASE_URL):
     return engine, session
 
 
-def epi_week_start_date(year, epi_config=country_config["epi_week"]):
+def epi_year_start_date(year, epi_config=country_config["epi_week"]):
     """
     Get the first day of epi week 1
 
