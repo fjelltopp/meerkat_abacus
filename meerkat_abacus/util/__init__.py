@@ -375,7 +375,6 @@ def read_csv_filename(filename, param_config=config):
 def get_data_from_rds_persistent_storage(form, param_config=config):
     """ Get data from RDS persistent storage"""
     engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
-    q = session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False)
     for row in session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False):
         yield row.__dict__['data']
 
