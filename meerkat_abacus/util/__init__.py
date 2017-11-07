@@ -106,23 +106,6 @@ def epi_year_start_date(year, epi_config=country_config["epi_week"]):
         return epi_config.get(year, datetime(year, 1, 1))
 
 
-def get_link_definitions(session):
-    """
-    gets all the link definitions from the db
-
-    Args:
-        session: db session
-
-    Returns:
-        links(dict) : id:link
-    """
-    result = session.query(LinkDefinitions)
-    links = {}
-    for row in result:
-        links[row.id] = row
-    return links
-
-
 def field_to_list(row, key):
     """
     Transforms key in row to a list. We split on semicolons if they exist in
