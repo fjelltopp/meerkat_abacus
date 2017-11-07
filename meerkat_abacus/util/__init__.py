@@ -56,7 +56,7 @@ def epi_week(date):
 
     Args:
         date
-    Returns epi_week
+    Returns tuple epi_year, epi_week
     """
     start_date = epi_week_start_date(date.year)
     year = start_date.year
