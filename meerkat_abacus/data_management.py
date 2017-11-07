@@ -85,7 +85,9 @@ def export_data(session):
                                for col in r.__table__.columns.keys())
                 logging.debug(name + "(**" + str(columns) + "),")
 
-def add_fake_data(session, N=500, append=False, from_files=False, param_config=config):
+def add_fake_data(session, N=5000, append=False,
+                  from_files=False, param_config=config,
+                  write_to="file"):
     """
     Creates a csv file with fake data for each form. We make
     sure that the forms have deviceids that match the imported locations.
@@ -149,12 +151,13 @@ def add_fake_data(session, N=500, append=False, from_files=False, param_config=c
                 for key in generated_data[0].keys():
                     if key not in row:
                         row[key] = None
-        util.write_csv(list(current_form) + list(manual_test_data_list) + generated_data, file_name)
-
-
-
-
-
+        data_to_write = list(current_form) + list(manual_test_data_list) + generated_data
+        if write_to == "file":
+            util.write_csv(data_to_write, file_name)
+        elif write_to == "local_db":
+            util.write_to_db(data_to_write, form,
+                             param_config.PERSISTENT_DATABASE_URL,
+                             param_config=param_config)
 
     
 
