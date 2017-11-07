@@ -39,7 +39,7 @@ def read_stationary_data(get_function, internal_buffer,
                                            start=False)
                 internal_buffer.put({"form": form,
                                      "uuid": element[uuid_field_current], "data": element})
-        print("read_stationary_data for " + form + " read through" + n + " records")
+        print("read_stationary_data for " + str(form) + " read through" + str(n) + " records")
 
 
 def download_data_from_s3(config):
