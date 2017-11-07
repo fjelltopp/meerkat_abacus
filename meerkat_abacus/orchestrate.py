@@ -63,7 +63,7 @@ logging.info("Finished setting up DB")
 
 # Set up data initialisation
 logging.info("Load data task started")
-initial_data = tasks.initial_data_setup.delay(source=config.initial_data, param_config_yaml=param_config_yaml)
+initial_data = tasks.initial_data_setup.delay(source=config.initial_data_source, param_config_yaml=param_config_yaml)
 
 result = initial_data.get()
 logging.info("Load data task finished")
