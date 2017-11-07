@@ -3,7 +3,7 @@ Main functionality for importing data into abacus
 """
 import logging
 import boto3
-from queue import Full
+import queue
 from dateutil.parser import parse
 import random
 
@@ -13,7 +13,8 @@ from meerkat_abacus.codes import to_codes
 
 
 def read_stationary_data(get_function, internal_buffer,
-                         buffer_proccesser_function, session, engine, param_config=config):
+                         buffer_proccesser_function, session,
+                         engine, param_config=config):
     """
     Read stationary data using the get_function to determine the source
     """
@@ -32,7 +33,7 @@ def read_stationary_data(get_function, internal_buffer,
                 internal_buffer.put_nowait({"form": form,
                                             "uuid": element[uuid_field_current],
                                             "data": element})
-            except Full:
+            except queue.Full:
                 i = 0
                 # Reached max_size of buffer
                 buffer_proccesser_function(internal_buffer=internal_buffer,

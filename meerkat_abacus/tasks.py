@@ -57,6 +57,9 @@ def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
         data_management.add_fake_data(session=session, param_config=param_config)
     elif source == "RDS":
         get_function = util.get_data_from_rds_persistent_storage
+        data_management.add_fake_data(session=session, param_config=param_config,
+                                      write_to="local_db")
+        
 
     else:
         raise AttributeError("Invalid source")

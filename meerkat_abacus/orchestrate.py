@@ -48,6 +48,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 wait_for_celery_runner()
 
+app.control.purge()
 logging.info("Setting up DB for %s", config.country_config["country_name"])
 global engine
 global session

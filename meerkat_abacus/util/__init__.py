@@ -345,7 +345,36 @@ def write_csv(rows, file_path, mode='w'):
             for row in rows:
                 out.writerow(row)
 
-                
+
+def write_to_db(data, form, db_url, param_config=config):
+    """
+    Writes data to db_url
+
+    Args:
+        rows: list of dicts with data
+        form: form to write to
+        db_url: Which db url to use
+    """
+    if data:
+        dicts = []
+        uuid_field = "meta/instanceID"
+        if "tables_uuid" in param_config.country_config:
+            uuid_field = param_config.country_config["tables_uuid"].get(form, uuid_field)
+        for d in data:
+            dicts.append(
+                {
+                    "data": d,
+                    "uuid": d[uuid_field]
+                }
+            )
+        table = form_tables[form]
+        engine, session = get_db_engine(db_url)
+        conn = engine.connect()
+        conn.execute(table.__table__.insert(), dicts)
+        conn.close()
+
+
+        
 def get_exclusion_list(session, form):
     """
     Get exclusion list for a form
