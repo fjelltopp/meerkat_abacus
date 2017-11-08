@@ -158,7 +158,7 @@ def epi_year_start_date_by_year(year, epi_config=country_config["epi_week"]):
         return datetime(year, 1, 1)
 
 
-def epi_week_start(year, epi_week):
+def epi_week_start_date(year, epi_week):
     """
     Calculates the start of an epi week in given year:
 
