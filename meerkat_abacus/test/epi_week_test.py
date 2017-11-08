@@ -1,15 +1,16 @@
 import unittest
 
+from parametrized import parametrized
 from datetime import datetime
 
-from meerkat_abacus.util import epi_year_start_date
+from meerkat_abacus.util import epi_year_start_date, epi_year_by_date
 
 
 class EpiWeekTest(unittest.TestCase):
     def test_epi_year_start_for_international_config(self):
         expected_epi_year_start_date = datetime(2015, 1, 1)
         date = datetime(2015, 5, 25)
-        self.assertEqual(expected_epi_year_start_date, epi_year_start_date(date, "international"))
+        self.assertEqual(expected_epi_year_start_date, epi_year_start_date(date, epi_config="international"))
 
     def test_epi_year_start_for_custom_weekday(self):
         year = 2016
@@ -18,12 +19,12 @@ class EpiWeekTest(unittest.TestCase):
         date = datetime(2016, 6, 14)
 
         for weekday, expected_epi_year_start_datetime in enumerate(first_weekdays_in_year_datetimes):
-            epi_config = "day:{!r}".format(weekday)
-            actual_epi_year_start_datetime = epi_year_start_date(date, epi_config)
+            test_config = "day:{!r}".format(weekday)
+            actual_epi_year_start_datetime = epi_year_start_date(date, epi_config=test_config)
             self.assertEqual(expected_epi_year_start_datetime, actual_epi_year_start_datetime)
 
     def test_epi_year_start_for_custom_start_date(self):
-        epi_config = {
+        test_config = {
             2016: datetime(2016, 1, 2),
             2017: datetime(2016, 12, 30)
         }
@@ -33,6 +34,35 @@ class EpiWeekTest(unittest.TestCase):
             {"date": datetime(2017, 4, 24), "expected_year": 2017}
         ]
         for _test in test_data:
-            expected_datetime = epi_config[_test["expected_year"]]
-            actual_datetime = epi_year_start_date(_test["date"], epi_config)
+            expected_datetime = test_config[_test["expected_year"]]
+            actual_datetime = epi_year_start_date(_test["date"], epi_config=test_config)
             self.assertEqual(expected_datetime, actual_datetime)
+
+    def test_epi_year_for_date_standard_config(self):
+        test_data = [
+            {"date": datetime(2017, 3, 5), "expected_year": 2017},
+            {"date": datetime(2017, 1, 1), "expected_year": 2017},
+            {"date": datetime(2016, 12, 31), "expected_year": 2016}
+        ]
+        for test_config in ["international", "day:0", "day:5"]:
+            for _test in test_data:
+                expected_year = _test["expected_year"]
+                actual_year = epi_year_by_date(_test["date"], epi_config=test_config)
+                self.assertEqual(expected_year, actual_year)
+
+    def test_epi_year_for_date_custom_config(self):
+        test_config = {
+            2015: datetime(2015, 1, 1),
+            2016: datetime(2016, 1, 2),
+            2017: datetime(2016, 12, 30)
+        }
+        test_data = [
+            {"date": datetime(2016, 1, 1), "expected_year": 2015},
+            {"date": datetime(2016, 3, 5), "expected_year": 2016},
+            {"date": datetime(2016, 12, 31), "expected_year": 2017},
+            {"date": datetime(2017, 4, 24), "expected_year": 2017}
+        ]
+        for _test in test_data:
+            expected_year = _test["expected_year"]
+            actual_year = epi_year_by_date(_test["date"], epi_config=test_config)
+            self.assertEqual(expected_year, actual_year)

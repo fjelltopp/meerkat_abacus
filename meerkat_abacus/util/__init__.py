@@ -52,7 +52,7 @@ def is_child(parent, child, locations):
     return False
 
 
-def epi_week(date):
+def epi_week_for_date(date):
     """
     calculate epi week
 
@@ -60,12 +60,13 @@ def epi_week(date):
         date
     Returns tuple epi_year, epi_week
     """
-    start_date = epi_year_start_date(date)
-    year = start_date.year
-    # If the date is before the start date, include in week 1.
-    if date < start_date:
-        return year, 1
-    return year, (date - start_date).days // 7 + 1
+    _epi_year_start_date = epi_year_start_date(date)
+    _epi_year = epi_year_by_date(date)
+    # If the date is before the epi year start date, include it in week 1.
+    if date < _epi_year_start_date:
+        return _epi_year, 1
+    _epi_week_number = (date - _epi_year_start_date).days // 7 + 1
+    return _epi_year, _epi_week_number
 
 
 def get_db_engine(db_url=config.DATABASE_URL):
@@ -158,6 +159,16 @@ def epi_year_start_date_by_year(year, epi_config=country_config["epi_week"]):
         return datetime(year, 1, 1)
 
 
+def epi_year_by_date(date, epi_config=country_config["epi_week"]):
+    if isinstance(epi_config, dict):
+        for epi_year, epi_year_start_datetime in reversed(sorted(epi_config.items())):
+            if date > epi_year_start_datetime:
+                return epi_year
+        raise ValueError("Could not compute epi year for date {!r}".format(date))
+    else:
+        return date.year
+
+
 def epi_week_start_date(year, epi_week):
     """
     Calculates the start of an epi week in given year:
@@ -168,8 +179,8 @@ def epi_week_start_date(year, epi_week):
     Returns:
         start-date: datetime
     """
-    epi_year_start_date = epi_year_start_date_by_year(int(year))
-    start_date = epi_year_start_date + timedelta(weeks=int(epi_week) - 1)
+    _epi_year_start_date = epi_year_start_date_by_year(int(year))
+    start_date = _epi_year_start_date + timedelta(weeks=int(epi_week) - 1)
     return start_date
 
 

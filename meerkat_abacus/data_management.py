@@ -17,7 +17,7 @@ from meerkat_abacus import model
 from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
-from meerkat_abacus.util import create_fake_data, epi_week
+from meerkat_abacus.util import create_fake_data, epi_week_for_date
 import meerkat_libs as libs
 from shapely.geometry import shape, Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
@@ -1327,7 +1327,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                     "uuid"]][-country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1
             variable_data["data_entry"] = 1
-            epi_year, week = epi_week(date)
+            epi_year, week = epi_week_for_date(date)
             new_data = {
                 "date": date,
                 "epi_week": week,
