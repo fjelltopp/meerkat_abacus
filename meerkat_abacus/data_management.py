@@ -1120,6 +1120,9 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             try:
                 date = parse(row[data_type["form"]][data_type["date"]])
                 date = datetime(date.year, date.month, date.day)
+            except KeyError:
+                logging.error("Missing Date field %s", data_type["date"])
+                continue
             except:
                 logging.error("Invalid Date: %s", row[data_type["form"]][data_type["date"]])
                 continue
