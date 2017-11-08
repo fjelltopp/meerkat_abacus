@@ -160,6 +160,24 @@ def epi_year_start_date_by_year(year, epi_config=country_config["epi_week"]):
 
 
 def epi_year_by_date(date, epi_config=country_config["epi_week"]):
+    """
+    Calculates the epi year for provided date
+    :param date: date to caluclate the epi year for
+    :param epi_config: epi year computation logic, "international", "day:X" or custom dict
+        if epi_config==international epi_week 1 starts on the 1st of January
+
+        if epi_config== day:<weekday> then the first epi_week start on the first weekday
+        First weekday after 1st of January
+        <weekday> is an integer where <weekday>=0 is Monday, 2 is Tuesday, etc.
+
+        if epi_config is a dict one can specify custom start dates for epi years
+        e.g.
+        "epi_week": {
+            2011: datetime.datetime(2011, 1, 2),
+            2012: datetime.datetime(2011, 12, 31)
+        }
+    :return: epi year
+    """
     if isinstance(epi_config, dict):
         for epi_year, epi_year_start_datetime in reversed(sorted(epi_config.items())):
             if date > epi_year_start_datetime:
