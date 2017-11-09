@@ -19,8 +19,8 @@ def read_stationary_data(get_function, internal_buffer,
     Read stationary data using the get_function to determine the source
     """
     i = 0
-    n = 0
     for form in param_config.country_config["tables"]:
+        n = 0
         logging.info(form)
         uuid_field = "meta/instanceID"
         for element in get_function(form, param_config=param_config):
@@ -47,7 +47,6 @@ def read_stationary_data(get_function, internal_buffer,
         buffer_proccesser_function(internal_buffer=internal_buffer,
                                    start=False,
                                    param_config_yaml=yaml.dump(param_config))
-
 
 def download_data_from_s3(config):
     """

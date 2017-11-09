@@ -55,10 +55,11 @@ def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
     elif source == "FAKE_DATA":
         get_function = util.read_csv_filename
         data_management.add_fake_data(session=session, param_config=param_config)
-    elif source == "RDS":
+    elif source in ["AWS_RDS", "LOCAL_RDS"]:
         get_function = util.get_data_from_rds_persistent_storage
-        data_management.add_fake_data(session=session, param_config=param_config,
-                                      write_to="local_db")
+        if source == "LOCAL_RDS":
+            data_management.add_fake_data(session=session, param_config=param_config,
+                                          write_to="local_db")
         
 
     else:
