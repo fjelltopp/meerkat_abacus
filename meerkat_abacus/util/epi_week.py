@@ -5,7 +5,9 @@ from meerkat_abacus.config import country_config
 
 def epi_week_for_date(date):
     """
-    calculate epi week
+    Calculate epi week for given date.
+    Returned epi week number is from range 1, 53. 53rd week includes dates from the end of 52nd week of current year
+    and the start of 1st epi week of next year.
 
     Args:
         date
@@ -13,10 +15,9 @@ def epi_week_for_date(date):
     """
     _epi_year_start_date = epi_year_start_date(date)
     _epi_year = epi_year_by_date(date)
-    # If the date is before the epi year start date, include it in week 1.
-    if date < _epi_year_start_date:
-        return _epi_year, 1
     _epi_week_number = (date - _epi_year_start_date).days // 7 + 1
+    if _epi_week_number == 0:
+        _epi_week_number = 53
     return _epi_year, _epi_week_number
 
 
@@ -54,9 +55,8 @@ def epi_year_start_date(date, epi_config=country_config["epi_week"]):
             adjustment = 7 + adjustment
         return first_of_year + timedelta(days=adjustment)
     elif isinstance(epi_config, dict):
-        for start_datetime in reversed(sorted(epi_config.values())):
-            if date > start_datetime:
-                return start_datetime
+        _epi_year, _epi_year_start_date = __get_epi_week_for_custom_config(date, epi_config)
+        return _epi_year_start_date
     else:
         return datetime(date.year, 1, 1)
 
@@ -114,10 +114,8 @@ def epi_year_by_date(date, epi_config=country_config["epi_week"]):
     :return: epi year
     """
     if isinstance(epi_config, dict):
-        for epi_year, epi_year_start_datetime in reversed(sorted(epi_config.items())):
-            if date > epi_year_start_datetime:
-                return epi_year
-        raise ValueError("Could not compute epi year for date {!r}".format(date))
+        _epi_year, _epi_year_start_date = __get_epi_week_for_custom_config(date, epi_config)
+        return _epi_year
     elif isinstance(epi_config, str) and "day:" in epi_config:
         year = date.year
         _epi_year_start_date = __epi_year_start_date_for_weekday_config(year, epi_config)
@@ -152,3 +150,10 @@ def __epi_year_start_date_for_weekday_config(year, epi_config):
     if adjustment < 0:
         adjustment = 7 + adjustment
     return first_of_year + timedelta(days=adjustment)
+
+
+def __get_epi_week_for_custom_config(date, epi_config):
+    for epi_year, epi_year_start_datetime in reversed(sorted(epi_config.items())):
+        if date >= epi_year_start_datetime:
+            return epi_year, epi_year_start_datetime
+    raise ValueError("Could not compute epi year for date {!r}".format(date))
