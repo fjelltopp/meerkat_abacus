@@ -8,6 +8,7 @@ from meerkat_abacus import data_import
 from meerkat_abacus import util
 from meerkat_abacus.config import config
 from meerkat_abacus import data_management
+import time
 
 deviceids_case = None
 deviceids = None
@@ -48,27 +49,29 @@ def prepare_add_rows_arguments(form, session, param_config=config):
     return {"uuid_field": uuid_field,
             "deviceids": form_deviceids,
             "table_name": form,
+            "only_new": True,
             "start_dates": start_dates,
             "quality_control": quality_control,
             "allow_enketo": allow_enketo,
             "exclusion_list": exclusion_list,
-            "fraction": param_config.import_fraction}
+            "fraction": param_config.import_fraction,
+            "param_config": param_config}
 
 
-def process_chunk(internal_buffer, session, engine, param_config=config):
+def process_chunk(internal_buffer, session, engine, param_config=config,
+                  run_overall_processes=True):
     """
     Processing a chunk of data from the internal buffer
 
     """
-    logging.info("Processing Chunk")
-
+    start = time.time()
     uuids = []
     tables = defaultdict(list)
-    logging.info(internal_buffer.qsize())
     while internal_buffer.qsize() > 0:
 
         element = internal_buffer.get()
         tables[element["form"]].append(element["data"])
+
     for form in tables:
         kwargs = prepare_add_rows_arguments(form, session, param_config)
         uuids += data_import.add_rows_to_db(
@@ -77,8 +80,15 @@ def process_chunk(internal_buffer, session, engine, param_config=config):
             session,
             engine,
             **kwargs)
-    data_management.initial_visit_control()
-    data_management.new_data_to_codes(
-        debug_enabled=True,
-        restrict_uuids=uuids
+    corrected = data_management.initial_visit_control(
+        param_config=param_config
     )
+    uuids += corrected
+    if len(uuids) > 0:
+        data_management.new_data_to_codes(
+            debug_enabled=True,
+            restrict_uuids=uuids,
+            param_config=param_config
+        )
+        if run_overall_processes:
+            data_management.add_alerts(session, param_config=param_config)

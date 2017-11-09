@@ -141,4 +141,3 @@ class Config:
 
 
 config = Config()
-print('foo')

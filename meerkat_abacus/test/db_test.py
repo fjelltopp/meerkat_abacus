@@ -42,8 +42,8 @@ class DbTest(unittest.TestCase):
         self.session.commit()
         self.session.close()
         self.engine.dispose()
-        if database_exists(config.DATABASE_URL):
-            drop_database(config.DATABASE_URL)
+        #if database_exists(config.DATABASE_URL):
+        #    drop_database(config.DATABASE_URL)
 
     def test_create_db(self):
         if database_exists(config.DATABASE_URL):
@@ -133,11 +133,11 @@ class DbTest(unittest.TestCase):
         data_row = {"a": "test", "b1": "test1", "b2": "test2",
                     "pt./visit_date": "2016/01/01", "meta/instanceID": "1",
                     "deviceid": "1"}
-        self.session.query(model.form_tables["demo_case"]).delete()
+        self.session.query(model.form_tables()["demo_case"]).delete()
         self.session.query(model.Data).delete()
         self.session.commit()
 
-        case = model.form_tables["demo_case"](
+        case = model.form_tables()["demo_case"](
             uuid="hei",
             data=data_row
         )
@@ -214,7 +214,7 @@ class DbTest(unittest.TestCase):
             start_dates={"2": datetime(2016, 2, 2)},
             table_name="demo_case",
             quality_control=True)
-        results = self.session.query(model.form_tables["demo_case"]).all()
+        results = self.session.query(model.form_tables()["demo_case"]).all()
         self.assertEqual(len(results), 4)
         # Only 6 of the cases have deviceids in 1-6
         # One has to early submission date and one
@@ -245,8 +245,8 @@ class DbTest(unittest.TestCase):
         country_test.test_locations(results)
 
         if config.fake_data:
-            for table in model.form_tables:
-                results = session.query(model.form_tables[table])
+            for table in model.form_tables():
+                results = session.query(model.form_tables()[table])
                 self.assertEqual(len(results.all()), 500)
         # Import variables
         agg_var = session.query(model.AggregationVariables).filter(
@@ -261,12 +261,12 @@ class DbTest(unittest.TestCase):
         n_disregarded_cases =  len(
             session.query(model.DisregardedData).filter(model.Data.type == "case").all())
 
-        t = model.form_tables[config.country_config["tables"][0]]
+        t = model.form_tables()[config.country_config["tables"][0]]
         n_expected_cases = len(
             session.query(t).filter(t.data["intro./visit"].astext == "new")
             .all())
         self.assertEqual(n_cases + n_disregarded_cases, n_expected_cases)
-
+        
         agg_var_female = "gen_2"
         results = session.query(model.Data).filter(model.Data.type == "case")
         results2 = session.query(model.DisregardedData).filter(model.DisregardedData.type == "case")
@@ -306,13 +306,13 @@ class DbTest(unittest.TestCase):
         tasks.config.country_config["manual_test_data"] = {}
         numbers = {}
         tasks.set_up_db.apply(kwargs={"param_config_yaml": self.param_config_yaml}).get()
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
+        for table in model.form_tables():
+            res = self.session.query(model.form_tables()[table])
             numbers[table] = len(res.all())
         tasks.add_fake_data()
         tasks.process_buffer(start=False)
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
+        for table in model.form_tables():
+            res = self.session.query(model.form_tables()[table])
             self.assertEqual(numbers[table] + 10, len(res.all()))
         #Clean up
         tasks.config.fake_data = old_fake
@@ -335,13 +335,13 @@ class DbTest(unittest.TestCase):
         manage.import_locations(self.engine, self.session)
         manage.import_variables(self.session)
         manage.add_fake_data(self.session, N=500, append=False)
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
+        for table in model.form_tables():
+            res = self.session.query(model.form_tables()[table])
             numbers[table] = len(res.all())
         tasks.add_fake_data()
         tasks.process_buffer(start=False)
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
+        for table in model.form_tables():
+            res = self.session.query(model.form_tables()[table])
             self.assertEqual(numbers[table] + 10, len(res.all()))
         #Reset configuration parameters
         tasks.config.fake_data = old_fake

@@ -85,7 +85,7 @@ def export_data(session):
                                for col in r.__table__.columns.keys())
                 logging.debug(name + "(**" + str(columns) + "),")
 
-def add_fake_data(session, N=5000, append=False,
+def add_fake_data(session, N=500, append=False,
                   from_files=False, param_config=config,
                   write_to="file"):
     """
@@ -222,7 +222,7 @@ def table_data_from_csv(filename,
     return new_rows
 
 
-def import_variables(session):
+def import_variables(session, param_config=config):
     """
     Import variables from codes csv-file.
 
@@ -232,9 +232,9 @@ def import_variables(session):
     session.query(model.AggregationVariables).delete()
     session.commit()
     #check if the coding_list parameter exists. If not, use the legacy parameter codes_file instead
-    if 'coding_list' in country_config.keys():
-        for coding_file_name in country_config['coding_list']:
-            codes_file = config.config_directory + 'variable_codes/' + coding_file_name
+    if 'coding_list' in param_config.country_config.keys():
+        for coding_file_name in param_config.country_config['coding_list']:
+            codes_file = param_config.config_directory + 'variable_codes/' + coding_file_name
             for row in util.read_csv(codes_file):
                 if '' in row.keys():
                     row.pop('')
@@ -244,7 +244,7 @@ def import_variables(session):
                 session.add(model.AggregationVariables(**row))
             session.commit()
     else:
-        codes_file = config.config_directory + country_config['codes_file'] + '.csv'
+        codes_file = param_config.config_directory + param_config.country_config['codes_file'] + '.csv'
         for row in util.read_csv(codes_file):
             if '' in row.keys():
                 row.pop('')
@@ -268,7 +268,7 @@ def import_data(engine, session):
     deviceids = util.get_deviceids(session)
     start_dates = util.get_start_date_by_deviceid(session)
 
-    for form in model.form_tables.keys():
+    for form in model.form_tables().keys():
 
         uuid_field = "meta/instanceID"
         if "tables_uuid" in country_config:
@@ -289,7 +289,7 @@ def import_data(engine, session):
         exclusion_list = get_exclusion_list(session, form)
         table_data_from_csv(
             form,
-            model.form_tables[form],
+            model.form_tables()[form],
             config.data_directory,
             session,
             engine,
@@ -495,7 +495,7 @@ def import_regions(csv_file, session, column_name,
     session.commit()
 
 
-def import_locations(engine, session):
+def import_locations(engine, session, param_config=config):
     """
     Imports all locations from csv-files.
 
@@ -507,7 +507,7 @@ def import_locations(engine, session):
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
     session.add(
         model.Locations(
-            name=country_config["country_name"],
+            name=param_config.country_config["country_name"],
             level="country",
             country_location_id=""
         )
@@ -516,15 +516,15 @@ def import_locations(engine, session):
     session.query(model.Devices).delete()
     session.commit()
     zone_file = None
-    if "zones" in country_config["locations"]:
-        zone_file = (config.config_directory + "locations/" +
-                    country_config["locations"]["zones"])
-    regions_file = (config.config_directory + "locations/" +
-                    country_config["locations"]["regions"])
-    districts_file = (config.config_directory + "locations/" +
-                      country_config["locations"]["districts"])
-    clinics_file = (config.config_directory + "locations/" +
-                    country_config["locations"]["clinics"])
+    if "zones" in param_config.country_config["locations"]:
+        zone_file = (param_config.config_directory + "locations/" +
+                    param_config.country_config["locations"]["zones"])
+    regions_file = (param_config.config_directory + "locations/" +
+                    param_config.country_config["locations"]["regions"])
+    districts_file = (param_config.config_directory + "locations/" +
+                      param_config.country_config["locations"]["districts"])
+    clinics_file = (param_config.config_directory + "locations/" +
+                    param_config.country_config["locations"]["clinics"])
 
     if zone_file:
         import_regions(zone_file, session, "zone", "country", "zone")
@@ -533,13 +533,13 @@ def import_locations(engine, session):
         import_regions(regions_file, session, "region", "country", "region")
     import_regions(districts_file, session, "district", "region", "district")
     import_clinics(clinics_file, session, 1,
-                   other_info=country_config.get("other_location_information", None),
-                   other_condition=country_config.get("other_location_condition", None))
-    for geosjon_file in config.country_config["geojson_files"]:
-        import_geojson(config.config_directory + geosjon_file,
+                   other_info=param_config.country_config.get("other_location_information", None),
+                   other_condition=param_config.country_config.get("other_location_condition", None))
+    for geosjon_file in param_config.country_config["geojson_files"]:
+        import_geojson(param_config.config_directory + geosjon_file,
                        session)
 
-def import_parameters(engine, session):
+def import_parameters(engine, session, param_config=config):
     """
     Imports additional calculation parameters from csv-files.
 
@@ -550,14 +550,14 @@ def import_parameters(engine, session):
     session.query(model.CalculationParameters).delete()
     engine.execute("ALTER SEQUENCE calculation_parameters_id_seq RESTART WITH 1;")
 
-    parameter_files = config.country_config.get("calculation_parameters",[])
+    parameter_files = param_config.country_config.get("calculation_parameters",[])
 
     for file in parameter_files:
         logging.debug("Importing parameter file %s", file)
         file_name = os.path.splitext(file)[0]
         file_extension = os.path.splitext(file)[-1]
         if file_extension == '.json':
-            with open(config.config_directory + "calculation_parameters/" +
+            with open(param_config.config_directory + "calculation_parameters/" +
                     file) as json_data:
                 parameter_data = json.load(json_data)
                 session.add(
@@ -593,6 +593,7 @@ def set_up_persistent_database(param_config):
         Session = sessionmaker(bind=engine)
         session = Session()
         logging.info("Creating persistent database tables")
+        model.form_tables(param_config=param_config)
         model.Base.metadata.create_all(engine)
         engine.dispose()
 
@@ -624,16 +625,17 @@ def set_up_database(leave_if_data, drop_db, param_config=config):
         Session = sessionmaker(bind=engine)
         session = Session()
         logging.info("Populating DB")
+        model.form_tables(param_config=param_config)
         model.Base.metadata.create_all(engine)
         logging.info("Import Locations")
-        import_locations(engine, session)
+        import_locations(engine, session, param_config=param_config)
         logging.info("Import calculation parameters")
-        import_parameters(engine, session)
+        import_parameters(engine, session, param_config=param_config)
         logging.info("Import Variables")
-        import_variables(session)
+        import_variables(session, param_config=param_config)
     return session, engine
 
-def add_alerts(session):
+def add_alerts(session, param_config=config):
     """
     Adds non indivdual alerts.
 
@@ -687,9 +689,9 @@ def add_alerts(session):
                 representative = new_alert["uuids"][0]
                 others = new_alert["uuids"][1:]
                 records = session.query(
-                    model.Data, model.form_tables[a.form]).join(
-                        (model.form_tables[a.form],
-                         model.form_tables[a.form].uuid == model.Data.uuid
+                    model.Data, model.form_tables(param_config=param_config)[a.form]).join(
+                        (model.form_tables(param_config=param_config)[a.form],
+                         model.form_tables(param_config=param_config)[a.form].uuid == model.Data.uuid
                          )).filter(model.Data.uuid.in_(new_alert["uuids"]),
                                    model.Data.type == data_type)
                 data_records_by_uuid = {}
@@ -705,11 +707,11 @@ def add_alerts(session):
                 new_variables["alert_duration"] = new_alert["duration"]
                 new_variables["alert_reason"] = var_id
                 new_variables["alert_id"] = data_records_by_uuid[
-                    representative].uuid[-country_config["alert_id_length"]:]
+                    representative].uuid[-param_config.country_config["alert_id_length"]:]
 
-                for data_var in country_config["alert_data"][a.form].keys():
+                for data_var in param_config.country_config["alert_data"][a.form].keys():
                     new_variables["alert_" + data_var] = form_records_by_uuid[
-                        representative].data[country_config["alert_data"][a.form][
+                        representative].data[param_config.country_config["alert_data"][a.form][
                             data_var]]
 
                 # Tell sqlalchemy that we have changed the variables field
@@ -723,10 +725,10 @@ def add_alerts(session):
                     data_records_by_uuid[o].variables[
                         "master_alert"] = representative
 
-                    for data_var in country_config["alert_data"][a.form].keys():
+                    for data_var in param_config.country_config["alert_data"][a.form].keys():
                         data_records_by_uuid[o].variables[
                             "alert_" + data_var] = form_records_by_uuid[
-                                o].data[country_config["alert_data"][a.form][data_var]]
+                                o].data[param_config.country_config["alert_data"][a.form][data_var]]
                     flag_modified(data_records_by_uuid[o], "variables")
                 session.commit()
                 session.flush()
@@ -735,7 +737,7 @@ def add_alerts(session):
             new_alerts = []
 
 
-def create_alert_id(alert):
+def create_alert_id(alert, param_config=config):
     """
     Create an alert id based on the alert we have
 
@@ -746,7 +748,7 @@ def create_alert_id(alert):
        alert_id: an alert id
 
     """
-    return "".join(sorted(alert["uuids"]))[-country_config["alert_id_length"]:]
+    return "".join(sorted(alert["uuids"]))[-param_config.country_config["alert_id_length"]:]
 
 
 def add_new_fake_data(to_add, from_files = False):
@@ -762,7 +764,8 @@ i
     add_fake_data(session=session, N=to_add, append=True, from_files=from_files)
 
 
-def create_links(data_type, input_conditions, table, session, conn):
+def create_links(data_type, input_conditions, table, session, conn,
+                 param_config=config):
     """
     Creates all the links in the Links table.
 
@@ -781,7 +784,7 @@ def create_links(data_type, input_conditions, table, session, conn):
 
     """
 
-    links_by_type, links_by_name = util.get_links(config.config_directory +
+    links_by_type, links_by_name = util.get_links(param_config.config_directory +
                                                   country_config["links_file"])
     link_names = []
     if data_type["type"] in links_by_type:
@@ -790,8 +793,8 @@ def create_links(data_type, input_conditions, table, session, conn):
             columns = [table.uuid.label("uuid_from")]
             if link["from_form"] == data_type["form"]:
                 aggregate_condition = link['aggregate_condition']
-                to_form = model.form_tables[link["to_form"]]
-                from_form = model.form_tables[link["from_form"]]
+                to_form = model.form_tables(param_config=param_config)[link["to_form"]]
+                from_form = model.form_tables(param_config=param_config)[link["from_form"]]
                 link_names.append(link["name"])
                 link_alias = aliased(to_form)
                 columns.append(link_alias.uuid.label("uuid_to"))
@@ -887,7 +890,8 @@ def create_links(data_type, input_conditions, table, session, conn):
     return link_names
 
 
-def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
+def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
+                      param_config=config):
     """
     Run all the raw data through the to_codes
     function to translate it into structured data
@@ -905,17 +909,18 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
             logging.info("No new data to add")
             return True
     if not engine:
-        engine = create_engine(config.DATABASE_URL)
+        engine = create_engine(param_config.DATABASE_URL)
 
     Session = sessionmaker(bind=engine)
     session = Session()
 
     locations = util.all_location_data(session)
 
-    data_types = util.read_csv(config.config_directory + country_config[
+    data_types = util.read_csv(
+        param_config.config_directory + param_config.country_config[
         "types_file"])
-    links_by_type, links_by_name = util.get_links(config.config_directory +
-                                                  country_config["links_file"])
+    links_by_type, links_by_name = util.get_links(param_config.config_directory +
+                                                  param_config.country_config["links_file"])
 
     alerts = []
     conn = engine.connect()
@@ -924,9 +929,9 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
     session.commit()
 
     for data_type in data_types:
-        table = model.form_tables[data_type["form"]]
+        table = model.form_tables()[data_type["form"]]
         if debug_enabled:
-            logging.info("Data type: %s", data_type["type"])
+            logging.debug("Data type: %s", data_type["type"])
         variables = to_codes.get_variables(session,
                                            match_on_type=data_type["type"],
                                            match_on_form=data_type["form"])
@@ -988,7 +993,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
                 if data:
                     data_dicts, disregarded_data_dicts, new_alerts = to_data(
                         data, link_names, links_by_name, data_type, locations,
-                        variables)
+                        variables, param_config=param_config)
                     newly_added = data_to_db(
                         conn2, data_dicts,
                         disregarded_data_dicts,
@@ -998,16 +1003,16 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
                     alerts += new_alerts
                 data = {uuid: last_data}
             if debug_enabled:
-                logging.info("Added %s records", added)
+                logging.debug("Added %s records", added)
         if data:
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
-                variables)
+                variables, param_config=param_config)
             newly_added = data_to_db(conn2, data_dicts,
                                      disregarded_data_dicts, data_type["type"])
             added += newly_added
             if debug_enabled:
-                logging.info("Added %s records", added)
+                logging.debug("Added %s records", added)
             alerts += new_alerts
     send_alerts(alerts, session)
     conn.close()
@@ -1040,12 +1045,17 @@ def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
         conn.execute(model.DisregardedData.__table__.delete().where(
             model.DisregardedData.__table__.c.uuid.in_(uuids)).where(
                 model.DisregardedData.__table__.c.type == data_type))
-
+        conn.execute(model.Data.__table__.delete().where(
+            model.Data.__table__.c.uuid.in_(uuids)).where(
+                model.Data.__table__.c.type == data_type)
+        )
         conn.execute(model.DisregardedData.__table__.insert(),
                      disregarded_data_dicts)
     return len(data_dicts) + len(disregarded_data_dicts)
 
-def to_data(data, link_names, links_by_name, data_type, locations, variables):
+def to_data(data, link_names,
+            links_by_name, data_type, locations, variables,
+            param_config=config):
     """
     Constructs structured data from the entries in the data list.
     We pass the data row with all its links through the to_codes function
@@ -1111,7 +1121,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             variable_data, category_data, location_data, disregard = to_codes.to_code(
                 row, variables, locations, data_type["type"],
                 data_type["form"],
-                country_config["alert_data"],
+                param_config.country_config["alert_data"],
                 multiple_forms, data_type["location"]
                 )
             if location_data is None:
@@ -1121,20 +1131,20 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
                 date = parse(row[data_type["form"]][data_type["date"]])
                 date = datetime(date.year, date.month, date.day)
             except:
-                logging.error("Invalid Date: %s", row[data_type["form"]][data_type["date"]])
+                logging.error("Invalid Date: %s", row[data_type["form"]].get(data_type["date"]))
                 continue
 
             # if date < locations[0][location_data["clinic"]].start_date:
             #     next
             if "alert" in variable_data:
                 variable_data["alert_id"] = row[data_type["form"]][data_type[
-                    "uuid"]][-country_config["alert_id_length"]:]
+                    "uuid"]][-param_config.country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1
             variable_data["data_entry"] = 1
             epi_year, week = epi_week(date)
             submission_date = None
             if "SubmissionDate" in row[data_type["form"]]:
-                submission_date = parse(row[data_type["form"]].get("SubmissionDate", None)).replace(tzinfo=None)
+                submission_date = parse(row[data_type["form"]].get("SubmissionDate")).replace(tzinfo=None)
             new_data = {
                 "date": date,
                 "epi_week": week,
@@ -1158,7 +1168,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
     return data_rows, disregarded_data_rows, alerts
 
 
-def send_alerts(alerts, session):
+def send_alerts(alerts, session, param_config=config):
     """
     Send alert messages
 
@@ -1175,10 +1185,11 @@ def send_alerts(alerts, session):
     alerts = alerts[-10:]
 
     for alert in alerts:
-        alert_id = alert.uuid[-country_config["alert_id_length"]:]
+        alert_id = alert.uuid[-param_config.country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations)
 
-def initial_visit_control():
+
+def initial_visit_control(param_config=config):
     """
     Configures and corrects the initial visits and removes the calculated codes
     from the data table where the visit was amended
@@ -1188,18 +1199,18 @@ def initial_visit_control():
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    if "initial_visit_control" not in country_config:
+    if "initial_visit_control" not in param_config.country_config:
         return []
 
     log = []
     corrected = []
-    for form_table in country_config['initial_visit_control'].keys():
-        table = model.form_tables[form_table]
-        identifier_key_list = country_config['initial_visit_control'][form_table]['identifier_key_list']
-        visit_type_key = country_config['initial_visit_control'][form_table]['visit_type_key']
-        visit_date_key = country_config['initial_visit_control'][form_table]['visit_date_key']
-        module_key = country_config['initial_visit_control'][form_table]['module_key']
-        module_value = country_config['initial_visit_control'][form_table]['module_value']
+    for form_table in param_config.country_config['initial_visit_control'].keys():
+        table = model.form_tables(param_config=param_config)[form_table]
+        identifier_key_list = param_config.country_config['initial_visit_control'][form_table]['identifier_key_list']
+        visit_type_key = param_config.country_config['initial_visit_control'][form_table]['visit_type_key']
+        visit_date_key = param_config.country_config['initial_visit_control'][form_table]['visit_date_key']
+        module_key = param_config.country_config['initial_visit_control'][form_table]['module_key']
+        module_value = param_config.country_config['initial_visit_control'][form_table]['module_value']
 
 
         ret_corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key,

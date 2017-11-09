@@ -28,7 +28,7 @@ from meerkat_abacus.util import create_fake_data
 sqs_client = None
 sqs_queue_url = None
 
-worker_buffer = Queue(maxsize=1000)
+worker_buffer = Queue(maxsize=10000)
 
 @task
 def set_up_db(param_config_yaml):
@@ -96,15 +96,17 @@ def stream_data_from_s3(param_config_yaml=yaml.dump(config)):
 
 
 @task
-def process_buffer(start=True, internal_buffer=None, param_config_yaml=yaml.dump(config)):
+def process_buffer(start=True, internal_buffer=None, param_config_yaml=yaml.dump(config), run_overall_processes=True):
     param_config = yaml.load(param_config_yaml)
     if internal_buffer is None:
         internal_buffer = worker_buffer
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
-    process_chunk(internal_buffer, session, engine, param_config)
+    process_chunk(internal_buffer, session, engine, param_config,
+                  run_overall_processes=run_overall_processes)
     if start:
         process_buffer.apply_async(countdown=30,
-                                   kwargs={"start": True, "param_config_yaml": param_config_yaml})
+                                   kwargs={"start": True, "param_config_yaml": param_config_yaml,
+                                           "run_overall_processes": run_overall_processes})
     session.close()
     engine.dispose()
 

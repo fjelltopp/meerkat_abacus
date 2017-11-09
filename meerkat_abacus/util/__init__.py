@@ -367,7 +367,7 @@ def write_to_db(data, form, db_url, param_config=config):
                     "uuid": d[uuid_field]
                 }
             )
-        table = form_tables[form]
+        table = form_tables(param_config=param_config)[form]
         engine, session = get_db_engine(db_url)
         conn = engine.connect()
         conn.execute(table.__table__.insert(), dicts)
@@ -404,7 +404,9 @@ def read_csv_filename(filename, param_config=config):
 def get_data_from_rds_persistent_storage(form, param_config=config):
     """ Get data from RDS persistent storage"""
     engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
-    for row in session.query(form_tables[form]).yield_per(1000).enable_eagerloads(False):
+    for row in session.query(
+            form_tables(param_config=param_config)[form]
+    ).yield_per(1000).enable_eagerloads(False):
         yield row.__dict__['data']
 
 
@@ -472,7 +474,7 @@ def submit_data_to_aggregate(data, form_id, aggregate_config):
     aggregate_url = aggregate_config.get('aggregate_url', None)
     r = requests.post(aggregate_url + "/submission", auth=auth,
                       files={
-                          "xml_submission_file":  ("tmp.xml", tostring(result), "text/xml")
+                        "xml_submission_file":  ("tmp.xml", tostring(result), "text/xml")
                       })
     logging.info("Aggregate submission status code: " + str(r.status_code))
     return r.status_code

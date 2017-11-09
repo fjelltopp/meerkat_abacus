@@ -12,19 +12,26 @@ from meerkat_abacus.config import config
 country_config = config.country_config
 
 Base = declarative_base()
-form_tables = {}
 
-for table in country_config["tables"]:
-    form_tables[table] = type(table, (Base, ), {
-        "__tablename__": table,
-        "id": Column(Integer, primary_key=True),
-        "uuid": Column(String, index=True),
-        "data": Column(JSONB)
-    })
-    create_index = DDL(
-        "CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table)
-    )
-    listen(form_tables[table].__table__, 'after_create', create_index)
+
+existing_form_tables = {}
+
+def form_tables(param_config=config):
+
+    for table in param_config.country_config["tables"]:
+        if table in existing_form_tables:
+            continue
+        existing_form_tables[table] = type(table, (Base, ), {
+            "__tablename__": table,
+            "id": Column(Integer, primary_key=True),
+            "uuid": Column(String, index=True),
+            "data": Column(JSONB)
+        })
+        create_index = DDL(
+            "CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table)
+        )
+        listen(existing_form_tables[table].__table__, 'after_create', create_index)
+    return existing_form_tables
 
 
 class DownloadDataFiles(Base):

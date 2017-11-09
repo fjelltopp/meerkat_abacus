@@ -6,7 +6,7 @@ import boto3
 import queue
 from dateutil.parser import parse
 import random
-
+import yaml
 from meerkat_abacus import model
 from meerkat_abacus.config import config
 from meerkat_abacus.codes import to_codes
@@ -28,7 +28,7 @@ def read_stationary_data(get_function, internal_buffer,
                 i += 1
                 n += 1
                 uuid_field_current = param_config.country_config.get("tables_uuid",
-                                                               {}).get(form,
+                                                                     {}).get(form,
                                                                        uuid_field)
                 internal_buffer.put_nowait({"form": form,
                                             "uuid": element[uuid_field_current],
@@ -37,10 +37,16 @@ def read_stationary_data(get_function, internal_buffer,
                 i = 0
                 # Reached max_size of buffer
                 buffer_proccesser_function(internal_buffer=internal_buffer,
-                                           start=False)
+                                           start=False,
+                                           param_config_yaml=yaml.dump(param_config),
+                                           run_overall_processes=False)
                 internal_buffer.put({"form": form,
-                                     "uuid": element[uuid_field_current], "data": element})
-        print("read_stationary_data for " + str(form) + " read through" + str(n) + " records")
+                                     "uuid": element[uuid_field_current],
+                                     "data": element})
+                logging.info("Processed {}".format(n))
+        buffer_proccesser_function(internal_buffer=internal_buffer,
+                                   start=False,
+                                   param_config_yaml=yaml.dump(param_config))
 
 
 def download_data_from_s3(config):
@@ -69,7 +75,8 @@ def add_rows_to_db(form, form_data, session, engine,
                    allow_enketo=False,
                    start_dates=None,
                    exclusion_list=[],
-                   fraction=None):
+                   fraction=None,
+                   param_config=config):
     """ Add form_data to DB
     If quality_control is true we look among the aggregation variables
     for variables of the import type. If this variable is not true the
@@ -92,17 +99,23 @@ def add_rows_to_db(form, form_data, session, engine,
         fraction: If present imports a randomly selected subset of data.
     """
     conn = engine.connect()
-    uuids = [row[uuid_field] for row in form_data]
-    table = model.form_tables[form]
+
+    table = model.form_tables(param_config=param_config)[form]
     exclusion_list = set(exclusion_list)
-    conn.execute(table.__table__.delete().where(
+
+    if not only_new:
+        uuids = set([row[uuid_field] for row in form_data])
+        conn.execute(table.__table__.delete().where(
             table.__table__.c.uuid.in_(uuids)))
+    else:
+        uuids = set([row.uuid for row in session.query(table.uuid).all()])
+        
     dicts = []
 
     new_rows = []
     to_check = []
     to_check_test = {}  # For speed
-    logging.info("Formname: %s", form)
+    logging.debug("Formname: %s", form)
 
     if quality_control:
         logging.debug("Doing Quality Control")
@@ -120,9 +133,10 @@ def add_rows_to_db(form, form_data, session, engine,
             if random.random() > fraction:
                 continue
         if row[uuid_field] in exclusion_list:
-            continue # The row is in the exclusion list
+            continue
         if only_new and row[uuid_field] in uuids:
-            continue # In this case we only add new data
+            continue #  In this case we only add new data
+        
         if "_index" in row:
             row["index"] = row.pop("_index")
         if row_function:
@@ -166,7 +180,7 @@ def add_rows_to_db(form, form_data, session, engine,
                               "uuid": insert_row[uuid_field]})
                 new_rows.append(insert_row[uuid_field])
             else:
-                print("Not added")
+                logging.debug("Not added")
         else:
             dicts.append({"data": insert_row,
                           "uuid": insert_row[uuid_field]})
@@ -183,7 +197,7 @@ def add_rows_to_db(form, form_data, session, engine,
     if len(dicts) > 0:
         conn.execute(table.__table__.insert(), dicts)
     conn.close()
-    logging.info("Number of records %s", i)
+    logging.debug("Number of records %s", i)
     return new_rows
 
 
