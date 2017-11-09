@@ -8,7 +8,7 @@ import pandas as pd
 from datetime import timedelta, datetime
 
 from meerkat_abacus.model import Data
-from meerkat_abacus.util import epi_year_start_date
+from meerkat_abacus.util.epi_week import epi_year_start_date
 
 
 def threshold(var_id, limits, session, hospital_limits=None):

@@ -2,7 +2,7 @@ import unittest
 
 from datetime import datetime
 
-from meerkat_abacus.util import epi_year_start_date, epi_year_by_date
+from meerkat_abacus.util.epi_week import epi_year_start_date, epi_year_by_date
 
 
 class EpiWeekTest(unittest.TestCase):
