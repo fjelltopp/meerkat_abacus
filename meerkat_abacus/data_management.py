@@ -10,6 +10,8 @@ from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
 from dateutil.parser import parse
 from datetime import datetime
+
+from meerkat_libs import consul_client as consul
 from meerkat_abacus import alerts as alert_functions
 from meerkat_abacus import model
 from meerkat_abacus.config import config
@@ -159,67 +161,6 @@ def add_fake_data(session, N=500, append=False,
                              param_config.PERSISTENT_DATABASE_URL,
                              param_config=param_config)
 
-    
-
-def table_data_from_csv(filename,
-                        table,
-                        directory,
-                        session,
-                        engine,
-                        **kwargs):
-
-    """
-    Adds all the data from a csv file. We delete all old data first
-    and then add new data.
-
-    If quality_control is true we look among the aggregation variables
-    for variables of the import type. If this variable is not true the
-    corresponding value is set to zero. If the variable has the disregard
-    category we remove the whole row.
-
-    Args:
-        filename: name of table
-        table: table class
-        directory: directory where the csv file is
-        session: SqlAlchemy session
-        engine: SqlAlchemy engine
-        only_new: If we should add only new data
-        deviceids: if we should only add rows with a one of the deviceids
-        table_name: name of table if different from filename
-        row_function: function to appy to the rows before inserting
-        start_dates: Clinic start dates, we do not add any data submitted
-                     before these dates
-        quality_control: If we are performing quality controll on the data.
-        exclusion_list: A list of uuid's that are restricted from entering
-        fraction: If present imports a randomly selected subset of data.
-    """
-
-    session.query(table).delete()
-    engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(
-        filename))
-    session.commit()
-
-    i = 0
-    dicts = []
-    new_rows = []
-    for row in util.read_csv(directory + filename + ".csv"):
-        i += 1
-        dicts.append(row)
-        if i % 10000 == 0:
-            new_rows += tasks.add_rows_to_db(filename,
-                                       dicts,
-                                       session,
-                                       engine,
-                                       **kwargs)
-            dicts = []
-
-    new_rows += add_rows_to_db(filename,
-                               dicts,
-                               session,
-                               engine,
-                               **kwargs)
-
-    return new_rows
 
 
 def import_variables(session, param_config=config):
@@ -509,7 +450,7 @@ def import_locations(engine, session, param_config=config):
         model.Locations(
             name=param_config.country_config["country_name"],
             level="country",
-            country_location_id=""
+            country_location_id="the_country_location_id"
         )
     )
 
@@ -1137,14 +1078,12 @@ def to_data(data, link_names,
                 logging.error("Invalid Date: %s", row[data_type["form"]].get(data_type["date"]))
                 continue
 
-            # if date < locations[0][location_data["clinic"]].start_date:
-            #     next
             if "alert" in variable_data:
                 variable_data["alert_id"] = row[data_type["form"]][data_type[
                     "uuid"]][-param_config.country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1
             variable_data["data_entry"] = 1
-            epi_year, week = epi_week(date)
+            epi_year, week = epi_week(date, epi_config=param_config.country_config["epi_week"])
             submission_date = None
             if "SubmissionDate" in row[data_type["form"]]:
                 submission_date = parse(row[data_type["form"]].get("SubmissionDate")).replace(tzinfo=None)
@@ -1160,8 +1099,7 @@ def to_data(data, link_names,
                 "links": links,
                 "type_name": data_type["name"]
             }
-            for l in location_data.keys():
-                new_data[l] = location_data[l]
+            new_data.update(location_data)
             if disregard:
                 disregarded_data_rows.append(new_data)
             else:
@@ -1189,7 +1127,7 @@ def send_alerts(alerts, session, param_config=config):
 
     for alert in alerts:
         alert_id = alert.uuid[-param_config.country_config["alert_id_length"]:]
-        util.send_alert(alert_id, alert, variables, locations)
+        util.send_alert(alert_id, alert, variables, locations, param_config)
 
 
 def initial_visit_control(param_config=config):
