@@ -37,18 +37,21 @@ class EpiWeekTest(unittest.TestCase):
         for _test in test_data:
             expected_datetime = test_config[_test["expected_year"]]
             actual_datetime = epi_year_start_date(_test["date"], epi_config=test_config)
-            self.assertEqual(expected_datetime, actual_datetime)
+            failure_message = f"Failed for date: '{_test['date']}'."
+            self.assertEqual(expected_datetime, actual_datetime, msg=failure_message)
 
-    def test_epi_year_for_date_international_config(self):
+    def test_epi_year_by_date_international_config(self):
         test_epi_config = "international"
         test_data = [
             {"date": datetime(2017, 3, 5), "expected_year": 2017},
             {"date": datetime(2017, 1, 1), "expected_year": 2017},
             {"date": datetime(2016, 12, 31), "expected_year": 2016}
         ]
-        self.__assert_valid_year_for_dates(test_epi_config, test_data)
+        self.__assert_valid_year_for_dates(method_under_test=epi_year_by_date,
+                                           test_config=test_epi_config,
+                                           test_data=test_data)
 
-    def test_epi_year_for_date_weekday_config(self):
+    def test_epi_year_by_date_weekday_config(self):
         year = 2016
         test_epi_config = "day:5"
         test_data = [
@@ -59,9 +62,11 @@ class EpiWeekTest(unittest.TestCase):
             {"date": datetime(2017, 12, 31), "expected_year": 2017},
 
         ]
-        self.__assert_valid_year_for_dates(test_epi_config, test_data)
+        self.__assert_valid_year_for_dates(method_under_test=epi_year_by_date,
+                                           test_config=test_epi_config,
+                                           test_data=test_data)
 
-    def test_epi_year_for_date_custom_config(self):
+    def test_epi_year_by_date_custom_config(self):
         test_config = {
             2015: datetime(2015, 1, 1),
             2016: datetime(2016, 1, 2),
@@ -73,11 +78,13 @@ class EpiWeekTest(unittest.TestCase):
             {"date": datetime(2016, 12, 31), "expected_year": 2017},
             {"date": datetime(2017, 4, 24), "expected_year": 2017}
         ]
-        self.__assert_valid_year_for_dates(test_config, test_data)
+        self.__assert_valid_year_for_dates(method_under_test=epi_year_by_date,
+                                           test_config=test_config,
+                                           test_data=test_data)
 
-    def __assert_valid_year_for_dates(self, test_config, test_data):
+    def __assert_valid_year_for_dates(self, method_under_test, test_config, test_data):
         for _test in test_data:
             expected_year = _test["expected_year"]
-            actual_year = epi_year_by_date(_test["date"], epi_config=test_config)
+            actual_year = method_under_test(_test["date"], epi_config=test_config)
             failure_message = f"Failed for config: '{test_config}' and date: '{_test['date']}'"
             self.assertEqual(expected_year, actual_year, msg=failure_message)
