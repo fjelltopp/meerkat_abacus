@@ -146,17 +146,21 @@ def epi_year_start_date_by_year(year, epi_config=country_config["epi_week"]):
     if epi_config == "international":
         return datetime(year, 1, 1)
     elif "day" in epi_config:
-        day_of_week = int(epi_config.split(":")[1])
-        first_of_year = datetime(year, 1, 1)
-        f_day_of_week = first_of_year.weekday()
-        adjustment = day_of_week - f_day_of_week
-        if adjustment < 0:
-            adjustment = 7 + adjustment
-        return first_of_year + timedelta(days=adjustment)
+        return __epi_year_start_date_for_weekday_config(year, epi_config)
     elif isinstance(epi_config, dict):
         return epi_config[year]
     else:
         return datetime(year, 1, 1)
+
+
+def __epi_year_start_date_for_weekday_config(year, epi_config):
+    config_weekday = int(epi_config.split(":")[1])
+    first_of_year = datetime(year, 1, 1)
+    first_day_of_year_weekday = first_of_year.weekday()
+    adjustment = config_weekday - first_day_of_year_weekday
+    if adjustment < 0:
+        adjustment = 7 + adjustment
+    return first_of_year + timedelta(days=adjustment)
 
 
 def epi_year_by_date(date, epi_config=country_config["epi_week"]):
@@ -183,6 +187,13 @@ def epi_year_by_date(date, epi_config=country_config["epi_week"]):
             if date > epi_year_start_datetime:
                 return epi_year
         raise ValueError("Could not compute epi year for date {!r}".format(date))
+    elif isinstance(epi_config, str) and "day:" in epi_config:
+        year = date.year
+        _epi_year_start_date = __epi_year_start_date_for_weekday_config(year, epi_config)
+        if date < _epi_year_start_date:
+            return year - 1
+        else:
+            return year
     else:
         return date.year
 
