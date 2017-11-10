@@ -142,8 +142,8 @@ def epi_week_start_date(year, epi_week):
     return start_date
 
 
-def __epi_year_start_date_for_weekday_config(year, epi_config):
-    config_weekday = int(epi_config.split(":")[1])
+def __epi_year_start_date_for_weekday_config(year, weekday_config):
+    config_weekday = int(weekday_config.split(":")[1])
     first_of_year = datetime(year, 1, 1)
     first_day_of_year_weekday = first_of_year.weekday()
     adjustment = config_weekday - first_day_of_year_weekday
@@ -152,8 +152,8 @@ def __epi_year_start_date_for_weekday_config(year, epi_config):
     return first_of_year + timedelta(days=adjustment)
 
 
-def __get_epi_week_for_custom_config(date, epi_config):
-    for epi_year, epi_year_start_datetime in reversed(sorted(epi_config.items())):
+def __get_epi_week_for_custom_config(date, dict_config):
+    for epi_year, epi_year_start_datetime in reversed(sorted(dict_config.items())):
         if date >= epi_year_start_datetime:
             return epi_year, epi_year_start_datetime
     raise ValueError("Could not compute epi year for date {!r}".format(date))
