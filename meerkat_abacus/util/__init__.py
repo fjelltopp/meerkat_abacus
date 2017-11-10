@@ -1,18 +1,20 @@
 """
 Various utility functions for meerkat abacus
 """
-from meerkat_abacus.model import Locations, AggregationVariables, Devices
-from meerkat_abacus.config import country_config
-from datetime import datetime, timedelta
-from dateutil.parser import parse
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-import meerkat_libs as libs
-import meerkat_abacus.config as config
+import csv
 import itertools
 import logging
-import csv
+
+from datetime import datetime, timedelta
+from dateutil.parser import parse
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+import meerkat_abacus.config as config
+import meerkat_libs as libs
+from meerkat_abacus.config import country_config
+from meerkat_abacus.model import Locations, AggregationVariables, Devices
 
 # Alert messages are rendered with Jinja2, setup the Jinja2 env
 env = Environment(
@@ -50,22 +52,6 @@ def is_child(parent, child, locations):
     return False
 
 
-def epi_week(date):
-    """
-    calculate epi week
-
-    Args:
-        date
-    Returns epi_week
-    """
-    start_date = epi_week_start_date(date.year)
-    year = start_date.year
-    # If the date is before the start date, include in week 1.
-    if date < start_date:
-        return year, 1
-    return year, (date - start_date).days // 7 + 1
-
-
 def get_db_engine(db_url=config.DATABASE_URL):
     """
     Returns a db engine and session
@@ -74,53 +60,6 @@ def get_db_engine(db_url=config.DATABASE_URL):
     Session = sessionmaker(bind=engine)
     session = Session()
     return engine, session
-
-
-def epi_week_start_date(year, epi_config=country_config["epi_week"]):
-    """
-    Get the first day of epi week 1
-
-    if epi_config==international epi_week 1 starts on the 1st of January
-
-    if epi_config== day:X then the first epi_week start on the first weekday
-    X after 1st of January
-    X=0 is Sunday
-
-    Args:
-        year: year
-        epi_config: how epi-weeks are calculated
-    Returns:
-        start_date: date of start of epi week 1
-    """
-    if epi_config == "international":
-        return datetime(year, 1, 1)
-    elif "day" in epi_config:
-        day_of_week = int(epi_config.split(":")[1])
-        first_of_year = datetime(year, 1, 1)
-        f_day_of_week = first_of_year.weekday()
-        adjustment = day_of_week - f_day_of_week
-        if adjustment < 0:
-            adjustment = 7 + adjustment
-        return first_of_year + timedelta(days=adjustment)
-    else:
-        return epi_config.get(year, datetime(year, 1, 1))
-
-
-def get_link_definitions(session):
-    """
-    gets all the link definitions from the db
-
-    Args:
-        session: db session
-
-    Returns:
-        links(dict) : id:link
-    """
-    result = session.query(LinkDefinitions)
-    links = {}
-    for row in result:
-        links[row.id] = row
-    return links
 
 
 def field_to_list(row, key):
@@ -295,7 +234,7 @@ def get_locations(session):
     locations = {}
     for row in result:
         locations[row.id] = row
-    #    if row.area is not None:
+    # if row.area is not None:
     #        row.area = to_shape(row.area)
     return locations
 
@@ -327,7 +266,7 @@ def get_deviceids(session, case_report=False):
     return deviceids
 
 
-def write_csv(rows, file_path, mode = 'w'):
+def write_csv(rows, file_path, mode='w'):
     """
     Writes rows to csvfile
 
@@ -389,7 +328,7 @@ def create_topic_list(alert, locations):
     # The district isn't stored in the alert model, so calulate it as the
     # parent of the clinic.
     district = locations[alert.clinic].parent_location
-    if(district != alert.region):
+    if (district != alert.region):
         locs.append(district)
 
     combinations = itertools.product(prefix, locs, reason)

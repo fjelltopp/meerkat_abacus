@@ -10,6 +10,8 @@ from datetime import datetime
 import importlib.util
 from unittest import mock
 from shapely.geometry import Polygon
+
+import meerkat_abacus.util.epi_week
 from meerkat_abacus import data_management as manage
 from meerkat_abacus import model, util, task_queue
 from meerkat_abacus import config
@@ -266,7 +268,7 @@ class DbTest(unittest.TestCase):
         number_of_totals = 0
         number_of_female = 0
         for row in results:
-            epi_year, epi_week= util.epi_week(row.date)
+            epi_year, epi_week= meerkat_abacus.util.epi_week.epi_week_for_date(row.date)
             self.assertEqual(epi_week, row.epi_week)
             self.assertEqual(epi_year, row.epi_year)
             if "tot_1" in row.variables.keys():
