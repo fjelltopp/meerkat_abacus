@@ -12,19 +12,26 @@ from meerkat_abacus.config import config
 country_config = config.country_config
 
 Base = declarative_base()
-form_tables = {}
 
-for table in country_config["tables"]:
-    form_tables[table] = type(table, (Base, ), {
-        "__tablename__": table,
-        "id": Column(Integer, primary_key=True),
-        "uuid": Column(String, index=True),
-        "data": Column(JSONB)
-    })
-    create_index = DDL(
-        "CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table)
-    )
-    listen(form_tables[table].__table__, 'after_create', create_index)
+
+existing_form_tables = {}
+
+def form_tables(param_config=config):
+
+    for table in param_config.country_config["tables"]:
+        if table in existing_form_tables:
+            continue
+        existing_form_tables[table] = type(table, (Base, ), {
+            "__tablename__": table,
+            "id": Column(Integer, primary_key=True),
+            "uuid": Column(String, index=True),
+            "data": Column(JSONB)
+        })
+        create_index = DDL(
+            "CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table)
+        )
+        listen(existing_form_tables[table].__table__, 'after_create', create_index)
+    return existing_form_tables
 
 
 class DownloadDataFiles(Base):
@@ -72,6 +79,7 @@ class Data(Base):
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String)
+    device_id = Column(String, index=True)
     type = Column(String, index=True)
     type_name = Column(String)
     date = Column(DateTime, index=True)
@@ -159,6 +167,7 @@ class AggregationVariables(Base):
     category = Column(JSONB, index=True)
     alert = Column(Integer, index=True)
     alert_type = Column(String, index=True)
+    alert_message = Column(String)
     calculation = Column(String)
     disregard = Column(Integer)
     calculation_group = Column(String)

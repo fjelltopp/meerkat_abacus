@@ -186,7 +186,7 @@ def get_new_fake_data(form, session, N, param_config=None, dates_is_now=False):
     for value in param_config.country_config["fake_data"][form]:
         if "data" in value and value["data"] == "uuids" and "from_form" in value:
             from_form = value["from_form"]
-            table = model.form_tables[from_form]
+            table = model.form_tables(param_config=param_config)[from_form]
             uuids = [r[0] for r in session.query(table.uuid).all()]
             for row in uuids:
                 alert_ids.append(row[-param_config.country_config["alert_id_length"]:])

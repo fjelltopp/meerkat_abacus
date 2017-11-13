@@ -71,8 +71,8 @@ class LinkTest(unittest.TestCase):
             for exclusion_list_file in config.country_config["exclusion_lists"][form]:
                 exclusion_list = util.read_csv(config.config_directory + exclusion_list_file)
                 for uuid_to_be_removed in exclusion_list:
-                    query = self.session.query(model.form_tables[form]).\
-                            filter(model.form_tables[form].uuid == uuid_to_be_removed["uuid"])
+                    query = self.session.query(model.form_tables()[form]).\
+                            filter(model.form_tables()[form].uuid == uuid_to_be_removed["uuid"])
                     res = query.all()
                     self.assertEqual(len(res), 0)
 
