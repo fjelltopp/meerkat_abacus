@@ -1,6 +1,18 @@
+from collections import defaultdict
+
 from datetime import datetime, timedelta
 
 from meerkat_abacus.config import country_config
+
+epi_week_53_strategy = country_config.get("epi_week_53_strategy", "leave_as_is")
+
+
+def __handle_epi_week_53(epi_year):
+    return {
+        "include_in_52": (lambda epi_year: (epi_year, 52)),
+        "include_in_1": (lambda epi_year: (epi_year + 1, 1)),
+        "leave_as_is": (lambda epi_year: (epi_year, 53))
+    }[epi_week_53_strategy](epi_year)
 
 
 def epi_week_for_date(date):
@@ -16,8 +28,8 @@ def epi_week_for_date(date):
     _epi_year_start_date = epi_year_start_date(date)
     _epi_year = epi_year_by_date(date)
     _epi_week_number = (date - _epi_year_start_date).days // 7 + 1
-    if _epi_week_number == 0:
-        _epi_week_number = 53
+    if _epi_week_number in [0, 53]:
+        _epi_year, _epi_week_number = __handle_epi_week_53(epi_year=_epi_year)
     return _epi_year, _epi_week_number
 
 

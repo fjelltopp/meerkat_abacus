@@ -110,10 +110,11 @@ class EpiWeekTest(unittest.TestCase):
         self.__assert_valid_week_for_dates(test_data)
 
     __test_epi_week_custom_config = {
-            2015: datetime(2015, 1, 1),
-            2016: datetime(2016, 1, 2),
-            2017: datetime(2016, 12, 30)
-        }
+        2015: datetime(2015, 1, 1),
+        2016: datetime(2016, 1, 2),
+        2017: datetime(2016, 12, 30)
+    }
+
     @patch('meerkat_abacus.util.epi_week.epi_year_start_date.__defaults__', new=(__test_epi_week_custom_config,))
     @patch('meerkat_abacus.util.epi_week.epi_year_by_date.__defaults__', new=(__test_epi_week_custom_config,))
     def test_epi_week_for_date_custom_config(self):
@@ -139,3 +140,19 @@ class EpiWeekTest(unittest.TestCase):
             actual_year = method_under_test(_test["date"], epi_config=test_config)
             failure_message = f"Failed for config: '{test_config}' and date: '{_test['date']}'"
             self.assertEqual(expected_year, actual_year, msg=failure_message)
+
+    @patch('meerkat_abacus.util.epi_week.epi_year_start_date.__defaults__', new=("international",))
+    @patch('meerkat_abacus.util.epi_week.epi_year_by_date.__defaults__', new=("international",))
+    def test_epi_week_53_strategy(self):
+        test_data = [
+            {'date': datetime(2015, 12, 31), 'strategy': 'leave_as_is',   'expected_epi_week': (2015, 53)},
+            {'date': datetime(2015, 12, 31), 'strategy': 'include_in_52', 'expected_epi_week': (2015, 52)},
+            {'date': datetime(2015, 12, 31), 'strategy': 'include_in_1',  'expected_epi_week': (2016, 1)}
+        ]
+        for _test in test_data:
+            test_strategy = _test['strategy']
+            with patch('meerkat_abacus.util.epi_week.epi_week_53_strategy', new=test_strategy):
+                failure_message = f"Failed for strategy: '{test_strategy}' and date: '{_test['date']}'"
+                actual = epi_week_for_date(_test['date'])
+                expected = _test['expected_epi_week']
+                self.assertEqual(expected, actual, msg=failure_message)
