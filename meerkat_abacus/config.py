@@ -139,6 +139,4 @@ class Config:
     def __repr__(self):
         return yaml.dump(self)
 
-
 config = Config()
-print('foo')
