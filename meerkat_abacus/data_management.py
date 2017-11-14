@@ -2,38 +2,39 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
+import copy
+import csv
+import inspect
+import json
+import logging
+import os
+import os.path
+import random
+import subprocess
+import time
+
+import boto3
+from datetime import datetime
+from dateutil.parser import parse
+from geoalchemy2.shape import from_shape
+from shapely.geometry import shape, Polygon, MultiPolygon
 from sqlalchemy import create_engine, func, and_
 from sqlalchemy import exc, over, update, delete
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
-from dateutil.parser import parse
-from datetime import datetime
 
-from meerkat_libs import consul_client as consul
-from meerkat_abacus import alerts as alert_functions
-from meerkat_abacus import model
-from meerkat_abacus import config
-from meerkat_abacus.codes import to_codes
-from meerkat_abacus import util
 from meerkat_abacus.util import data_types
+import meerkat_libs as libs
+from meerkat_abacus import alerts as alert_functions
+from meerkat_abacus import config
+from meerkat_abacus import model
+from meerkat_abacus import util
+from meerkat_abacus.codes import to_codes
 from meerkat_abacus.util import create_fake_data
 from meerkat_abacus.util.epi_week import epi_week_for_date
-import meerkat_libs as libs
-from shapely.geometry import shape, Polygon, MultiPolygon
-from geoalchemy2.shape import from_shape
-import inspect
-import csv
-import boto3
-import copy
-import json
-import time
-import os
-import os.path
-import logging
-import random
-import subprocess
+from meerkat_libs import consul_client as consul
 
 country_config = config.country_config
 

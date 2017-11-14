@@ -3,12 +3,12 @@ import csv
 from meerkat_abacus import config
 
 
-def __init_data_types():
+def init_data_types():
     with open(config.config_directory + config.country_config["types_file"], "r", encoding='utf-8', errors="replace") as f:
         return [_dict for _dict in csv.DictReader(f)]
 
 
-DATA_TYPES_DICT = __init_data_types()
+DATA_TYPES_DICT = init_data_types()
 
 
 def data_types_for_form_name(form_name):
