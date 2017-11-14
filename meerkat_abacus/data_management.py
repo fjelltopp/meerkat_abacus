@@ -17,6 +17,7 @@ from meerkat_abacus import model
 from meerkat_abacus import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus import util
+from meerkat_abacus.util import data_types
 from meerkat_abacus.util import create_fake_data
 from meerkat_abacus.util.epi_week import epi_week_for_date
 import meerkat_libs as libs
@@ -354,7 +355,7 @@ def should_row_be_added(row, form_name, deviceids, start_dates, allow_enketo=Fal
 
 
 def _validate_date_to_epi_week_convertion(form_name, row):
-    form_data_types = util.data_types_for_form_name(form_name)
+    form_data_types = data_types.data_types_for_form_name(form_name)
     if form_data_types:
         column_with_date_name = form_data_types['date']
         string_date = row[column_with_date_name]
@@ -1131,8 +1132,6 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
 
     locations = util.all_location_data(session)
 
-    data_types = util.read_csv(config.config_directory + country_config[
-        "types_file"])
     links_by_type, links_by_name = util.get_links(config.config_directory +
                                                   country_config["links_file"])
 
@@ -1142,7 +1141,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
     session.query(model.Links).delete()
     session.commit()
 
-    for data_type in data_types:
+    for data_type in data_types.DATA_TYPES_DICT:
         table = model.form_tables[data_type["form"]]
         if debug_enabled:
             logging.info("Data type: %s", data_type["type"])

@@ -420,9 +420,3 @@ def send_alert(alert_id, alert, variables, locations):
         if not country_config["messaging_silent"]:
             libs.hermes('/publish', 'PUT', data)
 
-def data_types_for_form_name(form_name):
-    with open(config.config_directory + country_config["types_file"], "r", encoding='utf-8', errors="replace") as f:
-        data_types_dict = csv.DictReader(f)
-        for data_type in data_types_dict:
-            if form_name == data_type['form']:
-                return data_type
