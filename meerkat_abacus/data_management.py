@@ -331,6 +331,7 @@ def should_row_be_added(row, form_name, deviceids, start_dates, allow_enketo=Fal
         should_add(Bool)
     """
     ret = False
+
     if deviceids is not None:
         if row.get("deviceid", None) in deviceids:
             ret = True
@@ -347,6 +348,19 @@ def should_row_be_added(row, form_name, deviceids, start_dates, allow_enketo=Fal
             ret = False
         elif parse(row["SubmissionDate"]) < start_dates[row["deviceid"]]:
             ret = False
+
+    column_with_date_name = util.data_types_for_form_name(form_name)['date']
+    string_date = row[column_with_date_name]
+    if not string_date:
+        ret = False
+    else:
+        try:
+            date_to_check = datetime.strptime(string_date, "%b %d, %Y")
+            epi_week_for_date(date_to_check)
+        except ValueError:
+            ret = False
+            logging.warning(f"Failed to process date column for row with device_id: {row.get('deviceid')}" +
+                            f" and submission date: {row.get('SubmissionDate')}")
     return ret
 
 
