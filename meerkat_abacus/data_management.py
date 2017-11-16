@@ -363,10 +363,11 @@ def _validate_date_to_epi_week_convertion(form_name, row):
             filter = __create_filter(form_data_type)
             filters.append(filter)
 
+        validated_dates = []
         for filter in filters:
             condition_field_name = filter.get('field_name')
             if not condition_field_name or __fulfills_condition(filter, row):
-                if __should_discard_row(row, filter):
+                if __should_discard_row(row, filter, validated_dates):
                     return False
     return True
 
@@ -388,8 +389,11 @@ def __fulfills_condition(filter, row):
     return row[filter['field_name']] == filter['value']
 
 
-def __should_discard_row(row, filter):
+def __should_discard_row(row, filter, already_validated_dates):
     column_with_date_name = filter['date_field_name']
+    if column_with_date_name in already_validated_dates:
+        return False
+    already_validated_dates.append(column_with_date_name)
     string_date = row[column_with_date_name]
     if not string_date:
         logging.debug(f"Empty value of date column for row with device_id: {row.get('deviceid')}" +

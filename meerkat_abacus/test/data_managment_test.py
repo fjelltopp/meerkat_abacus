@@ -27,6 +27,28 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
             self.assertTrue(len(logs))
             self.assertIn("Failed to process date column for row with device_id: fake_me", logs.output[0])
 
+    multiple_data_types_single_date = [
+        {
+            "db_column": "condition1",
+            "condition": "valid",
+            "date": "same_date"
+        },
+        {
+            "date": "same_date"
+        }
+    ]
+
+    @patch.object(data_management.data_types, 'data_types_for_form_name', return_value=multiple_data_types_single_date)
+    def test_dates_should_be_tested_once(self, mock):
+        test_row = {
+            "condition1": "valid",
+            "same_date": "June 14, 2015"
+        }
+        with patch.object(data_management, 'epi_week_for_date') as mock:
+            data_management._validate_date_to_epi_week_convertion("test_form", test_row)
+            mock.assert_called_once()
+            mock.assert_called_with(datetime(2015, 6, 14))
+
     test_epi_config = ({2015: datetime(2015, 3, 5)},)
 
     @patch('meerkat_abacus.util.epi_week.epi_year_start_date.__defaults__', new=test_epi_config)
