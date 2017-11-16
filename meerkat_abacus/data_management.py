@@ -392,6 +392,8 @@ def __should_discard_row(row, filter):
     column_with_date_name = filter['date_field_name']
     string_date = row[column_with_date_name]
     if not string_date:
+        logging.warning(f"Empty value of date column for row with device_id: {row.get('deviceid')}" +
+                        f" and submission date: {row.get('SubmissionDate')}")
         return True
     try:
         date_to_check = parse(string_date)
