@@ -4,18 +4,18 @@ import os
 from sqlalchemy_utils import database_exists, drop_database
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.postgresql import JSONB
-from dateutil.parser import parse
 from datetime import datetime
 import importlib.util
-from unittest import mock
 from shapely.geometry import Polygon
+from unittest.mock import patch
 
 import meerkat_abacus.util.epi_week
+import meerkat_abacus.util.data_types as data_types
 from meerkat_abacus import data_management as manage
-from meerkat_abacus import model, util, task_queue
+from meerkat_abacus import model, task_queue
 from meerkat_abacus import config
 from geoalchemy2.shape import to_shape
+
 spec = importlib.util.spec_from_file_location(
     "country_test",
     config.config_directory + config.country_config["country_tests"])
@@ -28,6 +28,8 @@ class DbTest(unittest.TestCase):
     Test setting up database functionality
     """
 
+    current_directory = os.path.dirname(os.path.realpath(__file__))
+
     def setUp(self):
         manage.create_db(config.DATABASE_URL, drop=True)
         engine = create_engine(config.DATABASE_URL)
@@ -36,7 +38,6 @@ class DbTest(unittest.TestCase):
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.conn = self.engine.connect()
-        self.current_directory = current_directory = os.path.dirname(os.path.realpath(__file__))
 
     def tearDown(self):
         self.session.commit()
@@ -70,7 +71,7 @@ class DbTest(unittest.TestCase):
             len(results),
             14)  # Important as we should not merge the final Clinic 1
         for r in results:
-            #Checking that devideids are handled properly
+            # Checking that devideids are handled properly
             if r.name == "Clinic 1":
                 if r.parent_location == 6:
                     self.assertEqual(r.deviceid, "1,6")
@@ -86,7 +87,7 @@ class DbTest(unittest.TestCase):
                 self.assertEqual(
                     list(Polygon([(0, 0), (0, 0.4), (0.2, 0.4), (0.2, 0), (0, 0)]).exterior.coords),
                     list(to_shape(r.area).geoms[0].exterior.coords)
-                    )
+                )
 
         # This file has a clinic with a non existent district
         old_clinic_file = manage.country_config["locations"]["clinics"]
@@ -95,39 +96,40 @@ class DbTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             manage.import_locations(self.engine, self.session)
 
-        #Clean Up
+        # Clean Up
         manage.country_config["locations"]["clinics"] = old_clinic_file
         manage.country_config["locations"] = old_locs
         manage.config.config_directory = old_dir
 
-    def test_multiple_rows_in_a_row(self):
-
-        variables = [
-            model.AggregationVariables(
-                id="b_1",
-                type="case",
-                form="demo_case",
-                db_column="b",
-                method="match",
-                calculation="results./bmi_height",
-                condition="test1,test2",
-                category="test"
-            ),
-        ]
-
-        self.session.query(model.AggregationVariables).delete()
-        self.session.commit()
-        for v in variables:
-            self.session.add(v)
-        self.session.commit()
-
-        old_locs = manage.country_config["locations"]
-        manage.country_config["locations"] = {
+    country_config_mock = {
+        "locations": {
             "clinics": "demo_clinics.csv",
             "districts": "demo_districts.csv",
             "regions": "demo_regions.csv",
             "zones": "demo_zones.csv"
-        }
+        },
+        "types_file": "data_types_multi.csv"
+
+    }
+
+    @patch.object(manage.config, 'config_directory', new=current_directory + "/test_data/")
+    @patch.dict(manage.country_config, country_config_mock)
+    def test_multiple_rows_in_a_row(self):
+
+        self.session.query(model.AggregationVariables).delete()
+        self.session.commit()
+        self.session.add(model.AggregationVariables(
+            id="b_1",
+            type="case",
+            form="demo_case",
+            db_column="b",
+            method="match",
+            calculation="results./bmi_height",
+            condition="test1,test2",
+            category="test"
+        ))
+        self.session.commit()
+
         manage.import_locations(self.engine, self.session)
 
         data_row = {"a": "test", "b1": "test1", "b2": "test2",
@@ -143,22 +145,13 @@ class DbTest(unittest.TestCase):
         )
         self.session.add(case)
         self.session.commit()
-        old_file = manage.country_config["types_file"]
-        manage.country_config["types_file"] = "data_types_multi.csv"
-        old_dir = manage.config.config_directory
-        manage.config.config_directory = self.current_directory + "/test_data/"
 
-        manage.new_data_to_codes(self.engine)
+        with patch.object(manage.data_types, 'DATA_TYPES_DICT', new=data_types.init_data_types()):
+            manage.new_data_to_codes(self.engine)
 
-        N_cases = len(self.session.query(model.Data).all())
+        N_cases = self.session.query(model.Data).count()
 
         self.assertEqual(N_cases, 2)
-
-        # Clean up
-        manage.country_config["types_file"] = old_file
-        manage.config.config_directory = old_dir
-        manage.country_config["locations"] = old_locs
-
 
     def test_table_data_from_csv(self):
         """Test table_data_from_csv"""
@@ -235,7 +228,7 @@ class DbTest(unittest.TestCase):
         self.assertTrue(database_exists(config.DATABASE_URL))
         engine = self.engine
         session = self.session
-        #Locations
+        # Locations
         results = session.query(model.Locations)
         country_test.test_locations(results)
 
@@ -253,13 +246,13 @@ class DbTest(unittest.TestCase):
         n_cases = len(
             session.query(model.Data).filter(model.Data.type == "case").all())
 
-        n_disregarded_cases =  len(
+        n_disregarded_cases = len(
             session.query(model.DisregardedData).filter(model.Data.type == "case").all())
 
         t = model.form_tables[config.country_config["tables"][0]]
         n_expected_cases = len(
             session.query(t).filter(t.data["intro./visit"].astext == "new")
-            .all())
+                .all())
         self.assertEqual(n_cases + n_disregarded_cases, n_expected_cases)
 
         agg_var_female = "gen_2"
@@ -268,7 +261,7 @@ class DbTest(unittest.TestCase):
         number_of_totals = 0
         number_of_female = 0
         for row in results:
-            epi_year, epi_week= meerkat_abacus.util.epi_week.epi_week_for_date(row.date)
+            epi_year, epi_week = meerkat_abacus.util.epi_week.epi_week_for_date(row.date)
             self.assertEqual(epi_week, row.epi_week)
             self.assertEqual(epi_year, row.epi_year)
             if "tot_1" in row.variables.keys():
@@ -316,7 +309,7 @@ class DbTest(unittest.TestCase):
         for table in model.form_tables:
             res = self.session.query(model.form_tables[table])
             self.assertEqual(numbers[table] + 5, len(res.all()))
-        #Clean up
+        # Clean up
         task_queue.config.fake_data = old_fake
         task_queue.config.get_data_from_s3 = old_s3
         task_queue.config.country_config["manual_test_data"] = old_manual
@@ -345,9 +338,10 @@ class DbTest(unittest.TestCase):
         for table in model.form_tables:
             res = self.session.query(model.form_tables[table])
             self.assertEqual(numbers[table] + 5, len(res.all()))
-        #Reset configuration parameters
+        # Reset configuration parameters
         task_queue.config.fake_data = old_fake
         task_queue.config.get_data_from_s3 = old_s3
+
 
 if __name__ == "__main__":
     unittest.main()

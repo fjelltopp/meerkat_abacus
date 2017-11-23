@@ -419,3 +419,4 @@ def send_alert(alert_id, alert, variables, locations):
 
         if not country_config["messaging_silent"]:
             libs.hermes('/publish', 'PUT', data)
+
