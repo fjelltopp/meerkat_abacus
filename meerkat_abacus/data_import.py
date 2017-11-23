@@ -10,6 +10,8 @@ import yaml
 from meerkat_abacus import model
 from meerkat_abacus.config import config
 from meerkat_abacus.codes import to_codes
+from meerkat_abacus.util import data_types
+from meerkat_abacus.util.epi_week import epi_week_for_date
 from meerkat_libs import consul_client as consul
 
 def read_stationary_data(get_function, internal_buffer,
@@ -207,7 +209,8 @@ def add_rows_to_db(form, form_data, session, engine,
     return new_rows
 
 
-def should_row_be_added(row, form_name, deviceids, start_dates, allow_enketo=False):
+def should_row_be_added(row, form_name, deviceids, start_dates,
+                        allow_enketo=False, param_config=config):
     """
     Determines if a data row should be added.
     If deviceid is not None, the reccord need to have one of the deviceids.
@@ -239,4 +242,62 @@ def should_row_be_added(row, form_name, deviceids, start_dates, allow_enketo=Fal
             ret = False
         elif parse(row["SubmissionDate"]).replace(tzinfo=None) < start_dates[row["deviceid"]]:
             ret = False
+    if ret:
+        ret = _validate_date_to_epi_week_convertion(form_name, row, param_config=param_config)
     return ret
+
+
+def _validate_date_to_epi_week_convertion(form_name, row, param_config=config):
+    form_data_types = data_types.data_types_for_form_name(form_name,
+                                                          param_config=param_config)
+    if form_data_types:
+        filters = []
+        for form_data_type in form_data_types:
+            filter = __create_filter(form_data_type)
+            filters.append(filter)
+
+        validated_dates = []
+        for filter in filters:
+            condition_field_name = filter.get('field_name')
+            if not condition_field_name or __fulfills_condition(filter, row):
+                if __should_discard_row(row, filter, validated_dates,
+                                        param_config=param_config):
+                    return False
+    return True
+
+
+def __create_filter(form_data_type):
+    if form_data_type.get('condition'):
+        return {
+            'field_name': form_data_type['db_column'],
+            'value': form_data_type['condition'],
+            'date_field_name': form_data_type['date']
+        }
+    else:
+        return {
+            'date_field_name': form_data_type['date']
+        }
+
+
+def __fulfills_condition(filter, row):
+    return row[filter['field_name']] == filter['value']
+
+
+def __should_discard_row(row, filter, already_validated_dates, param_config=config):
+    column_with_date_name = filter['date_field_name']
+    if column_with_date_name in already_validated_dates:
+        return False
+    already_validated_dates.append(column_with_date_name)
+    string_date = row[column_with_date_name]
+    if not string_date:
+        logging.debug(f"Empty value of date column for row with device_id: {row.get('deviceid')}" +
+                        f" and submission date: {row.get('SubmissionDate')}")
+        return True
+    try:
+        date_to_check = parse(string_date)
+        epi_week_for_date(date_to_check, param_config=param_config.country_config)
+    except ValueError:
+        logging.debug(f"Failed to process date column for row with device_id: {row.get('deviceid')}" +
+                        f" and submission date: {row.get('SubmissionDate')}")
+        return True
+    return False

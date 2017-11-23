@@ -2,36 +2,39 @@
 Functions to create the database, populate the db tables and proccess data.
 
 """
+import copy
+import csv
+import inspect
+import json
+import logging
+import os
+import os.path
+import random
+import subprocess
+import time
+
+import boto3
+from datetime import datetime
+from dateutil.parser import parse
+from geoalchemy2.shape import from_shape
+from shapely.geometry import shape, Polygon, MultiPolygon
 from sqlalchemy import create_engine, func, and_
 from sqlalchemy import exc, over, update, delete
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
-from dateutil.parser import parse
-from datetime import datetime
 
-from meerkat_libs import consul_client as consul
-from meerkat_abacus import alerts as alert_functions
-from meerkat_abacus import model
-from meerkat_abacus.config import config
-from meerkat_abacus.codes import to_codes
-from meerkat_abacus import util
-from meerkat_abacus.util import create_fake_data, epi_week
+from meerkat_abacus.util import data_types
 import meerkat_libs as libs
-from shapely.geometry import shape, Polygon, MultiPolygon
-from geoalchemy2.shape import from_shape
-import inspect
-import csv
-import boto3
-import copy
-import json
-import time
-import os
-import os.path
-import logging
-import random
-import subprocess
+from meerkat_abacus import alerts as alert_functions
+from meerkat_abacus.config import config
+from meerkat_abacus import model
+from meerkat_abacus import util
+from meerkat_abacus.codes import to_codes
+from meerkat_abacus.util import create_fake_data
+from meerkat_abacus.util.epi_week import epi_week_for_date
+from meerkat_libs import consul_client as consul
 
 country_config = config.country_config
 
@@ -109,6 +112,7 @@ def add_fake_data(session, N=500, append=False,
     logging.debug("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
+    country_config = param_config.country_config
     forms = country_config["tables"]
     # Make sure the case report form is handled before the alert form
     for form in forms:
@@ -132,13 +136,13 @@ def add_fake_data(session, N=500, append=False,
             for fake_data_file in country_config.get("manual_test_data", {})[form]:
                 manual_test_data[fake_data_file] = []
                 logging.debug("Adding test data from file: %s.csv", fake_data_file)
-                manual_test_data[fake_data_file] = util.read_csv(current_directory + '/test/test_data/test_cases/' +\
-                    fake_data_file + ".csv")
+                manual_test_data[fake_data_file] = util.read_csv(current_directory + '/test/test_data/test_cases/' + \
+                                                                 fake_data_file + ".csv")
 
-        generated_data = create_fake_data.create_form(fields=country_config["fake_data"][form],
-                                                      data={"deviceids": form_deviceids,
-                                                            "uuids": alert_ids},
-                                                      N=N)
+        generated_data = create_fake_data.create_form(
+            country_config["fake_data"][form], data={"deviceids":
+                                                         form_deviceids,
+                                                     "uuids": alert_ids}, N=N)
 
         if "case" in form:
             alert_ids = []
@@ -172,10 +176,10 @@ def import_variables(session, param_config=config):
     """
     session.query(model.AggregationVariables).delete()
     session.commit()
-    #check if the coding_list parameter exists. If not, use the legacy parameter codes_file instead
-    if 'coding_list' in param_config.country_config.keys():
-        for coding_file_name in param_config.country_config['coding_list']:
-            codes_file = param_config.config_directory + 'variable_codes/' + coding_file_name
+    # check if the coding_list parameter exists. If not, use the legacy parameter codes_file instead
+    if 'coding_list' in country_config.keys():
+        for coding_file_name in country_config['coding_list']:
+            codes_file = config.config_directory + 'variable_codes/' + coding_file_name
             for row in util.read_csv(codes_file):
                 if '' in row.keys():
                     row.pop('')
@@ -270,7 +274,7 @@ def import_clinics(csv_file, session, country_id,
         clinics_csv = csv.DictReader(f)
         for row in clinics_csv:
             if row["deviceid"] and row["clinic"].lower() != "not used" and row[
-                    "deviceid"] not in deviceids:
+                "deviceid"] not in deviceids:
 
                 other_cond = True
                 if other_condition:
@@ -374,9 +378,8 @@ def import_clinics(csv_file, session, country_id,
                     location.deviceid += "," + row["deviceid"]
                     location.case_type = list(
                         set(location.case_type) | set(case_type)
-                    )   # Combine case types with no duplicates
+                    )  # Combine case types with no duplicates
     session.commit()
-
 
 
 def import_geojson(geo_json, session):
@@ -457,15 +460,15 @@ def import_locations(engine, session, param_config=config):
     session.query(model.Devices).delete()
     session.commit()
     zone_file = None
-    if "zones" in param_config.country_config["locations"]:
-        zone_file = (param_config.config_directory + "locations/" +
-                    param_config.country_config["locations"]["zones"])
-    regions_file = (param_config.config_directory + "locations/" +
-                    param_config.country_config["locations"]["regions"])
-    districts_file = (param_config.config_directory + "locations/" +
-                      param_config.country_config["locations"]["districts"])
-    clinics_file = (param_config.config_directory + "locations/" +
-                    param_config.country_config["locations"]["clinics"])
+    if "zones" in country_config["locations"]:
+        zone_file = (config.config_directory + "locations/" +
+                     country_config["locations"]["zones"])
+    regions_file = (config.config_directory + "locations/" +
+                    country_config["locations"]["regions"])
+    districts_file = (config.config_directory + "locations/" +
+                      country_config["locations"]["districts"])
+    clinics_file = (config.config_directory + "locations/" +
+                    country_config["locations"]["clinics"])
 
     if zone_file:
         import_regions(zone_file, session, "zone", "country", "zone")
@@ -505,7 +508,7 @@ def import_parameters(engine, session, param_config=config):
                     model.CalculationParameters(
                         name=file_name,
                         type=file_extension,
-                        parameters = parameter_data
+                        parameters=parameter_data
                     ))
         elif file_extension == '.csv':
             # TODO: CSV implementation
@@ -518,7 +521,7 @@ def import_dump(dump_file):
     path = config.db_dump_folder + dump_file
     logging.info("Loading DB dump: {}".format(path))
     with open(path, 'r') as f:
-        command = ['psql', '-U',  'postgres', '-h', 'db', 'meerkat_db']
+        command = ['psql', '-U', 'postgres', '-h', 'db', 'meerkat_db']
         proc = subprocess.Popen(command, stdin=f)
         stdout, stderr = proc.communicate()
 
@@ -669,7 +672,7 @@ def add_alerts(session, param_config=config):
                     for data_var in param_config.country_config["alert_data"][a.form].keys():
                         data_records_by_uuid[o].variables[
                             "alert_" + data_var] = form_records_by_uuid[
-                                o].data[param_config.country_config["alert_data"][a.form][data_var]]
+                            o].data[param_config.country_config["alert_data"][a.form][data_var]]
                     flag_modified(data_records_by_uuid[o], "variables")
                 session.commit()
                 session.flush()
@@ -692,7 +695,7 @@ def create_alert_id(alert, param_config=config):
     return "".join(sorted(alert["uuids"]))[-param_config.country_config["alert_id_length"]:]
 
 
-def add_new_fake_data(to_add, from_files = False):
+def add_new_fake_data(to_add, from_files=False):
     """
     Wrapper function to add new fake data to the existing csv files
 i
@@ -756,24 +759,24 @@ def create_links(data_type, input_conditions, table, session, conn,
                 for i in range(0, len(join_operators)):
                     if join_operators[i] == "match":
                         join_on.append(link_alias.data[
-                            join_operands_to[i]].astext ==
-                            table.data[join_operands_from[i]].astext)
+                                           join_operands_to[i]].astext ==
+                                       table.data[join_operands_from[i]].astext)
 
                     elif join_operators[i] == "lower_match":
                         join_on.append(func.replace(func.lower(
                             link_alias.data[
                                 join_operands_to[i]].astext), "-", "_") ==
-                                func.replace(
-                                    func.lower(table.data[
-                                        join_operands_from[i]]
-                                               .astext), "-", "_"))
+                                       func.replace(
+                                           func.lower(table.data[
+                                                          join_operands_from[i]]
+                                                      .astext), "-", "_"))
 
                     elif join_operators[i] == "alert_match":
                         join_on.append(link_alias.data[join_operands_to[i]].astext == \
-                            func.substring(
-                                table.data[join_operands_from[i]].astext,
-                                42 - country_config["alert_id_length"],
-                                country_config["alert_id_length"]))
+                                       func.substring(
+                                           table.data[join_operands_from[i]].astext,
+                                           42 - country_config["alert_id_length"],
+                                           country_config["alert_id_length"]))
 
                     # check that the column values used for join are not empty
                     conditions.append(
@@ -802,30 +805,28 @@ def create_links(data_type, input_conditions, table, session, conn,
 
                 # if the link type has uniqueness constraint, remove non-unique links and circular links
                 if 'unique' in aggregate_conditions:
-                    dupe_query = session.query(model.Links.uuid_from).\
-                                            filter(model.Links.type == link["name"]).\
-                                            group_by(model.Links.uuid_from).\
-                                            having(func.count() > 1)
+                    dupe_query = session.query(model.Links.uuid_from). \
+                        filter(model.Links.type == link["name"]). \
+                        group_by(model.Links.uuid_from). \
+                        having(func.count() > 1)
 
-
-                    dupe_delete = session.query(model.Links.uuid_from).\
+                    dupe_delete = session.query(model.Links.uuid_from). \
                         filter(model.Links.uuid_from.in_(dupe_query),
-                        model.Links.type == link["name"]).\
+                               model.Links.type == link["name"]). \
                         delete(synchronize_session='fetch')
 
                     aliased_link_table = aliased(model.Links)
-                    circular_query = session.query(model.Links.id).\
-                                            join(aliased_link_table,and_(\
-                                                model.Links.uuid_from == aliased_link_table.uuid_to,\
-                                                model.Links.uuid_to == aliased_link_table.uuid_from)).\
-                                            filter(model.Links.type == link["name"]).\
-                                            filter(aliased_link_table.type == link["name"])
+                    circular_query = session.query(model.Links.id). \
+                        join(aliased_link_table, and_( \
+                        model.Links.uuid_from == aliased_link_table.uuid_to, \
+                        model.Links.uuid_to == aliased_link_table.uuid_from)). \
+                        filter(model.Links.type == link["name"]). \
+                        filter(aliased_link_table.type == link["name"])
 
-                    circular_delete = session.query(model.Links).\
+                    circular_delete = session.query(model.Links). \
                         filter(model.Links.id.in_(circular_query),
-                        model.Links.type == link["name"]).\
+                               model.Links.type == link["name"]). \
                         delete(synchronize_session='fetch')
-
 
                 session.commit()
     return link_names
@@ -857,9 +858,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
 
     locations = util.all_location_data(session)
 
-    data_types = util.read_csv(
-        param_config.config_directory + param_config.country_config[
-        "types_file"])
+
     links_by_type, links_by_name = util.get_links(param_config.config_directory +
                                                   param_config.country_config["links_file"])
 
@@ -869,7 +868,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
     session.query(model.Links).delete()
     session.commit()
 
-    for data_type in data_types:
+    for data_type in data_types.data_types(param_config=param_config):
         table = model.form_tables()[data_type["form"]]
         if debug_enabled:
             logging.debug("Data type: %s", data_type["type"])
@@ -903,8 +902,8 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
         query = session.query(
             table.uuid, table.data, model.Links.data_to,
             model.Links.type).outerjoin(
-                (model.Links,
-                 table.uuid == model.Links.uuid_from)).filter(*query_condtion)
+            (model.Links,
+             table.uuid == model.Links.uuid_from)).filter(*query_condtion)
         data = {}
         res = conn.execution_options(
             stream_results=True).execute(query.statement)
@@ -961,6 +960,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
 
     return True
 
+
 def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
     """
     Adds a list of data_dicts to the database. We make sure we do
@@ -978,7 +978,7 @@ def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
         uuids = [row["uuid"] for row in data_dicts]
         conn.execute(model.Data.__table__.delete().where(
             model.Data.__table__.c.uuid.in_(uuids)).where(
-                model.Data.__table__.c.type == data_type)
+            model.Data.__table__.c.type == data_type)
         )
         conn.execute(model.Data.__table__.insert(), data_dicts)
     if disregarded_data_dicts:
@@ -1053,7 +1053,8 @@ def to_data(data, link_names,
                     if value and value != "":
                         sub_row[data_type["form"]][sub_row_name] = value
                         data_in_row = True
-                sub_row[data_type["form"]][data_type["uuid"]] = sub_row[data_type["form"]][data_type["uuid"]] + ":" + str(i)
+                sub_row[data_type["form"]][data_type["uuid"]] = sub_row[data_type["form"]][
+                                                                    data_type["uuid"]] + ":" + str(i)
                 if data_in_row:
                     sub_rows.append(sub_row)
                 i += 1
@@ -1064,7 +1065,7 @@ def to_data(data, link_names,
                 data_type["form"],
                 param_config.country_config["alert_data"],
                 multiple_forms, data_type["location"]
-                )
+            )
             if location_data is None:
                 logging.warning("Missing loc data")
                 continue
@@ -1083,7 +1084,8 @@ def to_data(data, link_names,
                     "uuid"]][-param_config.country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1
             variable_data["data_entry"] = 1
-            epi_year, week = epi_week(date, epi_config=param_config.country_config["epi_week"])
+            epi_year, week = epi_week_for_date(date,
+                                               param_config=param_config.country_config)
             submission_date = None
             if "SubmissionDate" in row[data_type["form"]]:
                 submission_date = parse(row[data_type["form"]].get("SubmissionDate")).replace(tzinfo=None)
@@ -1153,23 +1155,22 @@ def initial_visit_control(param_config=config):
         module_key = param_config.country_config['initial_visit_control'][form_table]['module_key']
         module_value = param_config.country_config['initial_visit_control'][form_table]['module_value']
 
-
         ret_corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key,
-            module_key, module_value)
+                                               module_key, module_value)
         for i in ret_corrected.fetchall():
             corrected.append(i[0])
-            log.append({'timestamp':str(datetime.now()),'uuid':i[0]})
-
+            log.append({'timestamp': str(datetime.now()), 'uuid': i[0]})
 
     file_name = config.data_directory + 'initial_visit_control_corrected_rows.csv'
-    util.write_csv(log, file_name, mode = "a")
+    util.write_csv(log, file_name, mode="a")
 
     return corrected
 
 
 def correct_initial_visits(session, table,
-    identifier_key_list=['patientid','icd_code'], visit_type_key='intro./visit', visit_date_key='pt./visit_date',
-    module_key='intro./module', module_value="ncd"):
+                           identifier_key_list=['patientid', 'icd_code'], visit_type_key='intro./visit',
+                           visit_date_key='pt./visit_date',
+                           module_key='intro./module', module_value="ncd"):
     """
     Corrects cases where a patient has multiple initial visits.
     The additional initial visits will be corrected to return visits.
@@ -1191,7 +1192,6 @@ def correct_initial_visits(session, table,
     identifier_column_objects = []
     empty_values_filter = []
     for key in identifier_key_list:
-
         # make a column object list of identifier values
         identifier_column_objects.append(table.data[key].astext)
 
@@ -1202,25 +1202,24 @@ def correct_initial_visits(session, table,
     # create a Common Table Expression object to rank visit dates accoring to
     cte_table_ranked = session.query(
         table.id, table.uuid,
-        func.jsonb_set(table.data,'{'+visit_type_key+'}','"return"',False).label('data'),
+        func.jsonb_set(table.data, '{' + visit_type_key + '}', '"return"', False).label('data'),
         over(func.rank(),
-            partition_by = [*identifier_column_objects],
-            order_by =[table.data[visit_date_key],table.id]).label('rnk'))\
-        .filter(table.data[visit_type_key].astext == new_visit_value)\
-        .filter(and_(*empty_values_filter))\
-        .filter(table.data[module_key].astext == module_value)\
+             partition_by=[*identifier_column_objects],
+             order_by=[table.data[visit_date_key], table.id]).label('rnk')) \
+        .filter(table.data[visit_type_key].astext == new_visit_value) \
+        .filter(and_(*empty_values_filter)) \
+        .filter(table.data[module_key].astext == module_value) \
         .cte("cte_table_ranked")
 
-
-
     # create delete statement using the Common Table Expression
-    data_entry_delete = delete(model.Data).where(and_(model.Data.uuid == cte_table_ranked.c.uuid, cte_table_ranked.c.rnk > 1))
+    data_entry_delete = delete(model.Data).where(
+        and_(model.Data.uuid == cte_table_ranked.c.uuid, cte_table_ranked.c.rnk > 1))
 
     # create update query using the Common Table Expression
-    duplicate_removal_update = update(table.__table__)\
-    .where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1))\
-    .values(data = cte_table_ranked.c.data)\
-    .returning(table.uuid)
+    duplicate_removal_update = update(table.__table__) \
+        .where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1)) \
+        .values(data=cte_table_ranked.c.data) \
+        .returning(table.uuid)
 
     ret = session.execute(duplicate_removal_update)
 

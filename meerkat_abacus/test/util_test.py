@@ -2,16 +2,19 @@
 Testing for DB utilities
 """
 
+import io
 import unittest
+from collections import namedtuple
+from unittest import mock
+
 from datetime import datetime, timedelta
 from dateutil import parser
-import io
-from meerkat_abacus.util import create_fake_data, epi_week_start_date
-from meerkat_abacus import util, model
-from meerkat_abacus.config import config
+
 import meerkat_libs as libs
-from unittest import mock
-from collections import namedtuple
+from meerkat_abacus import util, model, config
+from meerkat_abacus.config import config
+country_config = config.country_config
+from meerkat_abacus.util import create_fake_data
 
 country_config = config.country_config
 
@@ -23,26 +26,6 @@ class UtilTest(unittest.TestCase):
 
     def tearDown(self):
         pass
-
-    def test_epi_week_start_date(self):
-        first = datetime(2015, 1, 1)
-        assert first == epi_week_start_date(2015, "international")
-
-        first_saturday = datetime(2016,1,2)
-        assert first_saturday == epi_week_start_date(2016, "day:5")
-
-        first_tuesday = datetime(2016,1,5)
-        assert first_tuesday == epi_week_start_date(2016, "day:1")
-
-        first_wednesday = datetime(2016,1,6)
-        assert first_wednesday == epi_week_start_date(2016, "day:2")
-
-        test_config = {
-            2016: datetime(2016, 1, 2),
-            2017: datetime(2016, 12, 30)
-        }
-        assert datetime(2016, 1, 2)  == epi_week_start_date(2016, test_config)
-        assert datetime(2016, 12, 30)  == epi_week_start_date(2017, test_config)
 
     def test_create_fake_data_get_value(self):
         """Test get value"""
