@@ -11,7 +11,7 @@ def data_types(param_config=config):
         with open(param_config.config_directory + param_config.country_config["types_file"],
                   "r", encoding='utf-8',
                   errors="replace") as f:
-            
+
             DATA_TYPES_DICT = [_dict for _dict in csv.DictReader(f)]
     return DATA_TYPES_DICT
 
