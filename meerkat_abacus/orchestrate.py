@@ -24,7 +24,7 @@ from queue import Queue
 @backoff.on_exception(backoff.expo,
                       (celery.exceptions.TimeoutError,
                        AttributeError, OSError),
-                      max_tries=8,
+                      max_tries=10,
                       max_value=30)
 def wait_for_celery_runner():
     test_task = tasks.test_up.delay()
