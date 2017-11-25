@@ -14,6 +14,7 @@ Base = declarative_base()
 
 existing_form_tables = {}
 
+country_config = config.country_config
 
 def form_tables(param_config=config):
 

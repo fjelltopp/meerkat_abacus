@@ -36,6 +36,8 @@ from meerkat_abacus.util import create_fake_data
 from meerkat_abacus.util.epi_week import epi_week_for_date
 from meerkat_libs import consul_client as consul
 
+country_config = config.country_config
+
 def create_db(url, drop=False):
     """
     The function creates the database
