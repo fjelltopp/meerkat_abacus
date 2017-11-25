@@ -9,12 +9,11 @@ from sqlalchemy.event import listen
 from geoalchemy2 import Geometry
 from meerkat_abacus.config import config
 
-country_config = config.country_config
-
 Base = declarative_base()
 
 
 existing_form_tables = {}
+
 
 def form_tables(param_config=config):
 

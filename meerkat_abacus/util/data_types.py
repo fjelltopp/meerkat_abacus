@@ -3,16 +3,12 @@ import csv
 from meerkat_abacus.config import config
 
 
-DATA_TYPES_DICT = None
-
 def data_types(param_config=config):
-    global DATA_TYPES_DICT
-    if not DATA_TYPES_DICT:
-        with open(param_config.config_directory + param_config.country_config["types_file"],
-                  "r", encoding='utf-8',
-                  errors="replace") as f:
+    with open(param_config.config_directory + param_config.country_config["types_file"],
+              "r", encoding='utf-8',
+              errors="replace") as f:
 
-            DATA_TYPES_DICT = [_dict for _dict in csv.DictReader(f)]
+        DATA_TYPES_DICT = [_dict for _dict in csv.DictReader(f)]
     return DATA_TYPES_DICT
 
 

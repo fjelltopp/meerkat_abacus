@@ -36,9 +36,6 @@ from meerkat_abacus.util import create_fake_data
 from meerkat_abacus.util.epi_week import epi_week_for_date
 from meerkat_libs import consul_client as consul
 
-country_config = config.country_config
-
-
 def create_db(url, drop=False):
     """
     The function creates the database
@@ -176,10 +173,12 @@ def import_variables(session, param_config=config):
     """
     session.query(model.AggregationVariables).delete()
     session.commit()
+
+    country_config = param_config.country_config
     # check if the coding_list parameter exists. If not, use the legacy parameter codes_file instead
     if 'coding_list' in country_config.keys():
         for coding_file_name in country_config['coding_list']:
-            codes_file = config.config_directory + 'variable_codes/' + coding_file_name
+            codes_file = param_config.config_directory + 'variable_codes/' + coding_file_name
             for row in util.read_csv(codes_file):
                 if '' in row.keys():
                     row.pop('')
@@ -200,7 +199,7 @@ def import_variables(session, param_config=config):
         session.commit()
 
 
-def import_data(engine, session):
+def import_data(engine, session, param_config=config):
     """
     Imports all the data for all the forms from the csv files
 
@@ -212,6 +211,8 @@ def import_data(engine, session):
     deviceids_case = util.get_deviceids(session, case_report=True)
     deviceids = util.get_deviceids(session)
     start_dates = util.get_start_date_by_deviceid(session)
+
+    country_config = param_config.country_config
 
     for form in model.form_tables().keys():
 
@@ -249,7 +250,7 @@ def import_data(engine, session):
 
 
 def import_clinics(csv_file, session, country_id,
-                   other_info=None, other_condition=None):
+                   other_info=None, other_condition=None, param_config=config):
     """
     Import clinics from csv file.
 
@@ -258,6 +259,7 @@ def import_clinics(csv_file, session, country_id,
         session: SQLAlchemy session
         country_id: id of the country
     """
+    country_config = param_config.country_config
 
     result = session.query(model.Locations)
     regions = {}
@@ -447,6 +449,8 @@ def import_locations(engine, session, param_config=config):
         engine: SQLAlchemy connection engine
         session: db session
     """
+    country_config = param_config.country_config
+
     session.query(model.Locations).delete()
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
     session.add(
@@ -461,13 +465,13 @@ def import_locations(engine, session, param_config=config):
     session.commit()
     zone_file = None
     if "zones" in country_config["locations"]:
-        zone_file = (config.config_directory + "locations/" +
+        zone_file = (param_config.config_directory + "locations/" +
                      country_config["locations"]["zones"])
-    regions_file = (config.config_directory + "locations/" +
+    regions_file = (param_config.config_directory + "locations/" +
                     country_config["locations"]["regions"])
-    districts_file = (config.config_directory + "locations/" +
+    districts_file = (param_config.config_directory + "locations/" +
                       country_config["locations"]["districts"])
-    clinics_file = (config.config_directory + "locations/" +
+    clinics_file = (param_config.config_directory + "locations/" +
                     country_config["locations"]["clinics"])
 
     if zone_file:
@@ -478,7 +482,8 @@ def import_locations(engine, session, param_config=config):
     import_regions(districts_file, session, "district", "region", "district")
     import_clinics(clinics_file, session, 1,
                    other_info=param_config.country_config.get("other_location_information", None),
-                   other_condition=param_config.country_config.get("other_location_condition", None))
+                   other_condition=param_config.country_config.get("other_location_condition", None),
+                   param_config=param_config)
     for geosjon_file in param_config.country_config["geojson_files"]:
         import_geojson(param_config.config_directory + geosjon_file,
                        session)
@@ -695,7 +700,7 @@ def create_alert_id(alert, param_config=config):
     return "".join(sorted(alert["uuids"]))[-param_config.country_config["alert_id_length"]:]
 
 
-def add_new_fake_data(to_add, from_files=False):
+def add_new_fake_data(to_add, from_files=False, param_config=config):
     """
     Wrapper function to add new fake data to the existing csv files
 i
@@ -705,7 +710,7 @@ i
     engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
-    add_fake_data(session=session, N=to_add, append=True, from_files=from_files)
+    add_fake_data(session=session, N=to_add, append=True, from_files=from_files, param_config=param_config)
 
 
 def create_links(data_type, input_conditions, table, session, conn,
@@ -727,6 +732,8 @@ def create_links(data_type, input_conditions, table, session, conn,
         conn: DB connection
 
     """
+
+    country_config = param_config.country_config
 
     links_by_type, links_by_name = util.get_links(param_config.config_directory +
                                                   country_config["links_file"])
@@ -846,6 +853,8 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
 
     """
 
+    country_config = param_config.country_config
+
     if restrict_uuids is not None:
         if restrict_uuids == []:
             logging.info("No new data to add")
@@ -869,7 +878,8 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
     session.commit()
 
     for data_type in data_types.data_types(param_config=param_config):
-        table = model.form_tables()[data_type["form"]]
+        print("DEBUG: " + str(data_type))
+        table = model.form_tables(param_config)[data_type["form"]]
         if debug_enabled:
             logging.debug("Data type: %s", data_type["type"])
         variables = to_codes.get_variables(session,
@@ -889,7 +899,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
 
         # Set up the links
 
-        link_names += create_links(data_type, conditions, table, session, conn)
+        link_names += create_links(data_type, conditions, table, session, conn, param_config)
 
         # Main Query
         if restrict_uuids is not None:
