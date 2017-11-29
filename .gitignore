@@ -67,4 +67,5 @@ target/
 data/forms/*
 celerybeat-schedule*
 celerybeat*
-
+# Libre office
+*.~lock*
