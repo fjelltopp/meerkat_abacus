@@ -1,6 +1,8 @@
 #!/miniconda/bin/python3
 
-from meerkat_abacus import task_queue
+from meerkat_abacus import tasks
+from meerkat_abacus.config import config
+import yaml
 import argparse
 
 # Setup the argument parsing.
@@ -39,7 +41,8 @@ if args_dict['report'] == 'cerf' and args_dict['loc'] != 19:
 
 print(args_dict)
 
-task_queue.send_report_email(
+tasks.send_report_email(
     args_dict['report'], args_dict['lang'],
-    args_dict['loc']
+    args_dict['loc'],
+    yaml.dump(config)
 )

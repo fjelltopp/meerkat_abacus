@@ -2,12 +2,14 @@ from collections import defaultdict
 
 from datetime import datetime, timedelta
 
-from meerkat_abacus.config import country_config
+from meerkat_abacus.config import config
+country_config = config.country_config
 
-epi_week_53_strategy = country_config.get("epi_week_53_strategy", "leave_as_is")
 
 
-def __handle_epi_week_53(epi_year):
+def __handle_epi_week_53(epi_year,
+                         epi_week_53_strategy=country_config.get("epi_week_53_strategy",
+                                                                 "leave_as_is")):
     return {
         "include_in_52": (lambda epi_year: (epi_year, 52)),
         "include_in_1": (lambda epi_year: (epi_year + 1, 1)),
@@ -15,7 +17,7 @@ def __handle_epi_week_53(epi_year):
     }[epi_week_53_strategy](epi_year)
 
 
-def epi_week_for_date(date):
+def epi_week_for_date(date, param_config=country_config):
     """
     Calculate epi week for given date.
     Returned epi week number is from range 1, 53. 53rd week includes dates from the end of 52nd week of current year
@@ -25,11 +27,15 @@ def epi_week_for_date(date):
         date
     Returns tuple epi_year, epi_week
     """
-    _epi_year_start_date = epi_year_start_date(date)
-    _epi_year = epi_year_by_date(date)
+    _epi_config = param_config["epi_week"]
+    _epi_week_53_strategy=param_config.get("epi_week_53_strategy",
+                                           "leave_as_is")
+    _epi_year_start_date = epi_year_start_date(date, epi_config=_epi_config)
+    _epi_year = epi_year_by_date(date, epi_config=_epi_config)
     _epi_week_number = (date - _epi_year_start_date).days // 7 + 1
     if _epi_week_number in [0, 53]:
-        _epi_year, _epi_week_number = __handle_epi_week_53(epi_year=_epi_year)
+        _epi_year, _epi_week_number = __handle_epi_week_53(epi_year=_epi_year,
+                                                           epi_week_53_strategy=_epi_week_53_strategy)
     return _epi_year, _epi_week_number
 
 

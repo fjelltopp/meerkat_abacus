@@ -10,6 +10,9 @@ env:
    HERMES_API_ROOT='http://testapiroot'
    DATA_DIRECTORY='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/data/'
    COUNTRY_CONFIG_DIR='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/country_config/'
+   FAKE_DATA_GENERATION=INTERNAL
+   INITIAL_DATA_SOURCE=FAKE_DATA
+   STREAM_DATA_SOURCE=AWS_S3
 
 addons:
   postgresql: '9.6'

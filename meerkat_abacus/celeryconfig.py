@@ -12,8 +12,9 @@ from datetime import timedelta, datetime
 from celery.schedules import crontab
 import logging
 import os
+import yaml
 
-import meerkat_abacus.config as config
+from meerkat_abacus.config import config
 
 BROKER_URL = 'amqp://guest@rabbit//'
 CELERY_RESULT_BACKEND = 'rpc://guest@rabbit//'
@@ -23,23 +24,16 @@ if new_url:
     BROKER_URL = new_url
     CELERY_RESULT_BACKEND = new_url
 
-CELERY_TASK_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'yaml'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_IMPORTS = ('api_background.export_data',)
+CELERY_ACCEPT_CONTENT = ['json', 'yaml']
 CELERY_ENABLE_UTC = True
 CELERYD_MAX_TASKS_PER_CHILD = 1  # To help with memory constraints
 
 
 CELERYBEAT_SCHEDULE = {}
-if config.start_celery:
-    CELERYBEAT_SCHEDULE['get_and_proccess_data'] = {
-        'task': 'task_queue.get_proccess_data',
-        'schedule': timedelta(seconds=config.interval)
-    }
-
 CELERYBEAT_SCHEDULE['cleanup_downloads'] = {
-    'task': 'task_queue.cleanup_downloads',
+    'task': 'meerkat_abacus.tasks.cleanup_downloads',
     'schedule': crontab(minute=16, hour='*')
 }
 
@@ -80,9 +74,9 @@ if config.mailing_root:
 
         # Add the email sending process to the celery schedule.
         CELERYBEAT_SCHEDULE[task_name] = {
-            'task': 'task_queue.send_report_email',
+            'task': 'meerkat_abacus.tasks.send_report_email',
             'schedule': send_time,
-            'args': (report, language, location)
+            'args': (report, language, location, yaml.dump(config))
         }
 
         # If the ENV variable is set, add the report to the testing schedule.
@@ -90,7 +84,7 @@ if config.mailing_root:
         # Sent every year at this time, but deployments never last that long!
         if int(config.send_test_emails):
             task_name = 'send_test_' + report
-            send_time = datetime.now() + timedelta(minutes=10)
+            send_time = datetime.now() + timedelta(minutes=1)
             send_time = crontab(
                     minute=send_time.minute,
                     hour=send_time.hour,
@@ -98,9 +92,9 @@ if config.mailing_root:
                     month_of_year=send_time.month
             )
             CELERYBEAT_SCHEDULE[task_name] = {
-                'task': 'task_queue.send_report_email',
+                'task': 'meerkat_abacus.tasks.send_report_email',
                 'schedule': send_time,
-                'args': ('test_'+report, language, location)
+                'args': ('test_'+report, language, location, yaml.dump(config))
             }
             # Also send the test reports every Thursday morning.
             # If these don't go out, I have a working day to debug.
@@ -111,9 +105,9 @@ if config.mailing_root:
                 day_of_week=4
             )
             CELERYBEAT_SCHEDULE[task_name] = {
-                'task': 'task_queue.send_report_email',
+                'task': 'meerkat_abacus.tasks.send_report_email',
                 'schedule': send_time,
-                'args': ('test_' + report, language, location)
+                'args': ('test_' + report, language, location, yaml.dump(config))
             }
 
 # Each message type will need it's own sending schedule.
@@ -151,9 +145,9 @@ if config.device_messaging_api:
             )
         # Add the message sending process to the celery schedule.
         CELERYBEAT_SCHEDULE[task_name] = {
-            'task': 'task_queue.send_device_messages',
+            'task': 'meerkat_abacus.tasks.send_device_messages',
             'schedule': send_time,
-            'args': (message, content, distribution)
+            'args': (message, content, distribution, yaml.dump(config))
         }
 
     if int(config.send_test_device_messages):
@@ -169,11 +163,11 @@ if config.device_messaging_api:
         content = "Test " + str(datetime.now())
         distribution = ['/topics/demo']
         CELERYBEAT_SCHEDULE[task_name] = {
-            'task': 'task_queue.send_device_messages',
+            'task': 'meerkat_abacus.tasks.send_device_messages',
             'schedule': send_time,
-            'args': ('send_device_message_test', content, distribution)
+            'args': ('send_device_message_test', content, distribution, yaml.dump(config))
         }
 
 
 logging.warning("Celery is set up with the following beat schedule:\n" +
-                str(CELERYBEAT_SCHEDULE))
+                str([ (key, value["schedule"]) for key, value in CELERYBEAT_SCHEDULE.items()]))

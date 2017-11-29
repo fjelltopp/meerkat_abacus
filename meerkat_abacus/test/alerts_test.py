@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from meerkat_abacus import model
 
 from meerkat_abacus import alerts
-from meerkat_abacus import config
+from meerkat_abacus.config import config
 
 
 class UtilTest(unittest.TestCase):

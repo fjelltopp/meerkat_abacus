@@ -6,7 +6,7 @@ Definition of the Variable class
 from dateutil.parser import parse
 from functools import partial
 from datetime import datetime, timedelta
-from meerkat_abacus import config
+from meerkat_abacus.config import config
 country_config = config.country_config
 
 

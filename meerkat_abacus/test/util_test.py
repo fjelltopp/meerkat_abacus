@@ -12,8 +12,11 @@ from dateutil import parser
 
 import meerkat_libs as libs
 from meerkat_abacus import util, model, config
-from meerkat_abacus.config import country_config
+from meerkat_abacus.config import config
+country_config = config.country_config
 from meerkat_abacus.util import create_fake_data
+
+country_config = config.country_config
 
 
 class UtilTest(unittest.TestCase):
