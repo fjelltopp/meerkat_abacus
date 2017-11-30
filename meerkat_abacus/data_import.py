@@ -294,7 +294,7 @@ def __should_discard_row(row, filter, already_validated_dates, param_config=conf
                         f" and submission date: {row.get('SubmissionDate')}")
         return True
     try:
-        date_to_check = parse(string_date)
+        date_to_check = parse(string_date).replace(tzinfo=None)
         epi_week_for_date(date_to_check, param_config=param_config.country_config)
     except ValueError:
         logging.debug(f"Failed to process date column for row with device_id: {row.get('deviceid')}" +
