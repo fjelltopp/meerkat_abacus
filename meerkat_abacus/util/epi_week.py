@@ -27,6 +27,9 @@ def epi_week_for_date(date, param_config=country_config):
         date
     Returns tuple epi_year, epi_week
     """
+    # We don't support timezone info in date comparison
+    # TODO: .replace(tzinfo=None) should be moved to a common meerkat dateparser
+    date = date.replace(tzinfo=None)
     _epi_config = param_config["epi_week"]
     _epi_week_53_strategy=param_config.get("epi_week_53_strategy",
                                            "leave_as_is")
