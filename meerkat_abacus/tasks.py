@@ -28,13 +28,11 @@ from meerkat_abacus.util import create_fake_data
 sqs_client = None
 sqs_queue_url = None
 
-worker_buffer = Queue(maxsize=10000)
+worker_buffer = Queue(maxsize=os.environ.get('INTERNAL_BUFFER_SIZE', 10000))
 
 @task
 def set_up_db(param_config_yaml):
     param_config = yaml.load(param_config_yaml)
-    # print("param config YAML:" + param_config_yaml)
-    # print("param config:" + param_config)
     data_management.set_up_database(leave_if_data=False,
                                     drop_db=True, param_config=param_config)
     if param_config.initial_data_source == "LOCAL_RDS":
