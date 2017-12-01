@@ -28,7 +28,11 @@ from meerkat_abacus.util import create_fake_data
 sqs_client = None
 sqs_queue_url = None
 
-worker_buffer = Queue(maxsize=os.environ.get('INTERNAL_BUFFER_SIZE', 10000))
+try:
+    INTERNAL_BUFFER_SIZE = int(os.environ.get('INTERNAL_BUFFER_SIZE', 10000))
+except ValueError:
+    INTERNAL_BUFFER_SIZE = 10000
+worker_buffer = Queue(maxsize=INTERNAL_BUFFER_SIZE)
 
 @task
 def set_up_db(param_config_yaml):
