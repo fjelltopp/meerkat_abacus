@@ -39,6 +39,7 @@ if __name__ == "__main__":
     if args.action == "create-db":
         create_db(config.DATABASE_URL, args.drop_db)
         engine = create_engine(config.DATABASE_URL)
+        model.form_tables()
         model.Base.metadata.create_all(engine)
     if args.action == "import-locations":
         engine = create_engine(config.DATABASE_URL)
