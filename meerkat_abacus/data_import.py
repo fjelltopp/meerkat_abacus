@@ -4,6 +4,7 @@ Main functionality for importing data into abacus
 import logging
 import boto3
 import queue
+import gc
 from dateutil.parser import parse
 import random
 import yaml
@@ -59,8 +60,9 @@ def download_data_from_s3(config):
     Args:
        bucket: bucket_name
     """
-    s3 = boto3.resource('s3')
     for form in config.country_config["tables"]:
+        s3 = boto3.resource('s3')
+        gc.collect()
         file_name = form + ".csv"
         s3.meta.client.download_file(config.s3_bucket, "data/" + file_name,
                                      config.data_directory + file_name)
