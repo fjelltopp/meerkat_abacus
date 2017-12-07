@@ -18,7 +18,7 @@ from datetime import datetime
 from dateutil.parser import parse
 from geoalchemy2.shape import from_shape
 from shapely.geometry import shape, Polygon, MultiPolygon
-from sqlalchemy import create_engine, func, and_
+from sqlalchemy import create_engine, func, and_, or_
 from sqlalchemy import exc, over, update, delete
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.attributes import flag_modified
@@ -716,7 +716,7 @@ i
 
 
 def create_links(data_type, input_conditions, table, session, conn,
-                 param_config=config):
+                 param_config=config, restrict_uuids=None):
     """
     Creates all the links in the Links table.
 
@@ -798,6 +798,8 @@ def create_links(data_type, input_conditions, table, session, conn,
                     conditions.append(
                         link_alias.data[column].astext == condition)
 
+                if restrict_uuids:
+                    conditions.append(or_(link_alias.uuid.in_(restrict_uuids), from_form.uuid.in_(restrict_uuids)))
                 # make sure that the link is not referring to itself
                 conditions.append(from_form.uuid != link_alias.uuid)
 
@@ -840,9 +842,8 @@ def create_links(data_type, input_conditions, table, session, conn,
                 session.commit()
     return link_names
 
-
 def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
-                      param_config=config):
+                      param_config=config, only_forms=None):
     """
     Run all the raw data through the to_codes
     function to translate it into structured data
@@ -854,7 +855,6 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
                        uuids in this list
 
     """
-
     country_config = param_config.country_config
 
     if restrict_uuids is not None:
@@ -880,6 +880,8 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
     session.commit()
 
     for data_type in data_types.data_types(param_config=param_config):
+        if only_forms and data_type["form"] not in only_forms:
+            continue
         table = model.form_tables(param_config)[data_type["form"]]
         if debug_enabled:
             logging.debug("Data type: %s", data_type["type"])
@@ -900,8 +902,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
 
         # Set up the links
 
-        link_names += create_links(data_type, conditions, table, session, conn, param_config)
-
+        link_names += create_links(data_type, conditions, table, session, conn, param_config, restrict_uuids=restrict_uuids)
         # Main Query
         if restrict_uuids is not None:
             result = session.query(model.Links.uuid_from).filter(

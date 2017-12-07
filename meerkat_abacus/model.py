@@ -78,7 +78,7 @@ class Data(Base):
     __tablename__ = 'data'
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String)
+    uuid = Column(String, index=True)
     device_id = Column(String, index=True)
     type = Column(String, index=True)
     type_name = Column(String)
@@ -112,7 +112,7 @@ class DisregardedData(Base):
     __tablename__ = 'disregarded_data'
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String)
+    uuid = Column(String, index=True)
     type = Column(String, index=True)
     type_name = Column(String)
     date = Column(DateTime, index=True)

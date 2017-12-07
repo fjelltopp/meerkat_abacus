@@ -57,7 +57,6 @@ def prepare_add_rows_arguments(form, session, param_config=config):
             "fraction": param_config.import_fraction,
             "param_config": param_config}
 
-
 def process_chunk(internal_buffer, session, engine, param_config=config,
                   run_overall_processes=True):
     """
@@ -72,23 +71,29 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
         element = internal_buffer.get()
         tables[element["form"]].append(element["data"])
 
+    forms = []
     for form in tables:
         kwargs = prepare_add_rows_arguments(form, session, param_config)
-        uuids += data_import.add_rows_to_db(
+        new_uuids = data_import.add_rows_to_db(
             form,
             tables[form],
             session,
             engine,
             **kwargs)
+        uuids += new_uuids
+        if len(new_uuids) > 0:
+            forms.append(form)
     corrected = data_management.initial_visit_control(
         param_config=param_config
     )
     uuids += corrected
     if len(uuids) > 0:
+
         data_management.new_data_to_codes(
             debug_enabled=True,
             restrict_uuids=uuids,
-            param_config=param_config
+            param_config=param_config,
+            only_forms=forms
         )
         if run_overall_processes:
             data_management.add_alerts(session, param_config=param_config)
