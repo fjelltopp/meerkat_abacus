@@ -65,7 +65,6 @@ def download_data_from_s3(config):
         s3.meta.client.download_file(config.s3_bucket, "data/" + file_name,
                                      config.data_directory + file_name)
 
-
 def add_rows_to_db(form, form_data, session, engine,
                    uuid_field="meta/instanceID",
                    only_new=False,
@@ -117,7 +116,7 @@ def add_rows_to_db(form, form_data, session, engine,
     to_check = []
     to_check_test = {}  # For speed
     logging.debug("Formname: %s", form)
-
+    
     if quality_control:
         logging.debug("Doing Quality Control")
         (variables, variable_forms, variable_tests,
@@ -194,7 +193,6 @@ def add_rows_to_db(form, form_data, session, engine,
             new_rows.append(insert_row[uuid_field])
         i += 1
         if i % 10000 == 0:
-            logging.info("Imported batch %d.", i / 10000)
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
 
