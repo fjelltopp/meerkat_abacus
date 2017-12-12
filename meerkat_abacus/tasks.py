@@ -51,8 +51,10 @@ def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
 
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
 
-    if source in ["S3", "AWS_S3"]:
+    if source == "AWS_S3":
         data_import.download_data_from_s3(param_config)
+        get_function = util.read_csv_filename
+    elif source == "LOCAL_CSV":
         get_function = util.read_csv_filename
     elif source == "FAKE_DATA":
         get_function = util.read_csv_filename
