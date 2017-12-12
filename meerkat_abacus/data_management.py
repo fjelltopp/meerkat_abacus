@@ -24,6 +24,8 @@ from sqlalchemy.orm import sessionmaker, aliased, Query
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
 
 from meerkat_abacus.util import data_types
 import meerkat_libs as libs
@@ -715,9 +717,8 @@ i
     add_fake_data(session=session, N=to_add, append=True, from_files=from_files, param_config=param_config)
 
 
-
 def create_links(data_type, input_conditions, table, session, conn,
-                 param_config=config, restrict_uuids=None):
+                 param_config=config, restrict_uuids=None, engine=None):
     """
     Creates all the links in the Links table.
 
@@ -735,7 +736,6 @@ def create_links(data_type, input_conditions, table, session, conn,
         conn: DB connection
 
     """
-
     country_config = param_config.country_config
 
     links_by_type, links_by_name = util.get_links(param_config.config_directory +
@@ -824,7 +824,17 @@ def create_links(data_type, input_conditions, table, session, conn,
 
                     dupe_delete = model.Links.__table__.delete().where(model.Links.uuid_from.in_(dupe_query)).where(
                         model.Links.type == link["name"])
-                    conn.execute(dupe_delete)
+
+                    connection = engine.raw_connection() # Create a raw connection so we can run vacuum analyse
+                    
+                    connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+                    cursor = connection.cursor()
+                    cursor.execute("VACUUM ANALYSE links")
+
+
+                    with conn.begin() as trans:
+                        conn.execute(dupe_delete)
+
                     aliased_link_table = aliased(model.Links)
                     circular_query = Query(model.Links.id). \
                         join(aliased_link_table, and_( \
@@ -833,12 +843,13 @@ def create_links(data_type, input_conditions, table, session, conn,
                         filter(model.Links.type == link["name"]). \
                         filter(aliased_link_table.type == link["name"])
 
-
-                    
                     circular_delete = model.Links.__table__.delete(). \
                                       where(model.Links.id.in_(circular_query)).where(
                                             model.Links.type == link["name"])
-                    conn.execute(circular_delete)
+                    cursor.execute("VACUUM ANALYSE links")
+                    connection.close()
+                    with conn.begin() as trans:
+                        conn.execute(circular_delete)
     return link_names
 
 def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
@@ -900,7 +911,10 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
             conditions.append(query_condtion[0])
 
         # Set up the links
-        link_names += create_links(data_type, conditions, table, session, conn, param_config, restrict_uuids=restrict_uuids)
+        print("start link")
+        link_names += create_links(data_type, conditions, table, session, conn, param_config,
+                                   restrict_uuids=restrict_uuids, engine=engine)
+        print("end link")
         # Main Query
         if restrict_uuids is not None:
             result = session.query(model.Links.uuid_from).filter(
