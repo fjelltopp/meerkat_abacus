@@ -1095,8 +1095,13 @@ def to_data(data, link_names,
             try:
                 date = parse(row[data_type["form"]][data_type["date"]])
                 date = datetime(date.year, date.month, date.day)
+                epi_year, week = epi_week_for_date(date, param_config=param_config.country_config)
             except KeyError:
                 logging.error("Missing Date field %s", data_type["date"])
+                continue
+            except ValueError:
+                logging.error(f"Failed to convert date to epi week. uuid: {row['uuid']}")
+                logging.debug(f"Faulty row date: {date}.")
                 continue
             except:
                 logging.error("Invalid Date: %s", row[data_type["form"]].get(data_type["date"]))
@@ -1107,8 +1112,6 @@ def to_data(data, link_names,
                     "uuid"]][-param_config.country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1
             variable_data["data_entry"] = 1
-            epi_year, week = epi_week_for_date(date,
-                                               param_config=param_config.country_config)
             submission_date = None
             if "SubmissionDate" in row[data_type["form"]]:
                 submission_date = parse(row[data_type["form"]].get("SubmissionDate")).replace(tzinfo=None)
