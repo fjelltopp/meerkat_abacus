@@ -355,6 +355,7 @@ allowed_formats = [
     '%b %d, %Y',
     '%d-%b-%Y',
     '%d-%b-%Y %I:%M:%S',
+    '%d-%b-%Y %H:%M:%S',
     '%b %d, %Y %I:%M:%S %p',
     '%Y-%m-%dT%H:%M:%S.%f',
     '%Y-%m-%dT%H:%M:%S'
