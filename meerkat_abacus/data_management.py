@@ -889,8 +889,10 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
     session.commit()
 
     for data_type in data_types.data_types(param_config=param_config):
-        if only_forms and data_type["form"] not in only_forms:
-            continue
+        # TODO: this piece of performance improvement broke "ongoing" status of alerts
+        # Removing untill further investigation.
+        # if only_forms and data_type["form"] not in only_forms:
+        #     continue
         table = model.form_tables(param_config)[data_type["form"]]
         if debug_enabled:
             logging.debug("Data type: %s", data_type["type"])
