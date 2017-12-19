@@ -10,12 +10,11 @@ from shapely.geometry import Polygon
 from unittest.mock import patch
 
 import meerkat_abacus.util.epi_week
-import meerkat_abacus.util.data_types as data_types
 from meerkat_abacus import data_management as manage
-from meerkat_abacus import model, task_queue
-from meerkat_abacus import config
+from meerkat_abacus import model, util, tasks, data_import
+from meerkat_abacus.config import config, Config
 from geoalchemy2.shape import to_shape
-
+import yaml
 spec = importlib.util.spec_from_file_location(
     "country_test",
     config.config_directory + config.country_config["country_tests"])
@@ -38,13 +37,15 @@ class DbTest(unittest.TestCase):
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.conn = self.engine.connect()
+        self.current_directory = current_directory = os.path.dirname(os.path.realpath(__file__))
+        self.param_config_yaml = yaml.dump(config)
 
     def tearDown(self):
         self.session.commit()
         self.session.close()
         self.engine.dispose()
-        if database_exists(config.DATABASE_URL):
-            drop_database(config.DATABASE_URL)
+        #if database_exists(config.DATABASE_URL):
+        #    drop_database(config.DATABASE_URL)
 
     def test_create_db(self):
         if database_exists(config.DATABASE_URL):
@@ -108,12 +109,13 @@ class DbTest(unittest.TestCase):
             "regions": "demo_regions.csv",
             "zones": "demo_zones.csv"
         },
-        "types_file": "data_types_multi.csv"
-
+        "types_file": "data_types_multi.csv",
+        "tables": ["demo_case"],
+        "epi_week": "international",
+        "links_file": "demo_links.csv"
     }
-
-    @patch.object(manage.config, 'config_directory', new=current_directory + "/test_data/")
-    @patch.dict(manage.country_config, country_config_mock)
+    
+    @patch.object(manage.data_types, "DATA_TYPES_DICT", new=None)
     def test_multiple_rows_in_a_row(self):
 
         self.session.query(model.AggregationVariables).delete()
@@ -135,19 +137,21 @@ class DbTest(unittest.TestCase):
         data_row = {"a": "test", "b1": "test1", "b2": "test2",
                     "pt./visit_date": "2016/01/01", "meta/instanceID": "1",
                     "deviceid": "1"}
-        self.session.query(model.form_tables["demo_case"]).delete()
+        self.session.query(model.form_tables()["demo_case"]).delete()
         self.session.query(model.Data).delete()
         self.session.commit()
-
-        case = model.form_tables["demo_case"](
+        
+        case = model.form_tables()["demo_case"](
             uuid="hei",
             data=data_row
         )
         self.session.add(case)
         self.session.commit()
-
-        with patch.object(manage.data_types, 'DATA_TYPES_DICT', new=data_types.init_data_types()):
-            manage.new_data_to_codes(self.engine)
+        config = Config()
+        config.config_directory = self.current_directory + "/test_data/"
+        config.country_config["types_file"] = "data_types_multi.csv"
+        # from nose.tools import set_trace; set_trace()
+        manage.new_data_to_codes(self.engine, param_config=config)
 
         N_cases = self.session.query(model.Data).count()
 
@@ -194,17 +198,20 @@ class DbTest(unittest.TestCase):
             self.session.add(v)
         self.session.commit()
 
-        manage.table_data_from_csv(
+        form_data = []
+        for d in util.read_csv(self.current_directory + "/test_data/" + "demo_case.csv"):
+            form_data.append(d)
+        
+        data_import.add_rows_to_db(
             "demo_case",
-            model.form_tables["demo_case"],
-            self.current_directory + "/test_data/",
+            form_data,
             self.session,
             self.engine,
             deviceids=["1", "2", "3", "4", "5", "6"],
             start_dates={"2": datetime(2016, 2, 2)},
             table_name="demo_case",
             quality_control=True)
-        results = self.session.query(model.form_tables["demo_case"]).all()
+        results = self.session.query(model.form_tables()["demo_case"]).all()
         self.assertEqual(len(results), 4)
         # Only 6 of the cases have deviceids in 1-6
         # One has to early submission date and one
@@ -222,9 +229,11 @@ class DbTest(unittest.TestCase):
             self.assertIn(r.uuid, ["3", "4", "5", "1"])
 
     def test_db_setup(self):
-        old_manual = task_queue.config.country_config["manual_test_data"]
-        task_queue.config.country_config["manual_test_data"] = {}
-        task_queue.set_up_db.apply().get()
+        old_manual = tasks.config.country_config["manual_test_data"]
+        tasks.config.country_config["manual_test_data"] = {}
+        tasks.set_up_db.apply(kwargs={"param_config_yaml": self.param_config_yaml}).get()
+        tasks.initial_data_setup(source="FAKE_DATA",
+                                 param_config_yaml=self.param_config_yaml)
         self.assertTrue(database_exists(config.DATABASE_URL))
         engine = self.engine
         session = self.session
@@ -233,8 +242,8 @@ class DbTest(unittest.TestCase):
         country_test.test_locations(results)
 
         if config.fake_data:
-            for table in model.form_tables:
-                results = session.query(model.form_tables[table])
+            for table in model.form_tables():
+                results = session.query(model.form_tables()[table])
                 self.assertEqual(len(results.all()), 500)
         # Import variables
         agg_var = session.query(model.AggregationVariables).filter(
@@ -249,12 +258,12 @@ class DbTest(unittest.TestCase):
         n_disregarded_cases = len(
             session.query(model.DisregardedData).filter(model.Data.type == "case").all())
 
-        t = model.form_tables[config.country_config["tables"][0]]
+        t = model.form_tables()[config.country_config["tables"][0]]
         n_expected_cases = len(
             session.query(t).filter(t.data["intro./visit"].astext == "new")
                 .all())
         self.assertEqual(n_cases + n_disregarded_cases, n_expected_cases)
-
+        
         agg_var_female = "gen_2"
         results = session.query(model.Data).filter(model.Data.type == "case")
         results2 = session.query(model.DisregardedData).filter(model.DisregardedData.type == "case")
@@ -283,45 +292,38 @@ class DbTest(unittest.TestCase):
         self.assertEqual(number_of_totals, len(total.all()))
         self.assertEqual(number_of_female, len(female.all()))
         session.close()
-        self.assertFalse(manage.set_up_everything(True, False, 100))
-        task_queue.config.country_config["manual_test_data"] = old_manual
+        tasks.config.country_config["manual_test_data"] = old_manual
 
     def test_get_proccess_data(self):
-        old_fake = task_queue.config.fake_data
-        old_s3 = task_queue.config.get_data_from_s3
-        task_queue.config.fake_data = True
-        task_queue.config.get_data_from_s3 = False
-        old_manual = task_queue.config.country_config["manual_test_data"]
-        task_queue.config.country_config["manual_test_data"] = {}
-        manage.create_db(config.DATABASE_URL, drop=True)
-        engine = create_engine(config.DATABASE_URL)
-        model.Base.metadata.create_all(engine)
-
+        old_fake = tasks.config.fake_data
+        old_s3 = tasks.config.get_data_from_s3
+        tasks.config.fake_data = True
+        tasks.config.get_data_from_s3 = False
+        old_manual = tasks.config.country_config["manual_test_data"]
+        tasks.config.country_config["manual_test_data"] = {}
         numbers = {}
-        manage.import_locations(self.engine, self.session)
-        manage.import_variables(self.session)
-        manage.add_fake_data(self.session, N=500, append=False)
-        task_queue.get_proccess_data.apply().get()
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
+        tasks.set_up_db.apply(kwargs={"param_config_yaml": self.param_config_yaml}).get()
+        for table in model.form_tables():
+            res = self.session.query(model.form_tables()[table])
             numbers[table] = len(res.all())
-        task_queue.get_proccess_data.apply().get()
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
-            self.assertEqual(numbers[table] + 5, len(res.all()))
-        # Clean up
-        task_queue.config.fake_data = old_fake
-        task_queue.config.get_data_from_s3 = old_s3
-        task_queue.config.country_config["manual_test_data"] = old_manual
+        tasks.add_fake_data()
+        tasks.process_buffer(start=False)
+        for table in model.form_tables():
+            res = self.session.query(model.form_tables()[table])
+            self.assertEqual(numbers[table] + 10, len(res.all()))
+        #Clean up
+        tasks.config.fake_data = old_fake
+        tasks.config.get_data_from_s3 = old_s3
+        tasks.config.country_config["manual_test_data"] = old_manual
 
     def test_get_new_data_initial_visit_control(self):
         """
         Tests the initial visit control in case new data is brought in and it needs to be validated
         """
-        old_fake = task_queue.config.fake_data
-        old_s3 = task_queue.config.get_data_from_s3
-        task_queue.config.fake_data = True
-        task_queue.config.get_data_from_s3 = False
+        old_fake = tasks.config.fake_data
+        old_s3 = tasks.config.get_data_from_s3
+        tasks.config.fake_data = True
+        tasks.config.get_data_from_s3 = False
         manage.create_db(config.DATABASE_URL, drop=True)
         engine = create_engine(config.DATABASE_URL)
         model.Base.metadata.create_all(engine)
@@ -330,17 +332,17 @@ class DbTest(unittest.TestCase):
         manage.import_locations(self.engine, self.session)
         manage.import_variables(self.session)
         manage.add_fake_data(self.session, N=500, append=False)
-        task_queue.get_proccess_data.apply().get()
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
+        for table in model.form_tables():
+            res = self.session.query(model.form_tables()[table])
             numbers[table] = len(res.all())
-        task_queue.get_proccess_data.apply().get()
-        for table in model.form_tables:
-            res = self.session.query(model.form_tables[table])
-            self.assertEqual(numbers[table] + 5, len(res.all()))
-        # Reset configuration parameters
-        task_queue.config.fake_data = old_fake
-        task_queue.config.get_data_from_s3 = old_s3
+        tasks.add_fake_data()
+        tasks.process_buffer(start=False)
+        for table in model.form_tables():
+            res = self.session.query(model.form_tables()[table])
+            self.assertEqual(numbers[table] + 10, len(res.all()))
+        #Reset configuration parameters
+        tasks.config.fake_data = old_fake
+        tasks.config.get_data_from_s3 = old_s3
 
 
 if __name__ == "__main__":

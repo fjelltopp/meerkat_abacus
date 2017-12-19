@@ -18,17 +18,19 @@ from datetime import datetime
 from dateutil.parser import parse
 from geoalchemy2.shape import from_shape
 from shapely.geometry import shape, Polygon, MultiPolygon
-from sqlalchemy import create_engine, func, and_
+from sqlalchemy import create_engine, func, and_, or_
 from sqlalchemy import exc, over, update, delete
-from sqlalchemy.orm import sessionmaker, aliased
+from sqlalchemy.orm import sessionmaker, aliased, Query
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy_utils import database_exists, create_database, drop_database
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
 
 from meerkat_abacus.util import data_types
 import meerkat_libs as libs
 from meerkat_abacus import alerts as alert_functions
-from meerkat_abacus import config
+from meerkat_abacus.config import config
 from meerkat_abacus import model
 from meerkat_abacus import util
 from meerkat_abacus.codes import to_codes
@@ -37,7 +39,6 @@ from meerkat_abacus.util.epi_week import epi_week_for_date
 from meerkat_libs import consul_client as consul
 
 country_config = config.country_config
-
 
 def create_db(url, drop=False):
     """
@@ -90,8 +91,9 @@ def export_data(session):
                                for col in r.__table__.columns.keys())
                 logging.debug(name + "(**" + str(columns) + "),")
 
-
-def add_fake_data(session, N=500, append=False, from_files=False):
+def add_fake_data(session, N=500, append=False,
+                  from_files=False, param_config=config,
+                  write_to="file"):
     """
     Creates a csv file with fake data for each form. We make
     sure that the forms have deviceids that match the imported locations.
@@ -111,6 +113,7 @@ def add_fake_data(session, N=500, append=False, from_files=False):
     logging.debug("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
+    country_config = param_config.country_config
     forms = country_config["tables"]
     # Make sure the case report form is handled before the alert form
     for form in forms:
@@ -155,261 +158,17 @@ def add_fake_data(session, N=500, append=False, from_files=False):
                 for key in generated_data[0].keys():
                     if key not in row:
                         row[key] = None
-        util.write_csv(list(current_form) + list(manual_test_data_list) + generated_data, file_name)
+        data_to_write = list(current_form) + list(manual_test_data_list) + generated_data
+        if write_to == "file":
+            util.write_csv(data_to_write, file_name)
+        elif write_to == "local_db":
+            util.write_to_db(data_to_write, form,
+                             param_config.PERSISTENT_DATABASE_URL,
+                             param_config=param_config)
 
 
-def get_data_from_s3(bucket):
-    """
-    Get csv-files with data from s3 bucket
 
-    Needs to be authenticated with AWS to run.
-
-    Args:
-       bucket: bucket_name
-    """
-    s3 = boto3.resource('s3')
-    for form in country_config["tables"]:
-        file_name = form + ".csv"
-        s3.meta.client.download_file(bucket, "data/" + file_name,
-                                     config.data_directory + file_name)
-
-
-def table_data_from_csv(filename,
-                        table,
-                        directory,
-                        session,
-                        engine,
-                        uuid_field="meta/instanceID",
-                        only_new=False,
-                        deviceids=None,
-                        table_name=None,
-                        row_function=None,
-                        quality_control=None,
-                        allow_enketo=False,
-                        start_dates=None,
-                        exclusion_list=[],
-                        fraction=None):
-    """
-    Adds all the data from a csv file. We delete all old data first
-    and then add new data.
-
-    If quality_control is true we look among the aggregation variables
-    for variables of the import type. If this variable is not true the
-    corresponding value is set to zero. If the variable has the disregard
-    category we remove the whole row.
-
-    Args:
-        filename: name of table
-        table: table class
-        directory: directory where the csv file is
-        session: SqlAlchemy session
-        engine: SqlAlchemy engine
-        only_new: If we should add only new data
-        deviceids: if we should only add rows with a one of the deviceids
-        table_name: name of table if different from filename
-        row_function: function to appy to the rows before inserting
-        start_dates: Clinic start dates, we do not add any data submitted
-                     before these dates
-        quality_control: If we are performing quality controll on the data.
-        exclusion_list: A list of uuid's that are restricted from entering
-        fraction: If present imports a randomly selected subset of data.
-    """
-
-    if only_new:
-        result = session.query(table.uuid)
-        uuids = []
-        for r in result:
-            uuids.append(r.uuid)
-        uuids = set(uuids)
-    else:
-        session.query(table).delete()
-        engine.execute("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(
-            filename))
-        session.commit()
-
-    i = 0
-    dicts = []
-    conn = engine.connect()
-    new_rows = []
-    to_check = []
-    to_check_test = {}  # For speed
-    logging.info("Filename: %s", filename)
-
-    if quality_control:
-        logging.debug("Doing Quality Control")
-        (variables, variable_forms, variable_tests,
-         variables_group, variables_match) = to_codes.get_variables(session, "import")
-        if variables:
-            to_check = [variables["import"][x][x]
-                        for x in variables["import"].keys() if variables["import"][x][x].variable.form == filename]
-            for variable in to_check:
-                to_check_test[variable] = variable.test
-    removed = {}
-    for row in util.read_csv(directory + filename + ".csv"):
-        if fraction:
-            if random.random() > fraction:
-                continue
-        if row[uuid_field] in exclusion_list:
-            continue  # The row is in the exclusion list
-        if only_new and row[uuid_field] in uuids:
-            continue  # In this case we only add new data
-        if "_index" in row:
-            row["index"] = row.pop("_index")
-        if row_function:
-            insert_row = row_function(row)
-        else:
-            insert_row = row
-        # If we have quality checks
-        remove = False
-        if to_check:
-            for variable in to_check:
-                try:
-                    if not to_check_test[variable](insert_row):
-                        if variable.variable.category == ["discard"]:
-                            remove = True
-                        else:
-                            column = variable.column
-                            if ";" in column or "," in column:
-                                column = column.split(";")[0].split(",")[0]
-                            category = variable.variable.category
-                            replace_value = None
-                            if category and len(category) > 0 and "replace:" in category[0]:
-                                replace_column = category[0].split(":")[1]
-                                replace_value = insert_row.get(replace_column,
-                                                               None)
-                            if column in insert_row:
-                                insert_row[column] = replace_value
-                                if insert_row[column]:
-                                    if column in removed:
-                                        removed[column] += 1
-                                    else:
-                                        removed[column] = 1
-                except Exception as e:
-                    logging.exception("Quality Controll error for code %s", variable.variable.id, exc_info=True)
-        if remove:
-            continue
-
-        if deviceids:
-            if should_row_be_added(insert_row, table_name, deviceids,
-                                   start_dates, allow_enketo=allow_enketo):
-                dicts.append({"data": insert_row,
-                              "uuid": insert_row[uuid_field]})
-                consul.send_dhis2_events(uuid=insert_row[uuid_field], form_id=filename, raw_row=insert_row)
-                new_rows.append(insert_row[uuid_field])
-        else:
-            dicts.append({"data": insert_row,
-                          "uuid": insert_row[uuid_field]})
-            consul.send_dhis2_events(uuid=insert_row[uuid_field], form_id=filename, raw_row=insert_row)
-            new_rows.append(insert_row[uuid_field])
-        i += 1
-        if i % 10000 == 0:
-            logging.info("Imported batch %d.", i / 10000)
-            conn.execute(table.__table__.insert(), dicts)
-            dicts = []
-
-    if to_check:
-        logging.info("Quality Controll performed: ")
-        logging.info("removed value: %s", removed)
-    conn.execute(table.__table__.insert(), dicts)
-    conn.close()
-    consul.flush_dhis2_events()
-    logging.info("Number of records %s", i)
-    return new_rows
-
-
-def should_row_be_added(row, form_name, deviceids, start_dates, allow_enketo=False):
-    """
-    Determines if a data row should be added.
-    If deviceid is not None, the reccord need to have one of the deviceids.
-    If start_dates is not None, the record needs to be dated
-    after the corresponding start date
-
-    Args:
-        row: row to be added
-        form_name: name of form
-        deviceids(list): the approved deviceid
-        start_dates(dict): Clinic start dates
-    Returns:
-        should_add(Bool)
-    """
-    ret = False
-
-    if deviceids is not None:
-        if row.get("deviceid", None) in deviceids:
-            ret = True
-        else:
-            if allow_enketo:
-                for url in allow_enketo:
-                    if url in row.get("deviceid", None):
-                        ret = True
-                        break
-    else:
-        ret = True
-    if start_dates and row.get("deviceid", None) in start_dates:
-        if not row["SubmissionDate"]:
-            ret = False
-        elif parse(row["SubmissionDate"]) < start_dates[row["deviceid"]]:
-            ret = False
-    if ret:
-        ret = _validate_date_to_epi_week_convertion(form_name, row)
-    return ret
-
-
-def _validate_date_to_epi_week_convertion(form_name, row):
-    form_data_types = data_types.data_types_for_form_name(form_name)
-    if form_data_types:
-        filters = []
-        for form_data_type in form_data_types:
-            filter = __create_filter(form_data_type)
-            filters.append(filter)
-
-        validated_dates = []
-        for filter in filters:
-            condition_field_name = filter.get('field_name')
-            if not condition_field_name or __fulfills_condition(filter, row):
-                if __should_discard_row(row, filter, validated_dates):
-                    return False
-    return True
-
-
-def __create_filter(form_data_type):
-    if form_data_type.get('condition'):
-        return {
-            'field_name': form_data_type['db_column'],
-            'value': form_data_type['condition'],
-            'date_field_name': form_data_type['date']
-        }
-    else:
-        return {
-            'date_field_name': form_data_type['date']
-        }
-
-
-def __fulfills_condition(filter, row):
-    return row[filter['field_name']] == filter['value']
-
-
-def __should_discard_row(row, filter, already_validated_dates):
-    column_with_date_name = filter['date_field_name']
-    if column_with_date_name in already_validated_dates:
-        return False
-    already_validated_dates.append(column_with_date_name)
-    string_date = row[column_with_date_name]
-    if not string_date:
-        logging.debug(f"Empty value of date column for row with device_id: {row.get('deviceid')}" +
-                        f" and submission date: {row.get('SubmissionDate')}")
-        return True
-    try:
-        date_to_check = parse(string_date)
-        epi_week_for_date(date_to_check)
-    except ValueError:
-        logging.debug(f"Failed to process date column for row with device_id: {row.get('deviceid')}" +
-                        f" and submission date: {row.get('SubmissionDate')}")
-        return True
-    return False
-
-
-def import_variables(session):
+def import_variables(session, param_config=config):
     """
     Import variables from codes csv-file.
 
@@ -418,10 +177,12 @@ def import_variables(session):
     """
     session.query(model.AggregationVariables).delete()
     session.commit()
+
+    country_config = param_config.country_config
     # check if the coding_list parameter exists. If not, use the legacy parameter codes_file instead
     if 'coding_list' in country_config.keys():
         for coding_file_name in country_config['coding_list']:
-            codes_file = config.config_directory + 'variable_codes/' + coding_file_name
+            codes_file = param_config.config_directory + 'variable_codes/' + coding_file_name
             for row in util.read_csv(codes_file):
                 if '' in row.keys():
                     row.pop('')
@@ -431,7 +192,7 @@ def import_variables(session):
                 session.add(model.AggregationVariables(**row))
             session.commit()
     else:
-        codes_file = config.config_directory + country_config['codes_file'] + '.csv'
+        codes_file = param_config.config_directory + param_config.country_config['codes_file'] + '.csv'
         for row in util.read_csv(codes_file):
             if '' in row.keys():
                 row.pop('')
@@ -442,7 +203,7 @@ def import_variables(session):
         session.commit()
 
 
-def import_data(engine, session):
+def import_data(engine, session, param_config=config):
     """
     Imports all the data for all the forms from the csv files
 
@@ -455,7 +216,9 @@ def import_data(engine, session):
     deviceids = util.get_deviceids(session)
     start_dates = util.get_start_date_by_deviceid(session)
 
-    for form in model.form_tables.keys():
+    country_config = param_config.country_config
+
+    for form in model.form_tables().keys():
 
         uuid_field = "meta/instanceID"
         if "tables_uuid" in country_config:
@@ -476,7 +239,7 @@ def import_data(engine, session):
         exclusion_list = get_exclusion_list(session, form)
         table_data_from_csv(
             form,
-            model.form_tables[form],
+            model.form_tables()[form],
             config.data_directory,
             session,
             engine,
@@ -490,47 +253,8 @@ def import_data(engine, session):
             fraction=config.import_fraction)
 
 
-def import_new_data():
-    """
-    Import only new data from csv files.
-    """
-    engine = create_engine(config.DATABASE_URL)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    new_records = []
-    deviceids_case = util.get_deviceids(session, case_report=True)
-    deviceids = util.get_deviceids(session)
-    start_dates = util.get_start_date_by_deviceid(session)
-    for form in model.form_tables.keys():
-        if form in country_config["require_case_report"]:
-            form_deviceids = deviceids_case
-        else:
-            form_deviceids = deviceids
-
-        quality_control = False
-        if "quality_control" in country_config:
-            if form in country_config["quality_control"]:
-                quality_control = True
-        exclusion_list = get_exclusion_list(session, form)
-        new_records += table_data_from_csv(
-            form,
-            model.form_tables[form],
-            config.data_directory,
-            session,
-            engine,
-            only_new=True,
-            deviceids=form_deviceids,
-            table_name=form,
-            start_dates=start_dates,
-            quality_control=quality_control,
-            exclusion_list=exclusion_list,
-            fraction=config.import_fraction)
-
-    return new_records
-
-
 def import_clinics(csv_file, session, country_id,
-                   other_info=None, other_condition=None):
+                   other_info=None, other_condition=None, param_config=config):
     """
     Import clinics from csv file.
 
@@ -539,6 +263,7 @@ def import_clinics(csv_file, session, country_id,
         session: SQLAlchemy session
         country_id: id of the country
     """
+    country_config = param_config.country_config
 
     result = session.query(model.Locations)
     regions = {}
@@ -720,7 +445,7 @@ def import_regions(csv_file, session, column_name,
     session.commit()
 
 
-def import_locations(engine, session):
+def import_locations(engine, session, param_config=config):
     """
     Imports all locations from csv-files.
 
@@ -728,11 +453,13 @@ def import_locations(engine, session):
         engine: SQLAlchemy connection engine
         session: db session
     """
+    country_config = param_config.country_config
+
     session.query(model.Locations).delete()
     engine.execute("ALTER SEQUENCE locations_id_seq RESTART WITH 1;")
     session.add(
         model.Locations(
-            name=country_config["country_name"],
+            name=param_config.country_config["country_name"],
             level="country",
             country_location_id="the_country_location_id"
         )
@@ -742,13 +469,13 @@ def import_locations(engine, session):
     session.commit()
     zone_file = None
     if "zones" in country_config["locations"]:
-        zone_file = (config.config_directory + "locations/" +
+        zone_file = (param_config.config_directory + "locations/" +
                      country_config["locations"]["zones"])
-    regions_file = (config.config_directory + "locations/" +
+    regions_file = (param_config.config_directory + "locations/" +
                     country_config["locations"]["regions"])
-    districts_file = (config.config_directory + "locations/" +
+    districts_file = (param_config.config_directory + "locations/" +
                       country_config["locations"]["districts"])
-    clinics_file = (config.config_directory + "locations/" +
+    clinics_file = (param_config.config_directory + "locations/" +
                     country_config["locations"]["clinics"])
 
     if zone_file:
@@ -758,14 +485,14 @@ def import_locations(engine, session):
         import_regions(regions_file, session, "region", "country", "region")
     import_regions(districts_file, session, "district", "region", "district")
     import_clinics(clinics_file, session, 1,
-                   other_info=country_config.get("other_location_information", None),
-                   other_condition=country_config.get("other_location_condition", None))
-    for geosjon_file in config.country_config["geojson_files"]:
-        import_geojson(config.config_directory + geosjon_file,
+                   other_info=param_config.country_config.get("other_location_information", None),
+                   other_condition=param_config.country_config.get("other_location_condition", None),
+                   param_config=param_config)
+    for geosjon_file in param_config.country_config["geojson_files"]:
+        import_geojson(param_config.config_directory + geosjon_file,
                        session)
 
-
-def import_parameters(engine, session):
+def import_parameters(engine, session, param_config=config):
     """
     Imports additional calculation parameters from csv-files.
 
@@ -776,15 +503,15 @@ def import_parameters(engine, session):
     session.query(model.CalculationParameters).delete()
     engine.execute("ALTER SEQUENCE calculation_parameters_id_seq RESTART WITH 1;")
 
-    parameter_files = config.country_config.get("calculation_parameters", [])
+    parameter_files = param_config.country_config.get("calculation_parameters",[])
 
     for file in parameter_files:
-        logging.warning("Importing parameter file %s", file)
+        logging.debug("Importing parameter file %s", file)
         file_name = os.path.splitext(file)[0]
         file_extension = os.path.splitext(file)[-1]
         if file_extension == '.json':
-            with open(config.config_directory + "calculation_parameters/" +
-                              file) as json_data:
+            with open(param_config.config_directory + "calculation_parameters/" +
+                    file) as json_data:
                 parameter_data = json.load(json_data)
                 session.add(
                     model.CalculationParameters(
@@ -808,90 +535,60 @@ def import_dump(dump_file):
         stdout, stderr = proc.communicate()
 
 
-def set_up_everything(leave_if_data, drop_db, N):
+def set_up_persistent_database(param_config):
     """
-    Sets up the db and imports all the data. This should leave
-    the database completely ready to used by the API.
+    Sets up the test persistent db if it doesn't exist yet.
+    """
+    logging.info("Create Persistent DB")
+    if not database_exists(param_config.PERSISTENT_DATABASE_URL):
+        create_db(param_config.PERSISTENT_DATABASE_URL, drop=False)
+        engine = create_engine(param_config.PERSISTENT_DATABASE_URL)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        logging.info("Creating persistent database tables")
+        model.form_tables(param_config=param_config)
+        model.Base.metadata.create_all(engine)
+        engine.dispose()
+
+
+def set_up_database(leave_if_data, drop_db, param_config=config):
+    """
+    Sets up the db and imports static data.
 
     Args:
         leave_if_data: do nothing if data is there
         drop_db: shall db be dropped before created
-        N: number of data points to create
+        param_config: config object for Abacus in case the function is called in a Celery container
     """
     set_up = True
     if leave_if_data:
-        if database_exists(config.DATABASE_URL):
-            engine = create_engine(config.DATABASE_URL)
+        if database_exists(param_config.DATABASE_URL):
+            engine = create_engine(param_config.DATABASE_URL)
             Session = sessionmaker(bind=engine)
             session = Session()
             if len(session.query(model.Data).all()) > 0:
                 set_up = False
     if set_up:
         logging.info("Create DB")
-        create_db(config.DATABASE_URL, drop=drop_db)
-        if config.db_dump:
-            import_dump(config.db_dump)
+        create_db(param_config.DATABASE_URL, drop=drop_db)
+        if param_config.db_dump:
+            import_dump(param_config.db_dump)
             return set_up
-        engine = create_engine(config.DATABASE_URL)
+        engine = create_engine(param_config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
         session = Session()
         logging.info("Populating DB")
+        model.form_tables(param_config=param_config)
         model.Base.metadata.create_all(engine)
         logging.info("Import Locations")
-        import_locations(engine, session)
+        import_locations(engine, session, param_config=param_config)
         logging.info("Import calculation parameters")
-        import_parameters(engine, session)
-        if config.fake_data:
-            logging.info("Generate fake data")
-            add_fake_data(session, N=N, append=False, from_files=True)
-        if config.get_data_from_s3:
-            logging.info("Get data from s3")
-            get_data_from_s3(config.s3_bucket)
+        import_parameters(engine, session, param_config=param_config)
         logging.info("Import Variables")
-        import_variables(session)
-        logging.info("Import Data")
-        import_data(engine, session)
-        logging.info("Controlling initial visits")
-        initial_visit_control()
-        logging.info("To codes")
-        session.query(model.Data).delete()
-        engine.execute("ALTER SEQUENCE data_id_seq RESTART WITH 1;")
-        session.commit()
+        import_variables(session, param_config=param_config)
+    return session, engine
 
-        new_data_to_codes(engine)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        logging.info("Add alerts")
-        add_alerts(session)
-        logging.info("Notifying developer")
-        logging.info(libs.hermes('/notify', 'PUT', data={
-            'message': 'Abacus is set up and good to go for {}.'.format(
-                country_config['country_name']
-            )
-        }))
-    return set_up
-
-
-def get_exclusion_list(session, form):
-    """
-    Get exclusion list for a form
-
-    Args:
-        session: db session
-        form: which form to get the exclusion list for
-    """
-    exclusion_lists = config.country_config.get("exclusion_lists", {})
-    ret = []
-
-    for exclusion_list_file in exclusion_lists.get(form, []):
-        exclusion_list = util.read_csv(config.config_directory + exclusion_list_file)
-        for uuid_to_be_removed in exclusion_list:
-            ret.append(uuid_to_be_removed["uuid"])
-
-    return ret
-
-
-def add_alerts(session):
+def add_alerts(session, param_config=config):
     """
     Adds non indivdual alerts.
 
@@ -945,11 +642,11 @@ def add_alerts(session):
                 representative = new_alert["uuids"][0]
                 others = new_alert["uuids"][1:]
                 records = session.query(
-                    model.Data, model.form_tables[a.form]).join(
-                    (model.form_tables[a.form],
-                     model.form_tables[a.form].uuid == model.Data.uuid
-                     )).filter(model.Data.uuid.in_(new_alert["uuids"]),
-                               model.Data.type == data_type)
+                    model.Data, model.form_tables(param_config=param_config)[a.form]).join(
+                        (model.form_tables(param_config=param_config)[a.form],
+                         model.form_tables(param_config=param_config)[a.form].uuid == model.Data.uuid
+                         )).filter(model.Data.uuid.in_(new_alert["uuids"]),
+                                   model.Data.type == data_type)
                 data_records_by_uuid = {}
                 form_records_by_uuid = {}
                 for r in records.all():
@@ -963,12 +660,12 @@ def add_alerts(session):
                 new_variables["alert_duration"] = new_alert["duration"]
                 new_variables["alert_reason"] = var_id
                 new_variables["alert_id"] = data_records_by_uuid[
-                                                representative].uuid[-country_config["alert_id_length"]:]
+                    representative].uuid[-param_config.country_config["alert_id_length"]:]
 
-                for data_var in country_config["alert_data"][a.form].keys():
+                for data_var in param_config.country_config["alert_data"][a.form].keys():
                     new_variables["alert_" + data_var] = form_records_by_uuid[
-                        representative].data[country_config["alert_data"][a.form][
-                        data_var]]
+                        representative].data[param_config.country_config["alert_data"][a.form][
+                            data_var]]
 
                 # Tell sqlalchemy that we have changed the variables field
                 data_records_by_uuid[representative].variables = new_variables
@@ -981,10 +678,10 @@ def add_alerts(session):
                     data_records_by_uuid[o].variables[
                         "master_alert"] = representative
 
-                    for data_var in country_config["alert_data"][a.form].keys():
+                    for data_var in param_config.country_config["alert_data"][a.form].keys():
                         data_records_by_uuid[o].variables[
                             "alert_" + data_var] = form_records_by_uuid[
-                            o].data[country_config["alert_data"][a.form][data_var]]
+                            o].data[param_config.country_config["alert_data"][a.form][data_var]]
                     flag_modified(data_records_by_uuid[o], "variables")
                 session.commit()
                 session.flush()
@@ -993,7 +690,7 @@ def add_alerts(session):
             new_alerts = []
 
 
-def create_alert_id(alert):
+def create_alert_id(alert, param_config=config):
     """
     Create an alert id based on the alert we have
 
@@ -1004,10 +701,10 @@ def create_alert_id(alert):
        alert_id: an alert id
 
     """
-    return "".join(sorted(alert["uuids"]))[-country_config["alert_id_length"]:]
+    return "".join(sorted(alert["uuids"]))[-param_config.country_config["alert_id_length"]:]
 
 
-def add_new_fake_data(to_add, from_files=False):
+def add_new_fake_data(to_add, from_files=False, param_config=config):
     """
     Wrapper function to add new fake data to the existing csv files
 i
@@ -1017,10 +714,11 @@ i
     engine = create_engine(config.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
-    add_fake_data(session, to_add, append=True, from_files=from_files)
+    add_fake_data(session=session, N=to_add, append=True, from_files=from_files, param_config=param_config)
 
 
-def create_links(data_type, input_conditions, table, session, conn):
+def create_links(data_type, input_conditions, table, session, conn,
+                 param_config=config, restrict_uuids=None, engine=None):
     """
     Creates all the links in the Links table.
 
@@ -1038,8 +736,9 @@ def create_links(data_type, input_conditions, table, session, conn):
         conn: DB connection
 
     """
+    country_config = param_config.country_config
 
-    links_by_type, links_by_name = util.get_links(config.config_directory +
+    links_by_type, links_by_name = util.get_links(param_config.config_directory +
                                                   country_config["links_file"])
     link_names = []
     if data_type["type"] in links_by_type:
@@ -1048,8 +747,8 @@ def create_links(data_type, input_conditions, table, session, conn):
             columns = [table.uuid.label("uuid_from")]
             if link["from_form"] == data_type["form"]:
                 aggregate_condition = link['aggregate_condition']
-                to_form = model.form_tables[link["to_form"]]
-                from_form = model.form_tables[link["from_form"]]
+                to_form = model.form_tables(param_config=param_config)[link["to_form"]]
+                from_form = model.form_tables(param_config=param_config)[link["from_form"]]
                 link_names.append(link["name"])
                 link_alias = aliased(to_form)
                 columns.append(link_alias.uuid.label("uuid_to"))
@@ -1100,11 +799,13 @@ def create_links(data_type, input_conditions, table, session, conn):
                     conditions.append(
                         link_alias.data[column].astext == condition)
 
+                if restrict_uuids:
+                    conditions.append(or_(link_alias.uuid.in_(restrict_uuids), from_form.uuid.in_(restrict_uuids)))
                 # make sure that the link is not referring to itself
                 conditions.append(from_form.uuid != link_alias.uuid)
 
                 # build query from join and filter conditions
-                link_query = session.query(*columns).join(
+                link_query = Query(columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
                 # use query to perform insert
                 insert = model.Links.__table__.insert().from_select(
@@ -1116,34 +817,42 @@ def create_links(data_type, input_conditions, table, session, conn):
 
                 # if the link type has uniqueness constraint, remove non-unique links and circular links
                 if 'unique' in aggregate_conditions:
-                    dupe_query = session.query(model.Links.uuid_from). \
+                    dupe_query = Query(model.Links.uuid_from). \
                         filter(model.Links.type == link["name"]). \
                         group_by(model.Links.uuid_from). \
                         having(func.count() > 1)
 
-                    dupe_delete = session.query(model.Links.uuid_from). \
-                        filter(model.Links.uuid_from.in_(dupe_query),
-                               model.Links.type == link["name"]). \
-                        delete(synchronize_session='fetch')
+                    dupe_delete = model.Links.__table__.delete().where(
+                        model.Links.uuid_from.in_(dupe_query)).where(
+                            model.Links.type == link["name"])
+                    # Create a raw connection so we can run vacuum analyse
+                    connection = engine.raw_connection()
+                    connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+                    cursor = connection.cursor()
+                    cursor.execute("VACUUM ANALYSE links")
+
+                    with conn.begin() as trans:
+                        conn.execute(dupe_delete)
 
                     aliased_link_table = aliased(model.Links)
-                    circular_query = session.query(model.Links.id). \
-                        join(aliased_link_table, and_( \
-                        model.Links.uuid_from == aliased_link_table.uuid_to, \
-                        model.Links.uuid_to == aliased_link_table.uuid_from)). \
-                        filter(model.Links.type == link["name"]). \
+                    circular_query = Query(model.Links.id). \
+                        join(aliased_link_table, and_(
+                            model.Links.uuid_from == aliased_link_table.uuid_to,
+                            model.Links.uuid_to == aliased_link_table.uuid_from)
+                        ).filter(model.Links.type == link["name"]). \
                         filter(aliased_link_table.type == link["name"])
 
-                    circular_delete = session.query(model.Links). \
-                        filter(model.Links.id.in_(circular_query),
-                               model.Links.type == link["name"]). \
-                        delete(synchronize_session='fetch')
-
-                session.commit()
+                    circular_delete = model.Links.__table__.delete(). \
+                        where(model.Links.id.in_(circular_query)).where(
+                            model.Links.type == link["name"])
+                    cursor.execute("VACUUM ANALYSE links")
+                    connection.close()
+                    with conn.begin() as trans:
+                        conn.execute(circular_delete)
     return link_names
 
-
-def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
+def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
+                      param_config=config, only_forms=None):
     """
     Run all the raw data through the to_codes
     function to translate it into structured data
@@ -1155,21 +864,23 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
                        uuids in this list
 
     """
+    country_config = param_config.country_config
 
     if restrict_uuids is not None:
         if restrict_uuids == []:
             logging.info("No new data to add")
             return True
     if not engine:
-        engine = create_engine(config.DATABASE_URL)
+        engine = create_engine(param_config.DATABASE_URL)
 
     Session = sessionmaker(bind=engine)
     session = Session()
 
     locations = util.all_location_data(session)
 
-    links_by_type, links_by_name = util.get_links(config.config_directory +
-                                                  country_config["links_file"])
+
+    links_by_type, links_by_name = util.get_links(param_config.config_directory +
+                                                  param_config.country_config["links_file"])
 
     alerts = []
     conn = engine.connect()
@@ -1177,10 +888,12 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
     session.query(model.Links).delete()
     session.commit()
 
-    for data_type in data_types.DATA_TYPES_DICT:
-        table = model.form_tables[data_type["form"]]
+    for data_type in data_types.data_types(param_config=param_config):
+        if only_forms and data_type["form"] not in only_forms:
+            continue
+        table = model.form_tables(param_config)[data_type["form"]]
         if debug_enabled:
-            logging.info("Data type: %s", data_type["type"])
+            logging.debug("Data type: %s", data_type["type"])
         variables = to_codes.get_variables(session,
                                            match_on_type=data_type["type"],
                                            match_on_form=data_type["form"])
@@ -1197,9 +910,10 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
             conditions.append(query_condtion[0])
 
         # Set up the links
-
-        link_names += create_links(data_type, conditions, table, session, conn)
-
+        link_names += create_links(data_type, conditions, table,
+                                   session, conn, param_config,
+                                   restrict_uuids=restrict_uuids,
+                                   engine=engine)
         # Main Query
         if restrict_uuids is not None:
             result = session.query(model.Links.uuid_from).filter(
@@ -1242,7 +956,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
                 if data:
                     data_dicts, disregarded_data_dicts, new_alerts = to_data(
                         data, link_names, links_by_name, data_type, locations,
-                        variables)
+                        variables, param_config=param_config)
                     newly_added = data_to_db(
                         conn2, data_dicts,
                         disregarded_data_dicts,
@@ -1252,16 +966,16 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None):
                     alerts += new_alerts
                 data = {uuid: last_data}
             if debug_enabled:
-                logging.info("Added %s records", added)
+                logging.debug("Added %s records", added)
         if data:
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
-                variables)
+                variables, param_config=param_config)
             newly_added = data_to_db(conn2, data_dicts,
                                      disregarded_data_dicts, data_type["type"])
             added += newly_added
             if debug_enabled:
-                logging.info("Added %s records", added)
+                logging.debug("Added %s records", added)
             alerts += new_alerts
     send_alerts(alerts, session)
     conn.close()
@@ -1294,14 +1008,18 @@ def data_to_db(conn, data_dicts, disregarded_data_dicts, data_type):
         uuids = [row["uuid"] for row in disregarded_data_dicts]
         conn.execute(model.DisregardedData.__table__.delete().where(
             model.DisregardedData.__table__.c.uuid.in_(uuids)).where(
-            model.DisregardedData.__table__.c.type == data_type))
-
+                model.DisregardedData.__table__.c.type == data_type))
+        conn.execute(model.Data.__table__.delete().where(
+            model.Data.__table__.c.uuid.in_(uuids)).where(
+                model.Data.__table__.c.type == data_type)
+        )
         conn.execute(model.DisregardedData.__table__.insert(),
                      disregarded_data_dicts)
     return len(data_dicts) + len(disregarded_data_dicts)
 
-
-def to_data(data, link_names, links_by_name, data_type, locations, variables):
+def to_data(data, link_names,
+            links_by_name, data_type, locations, variables,
+            param_config=config):
     """
     Constructs structured data from the entries in the data list.
     We pass the data row with all its links through the to_codes function
@@ -1368,7 +1086,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             variable_data, category_data, location_data, disregard = to_codes.to_code(
                 row, variables, locations, data_type["type"],
                 data_type["form"],
-                country_config["alert_data"],
+                param_config.country_config["alert_data"],
                 multiple_forms, data_type["location"]
             )
             if location_data is None:
@@ -1377,20 +1095,31 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
             try:
                 date = parse(row[data_type["form"]][data_type["date"]])
                 date = datetime(date.year, date.month, date.day)
+                epi_year, week = epi_week_for_date(date, param_config=param_config.country_config)
+            except KeyError:
+                logging.error("Missing Date field %s", data_type["date"])
+                continue
+            except ValueError:
+                logging.error(f"Failed to convert date to epi week. uuid: {row['uuid']}")
+                logging.debug(f"Faulty row date: {date}.")
+                continue
             except:
-                logging.error("Invalid Date: %s", row[data_type["form"]][data_type["date"]])
+                logging.error("Invalid Date: %s", row[data_type["form"]].get(data_type["date"]))
                 continue
 
             if "alert" in variable_data:
                 variable_data["alert_id"] = row[data_type["form"]][data_type[
-                    "uuid"]][-country_config["alert_id_length"]:]
+                    "uuid"]][-param_config.country_config["alert_id_length"]:]
             variable_data[data_type["var"]] = 1
             variable_data["data_entry"] = 1
-            epi_year, week = epi_week_for_date(date)
+            submission_date = None
+            if "SubmissionDate" in row[data_type["form"]]:
+                submission_date = parse(row[data_type["form"]].get("SubmissionDate")).replace(tzinfo=None)
             new_data = {
                 "date": date,
                 "epi_week": week,
                 "epi_year": epi_year,
+                "submission_date": submission_date,
                 "type": data_type["type"],
                 "uuid": row[data_type["form"]][data_type["uuid"]],
                 "variables": variable_data,
@@ -1408,7 +1137,7 @@ def to_data(data, link_names, links_by_name, data_type, locations, variables):
     return data_rows, disregarded_data_rows, alerts
 
 
-def send_alerts(alerts, session):
+def send_alerts(alerts, session, param_config=config):
     """
     Send alert messages
 
@@ -1425,11 +1154,11 @@ def send_alerts(alerts, session):
     alerts = alerts[-10:]
 
     for alert in alerts:
-        alert_id = alert.uuid[-country_config["alert_id_length"]:]
-        util.send_alert(alert_id, alert, variables, locations)
+        alert_id = alert.uuid[-param_config.country_config["alert_id_length"]:]
+        util.send_alert(alert_id, alert, variables, locations, param_config)
 
 
-def initial_visit_control():
+def initial_visit_control(param_config=config):
     """
     Configures and corrects the initial visits and removes the calculated codes
     from the data table where the visit was amended
@@ -1439,18 +1168,18 @@ def initial_visit_control():
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    if "initial_visit_control" not in country_config:
+    if "initial_visit_control" not in param_config.country_config:
         return []
 
     log = []
     corrected = []
-    for form_table in country_config['initial_visit_control'].keys():
-        table = model.form_tables[form_table]
-        identifier_key_list = country_config['initial_visit_control'][form_table]['identifier_key_list']
-        visit_type_key = country_config['initial_visit_control'][form_table]['visit_type_key']
-        visit_date_key = country_config['initial_visit_control'][form_table]['visit_date_key']
-        module_key = country_config['initial_visit_control'][form_table]['module_key']
-        module_value = country_config['initial_visit_control'][form_table]['module_value']
+    for form_table in param_config.country_config['initial_visit_control'].keys():
+        table = model.form_tables(param_config=param_config)[form_table]
+        identifier_key_list = param_config.country_config['initial_visit_control'][form_table]['identifier_key_list']
+        visit_type_key = param_config.country_config['initial_visit_control'][form_table]['visit_type_key']
+        visit_date_key = param_config.country_config['initial_visit_control'][form_table]['visit_date_key']
+        module_key = param_config.country_config['initial_visit_control'][form_table]['module_key']
+        module_value = param_config.country_config['initial_visit_control'][form_table]['module_value']
 
         ret_corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key,
                                                module_key, module_value)

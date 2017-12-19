@@ -7,23 +7,31 @@ from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from sqlalchemy.orm import validates
 from sqlalchemy.event import listen
 from geoalchemy2 import Geometry
-from meerkat_abacus.config import country_config
-
+from meerkat_abacus.config import config
 
 Base = declarative_base()
-form_tables = {}
 
-for table in country_config["tables"]:
-    form_tables[table] = type(table, (Base, ), {
-        "__tablename__": table,
-        "id": Column(Integer, primary_key=True),
-        "uuid": Column(String, index=True),
-        "data": Column(JSONB)
-    })
-    create_index = DDL(
-        "CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table)
-    )
-    listen(form_tables[table].__table__, 'after_create', create_index)
+
+existing_form_tables = {}
+
+country_config = config.country_config
+
+def form_tables(param_config=config):
+
+    for table in param_config.country_config["tables"]:
+        if table in existing_form_tables:
+            continue
+        existing_form_tables[table] = type(table, (Base, ), {
+            "__tablename__": table,
+            "id": Column(Integer, primary_key=True),
+            "uuid": Column(String, index=True),
+            "data": Column(JSONB)
+        })
+        create_index = DDL(
+            "CREATE INDEX {} ON {} USING gin(data);".format(table + "_gin", table)
+        )
+        listen(existing_form_tables[table].__table__, 'after_create', create_index)
+    return existing_form_tables
 
 
 class DownloadDataFiles(Base):
@@ -70,13 +78,14 @@ class Data(Base):
     __tablename__ = 'data'
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String)
+    uuid = Column(String, index=True)
     device_id = Column(String, index=True)
     type = Column(String, index=True)
     type_name = Column(String)
     date = Column(DateTime, index=True)
-    epi_week = Column(Integer)
-    epi_year = Column(Integer)
+    epi_week = Column(Integer, index=True)
+    epi_year = Column(Integer, index=True)
+    submission_date = Column(DateTime, index=True)
     country = Column(Integer, index=True)
     zone = Column(Integer, index=True)
     region = Column(Integer, index=True)
@@ -103,10 +112,13 @@ class DisregardedData(Base):
     __tablename__ = 'disregarded_data'
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String)
+    uuid = Column(String, index=True)
     type = Column(String, index=True)
     type_name = Column(String)
     date = Column(DateTime, index=True)
+    epi_week = Column(Integer)
+    epi_year = Column(Integer)
+    submission_date = Column(DateTime, index=True)
     country = Column(Integer, index=True)
     region = Column(Integer, index=True)
     district = Column(Integer, index=True)
