@@ -2,23 +2,15 @@ from time import sleep
 import celery
 import logging
 import pytz
-from datetime import datetime, timedelta
 import raven
 import copy
 import yaml
 import backoff
-
+from raven.contrib.celery import register_logger_signal, register_signal
 
 from meerkat_abacus import tasks
 from meerkat_abacus import celeryconfig
 from meerkat_abacus.config import config
-from meerkat_abacus import util
-from meerkat_abacus import data_management
-from meerkat_abacus import data_import
-
-
-# from meerkat_abacus.internal_buffer import InternalBuffer
-from queue import Queue
 
 
 @backoff.on_exception(backoff.expo,
