@@ -1102,7 +1102,7 @@ def to_data(data, link_names,
                 logging.error("Missing Date field %s", data_type["date"])
                 continue
             except ValueError:
-                logging.error(f"Failed to convert date to epi week. uuid: {row['uuid']}")
+                logging.error(f"Failed to convert date to epi week. uuid: {row.get('uuid', 'UNKNOWN')}")
                 logging.debug(f"Faulty row date: {date}.")
                 continue
             except:
