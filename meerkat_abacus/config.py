@@ -104,6 +104,10 @@ class Config:
         elif self.initial_data_source == "AWS_S3":
             self.get_data_from_s3 = 1  # int(os.environ.get("GET_DATA_FROM_S3", False))
             self.initial_data = "S3"
+        else:
+            raise ValueError(
+                f"INITIAL_DATA_SOURCE = {self.initial_data_source} unsupported."
+            )
 
         # Configure data streaming
         self.stream_data_source = os.environ.get("STREAM_DATA_SOURCE", "AWS_S3")
@@ -117,7 +121,11 @@ class Config:
             self.get_data_from_s3 = 1
             self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL", 3600)
         elif self.stream_data_source == "NO_STREAMING":
-            pass  # Don't do any streaming.
+            pass  # Don't set up any streaming.
+        else:
+            raise ValueError(
+                f"STREAM_DATA_SOURCE = {self.stream_data_source} unsupported."
+            )
 
         # Configure generating fake data
         self.fake_data = False
