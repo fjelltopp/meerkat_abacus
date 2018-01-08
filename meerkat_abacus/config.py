@@ -116,7 +116,8 @@ class Config:
         elif self.stream_data_source == "AWS_S3":
             self.get_data_from_s3 = 1
             self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL", 3600)
-
+        elif self.stream_data_source == "NO_STREAMING":
+            pass  # Don't do any streaming.
 
         # Configure generating fake data
         self.fake_data = False
