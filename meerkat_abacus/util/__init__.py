@@ -382,24 +382,22 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
     else:
         sqs_client = boto3.client('sqs', region_name=region_name,
                                   endpoint_url=sqs_endpoint)
-    sts_client = boto3.client('sts', region_name=region_name)
+    #sts_client = boto3.client('sts', region_name=region_name)
 
     logging.info("Getting SQS url")
     try:
         queue_url = sqs_client.get_queue_url(
             QueueName=sqs_queue_name,
-            QueueOwnerAWSAccountId=""
         )['QueueUrl']
         logging.info("Subscribed to %s.", queue_url)
     except ClientError as e:
         print(e)
-        logging.info("Creating Queue")
+        #logging.info("Creating Queue")
         response = sqs_client.create_queue(
             QueueName=sqs_queue_name
         )
         queue_url = sqs_client.get_queue_url(
-            QueueName=sqs_queue_name,
-            QueueOwnerAWSAccountId=sts_client.get_caller_identity()["Account"]
+            QueueName=sqs_queue_name
         )['QueueUrl']
         logging.info("Subscribed to %s.", queue_url)
     return sqs_client, queue_url
