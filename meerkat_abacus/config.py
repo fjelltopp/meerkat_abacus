@@ -112,7 +112,7 @@ class Config:
             self.sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo')
         elif self.stream_data_source == "AWS_SQS":
             self.SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", "DEFAULT")
-            self.sqs_queue = 'nest-queue-' + self.country_config["country_name"] + '-' + self.DEPLOYMENT
+            self.sqs_queue = 'nest-queue-' + self.country_config.get("implementation_id", "demo") + '-' + self.DEPLOYMENT
         elif self.stream_data_source == "AWS_S3":
             self.get_data_from_s3 = 1
             self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL", 3600)

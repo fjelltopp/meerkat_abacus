@@ -392,6 +392,7 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
         logging.info("Subscribed to %s.", queue_url)
     except ClientError as e:
         print(e)
+        print("sqs_queue_name", sqs_queue_name)
         #logging.info("Creating Queue")
         response = sqs_client.create_queue(
             QueueName=sqs_queue_name
