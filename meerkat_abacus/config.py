@@ -83,11 +83,11 @@ class Config:
         self.s3_bucket = country_config_module.s3_bucket
 
         # Configure data initialisation
-        self.initial_data_source = os.environ.get("INITIAL_DATA_SOURCE", "CSV")
+        self.initial_data_source = os.environ.get("INITIAL_DATA_SOURCE", "FAKE_DATA")
         self.PERSISTENT_DATABASE_URL = None
         self.get_data_from_s3 = 0
         self.s3_data_stream_interval = None
-        self.initial_data = "CSV"
+        self.initial_data = "FAKE_DATA"
         if self.initial_data_source == "FAKE_DATA":
             self.initial_data = "FAKE_DATA"
         elif self.initial_data_source == "AWS_RDS":
