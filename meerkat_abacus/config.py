@@ -83,11 +83,11 @@ class Config:
         self.s3_bucket = country_config_module.s3_bucket
 
         # Configure data initialisation
-        self.initial_data_source = os.environ.get("INITIAL_DATA_SOURCE", "CSV")
+        self.initial_data_source = os.environ.get("INITIAL_DATA_SOURCE", "FAKE_DATA")
         self.PERSISTENT_DATABASE_URL = None
         self.get_data_from_s3 = 0
         self.s3_data_stream_interval = None
-        self.initial_data = "CSV"
+        self.initial_data = "FAKE_DATA"
         if self.initial_data_source == "FAKE_DATA":
             self.initial_data = "FAKE_DATA"
         elif self.initial_data_source == "AWS_RDS":
@@ -104,6 +104,9 @@ class Config:
         elif self.initial_data_source == "AWS_S3":
             self.get_data_from_s3 = 1  # int(os.environ.get("GET_DATA_FROM_S3", False))
             self.initial_data = "S3"
+        else:
+            msg = f"INITIAL_DATA_SOURCE={self.initial_data_source} unsupported."
+            raise ValueError(msg)
 
         # Configure data streaming
         self.stream_data_source = os.environ.get("STREAM_DATA_SOURCE", "AWS_S3")
@@ -112,11 +115,15 @@ class Config:
             self.sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo')
         elif self.stream_data_source == "AWS_SQS":
             self.SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", "DEFAULT")
-            self.sqs_queue = 'nest-queue-' + self.country_config["country_name"] + '-' + self.DEPLOYMENT
+            self.sqs_queue = 'nest-queue-' + self.country_config.get("implementation_id", "demo") + '-' + self.DEPLOYMENT
         elif self.stream_data_source == "AWS_S3":
             self.get_data_from_s3 = 1
             self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL", 3600)
-
+        elif self.stream_data_source == "NO_STREAMING":
+            pass  # Don't set up any streaming.
+        else:
+            msg = f"STREAM_DATA_SOURCE={self.stream_data_source} unsupported."
+            raise ValueError(msg)
 
         # Configure generating fake data
         self.fake_data = False
