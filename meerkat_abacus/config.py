@@ -25,7 +25,7 @@ START_CELERY: if we want to star the celery hourly tasks
 import os
 import importlib.util
 import yaml
-
+from dateutil.parser import parse
 
 # Application config
 class Config:
@@ -62,6 +62,11 @@ class Config:
         self.db_dump_folder = '/var/www/dumps/'
 
         self.import_fraction = float(os.environ.get("IMPORT_FRACTION", 0))
+
+        self.only_import_after = os.environ.get("ONLY_IMPORT_AFTER", None)
+        if self.only_import_after:
+            self.only_import_after = parse(self.only_import_after)
+        print(self.only_import_after)
         # Country config
         country_config_file = os.environ.get("COUNTRY_CONFIG", "demo_config.py")
 

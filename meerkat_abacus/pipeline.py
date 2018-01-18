@@ -55,6 +55,7 @@ def prepare_add_rows_arguments(form, session, param_config=config):
             "allow_enketo": allow_enketo,
             "exclusion_list": exclusion_list,
             "fraction": param_config.import_fraction,
+            "only_import_after": param_config.only_import_after,
             "param_config": param_config}
 
 def process_chunk(internal_buffer, session, engine, param_config=config,
