@@ -26,7 +26,7 @@ import os
 import importlib.util
 import yaml
 from dateutil.parser import parse
-
+import logging
 # Application config
 class Config:
     def __init__(self):
@@ -62,11 +62,16 @@ class Config:
         self.db_dump_folder = '/var/www/dumps/'
 
         self.import_fraction = float(os.environ.get("IMPORT_FRACTION", 0))
+        only_import_after_date = os.environ.get("ONLY_IMPORT_AFTER", None)
+        if only_import_after_date:
+            self.only_import_after_date = parse(only_import_after_date)
+        else:
+            self.only_import_after_date = None
+        logging.info(
+            "Only importing data after {}".format(
+                self.only_import_after_date)
+        )
 
-        self.only_import_after = os.environ.get("ONLY_IMPORT_AFTER", None)
-        if self.only_import_after:
-            self.only_import_after = parse(self.only_import_after)
-        print(self.only_import_after)
         # Country config
         country_config_file = os.environ.get("COUNTRY_CONFIG", "demo_config.py")
 

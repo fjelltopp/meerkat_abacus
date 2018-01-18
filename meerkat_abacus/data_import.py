@@ -78,7 +78,7 @@ def add_rows_to_db(form, form_data, session, engine,
                    start_dates=None,
                    exclusion_list=[],
                    fraction=None,
-                   only_import_after=None,
+                   only_import_after_date=None,
                    param_config=config):
     """ Add form_data to DB
     If quality_control is true we look among the aggregation variables
@@ -135,8 +135,8 @@ def add_rows_to_db(form, form_data, session, engine,
         if fraction:
             if random.random() > fraction:
                 continue
-        if only_import_after:
-            if parse(row["SubmissionDate"]).replace(tzinfo=None) < only_import_after:
+        if only_import_after_date:
+            if parse(row["SubmissionDate"]).replace(tzinfo=None) < only_import_after_date:
                 continue
             
         if row[uuid_field] in exclusion_list:
