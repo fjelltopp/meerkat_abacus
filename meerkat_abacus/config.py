@@ -90,6 +90,8 @@ class Config:
         self.initial_data = "FAKE_DATA"
         if self.initial_data_source == "FAKE_DATA":
             self.initial_data = "FAKE_DATA"
+        elif self.initial_data_source == "LOCAL_CSV":
+            self.initial_data = "LOCAL_CSV"
         elif self.initial_data_source == "AWS_RDS":
             self.PERSISTENT_DATABASE_URL = os.environ.get(
                 "PERSISTENT_DATABASE_URL", None
