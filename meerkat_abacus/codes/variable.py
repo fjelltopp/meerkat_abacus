@@ -354,7 +354,7 @@ class Variable():
 allowed_formats = [
     '%b %d, %Y',
     '%d-%b-%Y',
-    '%Y-%b-%d',
+    '%Y-%m-%d',
     '%d-%b-%Y %I:%M:%S',
     '%d-%b-%Y %H:%M:%S',
     '%b %d, %Y %I:%M:%S %p',
