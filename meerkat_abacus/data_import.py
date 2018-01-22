@@ -180,6 +180,7 @@ def add_rows_to_db(form, form_data, session, engine,
         if remove:
             continue
 
+        flatten_structure(insert_row)
         if deviceids:
             if should_row_be_added(insert_row, form, deviceids,
                                    start_dates, allow_enketo=allow_enketo):
@@ -213,6 +214,13 @@ def add_rows_to_db(form, form_data, session, engine,
     logging.debug("Number of records %s", i)
     return new_rows
 
+def flatten_structure(row):
+    """
+    Flattens all lists in row to comma separated strings"
+    """
+    for key, value in row.items():
+        if isinstance(value, list):
+            row[key] = ",".join(value)
 
 def should_row_be_added(row, form_name, deviceids, start_dates,
                         allow_enketo=False, param_config=config):
