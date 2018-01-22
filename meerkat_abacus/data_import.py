@@ -218,9 +218,10 @@ def flatten_structure(row):
     """
     Flattens all lists in row to comma separated strings"
     """
-    for key in row:
-        if isinstance(row[key], list):
-            row[key] = ",".join(row[key])
+    for key, value in row.items():
+        if isinstance(value, list):
+            row[key] = ",".join(value)
+
 def should_row_be_added(row, form_name, deviceids, start_dates,
                         allow_enketo=False, param_config=config):
     """
