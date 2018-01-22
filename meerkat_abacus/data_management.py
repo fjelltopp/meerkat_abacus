@@ -639,7 +639,6 @@ def add_alerts(session, param_config=config):
         if new_alerts:
             for new_alert in new_alerts:
                 # Choose a representative record for the alert
-                representative = new_alert["uuids"][0]
                 others = new_alert["uuids"][1:]
                 records = session.query(
                     model.Data, model.form_tables(param_config=param_config)[a.form]).join(
@@ -652,7 +651,17 @@ def add_alerts(session, param_config=config):
                 for r in records.all():
                     data_records_by_uuid[r[0].uuid] = r[0]
                     form_records_by_uuid[r[1].uuid] = r[1]
-                new_variables = data_records_by_uuid[representative].variables
+                i = 0
+                representative = new_alert["uuids"][i]
+                while not representative in data_records_by_uuid:
+                    i += 1
+                    if i > len(new_alert):
+                        return None
+                    representative = new_alert["uuids"][i]
+                for uuid in new_alert["uuids"]:
+                    if uuid in data_records_by_uuid:
+                        new_variables = data_records_by_uuid[representative].variables
+
 
                 # Update the variables of the representative alert
                 new_variables["alert"] = 1
