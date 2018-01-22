@@ -46,6 +46,8 @@ def read_stationary_data(get_function, internal_buffer,
                                      "uuid": element[uuid_field_current],
                                      "data": element})
                 logging.info("Processed {}".format(n))
+            except KeyError:
+                logging.warn("This element did not have a uuid_field {}".format(element))
         buffer_proccesser_function(internal_buffer=internal_buffer,
                                    start=False,
                                    param_config_yaml=yaml.dump(param_config))
@@ -76,6 +78,7 @@ def add_rows_to_db(form, form_data, session, engine,
                    start_dates=None,
                    exclusion_list=[],
                    fraction=None,
+                   only_import_after_date=None,
                    param_config=config):
     """ Add form_data to DB
     If quality_control is true we look among the aggregation variables
@@ -132,6 +135,10 @@ def add_rows_to_db(form, form_data, session, engine,
         if fraction:
             if random.random() > fraction:
                 continue
+        if only_import_after_date:
+            if parse(row["SubmissionDate"]).replace(tzinfo=None) < only_import_after_date:
+                continue
+            
         if row[uuid_field] in exclusion_list:
             continue
         if only_new and row[uuid_field] in uuids:
