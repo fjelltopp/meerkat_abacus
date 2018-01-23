@@ -985,7 +985,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
             if debug_enabled:
                 logging.debug("Added %s records", added)
             alerts += new_alerts
-    send_alerts(alerts, session)
+    send_alerts(alerts, session, param_config=param_config)
     conn.close()
     conn2.close()
 
