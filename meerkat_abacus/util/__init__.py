@@ -566,7 +566,7 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
             "subject": "Public Health Surveillance Alerts: #" + alert_id,
             "medium": ['email', 'sms']
         }
-        logging.debug("CREATED ALERT {}".format(data['message']))
+        logging.info("CREATED ALERT {}".format(data['message']))
 
         if not param_config.country_config["messaging_silent"]:
             libs.hermes('/publish', 'PUT', data)
