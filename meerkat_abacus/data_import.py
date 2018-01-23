@@ -14,6 +14,7 @@ from meerkat_abacus.util import data_types
 from meerkat_abacus.util.epi_week import epi_week_for_date
 from meerkat_libs import consul_client as consul
 
+
 def read_stationary_data(get_function, internal_buffer,
                          buffer_proccesser_function, session,
                          engine, param_config=config):
@@ -29,9 +30,10 @@ def read_stationary_data(get_function, internal_buffer,
             try:
                 i += 1
                 n += 1
-                uuid_field_current = param_config.country_config.get("tables_uuid",
-                                                                     {}).get(form,
-                                                                       uuid_field)
+                uuid_field_current = param_config.country_config.get(
+                    "tables_uuid",
+                    {}).get(form,
+                            uuid_field)
                 internal_buffer.put_nowait({"form": form,
                                             "uuid": element[uuid_field_current],
                                             "data": element})
@@ -52,6 +54,7 @@ def read_stationary_data(get_function, internal_buffer,
                                    start=False,
                                    param_config_yaml=yaml.dump(param_config))
 
+
 def download_data_from_s3(config):
     """
     Get csv-files with data from s3 bucket
@@ -67,6 +70,7 @@ def download_data_from_s3(config):
         s3.meta.client.download_file(config.s3_bucket, "data/" + file_name,
                                      config.data_directory + file_name)
 
+        
 def add_rows_to_db(form, form_data, session, engine,
                    uuid_field="meta/instanceID",
                    only_new=False,
@@ -102,8 +106,11 @@ def add_rows_to_db(form, form_data, session, engine,
         fraction: If present imports a randomly selected subset of data.
     """
     conn = engine.connect()
-
-    table = model.form_tables(param_config=param_config)[form]
+    try:
+        table = model.form_tables(param_config=param_config)[form]
+    except KeyError:
+        logging.exception("Error in process buffer", exc_info=True)
+        return []
     exclusion_list = set(exclusion_list)
 
     if not only_new:
@@ -142,7 +149,7 @@ def add_rows_to_db(form, form_data, session, engine,
         if row[uuid_field] in exclusion_list:
             continue
         if only_new and row[uuid_field] in uuids:
-            continue #  In this case we only add new data
+            continue  # In this case we only add new data
         
         if "_index" in row:
             row["index"] = row.pop("_index")
