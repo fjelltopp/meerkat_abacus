@@ -39,8 +39,8 @@ def set_up_db(param_config_yaml):
     param_config = yaml.load(param_config_yaml)
     data_management.set_up_database(leave_if_data=False,
                                     drop_db=True, param_config=param_config)
-    if param_config.initial_data_source == "LOCAL_RDS":
-        data_management.set_up_persistent_database(param_config)
+    #if param_config.initial_data_source == "LOCAL_RDS":
+    #    data_management.set_up_persistent_database(param_config)
 
 @task
 def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
@@ -58,12 +58,13 @@ def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
         get_function = util.read_csv_filename
     elif source == "FAKE_DATA":
         get_function = util.read_csv_filename
-        data_management.add_fake_data(session=session, param_config=param_config)
+        data_management.add_fake_data(session=session,
+                                      param_config=param_config)
     elif source in ["AWS_RDS", "LOCAL_RDS"]:
         get_function = util.get_data_from_rds_persistent_storage
-        if source == "LOCAL_RDS":
-            data_management.add_fake_data(session=session, param_config=param_config,
-                                          write_to="local_db")
+        #if source == "LOCAL_RDS":
+        #    data_management.add_fake_data(session=session, param_config=param_config,
+        #                                  write_to="local_db")
         
 
     else:
@@ -91,33 +92,44 @@ def stream_data_from_s3(param_config_yaml=yaml.dump(config)):
     data_import.download_data_from_s3(param_config)
     get_function = util.read_csv_filename
     data_import.read_stationary_data(get_function, worker_buffer,
-                                     process_buffer, session, engine, param_config=param_config)
-    process_buffer(internal_buffer=worker_buffer, start=False, param_config_yaml=param_config_yaml)
+                                     process_buffer, session, engine,
+                                     param_config=param_config)
+    process_buffer(internal_buffer=worker_buffer, start=False,
+                   param_config_yaml=param_config_yaml)
     session.close()
     engine.dispose()
-    stream_data_from_s3.apply_async(countdown=param_config.s3_data_stream_interval,
-                               kwargs={"param_config_yaml": param_config_yaml})
+    stream_data_from_s3.apply_async(
+        countdown=param_config.s3_data_stream_interval,
+        kwargs={"param_config_yaml": param_config_yaml})
 
 
 
 @task
-def process_buffer(start=True, internal_buffer=None, param_config_yaml=yaml.dump(config), run_overall_processes=True):
+def process_buffer(start=True, internal_buffer=None,
+                   param_config_yaml=yaml.dump(config),
+                   run_overall_processes=True):
     param_config = yaml.load(param_config_yaml)
     if internal_buffer is None:
         internal_buffer = worker_buffer
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
-    process_chunk(internal_buffer, session, engine, param_config,
-                  run_overall_processes=run_overall_processes)
+    try:
+        process_chunk(internal_buffer, session, engine, param_config,
+                      run_overall_processes=run_overall_processes)
+    except Exception as e:
+        logging.exception("Error in process buffer", exc_info=True)
     if start:
         process_buffer.apply_async(countdown=30,
-                                   kwargs={"start": True, "param_config_yaml": param_config_yaml,
-                                           "run_overall_processes": run_overall_processes})
+                                   kwargs={
+                                       "start": True,
+                                       "param_config_yaml": param_config_yaml,
+                                       "run_overall_processes": run_overall_processes})
     session.close()
     engine.dispose()
 
 
 @task(bind=True, default_retry_delay=300, max_retries=5)
-def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml=yaml.dump(config)):
+def poll_queue(self, sqs_queue_name, sqs_endpoint,
+               start=True, param_config_yaml=yaml.dump(config)):
     """ Get's messages from SQS queue"""
     logging.info("Running Poll Queue")
     param_config = yaml.load(param_config_yaml)
@@ -142,7 +154,7 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml
         for message in messages["Messages"]:
             logging.info("Message %s", message)
             receipt_handle = message["ReceiptHandle"]
-            logging.info("Deleting message %s", receipt_handle)
+            logging.debug("Deleting message %s", receipt_handle)
             try:
                 message_body = json.loads(message["Body"])
                 form = message_body["formId"]
@@ -161,8 +173,7 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml
                          "uuid": uuid,
                          "data": form_data}
                     )
-                logging.warning(worker_buffer)
-                logging.info(worker_buffer.qsize())
+                logging.info("Messages in buffer {}".format(worker_buffer.qsize()))
                 sqs_client.delete_message(QueueUrl=sqs_queue_url,
                                           ReceiptHandle=receipt_handle)
             except Exception as e:
@@ -175,13 +186,15 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint, start=True, param_config_yaml
 
 @task
 def add_fake_data(N=10, interval_next=None, dates_is_now=False,
-                  internal_fake_data=True, param_config_yaml=yaml.dump(config)):
+                  internal_fake_data=True,
+                  param_config_yaml=yaml.dump(config)):
     param_config = yaml.load(param_config_yaml)
     logging.info("Adding fake data")
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
     for form in param_config.country_config["tables"]:
         logging.info("Generating fake data for form:" + form)
-        new_data = create_fake_data.get_new_fake_data(form=form, session=session, N=N, param_config=param_config,
+        new_data = create_fake_data.get_new_fake_data(form=form, session=session, N=N,
+                                                      param_config=param_config,
                                                       dates_is_now=dates_is_now)
         for row, uuid in new_data:
             if param_config.internal_fake_data:
