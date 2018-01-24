@@ -458,7 +458,7 @@ def read_csv(file_path):
             yield row
 
 
-def create_topic_list(alert, locations):
+def create_topic_list(alert, locations, country_config=config.country_config):
     """
     Assemble the appropriate topic ID list for a given alert. Make sure the
     topic list includes all appropriate location levels from clinic to whole
@@ -558,7 +558,8 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         # Structure and send the hermes request
         data = {
             "from": param_config.country_config['messaging_sender'],
-            "topics": create_topic_list(alert, locations),
+            "topics": create_topic_list(alert, locations,
+                                        country_config=config.country_config),
             "id": alert_id,
             "message": text_message,
             "sms-message": sms_message,
