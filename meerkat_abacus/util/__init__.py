@@ -559,7 +559,7 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         data = {
             "from": param_config.country_config['messaging_sender'],
             "topics": create_topic_list(alert, locations,
-                                        country_config=config.country_config),
+                                        country_config=param_config.country_config),
             "id": alert_id,
             "message": text_message,
             "sms-message": sms_message,
