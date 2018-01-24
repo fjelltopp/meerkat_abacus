@@ -171,7 +171,8 @@ class UtilTest(unittest.TestCase):
         libs.hermes("/test", "POST", {})
 
         # Check the function behaves as expected
-        mock_authenticate.assert_called_with(password='password',
+        mock_authenticate.assert_called_with(auth_root="http://nginx/auth",
+                                             password='password',
                                              username='server')
         mock_requests.request.assert_called_with(
             "POST",
