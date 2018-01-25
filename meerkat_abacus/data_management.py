@@ -410,8 +410,8 @@ def import_geojson(geo_json, session):
             name = g["properties"]["Name"]
             location = session.query(model.Locations).filter(
                 model.Locations.name == name,
-                model.Locations.level.in_(["district",
-                                           "region", "country"])).first()
+                model.Locations.level.in_(["district", "region", "country"])
+            ).first()
             if location is not None:
                 location.area = from_shape(shapely_shapes)
             session.commit()
