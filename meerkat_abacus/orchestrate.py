@@ -45,7 +45,7 @@ logging.info("Setting up DB for %s", config.country_config["country_name"])
 global engine
 global session
 
-tz = pytz.timezone(config.country_config.get("timezone", "Europe/Dublin"))
+tz = pytz.timezone(config.country_config["timezone"])
 
 param_config_yaml = yaml.dump(config)
 

@@ -517,9 +517,7 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         # To display date-times as a local date string.
         def tostr(date):
             try:
-                local_timezone = pytz.timezone(param_config.country_config.get(
-                    "timezone", "Europe/Dublin"
-                ))
+                local_timezone = pytz.timezone(param_config.country_config["timezone"])
                 utc_date = parse(date).replace(tzinfo=pytz.utc)
                 local_date = utc_date.astimezone(local_timezone)
                 return local_date.strftime("%H:%M %d %b %Y")

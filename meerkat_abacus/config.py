@@ -89,6 +89,9 @@ class Config:
         if self.hermes_dev:
             self.country_config["messaging_silent"] = True
 
+        if not self.country_config.get("timezone"):
+            self.country_config["timezone"] = "Europe/Dublin"
+
         self.s3_bucket = country_config_module.s3_bucket
 
         # Configure data initialisation
