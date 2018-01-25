@@ -192,7 +192,8 @@ class UtilTest(unittest.TestCase):
                               "variables": {"alert_reason": "1",
                                             "alert_id": "abcdef",
                                             "alert_gender": "male",
-                                            "alert_age": "32"},
+                                            "alert_age": "32",
+                                            "alert_submitted": "2018-01-22T07:52:31.978613"},
                               "id": "abcdef",
                               "date": datetime.now()
         })
@@ -216,18 +217,24 @@ class UtilTest(unittest.TestCase):
         }
 
         util.country_config["messaging_silent"] = False
+        util.country_config["timezone"] = "Asia/Amman"
         util.send_alert("abcdef", alert, variables, locations)
         self.assertTrue(mock_authenticate.called)
         self.assertTrue(mock_requests.request.called)
         call_args = mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "PUT")
         self.assertEqual(call_args[0][1], config.hermes_api_root + "/publish")
+
         # 160 characters in a single sms
         self.assertTrue(len(call_args[1]["json"]["sms-message"]) < 160)
+        # Correct alert reason specified in message
         self.assertIn("Rabies", call_args[1]["json"]["html-message"])
         self.assertIn("Rabies", call_args[1]["json"]["sms-message"])
         self.assertIn("Rabies", call_args[1]["json"]["message"])
-
+        # Correct LOCAL submission time string in the message
+        self.assertIn("09:52 22 Jan 2018", call_args[1]["json"]["html-message"])
+        self.assertIn("09:52 22 Jan 2018", call_args[1]["json"]["message"])
+        # Correct message topics specified
         prefix = util.country_config["messaging_topic_prefix"]
         self.assertIn(prefix + "-1-allDis", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-2-allDis", call_args[1]["json"]["topics"])
