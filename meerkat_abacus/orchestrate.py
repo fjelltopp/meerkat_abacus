@@ -45,7 +45,7 @@ logging.info("Setting up DB for %s", config.country_config["country_name"])
 global engine
 global session
 
-tz = pytz.timezone(config.timezone)
+tz = pytz.timezone(config.country_config.get("timezone", "Europe/Dublin"))
 
 param_config_yaml = yaml.dump(config)
 
@@ -78,6 +78,6 @@ if config.fake_data:
                                             "internal_fake_data": copy.deepcopy(config.internal_fake_data),
                                             "param_config_yaml": param_config_yaml
                                             })
-              
+
 while True:
     sleep(120)

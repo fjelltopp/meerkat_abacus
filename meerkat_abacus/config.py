@@ -40,7 +40,6 @@ class Config:
                                         current_directory + "/data/")
         self.config_directory = os.environ.get("COUNTRY_CONFIG_DIR",
                                           current_directory + "/country_config/")
-        self.timezone = os.environ.get('TIMEZONE', 'Europe/Dublin')
 
         self.start_celery = os.environ.get("START_CELERY", False)
 

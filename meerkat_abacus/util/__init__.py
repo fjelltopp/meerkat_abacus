@@ -13,15 +13,13 @@ from requests.auth import HTTPDigestAuth
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from botocore.exceptions import ClientError
-
 from datetime import datetime, timedelta
+import pytz
 from dateutil.parser import parse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-
 from meerkat_abacus.model import Locations, AggregationVariables, Devices, form_tables
 from meerkat_abacus.config import config
 import meerkat_libs as libs
-from meerkat_abacus.model import Locations, AggregationVariables, Devices
 
 country_config = config.country_config
 
@@ -39,9 +37,6 @@ def get_env(param_config=config):
             autoescape=select_autoescape(['html'])
         )
         return env
-
-
-
 
 
 def is_child(parent, child, locations):
@@ -336,7 +331,7 @@ def write_to_db(data, form, db_url, param_config=config):
         conn.close()
 
 
-        
+
 def get_exclusion_list(session, form):
     """
     Get exclusion list for a form
@@ -429,7 +424,7 @@ def submit_data_to_aggregate(data, form_id, aggregate_config):
     grouped_json["@id"] = form_id
     result = bf.etree(grouped_json, root=Element(form_id))
     aggregate_user = aggregate_config.get('aggregate_username', None)
-    
+
     aggregate_password = aggregate_config.get('aggregate_password', None)
     auth = HTTPDigestAuth(aggregate_user, aggregate_password)
     aggregate_url = aggregate_config.get('aggregate_url', None)
@@ -519,10 +514,15 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         if alert.district:
             district = locations[alert.district].name
 
-        # To display date-times
+        # To display date-times as a local date string.
         def tostr(date):
             try:
-                return parse(date).strftime("%H:%M %d %b %Y")
+                local_timezone = pytz.timezone(param_config.country_config.get(
+                    "timezone", "Europe/Dublin"
+                ))
+                utc_date = parse(date).replace(tzinfo=pytz.utc)
+                local_date = utc_date.astimezone(local_timezone)
+                return local_date.strftime("%H:%M %d %b %Y")
             except AttributeError:
                 return "Not available"  # Catch if date not a date type
 
@@ -568,8 +568,5 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
             "medium": ['email', 'sms']
         }
         logging.info("CREATED ALERT {}".format(data['message']))
-
         if not param_config.country_config["messaging_silent"]:
-            libs.hermes('/publish', 'PUT', data,
-                        config=param_config)
-
+            libs.hermes('/publish', 'PUT', data, config=param_config)
