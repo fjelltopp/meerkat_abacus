@@ -886,7 +886,10 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
     country_config = param_config.country_config
 
     if restrict_uuids is not None:
-        if restrict_uuids == {} or sum([len(v) for v in restrict_uuids.values()]) == 0:
+        total_number_of_uuids = sum(
+            [len(v) for v in restrict_uuids.values()]
+        )
+        if restrict_uuids == {} or total_number_of_uuids == 0:
             logging.info("No new data to add")
             return True
     if not engine:
@@ -908,7 +911,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
     session.commit()
 
     for data_type in data_types.data_types(param_config=param_config):
-        if data_type["form"] not in restrict_uuids:
+        if restrict_uuids and data_type["form"] not in restrict_uuids:
             link_forms = []
             for link in links_by_type.get(data_type["name"], []):
                 link_forms += [link["to_form"], link["from_form"]]
@@ -916,7 +919,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
             for l in set(link_forms):
                 if l in restrict_uuids.keys():
                     found = True
-            if found is False:
+            if not found:
                 continue
         table = model.form_tables(param_config)[data_type["form"]]
         if debug_enabled:
@@ -984,7 +987,6 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
                 # Send all data apart from the latest UUID to to_data function
                 last_data = data.pop(uuid)
                 if data:
-
                     data_dicts, disregarded_data_dicts, new_alerts = to_data(
                         data, link_names, links_by_name, data_type, locations,
                         variables, param_config=param_config)
@@ -999,7 +1001,6 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
             if debug_enabled:
                 logging.debug("Added %s records", added)
         if data:
-            #logging.info(data)
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
                 variables, param_config=param_config)

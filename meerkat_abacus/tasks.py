@@ -5,6 +5,7 @@ import requests
 import logging
 import traceback
 from celery import task
+from celery.exceptions import SoftTimeLimitExceeded
 import time
 import json
 import os
@@ -81,26 +82,36 @@ def test_up():
 
     
 @task
-def stream_data_from_s3(param_config_yaml=yaml.dump(config)):
-    param_config = yaml.load(param_config_yaml)
-    logging.info("Getting new data from S3")
-    while not worker_buffer.empty():  # Make sure that the buffer is empty
-        worker_buffer.get()
+def stream_data_from_s3(param_config_yaml=yaml.dump(config),
+                        soft_time_limit=3600*3,
+                        time_limit=3600*4):
+    try:
+        param_config = yaml.load(param_config_yaml)
+        logging.info("Getting new data from S3")
+        while not worker_buffer.empty():  # Make sure that the buffer is empty
+            worker_buffer.get()
 
-    engine, session = util.get_db_engine(param_config.DATABASE_URL)
-
-    data_import.download_data_from_s3(param_config)
-    get_function = util.read_csv_filename
-    data_import.read_stationary_data(get_function, worker_buffer,
-                                     process_buffer, session, engine,
-                                     param_config=param_config)
-    process_buffer(internal_buffer=worker_buffer, start=False,
-                   param_config_yaml=param_config_yaml)
-    session.close()
-    engine.dispose()
-    stream_data_from_s3.apply_async(
-        countdown=param_config.s3_data_stream_interval,
-        kwargs={"param_config_yaml": param_config_yaml})
+        engine, session = util.get_db_engine(param_config.DATABASE_URL)
+        try:
+            data_import.download_data_from_s3(param_config)
+            get_function = util.read_csv_filename
+            data_import.read_stationary_data(get_function, worker_buffer,
+                                             process_buffer, session, engine,
+                                             param_config=param_config)
+            process_buffer(internal_buffer=worker_buffer, start=False,
+                           param_config_yaml=param_config_yaml)
+            session.close()
+            engine.dispose()
+        except Exception as e:
+            logging.exception("Error in stream from S3", exc_info=True)
+        stream_data_from_s3.apply_async(
+            countdown=param_config.s3_data_stream_interval,
+            kwargs={"param_config_yaml": param_config_yaml})
+    except SoftTimeLimitExceeded:
+        logging.error("Stream from S3 took more than 3 hours, restarting")
+        stream_data_from_s3.apply_async(
+            countdown=1,
+            kwargs={"param_config_yaml": param_config_yaml})
 
 
 
