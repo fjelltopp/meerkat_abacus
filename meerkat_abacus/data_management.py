@@ -747,8 +747,8 @@ def create_links(data_type, input_conditions, table, session, conn,
     links_by_type, links_by_name = util.get_links(param_config.config_directory +
                                                   country_config["links_file"])
     link_names = []
-    if data_type["type"] in links_by_type:
-        for link in links_by_type[data_type["type"]]:
+    if data_type["name"] in links_by_type:
+        for link in links_by_type[data_type["name"]]:
             conditions = list(input_conditions)
             columns = [table.uuid.label("uuid_from")]
             if link["from_form"] == data_type["form"]:
@@ -806,7 +806,22 @@ def create_links(data_type, input_conditions, table, session, conn,
                         link_alias.data[column].astext == condition)
 
                 if restrict_uuids:
-                    conditions.append(or_(link_alias.uuid.in_(restrict_uuids), from_form.uuid.in_(restrict_uuids)))
+                    if link["to_form"] == link["from_form"] and link["to_form"] in restrict_uuids:
+                        conditions.append(
+                            or_(link_alias.uuid.in_(
+                                restrict_uuids[link["to_form"]]),
+                                from_form.uuid.in_(restrict_uuids[link["to_form"]])))
+                    
+                    elif link["to_form"] in restrict_uuids and link["from_form"] not in restrict_uuids:
+                        conditions.append(
+                            link_alias.uuid.in_(
+                                restrict_uuids[link["to_form"]]))
+                    elif link["from_form"] in restrict_uuids and link["to_form"] not in restrict_uuids:
+                        conditions.append(
+                            from_form.uuid.in_(
+                                restrict_uuids[link["from_form"]]))
+
+                
                 # make sure that the link is not referring to itself
                 conditions.append(from_form.uuid != link_alias.uuid)
 
@@ -814,13 +829,15 @@ def create_links(data_type, input_conditions, table, session, conn,
                 link_query = Query(columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
                 # use query to perform insert
+                #logging.info(link["name"])
+                #logging.info(link_query.statement)
+                
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
                 conn.execute(insert)
-
                 # split aggregate constraints into a list
                 aggregate_conditions = aggregate_condition.split(';')
-
+                #logging.info(session.query(model.Links).all())
                 # if the link type has uniqueness constraint, remove non-unique links and circular links
                 if 'unique' in aggregate_conditions:
                     dupe_query = Query(model.Links.uuid_from). \
@@ -873,7 +890,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
     country_config = param_config.country_config
 
     if restrict_uuids is not None:
-        if restrict_uuids == []:
+        if restrict_uuids == {} or sum([len(v) for v in restrict_uuids.values()]) == 0:
             logging.info("No new data to add")
             return True
     if not engine:
@@ -897,8 +914,16 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
     for data_type in data_types.data_types(param_config=param_config):
         # TODO: this piece of performance improvement broke "ongoing" status of alerts
         # Removing untill further investigation.
-        # if only_forms and data_type["form"] not in only_forms:
-        #     continue
+        if data_type["form"] not in restrict_uuids:
+            link_forms = []
+            for link in links_by_type.get(data_type["name"], []):
+                link_forms += [link["to_form"], link["from_form"]]
+            found = False
+            for l in set(link_forms):
+                if l in restrict_uuids.keys():
+                    found = True
+            if found is False:
+                continue
         table = model.form_tables(param_config)[data_type["form"]]
         if debug_enabled:
             logging.debug("Data type: %s", data_type["type"])
@@ -924,9 +949,12 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
                                    engine=engine)
         # Main Query
         if restrict_uuids is not None:
+            all_uuids = []
+            for form_uuids in restrict_uuids.values():
+                all_uuids += form_uuids
             result = session.query(model.Links.uuid_from).filter(
-                model.Links.uuid_to.in_(restrict_uuids))
-            restrict_uuids_all = restrict_uuids + [row.uuid_from
+                model.Links.uuid_to.in_(all_uuids))
+            restrict_uuids_all = restrict_uuids.get(data_type["form"], []) + [row.uuid_from
                                                    for row in result]
             query_condtion.append(table.uuid.in_(restrict_uuids_all))
 
@@ -962,6 +990,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
                 # Send all data apart from the latest UUID to to_data function
                 last_data = data.pop(uuid)
                 if data:
+
                     data_dicts, disregarded_data_dicts, new_alerts = to_data(
                         data, link_names, links_by_name, data_type, locations,
                         variables, param_config=param_config)
@@ -976,6 +1005,7 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
             if debug_enabled:
                 logging.debug("Added %s records", added)
         if data:
+            #logging.info(data)
             data_dicts, disregarded_data_dicts, new_alerts = to_data(
                 data, link_names, links_by_name, data_type, locations,
                 variables, param_config=param_config)

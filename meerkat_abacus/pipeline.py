@@ -65,7 +65,7 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
 
     """
     start = time.time()
-    uuids = []
+    uuids = {}
     tables = defaultdict(list)
     while internal_buffer.qsize() > 0:
 
@@ -81,15 +81,19 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
             session,
             engine,
             **kwargs)
-        uuids += new_uuids
+        uuids.setdefault(form, [])
+        uuids[form] += new_uuids
         if len(new_uuids) > 0:
             forms.append(form)
     corrected = data_management.initial_visit_control(
         param_config=param_config
     )
-    uuids += corrected
+    corrected_tables = list(
+        param_config.country_config['initial_visit_control'].keys())
+    if corrected_tables:
+        if corrected_tables[0] in uuids:
+            uuids[corrected_tables[0]] += corrected
     if len(uuids) > 0:
-
         data_management.new_data_to_codes(
             debug_enabled=True,
             restrict_uuids=uuids,
