@@ -829,15 +829,11 @@ def create_links(data_type, input_conditions, table, session, conn,
                 link_query = Query(columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
                 # use query to perform insert
-                #logging.info(link["name"])
-                #logging.info(link_query.statement)
-                
                 insert = model.Links.__table__.insert().from_select(
                     ("uuid_from", "uuid_to", "type", "data_to"), link_query)
                 conn.execute(insert)
                 # split aggregate constraints into a list
                 aggregate_conditions = aggregate_condition.split(';')
-                #logging.info(session.query(model.Links).all())
                 # if the link type has uniqueness constraint, remove non-unique links and circular links
                 if 'unique' in aggregate_conditions:
                     dupe_query = Query(model.Links.uuid_from). \
@@ -912,8 +908,6 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
     session.commit()
 
     for data_type in data_types.data_types(param_config=param_config):
-        # TODO: this piece of performance improvement broke "ongoing" status of alerts
-        # Removing untill further investigation.
         if data_type["form"] not in restrict_uuids:
             link_forms = []
             for link in links_by_type.get(data_type["name"], []):
