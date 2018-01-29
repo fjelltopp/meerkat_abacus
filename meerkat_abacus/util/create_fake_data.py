@@ -9,6 +9,7 @@ import logging
 from meerkat_abacus import util
 from meerkat_abacus import model
 
+random.seed(1)
 
 def get_value(field, data):
     """

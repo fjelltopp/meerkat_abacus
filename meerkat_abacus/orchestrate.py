@@ -36,9 +36,10 @@ class Celery(celery.Celery):
 
 app = Celery()
 app.config_from_object(celeryconfig)
+app.conf.CELERY_ALWAYS_EAGER = True
 logging.getLogger().setLevel(logging.INFO)
 
-wait_for_celery_runner()
+#wait_for_celery_runner()
 
 app.control.purge()
 logging.info("Setting up DB for %s", config.country_config["country_name"])
@@ -49,15 +50,15 @@ tz = pytz.timezone(config.timezone)
 
 param_config_yaml = yaml.dump(config)
 
-tasks.set_up_db.delay(param_config_yaml=param_config_yaml).get()
+tasks.set_up_db(param_config_yaml=param_config_yaml)
 
 logging.info("Finished setting up DB")
 
 # Set up data initialisation
 logging.info("Load data task started")
-initial_data = tasks.initial_data_setup.delay(source=config.initial_data_source, param_config_yaml=param_config_yaml)
+initial_data = tasks.initial_data_setup(source=config.initial_data_source, param_config_yaml=param_config_yaml)
 
-result = initial_data.get()
+#result = initial_data.get()
 logging.info("Load data task finished")
 logging.info("Starting Real time")
 
@@ -79,5 +80,5 @@ if config.fake_data:
                                             "param_config_yaml": param_config_yaml
                                             })
               
-while True:
-    sleep(120)
+#while True:
+#    sleep(120)

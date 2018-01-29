@@ -71,7 +71,7 @@ def download_data_from_s3(config):
                                      config.data_directory + file_name)
 
         
-def add_rows_to_db(form, form_data, session, engine,
+def quality_control(form, row,
                    uuid_field="meta/instanceID",
                    only_new=False,
                    deviceids=None,
@@ -105,121 +105,73 @@ def add_rows_to_db(form, form_data, session, engine,
         exclusion_list: A list of uuid's that are restricted from entering
         fraction: If present imports a randomly selected subset of data.
     """
-    conn = engine.connect()
-    try:
-        table = model.form_tables(param_config=param_config)[form]
-    except KeyError:
-        logging.exception("Error in process buffer", exc_info=True)
-        return []
     exclusion_list = set(exclusion_list)
 
-    if not only_new:
-        uuids = set([row[uuid_field] for row in form_data])
-        conn.execute(table.__table__.delete().where(
-            table.__table__.c.uuid.in_(uuids)))
-    else:
-        uuids = set([row.uuid for row in session.query(table.uuid).all()])
+    # if not only_new:
+    #     uuids = set([row[uuid_field] for row in form_data])
+    #     conn.execute(table.__table__.delete().where(
+    #         table.__table__.c.uuid.in_(uuids)))
+    # else:
+    #     uuids = set([row.uuid for row in session.query(table.uuid).all()])
         
     dicts = []
 
     new_rows = []
-    to_check = []
-    to_check_test = {}  # For speed
     logging.debug("Formname: %s", form)
     
-    if quality_control:
-        logging.debug("Doing Quality Control")
-        (variables, variable_forms, variable_tests,
-         variables_group, variables_match) = to_codes.get_variables(session, "import")
-        if variables:
-            to_check = [variables["import"][x][x]
-                        for x in variables["import"].keys() if variables["import"][x][x].variable.form == form]
-            for variable in to_check:
-                to_check_test[variable] = variable.test
     removed = {}
     i = 0
-    for row in form_data:
-        if fraction:
-            if random.random() > fraction:
-                continue
-        if only_import_after_date:
-            if parse(row["SubmissionDate"]).replace(tzinfo=None) < only_import_after_date:
-                continue
-            
-        if row[uuid_field] in exclusion_list:
-            continue
-        if only_new and row[uuid_field] in uuids:
-            continue  # In this case we only add new data
-        
-        if "_index" in row:
-            row["index"] = row.pop("_index")
-        if row_function:
-            insert_row = row_function(row)
-        else:
-            insert_row = row
-        # If we have quality checks
-        remove = False
-        if to_check:
-            for variable in to_check:
-                try:
-                    if not to_check_test[variable](insert_row):
-                        if variable.variable.category == ["discard"]:
-                            remove = True
-                        else:
-                            column = variable.column
-                            if ";" in column or "," in column:
-                                column = column.split(";")[0].split(",")[0]
-                            category = variable.variable.category
-                            replace_value = None
-                            if category and len(category) > 0 and "replace:" in category[0]:
-                                replace_column = category[0].split(":")[1]
-                                replace_value = insert_row.get(replace_column,
-                                                               None)
-                            if column in insert_row:
-                                insert_row[column] = replace_value
-                                if insert_row[column]:
-                                    if column in removed:
-                                        removed[column] += 1
-                                    else:
-                                        removed[column] = 1
-                except Exception as e:
-                    logging.exception("Quality Controll error for code %s",variable.variable.id, exc_info=True)
-        if remove:
-            continue
+    if only_import_after_date:
+        if parse(row["SubmissionDate"]).replace(tzinfo=None) < only_import_after_date:
+            return None
 
-        flatten_structure(insert_row)
-        if deviceids:
-            if should_row_be_added(insert_row, form, deviceids,
-                                   start_dates, allow_enketo=allow_enketo):
-                dicts.append({"data": insert_row,
-                              "uuid": insert_row[uuid_field]})
-                consul.send_dhis2_events(uuid=insert_row[uuid_field],
-                                         form_id=form,
-                                         raw_row=insert_row)
+    if row[uuid_field] in exclusion_list:
+        return None
+
+    if row_function:
+        insert_row = row_function(row)
+    else:
+        insert_row = row
+    # If we have quality checks
+    remove = False
+    if quality_control:
+        for variable in quality_control:
+            try:
+                if not quality_control[variable](insert_row):
+                    if variable.variable.category == ["discard"]:
+                        remove = True
+                    else:
+                        column = variable.column
+                        if ";" in column or "," in column:
+                            column = column.split(";")[0].split(",")[0]
+                        category = variable.variable.category
+                        replace_value = None
+                        if category and len(category) > 0 and "replace:" in category[0]:
+                            replace_column = category[0].split(":")[1]
+                            replace_value = insert_row.get(replace_column,
+                                                           None)
+                        if column in insert_row:
+                            insert_row[column] = replace_value
+                            if insert_row[column]:
+                                if column in removed:
+                                    removed[column] += 1
+                                else:
+                                    removed[column] = 1
+            except Exception as e:
+                logging.exception("Quality Controll error for code %s",variable.variable.id, exc_info=True)
+    if remove:
+        return None
+    if deviceids:
+        if should_row_be_added(insert_row, form, deviceids,
+                               start_dates, allow_enketo=allow_enketo):
                 new_rows.append(insert_row[uuid_field])
-            else:
-                logging.debug("Not added")
         else:
-            dicts.append({"data": insert_row,
-                          "uuid": insert_row[uuid_field]})
-            consul.send_dhis2_events(uuid=insert_row[uuid_field],
-                                     form_id=form,
-                                     raw_row=insert_row)
-            new_rows.append(insert_row[uuid_field])
-        i += 1
-        if i % 10000 == 0:
-            conn.execute(table.__table__.insert(), dicts)
-            dicts = []
+            return None
+    flatten_structure(insert_row)
+    return insert_row
 
-    if to_check:
-        logging.info("Quality Controll performed: ")
-        logging.info("removed value: %s", removed)
-    if len(dicts) > 0:
-        conn.execute(table.__table__.insert(), dicts)
-    conn.close()
-    consul.flush_dhis2_events()
-    logging.debug("Number of records %s", i)
-    return new_rows
+
+
 
 def flatten_structure(row):
     """

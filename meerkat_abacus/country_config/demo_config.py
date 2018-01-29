@@ -53,6 +53,7 @@ country_config = {
             "pt1./gender": {"one": ["male", "female"]},
             "pt./visit_date": {"date": "year"},
             "intro./visit": {"one": ["new", "return", "referral"]},
+            "intro./module": {"one": ["cd", "ncd", "mh"]},
             "nationality": {"one": ["demo", "null_island"]},
             "pt1./status": {"one": ["refugee", "national"]},
             "intro_module": {

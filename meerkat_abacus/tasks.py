@@ -29,9 +29,9 @@ sqs_client = None
 sqs_queue_url = None
 
 try:
-    INTERNAL_BUFFER_SIZE = int(os.environ.get('INTERNAL_BUFFER_SIZE', 10000))
+    INTERNAL_BUFFER_SIZE = int(os.environ.get('INTERNAL_BUFFER_SIZE', 1000))
 except ValueError:
-    INTERNAL_BUFFER_SIZE = 10000
+    INTERNAL_BUFFER_SIZE = 1000
 worker_buffer = Queue(maxsize=INTERNAL_BUFFER_SIZE)
 
 @task
