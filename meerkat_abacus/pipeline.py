@@ -5,7 +5,7 @@ Main pipeline for abacus
 import logging
 from collections import defaultdict
 from meerkat_abacus import data_import
-from meerkat_abacus import util{{ _(
+from meerkat_abacus import util
 from meerkat_abacus.config import config
 from meerkat_abacus import data_management
 import time
