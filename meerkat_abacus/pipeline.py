@@ -89,7 +89,7 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
         param_config=param_config
     )
     corrected_tables = list(
-        param_config.country_config['initial_visit_control'].keys())
+        param_config.country_config.get('initial_visit_control', {}).keys())
     if corrected_tables:
         if corrected_tables[0] in uuids_form_map:
             uuids_form_map[corrected_tables[0]] += corrected
