@@ -513,11 +513,11 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         variables: dict with variables
         locations: dict with locations
     """
-    if alert.date > datetime.now() - timedelta(days=7):
+    if alert["date"] > datetime.now() - timedelta(days=7):
         # List the possible strings that construct an alert sms message
         district = ""
         if alert["district"]:
-            district = locations[alert["district"].name
+            district = locations[alert["district"]].name
 
         # To display date-times
         def tostr(date):
@@ -528,13 +528,13 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
 
         # Assemble the data to be shown in the messsage
         data = {
-            "date": alert.date.strftime("%d %b %Y"),
+            "date": alert["date"].strftime("%d %b %Y"),
             "received": tostr(alert["variables"].get('alert_received')),
             "submitted": tostr(alert["variables"].get('alert_submitted')),
             "clinic": locations[alert["clinic"]].name,
             "district": district,
             "region": locations[alert["region"]].name,
-            "uuid": alert.uuid,
+            "uuid": alert["uuid"],
             "alert_id": alert_id,
             "reason": variables[alert["variables"]["alert_reason"]].name
         }

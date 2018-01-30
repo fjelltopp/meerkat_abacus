@@ -6,12 +6,13 @@ Functions to calculate alerts
 import numpy as np
 import pandas as pd
 from datetime import timedelta, datetime
+from dateutil.parser import parse
 
 from meerkat_abacus.model import Data
 from meerkat_abacus.util.epi_week import epi_year_start_date
 
 
-def threshold(var_id, limits, session, hospital_limits=None):
+def threshold(var_id, limits, day, clinic, session, hospital_limits=None):
     """
     Calculate threshold alerts based on daily and weekly limits
 
@@ -28,9 +29,14 @@ def threshold(var_id, limits, session, hospital_limits=None):
         alerts: list of alerts.
     """
 
-    conditions = [Data.variables.has_key(var_id)]
+    date = parse(day)
+    conditions = [Data.variables.has_key(var_id),
+                  Data.clinic == clinic,
+                  Data.date > date - timedelta(days=7),
+                  Data.date < date + timedelta(days=7)]
     data = pd.read_sql(
-        session.query(Data.region, Data.district, Data.clinic, Data.date, Data.clinic_type,
+        session.query(Data.region, Data.district,
+                      Data.clinic, Data.date, Data.clinic_type,
                       Data.uuid, Data.variables[var_id].label(var_id)).filter(
                           *conditions).statement, session.bind)
     if len(data) == 0:
@@ -103,9 +109,9 @@ def threshold(var_id, limits, session, hospital_limits=None):
     return alerts
 
 
-def double_double(var_id, session):
+def double_double(var_id, day, clinic, session):
     """
-    Calculate threshold alerts based on a double doubling of cases. 
+    Calculate threshold alerts based on a double doubling of cases.
 
     We want to trigger an alert for a clinic if there has been a doubling of cases
     in two consecutive weeks. I.e if the case numbers look like: 2, 4, 8. We would
@@ -119,7 +125,11 @@ def double_double(var_id, session):
     Returns:
         alerts: list of alerts.
     """
-    conditions = [Data.variables.has_key(var_id)]
+    date = parse(day)
+    conditions = [Data.variables.has_key(var_id),
+                  Data.clinic == clinic,
+                  Data.date > date - timedelta(days=21),
+                  Data.date < date + timedelta(days=7)]
     data = pd.read_sql(
         session.query(Data.region, Data.district, Data.clinic, Data.date,
                       Data.uuid, Data.variables[var_id].label(var_id)).filter(

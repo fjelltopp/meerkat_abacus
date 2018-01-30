@@ -173,14 +173,14 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
             data += data_i
             disregarded += disregarded_i
             data_types += data_types_i
-        to_data.append(time.time() -s )
+        to_data.append(time.time() - s)
         s = time.time()
         for i in range(len(data)):
             write_to_db(engine, data[i],
                         table=[model.Data, model.DisregardedData][disregarded[i]],
                         delete=("type", data_types[i]))
         second_db_write.append(time.time() - s)
-        data_management.add_alerts(session, data, row=data,
+        data_management.add_alerts(session, data, 
                                    param_config=param_config)
 
         

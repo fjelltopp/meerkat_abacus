@@ -637,41 +637,41 @@ def add_alerts(session, newely_inserted_data, param_config=config):
     alerts = session.query(model.AggregationVariables).filter(
         model.AggregationVariables.alert == 1)
 
-    
-
-    
     for a in alerts.all():
         new_alerts = []
         data_type = a.type
-
-        for newly_inserted in newly_inserted_data:
+        for newly_inserted in newely_inserted_data:
             var_id = a.id
             if var_id not in newly_inserted["variables"]:
                 continue
-            if not a.alert_type or not a.alert_type in ["threshold:
+            if not a.alert_type or a.alert_type not in ["threshold", "double"]:
+                continue
+            logging.info(newly_inserted)
+            day = newly_inserted["date"]
+            
+            clinic = newly_inserted["clinic"]
+                
+            if a.alert_type == "threshold":
                 limits = [int(x) for x in a.alert_type.split(":")[1].split(",")]
                 hospital_limits = None
                 if len(limits) == 4:
                     hospital_limits = limits[2:]
                     limits = limits[:2]
-
-                    
                 new_alerts = alert_functions.threshold(
                     var_id,
                     limits,
                     session,
                     day,
-                    week,
+                    clinic,
                     hospital_limits=hospital_limits
                     )
                 type_name = "threshold"
             if a.alert_type == "double":
                 new_alerts = alert_functions.double_double(a.id, day,
-                                                           week, clinic,
+                                                           clinic,
                                                            session)
                 type_name = "threshold"
             
-
         if new_alerts:
             for new_alert in new_alerts:
                 # Choose a representative record for the alert
@@ -1042,9 +1042,13 @@ def to_data(data, links_by_name, data_type, locations, variables, session,
         }
         new_data.update(location_data)
         if "alert" in variable_data and not disregard:
+            alerts = session.query(model.AggregationVariables).filter(
+                model.AggregationVariables.alert == 1)
+            alert_variables = {a.id: a for a in alerts}
+            
             alert_id = new_data["uuid"][-param_config.country_config["alert_id_length"]:]
             util.send_alert(alert_id, new_data,
-                            variables, locations, param_config)
+                            alert_variables, locations[0], param_config)
         data_rows.append(new_data)
         disregarded_list.append(disregard)
     return data_rows, disregarded_list
