@@ -81,10 +81,8 @@ def test_up():
     return True
 
     
-@task
-def stream_data_from_s3(param_config_yaml=yaml.dump(config),
-                        soft_time_limit=3600*3,
-                        time_limit=3600*4):
+@task(soft_time_limit=3600, time_limit=3600*2)
+def stream_data_from_s3(param_config_yaml=yaml.dump(config)):
     try:
         param_config = yaml.load(param_config_yaml)
         logging.info("Getting new data from S3")
@@ -108,7 +106,7 @@ def stream_data_from_s3(param_config_yaml=yaml.dump(config),
             countdown=param_config.s3_data_stream_interval,
             kwargs={"param_config_yaml": param_config_yaml})
     except SoftTimeLimitExceeded:
-        logging.error("Stream from S3 took more than 3 hours, restarting")
+        logging.error("Stream from S3 took more than 1 hour, restarting")
         stream_data_from_s3.apply_async(
             countdown=1,
             kwargs={"param_config_yaml": param_config_yaml})
