@@ -10,6 +10,11 @@ country_config = {
         "demo_register",
 #        "plague_data"
     ],
+
+    "pipeline": ["quality_control", "write_to_db"],  # "initial_visit_control",
+#                 "write_to_db", "to_codes",
+#                 "write_to_db", "add_alerts"],
+    
     "initial_visit_control": {
         "demo_case": {
           "identifier_key_list": ["pt./pid","icd_code"],

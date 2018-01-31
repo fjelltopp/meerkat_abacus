@@ -21,7 +21,7 @@ from meerkat_abacus.config import config
 import meerkat_libs as libs
 from meerkat_abacus import data_import
 from meerkat_abacus import util
-from meerkat_abacus.pipeline import process_chunk
+from meerkat_abacus.pipeline import Pipeline
 from meerkat_abacus.util import create_fake_data
 
 
@@ -109,12 +109,16 @@ def process_buffer(start=True, internal_buffer=None,
                    param_config_yaml=yaml.dump(config),
                    run_overall_processes=True):
     param_config = yaml.load(param_config_yaml)
+
     if internal_buffer is None:
         internal_buffer = worker_buffer
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
+    pipeline = Pipeline(engine, session, param_config)
+    
     try:
-        process_chunk(internal_buffer, session, engine, param_config,
-                      run_overall_processes=run_overall_processes)
+        while internal_buffer.qsize() > 0:
+            element = internal_buffer.get()
+            pipeline.process_chunk([element])
     except Exception as e:
         logging.exception("Error in process buffer", exc_info=True)
     if start:
