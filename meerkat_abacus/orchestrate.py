@@ -64,9 +64,10 @@ logging.info("Starting Real time")
 # Set up data stream source
 if config.stream_data_source in ["LOCAL_SQS", "AWS_SQS"]:
     tasks.poll_queue.delay(config.sqs_queue, config.SQS_ENDPOINT, start=True, param_config_yaml=param_config_yaml)
+    tasks.process_buffer.delay(start=True, param_config_yaml=param_config_yaml)
 elif config.stream_data_source == "AWS_S3":
     tasks.stream_data_from_s3.delay(param_config_yaml=param_config_yaml)
-tasks.process_buffer.delay(start=True, param_config_yaml=param_config_yaml)
+    # Do not need to run process_buffer as this is already run in the stream function
 
 
 # Set up fake data generation
@@ -78,6 +79,6 @@ if config.fake_data:
                                             "internal_fake_data": copy.deepcopy(config.internal_fake_data),
                                             "param_config_yaml": param_config_yaml
                                             })
-
+    tasks.process_buffer.delay(start=True, param_config_yaml=param_config_yaml)
 while True:
     sleep(120)
