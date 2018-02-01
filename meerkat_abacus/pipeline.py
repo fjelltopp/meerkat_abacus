@@ -58,14 +58,14 @@ def prepare_add_rows_arguments(form, session, param_config=config):
             "only_import_after_date": param_config.only_import_after_date,
             "param_config": param_config}
 
+
 def process_chunk(internal_buffer, session, engine, param_config=config,
                   run_overall_processes=True):
     """
     Processing a chunk of data from the internal buffer
 
     """
-    start = time.time()
-    uuids = []
+    uuids_form_map = {}
     tables = defaultdict(list)
     while internal_buffer.qsize() > 0:
 
@@ -81,18 +81,22 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
             session,
             engine,
             **kwargs)
-        uuids += new_uuids
+        uuids_form_map.setdefault(form, [])
+        uuids_form_map[form] += new_uuids
         if len(new_uuids) > 0:
             forms.append(form)
     corrected = data_management.initial_visit_control(
         param_config=param_config
     )
-    uuids += corrected
-    if len(uuids) > 0:
-
+    corrected_tables = list(
+        param_config.country_config.get('initial_visit_control', {}).keys())
+    if corrected_tables:
+        if corrected_tables[0] in uuids_form_map:
+            uuids_form_map[corrected_tables[0]] += corrected
+    if len(uuids_form_map) > 0:
         data_management.new_data_to_codes(
             debug_enabled=True,
-            restrict_uuids=uuids,
+            restrict_uuids=uuids_form_map,
             param_config=param_config,
             only_forms=forms
         )
