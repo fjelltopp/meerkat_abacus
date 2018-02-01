@@ -129,6 +129,8 @@ class Config:
         elif self.stream_data_source == "AWS_S3":
             self.get_data_from_s3 = 1
             self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL", 3600)
+        elif self.stream_data_source == "FAKE_DATA":
+            self.fake_data_generation = "INTERNAL"
         elif self.stream_data_source == "NO_STREAMING":
             pass  # Don't set up any streaming.
         else:
@@ -138,7 +140,7 @@ class Config:
         # Configure generating fake data
         self.fake_data = False
         self.internal_fake_data = None
-        self.fake_data_interval = 60*5
+        self.fake_data_interval = 60
         self.aggregate_password = None
         self.aggregate_username = None
         self.aggregate_url = None
@@ -157,3 +159,6 @@ class Config:
         return yaml.dump(self)
 
 config = Config()
+
+def get_config():
+    return config

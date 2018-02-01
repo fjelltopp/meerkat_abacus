@@ -34,6 +34,18 @@ except ValueError:
     INTERNAL_BUFFER_SIZE = 1000
 worker_buffer = Queue(maxsize=INTERNAL_BUFFER_SIZE)
 
+@task
+def set_up_db(param_config_yaml):
+    param_config = yaml.load(param_config_yaml)
+    data_management.set_up_database(leave_if_data=False,
+                                    drop_db=True, param_config=param_config)
+    #if param_config.initial_data_source == "LOCAL_RDS":
+    #    data_management.set_up_persistent_database(param_config)
+
+    
+@task
+def test_up():
+    return True
 
     
 @task

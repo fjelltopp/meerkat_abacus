@@ -16,8 +16,8 @@ existing_form_tables = {}
 
 country_config = config.country_config
 
-def form_tables(param_config=config):
 
+def form_tables(param_config):
     for table in param_config.country_config["tables"]:
         if table in existing_form_tables:
             continue

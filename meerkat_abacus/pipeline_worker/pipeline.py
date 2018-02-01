@@ -3,26 +3,21 @@ Main pipeline for abacus
 
 """
 import logging
-from collections import defaultdict
-from meerkat_abacus import data_import
-from meerkat_abacus import util, model
-from meerkat_abacus.config import config
-from meerkat_abacus import data_management
-from meerkat_abacus.codes import to_codes
-import time
-import random
 
 from meerkat_abacus.process_steps import quality_control, write_to_db
 
 
 class Pipeline:
+    """
+    Creates and then runs data through a pipeline as specifed by
+    config object
 
+    """
+
+    
     def __init__(self, engine, session, param_config):
         quality_control_arguments = {}
-        variables = {}
-
         pipeline_spec = param_config.country_config["pipeline"]
-        logging.info(pipeline_spec)
         pipeline = []
         pipeline_config = []
 
@@ -39,13 +34,7 @@ class Pipeline:
             if step == "write_to_db":
                 pipeline_config.append(write_to_db.prepare_config(param_config, engine))
                 pipeline.append(write_to_db.write_to_db)
-          #   variables[form] = to_codes.get_variables(session
-        #                                              match_on_form=data_type["form"])
-        # self.quality_control_arguments = quality_control_arguments
-
-        # self.locations = util.all_location_data(session)
-        # self.links = util.get_links(param_config.config_directory +
-        #                     param_config.country_config["links_file"])
+       
         self.session = session
         self.engine = engine
         self.param_config = param_config
@@ -73,7 +62,46 @@ class Pipeline:
             if not new_data:
                 break
             data = new_data
-            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### CODE that will be needed again soon
+
+
+              #   variables[form] = to_codes.get_variables(session
+        #                                              match_on_form=data_type["form"])
+        # self.quality_control_arguments = quality_control_arguments
+
+        # self.locations = util.all_location_data(session)
+        # self.links = util.get_links(param_config.config_directory +
+        #                     param_config.country_config["links_file"]) 
 #         uuids = []
 #         tables = defaultdict(list)
 #         for data_row in input_data:

@@ -200,3 +200,82 @@ def get_new_fake_data(form, session, N, param_config=None, dates_is_now=False):
         N=N,
         dates_is_now=dates_is_now)
     return [(row, row["meta/instanceID"]) for row in data]
+
+
+def create_fake_data(session, config, N=500, append=False,
+                     from_files=False,
+                     write_to="file"):
+    """
+    Creates a csv file with fake data for each form. We make
+    sure that the forms have deviceids that match the imported locations.
+
+    For the case report forms we save the X last characters of
+    meta/instanceID to use as alert_ids for the alert_form,
+    where X is the alert_id_lenght from the config file.
+
+    Args:
+       session: SQLAlchemy session
+       N: number of rows to create for each from (default=500)
+       append: If we should append the new fake data or write
+               over the old (default=False)
+       from_files: whether to add data from the manual test case
+                   files defined in country_config
+    """
+    logging.debug("fake data")
+    deviceids = util.get_deviceids(session, case_report=True)
+    alert_ids = []
+    country_config = config.country_config
+    forms = country_config["tables"]
+    # Make sure the case report form is handled before the alert form
+    for form in forms:
+        logging.debug("Processing form: %s", form)
+        file_name = config.data_directory + form + ".csv"
+        current_form = []
+        if form not in country_config["fake_data"]:
+            continue
+        if append:
+            current_form = util.read_csv(file_name)
+        if "deviceids" in country_config["fake_data"][form]:
+            # This is a special way to limit the deviceids for a form in
+            # the config file
+            form_deviceids = country_config["fake_data"][form]["deviceids"]
+        else:
+            form_deviceids = deviceids
+
+        manual_test_data = {}
+        if from_files and form in country_config.get("manual_test_data", {}).keys():
+            current_directory = os.path.dirname(os.path.realpath(__file__))
+            for fake_data_file in country_config.get("manual_test_data", {})[form]:
+                manual_test_data[fake_data_file] = []
+                logging.debug("Adding test data from file: %s.csv", fake_data_file)
+                manual_test_data[fake_data_file] = util.read_csv(current_directory + '/test/test_data/test_cases/' + \
+                                                                 fake_data_file + ".csv")
+
+        generated_data = create_form(
+            country_config["fake_data"][form], data={"deviceids":
+                                                     form_deviceids,
+                                                     "uuids": alert_ids}, N=N)
+
+        if "case" in form:
+            alert_ids = []
+            for row in generated_data:
+                alert_ids.append(row["meta/instanceID"][-country_config[
+                    "alert_id_length"]:])
+        manual_test_data_list = []
+        for manual_test_data_file in manual_test_data.keys():
+            manual_test_data_list += list(manual_test_data[manual_test_data_file])
+        for row in manual_test_data_list:
+            if len(generated_data) > 0:
+                for key in generated_data[0].keys():
+                    if key not in row:
+                        row[key] = None
+        data_to_write = list(current_form) + list(manual_test_data_list) + generated_data
+        if write_to == "file":
+            util.write_csv(data_to_write, file_name)
+        elif write_to == "local_db":
+            util.write_to_db(data_to_write, form,
+                             param_config.PERSISTENT_DATABASE_URL,
+                             param_config=param_config)
+
+
+
