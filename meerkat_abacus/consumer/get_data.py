@@ -4,8 +4,7 @@ import boto3
 from meerkat_abacus.pipeline_worker.processing_tasks import process_data
 
 
-def read_stationary_data(get_function, session,
-                         engine, param_config, N_send_to_task=100):
+def read_stationary_data(get_function, param_config, N_send_to_task=100):
     """
     Read stationary data using the get_function to determine the source
     """
@@ -18,7 +17,8 @@ def read_stationary_data(get_function, session,
             if len(data) == N_send_to_task:
                 process_data.delay(data)
                 data = []
-        process_data.delay(data)
+        if data:
+            process_data.delay(data)
 
 
 def download_data_from_s3(config):

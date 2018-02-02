@@ -4,7 +4,9 @@ Main pipeline for abacus
 """
 import logging
 
-from meerkat_abacus.process_steps import quality_control, write_to_db
+from meerkat_abacus.pipeline_worker.process_steps.quality_control import QualityControl
+from meerkat_abacus.pipeline_worker.process_steps.write_to_db import WriteToDb
+from meerkat_abacus.pipeline_worker.process_steps import DoNothing
 
 
 class Pipeline:
@@ -13,33 +15,33 @@ class Pipeline:
     config object
 
     """
-
-    
     def __init__(self, engine, session, param_config):
-        quality_control_arguments = {}
         pipeline_spec = param_config.country_config["pipeline"]
         pipeline = []
-        pipeline_config = []
 
         for step in pipeline_spec:
+            if step == "do_nothing":
+                pipeline.append(DoNothing())
             if step == "quality_control":
-                quality_control_arguments = {}
-                for form in param_config.country_config["tables"]:
-                    quality_control_arguments[form] = quality_control.prepare_arguments(form,
-                                                                                session,
-                                                                                param_config)
-
-                pipeline.append(quality_control.quality_control)
-                pipeline_config.append(quality_control_arguments)
+                pipeline.append(
+                    QualityControl(
+                        session,
+                        param_config
+                    )
+                )
+                    
             if step == "write_to_db":
-                pipeline_config.append(write_to_db.prepare_config(param_config, engine))
-                pipeline.append(write_to_db.write_to_db)
+                pipeline.append(
+                    WriteToDb(
+                        param_config,
+                        engine
+                    )
+                )
        
         self.session = session
         self.engine = engine
         self.param_config = param_config
         self.pipeline = pipeline
-        self.pipeline_config = pipeline_config
         self.param_config = param_config
 
     def process_chunk(self, input_data):
@@ -53,19 +55,16 @@ class Pipeline:
         """
 
         data = input_data
-        for step, step_config in zip(self.pipeline, self.pipeline_config):
+        for step in self.pipeline:
             new_data = []
             for d in data:
                 data = d["data"]
                 form = d["form"]
-                new_data += step(form, data, self.param_config, step_config)
+                new_data += step.run(form, data)
             if not new_data:
                 break
             data = new_data
-
-
-
-
+        return data
 
 
 
