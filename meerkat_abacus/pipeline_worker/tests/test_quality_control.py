@@ -7,18 +7,19 @@ from datetime import datetime
 from meerkat_abacus.config import get_config
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps import quality_control
+from meerkat_abacus.consumer.database_setup import create_db
 config = get_config()
 
 
 class TestQualityControll(unittest.TestCase):
 
     def setUp(self):
+        create_db(config.DATABASE_URL)
         engine = create_engine(config.DATABASE_URL)
         model.Base.metadata.create_all(engine)
         self.engine = create_engine(config.DATABASE_URL)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
-
 
     def test_quality_control(self):
         config = get_config()
