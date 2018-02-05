@@ -580,6 +580,15 @@ def set_up_database(leave_if_data, drop_db, param_config=config):
         logging.info("Populating DB")
         model.form_tables(param_config=param_config)
         model.Base.metadata.create_all(engine)
+
+        links_by_type, links_by_name = util.get_links(param_config.config_directory +
+                                                      param_config.country_config["links_file"])
+        for link in links_by_name.values():
+            to_form = link["to_form"]
+            to_condition_column = link["to_condition"].split(":")[0]
+            if to_condition_column:
+                engine.execute(f"CREATE index on {to_form} ((data->>'{to_condition_column}'))")
+        
         logging.info("Import Locations")
         import_locations(engine, session, param_config=param_config)
         logging.info("Import calculation parameters")
@@ -801,10 +810,15 @@ def create_links(data_type, input_conditions, table, session, conn,
 
                 # handle the filter condition
                 if link["to_condition"]:
-                    column, condition = link["to_condition"].split(":")
-                    conditions.append(
-                        link_alias.data[column].astext == condition)
+                    column, compare_text = link["to_condition"].split(":")
+                    condition = link_alias.data[column].astext == compare_text
+                    conditions.append(condition)
+                if link.get("from_condition"):
+                    column, compare_text = link["from_condition"].split(":")
+                    condition = link_alias.data[column].astext == compare_text
+                    conditions.append(condition)
 
+                
                 if restrict_uuids:
                     if link["to_form"] == link["from_form"] and link["to_form"] in restrict_uuids:
                         conditions.append(
@@ -824,7 +838,6 @@ def create_links(data_type, input_conditions, table, session, conn,
                 
                 # make sure that the link is not referring to itself
                 conditions.append(from_form.uuid != link_alias.uuid)
-
                 # build query from join and filter conditions
                 link_query = Query(columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
