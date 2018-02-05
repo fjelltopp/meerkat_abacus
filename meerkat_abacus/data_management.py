@@ -1230,8 +1230,8 @@ def initial_visit_control(param_config=config, uuids_form_map={}):
         uuids = uuids_form_map.get(form_table, [])
 
         patient_filter = session.query(
-            form_table.data[param_config.country_config[form_table].get('patient_id')])\
-            .filter(form_table.uuid.in_(uuids)).all()
+            table.data[param_config.country_config['initial_visit_control'][form_table].get('patient_id')])\
+            .filter(table.uuid.in_(uuids)).all()
 
         ret_corrected = correct_initial_visits(session,
                                                table,
@@ -1286,7 +1286,7 @@ def correct_initial_visits(session, table,
         # jsonb data values are not empty
         empty_values_filter.append(table.data[key].astext != "")
 
-    # create a Common Table Expression object to rank visit dates accoring to
+    # create a Common Table Expression object to rank visit dates according to each patient
     cte_table_ranked = session.query(
         table.id, table.uuid,
         func.jsonb_set(table.data, '{' + visit_type_key + '}', '"return"', False).label('data'),
@@ -1296,15 +1296,16 @@ def correct_initial_visits(session, table,
         .filter(table.data[visit_type_key].astext == new_visit_value) \
         .filter(and_(*empty_values_filter)) \
         .filter(table.data[module_key].astext == module_value) \
+        .filter(table.uuid.in_(patient_filter)) \
         .cte("cte_table_ranked")
 
     # create delete statement using the Common Table Expression
     data_entry_delete = delete(model.Data).where(
-        and_(model.Data.uuid == cte_table_ranked.c.uuid, cte_table_ranked.c.rnk > 1))
+        and_(model.Data.uuid == cte_table_ranked.c.uuid, cte_table_ranked.c.rnk > 1, table.uuid.in_(patient_filter)))
 
     # create update query using the Common Table Expression
     duplicate_removal_update = update(table.__table__) \
-        .where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1)) \
+        .where(and_(table.id == cte_table_ranked.c.id, cte_table_ranked.c.rnk > 1, table.uuid.in_(patient_filter))) \
         .values(data=cte_table_ranked.c.data) \
         .returning(table.uuid)
 
