@@ -824,7 +824,7 @@ def create_links(data_type, input_conditions, table, session, conn,
                     conditions.append(condition)
                 if link.get("from_condition"):
                     column, compare_text = link["from_condition"].split(":")
-                    condition = link_alias.data[column].astext == compare_text
+                    condition = from_form.data[column].astext == compare_text
                     conditions.append(condition)
 
                 
