@@ -584,13 +584,10 @@ def set_up_database(leave_if_data, drop_db, param_config=config):
         links_by_type, links_by_name = util.get_links(param_config.config_directory +
                                                       param_config.country_config["links_file"])
         for link in links_by_name.values():
-            logging.info(link)
-            form_1 = link["to_form"]
-            column_3 = link["to_condition"].split(":")[0]
-
-            if column_3:
-                engine.execute(f"CREATE index on {form_1} ((data->>'{column_3}'))")
-
+            to_form = link["to_form"]
+            to_condition_column = link["to_condition"].split(":")[0]
+            if to_condition_column:
+                engine.execute(f"CREATE index on {to_form} ((data->>'{to_condition_column}'))")
         
         logging.info("Import Locations")
         import_locations(engine, session, param_config=param_config)
@@ -813,13 +810,13 @@ def create_links(data_type, input_conditions, table, session, conn,
 
                 # handle the filter condition
                 if link["to_condition"]:
-                    column, condition = link["to_condition"].split(":")
-                    conditions.append(
-                        link_alias.data[column].astext == condition)
+                    column, compare_text = link["to_condition"].split(":")
+                    condition = link_alias.data[column].astext == compare_text
+                    conditions.append(condition)
                 if link.get("from_condition"):
-                    column, condition = link["from_condition"].split(":")
-                    conditions.append(
-                        link_alias.data[column].astext == condition)
+                    column, compare_text = link["from_condition"].split(":")
+                    condition = link_alias.data[column].astext == compare_text
+                    conditions.append(condition)
 
                 
                 if restrict_uuids:
