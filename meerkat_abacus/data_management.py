@@ -598,10 +598,10 @@ def set_up_database(leave_if_data, drop_db, param_config=config):
     return session, engine
 
 
-def add_data_indexes(engine, param_config):
+def add_variable_indexes(engine, param_config):
     """ Adding indexes to variables colmns in the data table"""
 
-    index_cols = param_config.country_config.get("data_index_columns", [])
+    index_cols = param_config.country_config.get("variable_indexes", [])
     for index in index_cols:
         engine.execute(f"CREATE index on data ((variables->>'{index}'))")
 
