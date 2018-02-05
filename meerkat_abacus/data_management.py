@@ -580,6 +580,18 @@ def set_up_database(leave_if_data, drop_db, param_config=config):
         logging.info("Populating DB")
         model.form_tables(param_config=param_config)
         model.Base.metadata.create_all(engine)
+
+        links_by_type, links_by_name = util.get_links(param_config.config_directory +
+                                                      param_config.country_config["links_file"])
+        for link in links_by_name.values():
+            logging.info(link)
+            form_1 = link["to_form"]
+            column_3 = link["to_condition"].split(":")[0]
+
+            if column_3:
+                engine.execute(f"CREATE index on {form_1} ((data->>'{column_3}'))")
+
+        
         logging.info("Import Locations")
         import_locations(engine, session, param_config=param_config)
         logging.info("Import calculation parameters")
@@ -804,7 +816,12 @@ def create_links(data_type, input_conditions, table, session, conn,
                     column, condition = link["to_condition"].split(":")
                     conditions.append(
                         link_alias.data[column].astext == condition)
+                if link.get("from_condition"):
+                    column, condition = link["from_condition"].split(":")
+                    conditions.append(
+                        link_alias.data[column].astext == condition)
 
+                
                 if restrict_uuids:
                     if link["to_form"] == link["from_form"] and link["to_form"] in restrict_uuids:
                         conditions.append(
@@ -824,7 +841,6 @@ def create_links(data_type, input_conditions, table, session, conn,
                 
                 # make sure that the link is not referring to itself
                 conditions.append(from_form.uuid != link_alias.uuid)
-
                 # build query from join and filter conditions
                 link_query = Query(columns).join(
                     link_alias, and_(*join_on)).filter(*conditions)
