@@ -597,6 +597,15 @@ def set_up_database(leave_if_data, drop_db, param_config=config):
         import_variables(session, param_config=param_config)
     return session, engine
 
+
+def add_variable_indexes(engine, param_config):
+    """ Adding indexes to variables colmns in the data table"""
+
+    index_cols = param_config.country_config.get("variable_indexes", [])
+    for index in index_cols:
+        engine.execute(f"CREATE index on data ((variables->>'{index}'))")
+
+
 def add_alerts(session, param_config=config):
     """
     Adds non indivdual alerts.
