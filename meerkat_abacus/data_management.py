@@ -1204,7 +1204,7 @@ def send_alerts(alerts, session, param_config=config):
         util.send_alert(alert_id, alert, variables, locations, param_config)
 
 
-def initial_visit_control(param_config=config):
+def initial_visit_control(param_config=config, uuids_form_map={}):
     """
     Configures and corrects the initial visits and removes the calculated codes
     from the data table where the visit was amended
@@ -1227,8 +1227,20 @@ def initial_visit_control(param_config=config):
         module_key = param_config.country_config['initial_visit_control'][form_table]['module_key']
         module_value = param_config.country_config['initial_visit_control'][form_table]['module_value']
 
-        ret_corrected = correct_initial_visits(session, table, identifier_key_list, visit_type_key, visit_date_key,
-                                               module_key, module_value)
+        uuids = uuids_form_map.get(form_table, [])
+
+        patient_filter = session.query(
+            form_table.data[param_config.country_config[form_table].get('patient_id')])\
+            .filter(form_table.uuid.in_(uuids)).all()
+
+        ret_corrected = correct_initial_visits(session,
+                                               table,
+                                               identifier_key_list=identifier_key_list,
+                                               visit_type_key=visit_type_key,
+                                               visit_date_key=visit_date_key,
+                                               module_key=module_key,
+                                               module_value=module_value,
+                                               patient_filter=patient_filter)
         for i in ret_corrected.fetchall():
             corrected.append(i[0])
             log.append({'timestamp': str(datetime.now()), 'uuid': i[0]})
@@ -1240,9 +1252,12 @@ def initial_visit_control(param_config=config):
 
 
 def correct_initial_visits(session, table,
-                           identifier_key_list=['patientid', 'icd_code'], visit_type_key='intro./visit',
+                           identifier_key_list=['patientid', 'icd_code'],
+                           visit_type_key='intro./visit',
                            visit_date_key='pt./visit_date',
-                           module_key='intro./module', module_value="ncd"):
+                           module_key='intro./module',
+                           module_value="ncd",
+                           patient_filter=[]):
     """
     Corrects cases where a patient has multiple initial visits.
     The additional initial visits will be corrected to return visits.

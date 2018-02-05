@@ -86,7 +86,8 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
         if len(new_uuids) > 0:
             forms.append(form)
     corrected = data_management.initial_visit_control(
-        param_config=param_config
+        param_config=param_config,
+        uuids_form_map=uuids_form_map
     )
     corrected_tables = list(
         param_config.country_config.get('initial_visit_control', {}).keys())

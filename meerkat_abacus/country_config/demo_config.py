@@ -13,6 +13,7 @@ country_config = {
     "initial_visit_control": {
         "demo_case": {
           "identifier_key_list": ["pt./pid","icd_code"],
+          "patient_id": ["pt./id"],
           "visit_type_key": "intro./visit",
           "visit_date_key": "pt./visit_date",
           "module_key": "intro./module",
