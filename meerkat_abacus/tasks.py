@@ -73,6 +73,8 @@ def initial_data_setup(source, param_config_yaml=yaml.dump(config)):
     data_import.read_stationary_data(get_function, worker_buffer,
                                      process_buffer, session, engine, param_config=param_config)
     process_buffer(internal_buffer=worker_buffer, start=False, param_config_yaml=param_config_yaml)
+
+    data_management.add_variable_indexes(engine, param_config)
     session.close()
     engine.dispose()
     
