@@ -7,6 +7,10 @@ Unit tests Meerkat Abacus
 from unittest import mock
 import random
 import unittest
+import sys
+sys.modules[
+    'meerkat_abacus.pipeline_worker.processing_tasks'
+] = mock.MagicMock()
 from meerkat_abacus.consumer import get_data
 from meerkat_abacus import config
 
@@ -19,7 +23,7 @@ class TestConsumer(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @mock.patch('meerkat_abacus.consumer.get_data.process_data.delay')
+    @mock.patch('meerkat_abacus.consumer.get_data.processing_tasks.process_data.delay')
     def test_read_data(self, process_data_mock):
         """
         Tests that read_stationary_data gets data from
