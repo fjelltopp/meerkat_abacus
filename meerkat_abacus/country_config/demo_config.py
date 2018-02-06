@@ -10,14 +10,15 @@ country_config = {
         "demo_register",
 #        "plague_data"
     ],
+    "pipeline": ["quality_control",
+                 "initial_visit_control", "write_to_db"],
 
-    "pipeline": ["quality_control", "write_to_db"],  # "initial_visit_control",
 #                 "write_to_db", "to_codes",
 #                 "write_to_db", "add_alerts"],
     
     "initial_visit_control": {
         "demo_case": {
-          "identifier_key_list": ["pt./pid","icd_code"],
+          "identifier_key_list": ["patientid", "icd_code"],
           "visit_type_key": "intro./visit",
           "visit_date_key": "pt./visit_date",
           "module_key": "intro./module",
@@ -80,7 +81,7 @@ country_config = {
                                             "polio", "hib", "measles",
                                             "mumps", "rubella"]},
             "pip./namru": {"one": range(1, 400)},
-            "patientid": {"one": range(1, 20)},
+            "patientid": {"one": range(1, 3)},
             "sari": {"one": ["yes", "no"]},
             "pip_fu5./icu": {"one": ["yes", "no"]},
             "pip_fu5./ventilated": {"one": ["yes", "no"]},

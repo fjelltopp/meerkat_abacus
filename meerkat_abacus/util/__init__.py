@@ -11,7 +11,7 @@ from lxml.html import Element, tostring
 import requests
 from requests.auth import HTTPDigestAuth
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from botocore.exceptions import ClientError
 
 from datetime import datetime, timedelta
@@ -74,9 +74,10 @@ def get_db_engine(db_url=config.DATABASE_URL):
     """
     Returns a db engine and session
     """
-    engine = create_engine(db_url)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    engine = create_engine(db_url, isolation_level="AUTOCOMMIT")
+    session = scoped_session(sessionmaker(bind=engine))
+    #session = Session()
+    logging.info(session)
     return engine, session
 
 

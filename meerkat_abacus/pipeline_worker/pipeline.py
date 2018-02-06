@@ -6,6 +6,7 @@ import logging
 
 from meerkat_abacus.pipeline_worker.process_steps.quality_control import QualityControl
 from meerkat_abacus.pipeline_worker.process_steps.write_to_db import WriteToDb
+from meerkat_abacus.pipeline_worker.process_steps.initial_visit_control import InitialVisitControl
 from meerkat_abacus.pipeline_worker.process_steps import DoNothing
 
 
@@ -22,7 +23,7 @@ class Pipeline:
         for step in pipeline_spec:
             if step == "do_nothing":
                 pipeline.append(DoNothing())
-            if step == "quality_control":
+            elif step == "quality_control":
                 pipeline.append(
                     QualityControl(
                         session,
@@ -30,14 +31,23 @@ class Pipeline:
                     )
                 )
                     
-            if step == "write_to_db":
+            elif step == "write_to_db":
                 pipeline.append(
                     WriteToDb(
                         param_config,
                         engine
                     )
                 )
-       
+            elif step == "initial_visit_control":
+                pipeline.append(
+                    InitialVisitControl(
+                        param_config,
+                        engine,
+                        session
+                    )
+                )
+            else:
+                raise NotImplementedError("{step} is not implemented")
         self.session = session
         self.engine = engine
         self.param_config = param_config
@@ -53,7 +63,6 @@ class Pipeline:
         data = input_data
      
         """
-
         data = input_data
         for step in self.pipeline:
             new_data = []

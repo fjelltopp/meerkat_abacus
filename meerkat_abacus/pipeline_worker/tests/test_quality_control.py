@@ -11,10 +11,12 @@ from meerkat_abacus.consumer.database_setup import create_db
 config = get_config()
 
 
+# TODO: Test deviceid and exclusion list
+
 class TestQualityControll(unittest.TestCase):
 
     def setUp(self):
-        create_db(config.DATABASE_URL)
+        create_db(config.DATABASE_URL, drop=True)
         engine = create_engine(config.DATABASE_URL)
         model.Base.metadata.create_all(engine)
         self.engine = create_engine(config.DATABASE_URL)

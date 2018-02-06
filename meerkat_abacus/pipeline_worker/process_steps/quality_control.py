@@ -45,7 +45,8 @@ class QualityControl(ProcessingStep):
             if "quality_control" in param_config.country_config:
                 if form in param_config.country_config["quality_control"]:
                     (variables, variable_forms, variable_tests,
-                     variables_group, variables_match) = to_codes.get_variables(session, "import")
+                     variables_group, variables_match) = to_codes.get_variables(session,
+                                                                                "import")
                     if variables:
                         quality_control_list = [variables["import"][x][x]
                                     for x in variables["import"].keys() if variables["import"][x][x].variable.form == form]

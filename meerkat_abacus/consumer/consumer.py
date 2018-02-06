@@ -21,12 +21,10 @@ app.config_from_object(celeryconfig)
 
 # Initial Setup
 
-database_setup.set_up_database(False, True, config)
+session, engine = database_setup.set_up_database(False, True, config)
 
 
 logging.info("Starting initial setup")
-engine, session = util.get_db_engine(config.DATABASE_URL)
-
 
 if config.initial_data_source == "AWS_S3":
     get_data.download_data_from_s3(config)
@@ -38,14 +36,13 @@ elif config.initial_data_source == "FAKE_DATA":
     create_fake_data.create_fake_data(session,
                                       config,
                                       write_to="file")
+ 
 elif config.initial_data_source in ["AWS_RDS", "LOCAL_RDS"]:
     get_function = util.get_data_from_rds_persistent_storage
 else:
     raise AttributeError(f"Invalid source {config.initial_data_source}")
 
 get_data.read_stationary_data(get_function, config)
-session.close()
-engine.dispose()
 
 
 # Real time

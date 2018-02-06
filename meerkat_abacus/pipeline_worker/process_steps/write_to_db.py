@@ -13,9 +13,13 @@ class WriteToDb(ProcessingStep):
             "engine": engine,
             "form_to_table": {
                 "data": model.Data,
-                "disregardedData": model.DisregardedData}
+                "disregardedData": model.DisregardedData
+            },
+            "country_config": param_config.country_config
+
         }
         config["form_to_table"].update(model.form_tables(param_config))
+        config["raw_data_forms"] = param_config.country_config["tables"]
         self.config = config
     
     def run(self, form, data):
@@ -25,6 +29,9 @@ class WriteToDb(ProcessingStep):
         """
         table = self.config["form_to_table"][form]
         conn = self.config["engine"].connect()
+        if form in self.config["raw_data_forms"]:
+            data = {"uuid": get_uuid(data, form, self.config),
+                     "data": data}
         if self.config["delete"]:
             conn.execute(table.__table__.delete().where(
                 table.__table__.c.uuid == data["uuid"]).where(
@@ -36,3 +43,11 @@ class WriteToDb(ProcessingStep):
         conn.close()
         return [{"form": form,
                  "data": data}]
+
+    
+def get_uuid(data, form, config):
+    uuid_field = "meta/instanceID"
+    if "tables_uuid" in config["country_config"]:
+        uuid_field = config["country_config"]["tables_uuid"].get(form, uuid_field)
+    return data[uuid_field]
+
