@@ -64,7 +64,6 @@ class InitialVisitControl(ProcessingStep):
                 combined_data = [data] + [r.data for r in ret_corrected]
                 combined_data.sort(key=lambda d: parse(d[visit_date_key]),
                                    reverse=False)
-                logging.info(combined_data)
                 for row in combined_data[1:]:
                     row[visit_type_key] = return_visit_value
                     #logging.info("Updated data with uuid {}".format(

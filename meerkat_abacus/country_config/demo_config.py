@@ -11,7 +11,8 @@ country_config = {
 #        "plague_data"
     ],
     "pipeline": ["quality_control",
-                 "initial_visit_control", "write_to_db"],
+                 "initial_visit_control", "write_to_db",
+                 "to_data_type"],
 
 #                 "write_to_db", "to_codes",
 #                 "write_to_db", "add_alerts"],

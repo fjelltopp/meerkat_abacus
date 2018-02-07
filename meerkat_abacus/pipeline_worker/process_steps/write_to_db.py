@@ -30,8 +30,10 @@ class WriteToDb(ProcessingStep):
         table = self.config["form_to_table"][form]
         conn = self.config["engine"].connect()
         if form in self.config["raw_data_forms"]:
-            data = {"uuid": get_uuid(data, form, self.config),
-                     "data": data}
+            insert_data = {"uuid": get_uuid(data, form, self.config),
+                           "data": data}
+        else:
+            insert_data = data
         if self.config["delete"]:
             conn.execute(table.__table__.delete().where(
                 table.__table__.c.uuid == data["uuid"]).where(
@@ -39,7 +41,7 @@ class WriteToDb(ProcessingStep):
             )
  
         if data:
-            conn.execute(table.__table__.insert(), [data])
+            conn.execute(table.__table__.insert(), [insert_data])
         conn.close()
         return [{"form": form,
                  "data": data}]

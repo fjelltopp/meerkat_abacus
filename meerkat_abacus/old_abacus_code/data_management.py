@@ -375,13 +375,7 @@ def create_links(links, data, base_form, form, uuid, connection,
     return data, link_data
             
 
-def check_data_type_condition(data_type, data):
-    if data_type["db_column"] and data:
-        if data[data_type["db_column"]] == data_type["condition"]:
-            return True
-    else:
-        return True
-    return False
+
 
 def new_data_to_codes(form, row, uuid,
                       locations,

@@ -6,6 +6,7 @@ import logging
 
 from meerkat_abacus.pipeline_worker.process_steps.quality_control import QualityControl
 from meerkat_abacus.pipeline_worker.process_steps.write_to_db import WriteToDb
+from meerkat_abacus.pipeline_worker.process_steps.to_data_type import ToDataType
 from meerkat_abacus.pipeline_worker.process_steps.initial_visit_control import InitialVisitControl
 from meerkat_abacus.pipeline_worker.process_steps import DoNothing
 
@@ -46,6 +47,14 @@ class Pipeline:
                         session
                     )
                 )
+            elif step == "to_data_type":
+                pipeline.append(
+                    ToDataType(
+                        param_config,
+                        engine,
+                        session
+                    )
+                )
             else:
                 raise NotImplementedError("{step} is not implemented")
         self.session = session
@@ -67,14 +76,13 @@ class Pipeline:
         for step in self.pipeline:
             new_data = []
             for d in data:
-                data = d["data"]
+                data_field = d["data"]
                 form = d["form"]
-                new_data += step.run(form, data)
+                new_data += step.run(form, data_field)
             if not new_data:
                 break
             data = new_data
-        return data
-
+      
 
 
 
