@@ -82,7 +82,7 @@ class Pipeline:
             if not new_data:
                 break
             data = new_data
-      
+        return data
 
 
 
