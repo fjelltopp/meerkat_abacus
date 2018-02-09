@@ -181,7 +181,8 @@ def should_row_be_added(row, form_name, deviceids, start_dates, param_config,
     if start_dates and row.get("deviceid", None) in start_dates:
         if not row["SubmissionDate"]:
             ret = False
-        elif parse(row["SubmissionDate"]).replace(tzinfo=None) < start_dates[row["deviceid"]]:
+        elif parse(
+                row["SubmissionDate"]).replace(tzinfo=None) < start_dates[row["deviceid"]]:
             ret = False
     if ret:
         ret = _validate_date_to_epi_week_convertion(form_name, row, param_config)

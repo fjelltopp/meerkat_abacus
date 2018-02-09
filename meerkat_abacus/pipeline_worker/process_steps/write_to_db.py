@@ -9,7 +9,8 @@ class WriteToDb(ProcessingStep):
 
     def __init__(self, param_config, engine):
         config = {
-            "delete": False,
+            "delete": {"data": "type",
+                       "disregardedData": "type"},
             "engine": engine,
             "form_to_table": {
                 "data": model.Data,
@@ -34,10 +35,12 @@ class WriteToDb(ProcessingStep):
                            "data": data}
         else:
             insert_data = data
-        if self.config["delete"]:
+        if form in self.config["delete"]:
             conn.execute(table.__table__.delete().where(
                 table.__table__.c.uuid == data["uuid"]).where(
-                    getattr(table.__table__.c, self.config["delete"][0]) == self.config["delete"][1])
+                    getattr(
+                        table.__table__.c, self.config["delete"][form]) ==
+                    data[self.config["delete"][form]])
             )
  
         if data:

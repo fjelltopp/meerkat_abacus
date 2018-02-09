@@ -43,9 +43,7 @@ def set_up_db(param_config_yaml):
     #    data_management.set_up_persistent_database(param_config)
 
     
-@task
-def test_up():
-    return True
+
 
     
 @task

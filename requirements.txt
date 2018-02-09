@@ -1,7 +1,7 @@
 python-dateutil==2.2
 pystmark==0.4.4
-psycopg2==2.7.3.2
-SQLAlchemy==1.1.15
+psycopg2==2.7.4
+SQLAlchemy==1.2.2
 celery==4.1.0
 pyYAML==3.12
 SQLAlchemy-Utils==0.32.21

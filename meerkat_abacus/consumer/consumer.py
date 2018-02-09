@@ -1,4 +1,5 @@
 import logging
+import celery
 from celery import Celery
 import time
 
@@ -8,8 +9,8 @@ from meerkat_abacus.consumer import get_data
 from meerkat_abacus.config import get_config
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
-from meerkat_abacus.pipeline_worker.processing_tasks import process_data
-
+from meerkat_abacus.pipeline_worker.processing_tasks import process_data, test_up
+import backoff
 
 config = get_config()
 
@@ -17,11 +18,23 @@ logging.getLogger().setLevel(logging.INFO)
 
 app = Celery()
 app.config_from_object(celeryconfig)
-
-
+@backoff.on_exception(backoff.expo,
+                      (celery.exceptions.TimeoutError,
+                       AttributeError, OSError),
+                      max_tries=10,
+                      max_value=30)
+def wait_for_celery_runner():
+    test_task = test_up.delay()
+    result = test_task.get(timeout=1)
+    return result
+wait_for_celery_runner()
 # Initial Setup
 
 session, engine = database_setup.set_up_database(False, True, config)
+
+
+
+
 
 
 logging.info("Starting initial setup")
@@ -59,7 +72,8 @@ while True:
             new_data = []
             for form in config.country_config["tables"]:
                 data = create_fake_data.get_new_fake_data(form=form,
-                                                          session=session, N=10,
+                                                          session=session,
+                                                          N=10,
                                                           param_config=config,
                                                           dates_is_now=True)
                 new_data = [{"form": form, "data": d[0]} for d in data]

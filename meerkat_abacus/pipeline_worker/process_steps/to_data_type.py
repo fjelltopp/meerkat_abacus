@@ -16,14 +16,6 @@ class ToDataType(ProcessingStep):
 
     def run(self, form, data):
         """
-        Creates all the links for a given data row
-        Args:
-        data_type: The data type we are working with
-        input_conditions: Some data types have conditions for
-                          which records qualify
-        table: Class of the table we are linking from
-        session: Db session
-        conn: DB connection
 
         """
         return_data = []

@@ -7,6 +7,7 @@ import logging
 from meerkat_abacus.pipeline_worker.process_steps.quality_control import QualityControl
 from meerkat_abacus.pipeline_worker.process_steps.write_to_db import WriteToDb
 from meerkat_abacus.pipeline_worker.process_steps.add_links import AddLinks
+from meerkat_abacus.pipeline_worker.process_steps.to_codes import ToCodes
 from meerkat_abacus.pipeline_worker.process_steps.to_data_type import ToDataType
 from meerkat_abacus.pipeline_worker.process_steps.initial_visit_control import InitialVisitControl
 from meerkat_abacus.pipeline_worker.process_steps import DoNothing
@@ -62,6 +63,13 @@ class Pipeline:
                         session
                     )
                 )
+            elif step == "to_codes":
+                pipeline.append(
+                    ToCodes(
+                        param_config,
+                        session
+                    )
+                )
             else:
                 raise NotImplementedError("{step} is not implemented")
         self.session = session
@@ -96,10 +104,20 @@ class Pipeline:
 
 
 
+#### ALERT CODE
+#  if "alert" in variable_data:
+#                variable_data["alert_id"] = row[data_type["form"]][data_type[
+#                    "uuid"]][-param_config.country_config["alert_id_length"]:]
 
 
+ # if "alert" in variable_data and not disregard:
+ #                alerts = session.query(model.AggregationVariables).filter(
+ #                    model.AggregationVariables.alert == 1)
+ #                alert_variables = {a.id: a for a in alerts}
 
-
+ #                alert_id = new_data["uuid"][-param_config.country_config["alert_id_length"]:]
+ #                util.send_alert(alert_id, new_data,
+ #                                alert_variables, locations[0], param_config)
 
 
 
@@ -118,8 +136,7 @@ class Pipeline:
 ### CODE that will be needed again soon
 
 
-              #   variables[form] = to_codes.get_variables(session
-        #                                              match_on_form=data_type["form"])
+              #   
         # self.quality_control_arguments = quality_control_arguments
 
         # self.locations = util.all_location_data(session)
