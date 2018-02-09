@@ -12,7 +12,7 @@ country_config = {
     ],
     "pipeline": ["quality_control",
                  "initial_visit_control", "write_to_db",
-                 "to_data_type"],
+                 "to_data_type", "add_links"],
 
 #                 "write_to_db", "to_codes",
 #                 "write_to_db", "add_alerts"],

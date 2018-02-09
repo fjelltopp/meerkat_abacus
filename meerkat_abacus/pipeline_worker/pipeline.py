@@ -6,6 +6,7 @@ import logging
 
 from meerkat_abacus.pipeline_worker.process_steps.quality_control import QualityControl
 from meerkat_abacus.pipeline_worker.process_steps.write_to_db import WriteToDb
+from meerkat_abacus.pipeline_worker.process_steps.add_links import AddLinks
 from meerkat_abacus.pipeline_worker.process_steps.to_data_type import ToDataType
 from meerkat_abacus.pipeline_worker.process_steps.initial_visit_control import InitialVisitControl
 from meerkat_abacus.pipeline_worker.process_steps import DoNothing
@@ -50,6 +51,12 @@ class Pipeline:
             elif step == "to_data_type":
                 pipeline.append(
                     ToDataType(
+                        param_config
+                    )
+                )
+            elif step == "add_links":
+                pipeline.append(
+                    AddLinks(
                         param_config,
                         engine,
                         session

@@ -30,17 +30,18 @@ class ToDataType(ProcessingStep):
         # from nose.tools import set_trace; set_trace()
         for data_type in data_types.data_types(param_config=self.config):
             main_form = data_type["form"]
-            additional_forms = []
+            additional_forms = {}
             for link in self.links_by_type.get(data_type["name"], []):
-                additional_forms.append(link["to_form"])
-            d = {"type": data_type["type"]}
+                additional_forms[link["to_form"]] = link["name"]
+            d = {"type": data_type["name"],
+                 "original_form": form}
             if form == main_form:
                 if check_data_type_condition(data_type, data):
                     d["raw_data"] = data
                 else:
                     continue
-            elif form in additional_forms:
-                d["link_data"] = (form, data)
+            elif form in additional_forms.keys():
+                d["link_data"] = {additional_forms[form]: [data]}
             else:
                 continue
             return_data.append({"form": "data",
