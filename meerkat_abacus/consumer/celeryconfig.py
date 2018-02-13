@@ -12,7 +12,6 @@ from datetime import timedelta, datetime
 from celery.schedules import crontab
 import logging
 import os
-import yaml
 
 from meerkat_abacus.config import config
 
@@ -24,7 +23,7 @@ if new_url:
     BROKER_URL = new_url
     CELERY_RESULT_BACKEND = new_url
 
-CELERY_TASK_SERIALIZER = 'yaml'
+CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json', 'yaml']
 CELERY_ENABLE_UTC = True

@@ -40,7 +40,8 @@ class Pipeline:
                 pipeline.append(
                     WriteToDb(
                         param_config,
-                        engine
+                        engine,
+                        session
                     )
                 )
             elif step == "initial_visit_control":
@@ -54,7 +55,8 @@ class Pipeline:
             elif step == "to_data_type":
                 pipeline.append(
                     ToDataType(
-                        param_config
+                        param_config,
+                        session
                     )
                 )
             elif step == "add_links":
@@ -105,14 +107,18 @@ class Pipeline:
         """
         data = input_data
         for step in self.pipeline:
+            step.start_step()
+            n = len(data)
             new_data = []
             for d in data:
                 data_field = d["data"]
                 form = d["form"]
                 new_data += step.run(form, data_field)
+            step.end_step(n)
             if not new_data:
                 break
             data = new_data
+
         return data
 
 

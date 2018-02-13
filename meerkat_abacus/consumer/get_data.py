@@ -4,11 +4,13 @@ import boto3
 from meerkat_abacus.pipeline_worker import processing_tasks
 
 
-def read_stationary_data(get_function, param_config, N_send_to_task=100):
+def read_stationary_data(get_function, param_config, N_send_to_task=1000):
     """
     Read stationary data using the get_function to determine the source
     """
+
     for form in param_config.country_config["tables"]:
+        i = 0
         logging.info(form)
         data = []
         for element in get_function(form, param_config=param_config):
@@ -17,6 +19,9 @@ def read_stationary_data(get_function, param_config, N_send_to_task=100):
             if len(data) == N_send_to_task:
                 processing_tasks.process_data.delay(data)
                 data = []
+            i += 1
+            if i % 1000 == 0:
+                logging.info(i)
         if data:
             processing_tasks.process_data.delay(data)
 

@@ -74,13 +74,10 @@ def get_db_engine(db_url=config.DATABASE_URL):
     """
     Returns a db engine and session
     """
-    engine = create_engine(db_url, isolation_level="AUTOCOMMIT")#,
-#                           pool_pre_ping=True)
-    session = scoped_session(
-        sessionmaker(
-            autocommit=False, autoflush=False, bind=engine))
-    #session = Session()
-    logging.info(session)
+    engine = create_engine(db_url)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
     return engine, session
 
 
@@ -370,6 +367,7 @@ def read_csv_filename(filename, param_config=config):
 def get_data_from_rds_persistent_storage(form, param_config=config):
     """ Get data from RDS persistent storage"""
     engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
+    logging.info(session)
     for row in session.query(
             form_tables(param_config=param_config)[form]
     ).yield_per(1000).enable_eagerloads(False):

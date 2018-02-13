@@ -12,11 +12,10 @@ from meerkat_abacus import config
 config = config.get_config()
 
 
-pipline = None
+pipeline = None
 
 
-@worker_process_init.connect
-def configure_workers(sender=None, conf=None, **kwargs):
+def configure_worker():
     # load the application configuration
     # db_uri = conf['db_uri']
     global engine
@@ -25,7 +24,9 @@ def configure_workers(sender=None, conf=None, **kwargs):
                            pool_pre_ping=True)
 
     global session
-    session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+    session = scoped_session(sessionmaker(autocommit=False,
+                                          autoflush=False,
+                                          bind=engine))
     logging.info(session)
     global pipeline
     pipeline = Pipeline(engine, session, config)
@@ -33,6 +34,8 @@ def configure_workers(sender=None, conf=None, **kwargs):
 
 @task(bind=True)
 def process_data(self, data_rows):
+    if pipeline is None:
+        configure_worker()
     logging.info("STARTING task")
     engine.dispose()
     pipeline.process_chunk(data_rows)

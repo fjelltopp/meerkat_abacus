@@ -14,7 +14,7 @@ from shapely.geos import WKTWriter
 class AddMultipleAlerts(ProcessingStep):
 
     def __init__(self, param_config, session):
-
+        self.step_name = "add_multiple_alerts"
         self.alerts = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.alert == 1)
 

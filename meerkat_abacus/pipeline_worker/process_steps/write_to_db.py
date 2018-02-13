@@ -7,7 +7,8 @@ from meerkat_abacus import model
 
 class WriteToDb(ProcessingStep):
 
-    def __init__(self, param_config, engine):
+    def __init__(self, param_config, engine, session):
+        self.step_name = "write_to_db"
         config = {
             "delete": {"data": "type",
                        "disregardedData": "type"},
@@ -22,6 +23,8 @@ class WriteToDb(ProcessingStep):
         config["form_to_table"].update(model.form_tables(param_config))
         config["raw_data_forms"] = param_config.country_config["tables"]
         self.config = config
+        self.session = session
+        
     
     def run(self, form, data):
         """

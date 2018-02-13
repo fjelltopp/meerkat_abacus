@@ -24,6 +24,8 @@ class QualityControl(ProcessingStep):
             exclusion_list: A list of uuid's that are restricted from entering
             fraction: If present imports a randomly selected subset of data.
         """
+        self.step_name = "quality_control"
+        self.session = session
         config = {}
         for form in param_config.country_config["tables"]:
             deviceids_case = util.get_deviceids(session, case_report=True)
@@ -91,12 +93,12 @@ class QualityControl(ProcessingStep):
 
         if config["fraction"]:
             if random.random() > config["fraction"]:
-                return None
+                return []
         if config["only_import_after_date"]:
             if parse(row["SubmissionDate"]).replace(tzinfo=None) < config["only_import_after_date"]:
-                return None
+                return []
         if row[config["uuid_field"]] in config["exclusion_list"]:
-            return None
+            return []
 
         else:
             insert_row = row

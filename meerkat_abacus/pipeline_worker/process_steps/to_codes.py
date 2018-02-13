@@ -12,6 +12,7 @@ from meerkat_abacus.pipeline_worker.process_steps.write_to_db import get_uuid
 class ToCodes(ProcessingStep):
 
     def __init__(self, param_config, session):
+        self.step_name = "to_codes"
         self.config = param_config
         self.links_by_type, self.links_by_name = util.get_links(
             param_config.config_directory +
@@ -23,7 +24,7 @@ class ToCodes(ProcessingStep):
         for type_name, data_type in self.data_types.items():
             self.variables[type_name] = to_codes.get_variables(session,
                                                                match_on_form=data_type["type"])
-
+        self.session = session
     def run(self, form, data):
         return_rows = []
         rows = [data]

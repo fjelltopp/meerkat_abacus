@@ -8,15 +8,16 @@ from meerkat_abacus.util import data_types
 
 class ToDataType(ProcessingStep):
 
-    def __init__(self, param_config):
+    def __init__(self, param_config, session):
+        self.step_name = "to_data_type"
         self.config = param_config
         self.links_by_type, self.links_by_name = util.get_links(
             param_config.config_directory +
             param_config.country_config["links_file"])
-
+        self.session = session
+        
     def run(self, form, data):
         """
-
         """
         return_data = []
         # from nose.tools import set_trace; set_trace()

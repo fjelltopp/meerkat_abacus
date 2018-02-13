@@ -9,14 +9,15 @@ from meerkat_abacus import util
 class SendAlerts(ProcessingStep):
 
     def __init__(self, param_config, session):
-
+        self.step_name = "send_alerts"
         alerts = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.alert == 1)
 
         self.alert_variables = {a.id: a for a in alerts}
         self.locations = util.all_location_data(session)[0]
         self.config = param_config
-    
+        self.session = session
+
     def run(self, form, data):
         """
         Send alerts

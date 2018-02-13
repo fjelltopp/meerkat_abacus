@@ -32,11 +32,6 @@ wait_for_celery_runner()
 
 session, engine = database_setup.set_up_database(False, True, config)
 
-
-
-
-
-
 logging.info("Starting initial setup")
 
 if config.initial_data_source == "AWS_S3":
