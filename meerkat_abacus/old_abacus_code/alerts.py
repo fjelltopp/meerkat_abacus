@@ -109,7 +109,7 @@ def threshold(var_id, limits, day, clinic, session, hospital_limits=None):
     return alerts
 
 
-def double_double(var_id, day, clinic, session):
+def double_double(var_id, , clinic, session):
     """
     Calculate threshold alerts based on a double doubling of cases.
 

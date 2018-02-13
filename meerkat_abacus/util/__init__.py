@@ -74,8 +74,11 @@ def get_db_engine(db_url=config.DATABASE_URL):
     """
     Returns a db engine and session
     """
-    engine = create_engine(db_url, isolation_level="AUTOCOMMIT")
-    session = scoped_session(sessionmaker(bind=engine))
+    engine = create_engine(db_url, isolation_level="AUTOCOMMIT")#,
+#                           pool_pre_ping=True)
+    session = scoped_session(
+        sessionmaker(
+            autocommit=False, autoflush=False, bind=engine))
     #session = Session()
     logging.info(session)
     return engine, session

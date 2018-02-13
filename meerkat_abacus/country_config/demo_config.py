@@ -13,11 +13,11 @@ country_config = {
     "pipeline": ["quality_control",
                  "initial_visit_control", "write_to_db",
                  "to_data_type", "add_links",
-                 "to_codes", "write_to_db"],
-    
-#                 "write_to_db", "to_codes",
-#                 "write_to_db", "add_alerts"],
-    
+                 "to_codes", "write_to_db",
+                 "add_multiple_alerts",
+                 "send_alerts",
+                 "write_to_db"],
+        
     "initial_visit_control": {
         "demo_case": {
           "identifier_key_list": ["patientid", "icd_code"],

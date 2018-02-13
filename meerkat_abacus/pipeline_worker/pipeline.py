@@ -8,6 +8,8 @@ from meerkat_abacus.pipeline_worker.process_steps.quality_control import Quality
 from meerkat_abacus.pipeline_worker.process_steps.write_to_db import WriteToDb
 from meerkat_abacus.pipeline_worker.process_steps.add_links import AddLinks
 from meerkat_abacus.pipeline_worker.process_steps.to_codes import ToCodes
+from meerkat_abacus.pipeline_worker.process_steps.send_alerts import SendAlerts
+from meerkat_abacus.pipeline_worker.process_steps.add_multiple_alerts import AddMultipleAlerts
 from meerkat_abacus.pipeline_worker.process_steps.to_data_type import ToDataType
 from meerkat_abacus.pipeline_worker.process_steps.initial_visit_control import InitialVisitControl
 from meerkat_abacus.pipeline_worker.process_steps import DoNothing
@@ -66,6 +68,20 @@ class Pipeline:
             elif step == "to_codes":
                 pipeline.append(
                     ToCodes(
+                        param_config,
+                        session
+                    )
+                )
+            elif step == "send_alerts":
+                pipeline.append(
+                    SendAlerts(
+                        param_config,
+                        session
+                    )
+                )
+            elif step == "add_multiple_alerts":
+                pipeline.append(
+                    AddMultipleAlerts(
                         param_config,
                         session
                     )

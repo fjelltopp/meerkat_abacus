@@ -109,7 +109,6 @@ class InitialVisitControl(ProcessingStep):
             # construct a comparison list that makes sure the identifier
             # jsonb data values are not empty
             empty_values_filter.append(table.data[key].astext != "")
-        session.rollback()
         result_query = session.query(
             table.id, table.uuid,
             table.data) \

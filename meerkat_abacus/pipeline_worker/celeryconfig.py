@@ -27,7 +27,7 @@ CELERY_TASK_SERIALIZER = 'yaml'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json', 'yaml']
 CELERY_ENABLE_UTC = True
-CELERYD_MAX_TASKS_PER_CHILD = 1  # To help with memory constraints
+# CELERYD_MAX_TASKS_PER_CHILD = 1  # To help with memory constraints
 
 
 CELERYBEAT_SCHEDULE = {}

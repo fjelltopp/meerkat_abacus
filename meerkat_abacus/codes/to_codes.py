@@ -176,7 +176,7 @@ def to_code(row, variables, locations, data_type,  alert_data,
                 print("Not Found")
                 return (None, None, None, None)
         except ValueError:
-            print("Value Errot in point in polygon location")
+            print("Value Error in point in polygon location")
             return (None, None, None, None)
     else:
         return (None, None, None, None)
