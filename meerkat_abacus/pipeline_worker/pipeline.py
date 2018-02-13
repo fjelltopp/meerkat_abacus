@@ -27,7 +27,7 @@ class Pipeline:
 
         for step in pipeline_spec:
             if step == "do_nothing":
-                pipeline.append(DoNothing())
+                pipeline.append(DoNothing(session))
             elif step == "quality_control":
                 pipeline.append(
                     QualityControl(

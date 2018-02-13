@@ -1,18 +1,28 @@
 import unittest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from meerkat_abacus.config import get_config
+from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps import to_data_type
-
+from meerkat_abacus.consumer.database_setup import create_db
 
 class TestToDataType(unittest.TestCase):
 
     def setUp(self):
-        pass
+        config = get_config()
+        create_db(config.DATABASE_URL, drop=True)
+        engine = create_engine(config.DATABASE_URL)
+        model.form_tables(config)
+        model.Base.metadata.create_all(engine)
+        self.engine = create_engine(config.DATABASE_URL)
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
 
     def test_to_data_type(self):
         config = get_config()
 
-        tdt = to_data_type.ToDataType(config)
+        tdt = to_data_type.ToDataType(config, self.session)
         
         data_1 = {"form": "demo_case",
                   "data": {"intro./visit": "new"}}

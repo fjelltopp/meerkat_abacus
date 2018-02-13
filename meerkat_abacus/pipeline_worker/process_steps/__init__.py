@@ -43,10 +43,10 @@ def write_monitoring_data(session,
     session.commit()
         
         
-
-class DoNothing:
-    def __init__(self):
-        pass
+class DoNothing(ProcessingStep):
+    def __init__(self, session):
+        self.step_name = "do_nothing"
+        self.session = session
     
     def run(self, form, data):
         return [{"form": form,
