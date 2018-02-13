@@ -8,9 +8,6 @@ from unittest import mock
 import random
 import unittest
 import sys
-sys.modules[
-    'meerkat_abacus.pipeline_worker.processing_tasks'
-] = mock.MagicMock()
 from meerkat_abacus.consumer import get_data
 from meerkat_abacus import config
 
