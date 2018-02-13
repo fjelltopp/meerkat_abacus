@@ -9,7 +9,7 @@ from meerkat_abacus.pipeline_worker.pipeline import Pipeline
 from meerkat_abacus import util
 from meerkat_abacus import config
 
-config = config.get_config()
+config_ = config.get_config()
 
 
 pipeline = None
@@ -20,8 +20,7 @@ def configure_worker():
     # db_uri = conf['db_uri']
     global engine
     logging.info("Worker setup")
-    engine = create_engine(config.DATABASE_URL,
-                           pool_pre_ping=True)
+    engine = create_engine(config_.DATABASE_URL, pool_pre_ping=True)
 
     global session
     session = scoped_session(sessionmaker(autocommit=False,
@@ -29,10 +28,10 @@ def configure_worker():
                                           bind=engine))
     logging.info(session)
     global pipeline
-    pipeline = Pipeline(engine, session, config)
+    pipeline = Pipeline(engine, session, config_)
 
 
-@task(bind=True)
+@task(bind=True, name="process_data")
 def process_data(self, data_rows):
     if pipeline is None:
         configure_worker()
