@@ -102,7 +102,10 @@ class AddLinks(ProcessingStep):
         for link in self.links_by_type.get(data["type"], []):
             to_form = model.form_tables(
                 param_config=self.config)[link["to_form"]]
-
+            if link.get("from_condition"):
+                column, condition = link["from_condition"].split(":")
+                if data.get(column) != condition:
+                    continue
             columns = [to_form.uuid, to_form.data]
             conditions = []
             for i in range(len(link["from_column"].split(";"))):

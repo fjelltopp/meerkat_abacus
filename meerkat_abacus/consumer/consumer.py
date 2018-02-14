@@ -17,6 +17,7 @@ config = get_config()
 logging.getLogger().setLevel(logging.INFO)
 
 app = Celery()
+#app.purge()
 app.config_from_object(celeryconfig)
 @backoff.on_exception(backoff.expo,
                       (celery.exceptions.TimeoutError,
@@ -31,6 +32,8 @@ wait_for_celery_runner()
 # Initial Setup
 
 session, engine = database_setup.set_up_database(False, True, config)
+
+database_setup.unlogg_tables(config.country_config["tables"], engine)
 
 logging.info("Starting initial setup")
 
@@ -51,7 +54,7 @@ else:
     raise AttributeError(f"Invalid source {config.initial_data_source}")
 
 get_data.read_stationary_data(get_function, config)
-
+database_setup.logg_tables(config.country_config["tables"], engine)
 
 # Real time
 

@@ -419,21 +419,14 @@ def set_up_database(leave_if_data, drop_db, param_config):
         links, links_by_name = util.get_links(param_config.config_directory +
                                               param_config.country_config["links_file"])
 
+        indexes_already_created = {}
         for link in links_by_name.values():
-            form_1 = link["to_form"]
-            column_1 = link["to_column"]
-            form_2 = link["from_form"]
-            column_2 = link["from_column"]
-            column_3 = link["to_condition"].split(";")[0]
-            if link["method"] == "lower_match":
-                column_1 = "lower(" + column_1 + ")"
-                column_2 = "lower(" + column_2 + ")"
-                
-            engine.execute(f"CREATE index on {form_1} ((data->>'{column_1}'))")
-            engine.execute(f"CREATE index on {form_2} ((data->>'{column_2}'))")
-            if column_3:
-                engine.execute(f"CREATE index on {form_1} ((data->>'{column_3}'))")
-        
+            to_form = link["to_form"]
+            to_condition_column = link["to_condition"].split(":")[0]
+            add_index(to_form, to_condition_column, indexes_already_created, engine)
+            from_form = link["from_form"]
+            from_condition_column = link.get("from_condition", "").split(":")[0]
+            add_index(from_form, from_condition_column, indexes_already_created, engine)
         logging.info("Import Locations")
         import_locations(engine, session, param_config)
         logging.info("Import calculation parameters")
@@ -441,3 +434,20 @@ def set_up_database(leave_if_data, drop_db, param_config):
         logging.info("Import Variables")
         import_variables(session, param_config)
     return session, engine
+
+
+def unlogg_tables(form_tables, engine):
+    for table in ["data", "disregarded_data"] + form_tables:
+        engine.execute(f"ALTER TABLE {table} SET UNLOGGED;")
+
+
+def logg_tables(form_tables, engine):
+    for table in ["data", "disregarded_data"] + form_tables:
+        engine.execute(f"ALTER TABLE {table} SET LOGGED;")
+
+        
+def add_index(form, column, already_created, engine):
+    if column and column not in already_created.get(form, []):
+        engine.execute(f"CREATE index on {form} ((data->>'{column}'))")
+        already_created.setdefault(form, [])
+        already_created[form].append(column)
