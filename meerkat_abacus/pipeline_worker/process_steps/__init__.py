@@ -1,55 +1,58 @@
+from abc import abstractmethod
+
 import datetime
 from meerkat_abacus import model
 
-class ProcessingStep:
+
+class ProcessingStep(object):
     """
     Base class for all ProcessingSteps
 
     """
 
     def __init__(self):
-        pass
+        self.step_name = "processing_step"
+        self.session = None
+        self.start = None
+        self.end = None
 
-    def run(self):
-        raise NotImplementedError
+    def __repr__(self):
+        return f'<{self.__class__}, step_name="{self.step_name}">'
+
+    @property
+    def duration(self):
+        if not self.start or not self.end:
+            return None
+        return self.end - self.start
+
+    @abstractmethod
+    def run(self, form, data):
+        pass
 
     def start_step(self):
         self.start = datetime.datetime.now()
 
     def end_step(self, n):
-        end = datetime.datetime.now()
-        duration = (end - self.start).total_seconds()
-        write_monitoring_data(self.session,
-                              start=self.start,
-                              end=end,
-                              duration=duration,
-                              step=self.step_name,
-                              n=n)
+        self.end = datetime.datetime.now()
+        self._write_monitoring_data(n)
+
+    def _write_monitoring_data(self, n=None):
+        monitoring = model.StepMonitoring(
+            step=self.step_name,
+            end=self.end,
+            start=self.start,
+            duration=self.duration,
+            n=n)
+        self.session.add(monitoring)
+        self.session.commit()
 
 
-def write_monitoring_data(session,
-                          start=None,
-                          end=None,
-                          duration=None,
-                          step=None,
-                          n=None):
-    monitoring = model.StepMonitoring(
-        step=step,
-        end=end,
-        start=start,
-        duration=duration,
-        n=n)
-    session.add(monitoring)
-    session.commit()
-        
-        
 class DoNothing(ProcessingStep):
     def __init__(self, session):
+        super().__init__()
         self.step_name = "do_nothing"
         self.session = session
-    
+
     def run(self, form, data):
         return [{"form": form,
                  "data": data}]
-
-        
