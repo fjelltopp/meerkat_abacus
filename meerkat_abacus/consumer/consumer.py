@@ -19,6 +19,8 @@ logging.getLogger().setLevel(logging.INFO)
 app = Celery()
 #app.purge()
 app.config_from_object(celeryconfig)
+session, engine = database_setup.set_up_database(False, True, config)
+
 @backoff.on_exception(backoff.expo,
                       (celery.exceptions.TimeoutError,
                        AttributeError, OSError),
@@ -31,7 +33,6 @@ def wait_for_celery_runner():
 wait_for_celery_runner()
 # Initial Setup
 
-session, engine = database_setup.set_up_database(False, True, config)
 
 database_setup.unlogg_tables(config.country_config["tables"], engine)
 
@@ -75,7 +76,7 @@ while True:
                                                           param_config=config,
                                                           dates_is_now=True)
                 new_data = [{"form": form, "data": d[0]} for d in data]
-            process_data.delay(new_data)
+            app.send_task('process_data', [new_data])
         else:
             raise NotImplementedError("Not yet implemented")
         logging.info("Sleeping")

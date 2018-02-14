@@ -6,7 +6,7 @@ from raven.contrib.celery import register_signal, register_logger_signal
 import celery
 import logging
 import raven
-from meerkat_abacus.pipeline_worker.processing_tasks import process_data
+import meerkat_abacus.pipeline_worker.processing_tasks
 
 from meerkat_abacus.pipeline_worker import celeryconfig
 
