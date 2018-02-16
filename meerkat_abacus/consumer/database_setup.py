@@ -433,6 +433,12 @@ def set_up_database(leave_if_data, drop_db, param_config):
         import_parameters(engine, session, param_config)
         logging.info("Import Variables")
         import_variables(session, param_config)
+        for alert in session.query(model.AggregationVariables).filter(
+                model.AggregationVariables.alert == 1).all():
+            alert_type = alert.alert_type.split(":")[0]
+            if alert_type in ["threshold", "double"]:
+                engine.execute(f"CREATE index on data ((variables->>'{alert.id}'))")
+        
     return session, engine
 
 

@@ -181,134 +181,205 @@ class TestAlertTypes(unittest.TestCase):
         self.double = [
             model.Data(
                 date=datetime(year, 1, 3),
+                epi_year=year,
+                epi_week=1,
                 clinic=6,
                 uuid="1",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 3),
+                epi_year=year,
+                epi_week=1,
                 clinic=6,
                 uuid="2",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
                 uuid="3",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
                 uuid="4",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
                 uuid="5",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
                 uuid="6",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
                 clinic=6,
                 uuid="7",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
                 clinic=6,
                 uuid="8",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
                 clinic=6,
                 uuid="9",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
                 clinic=6,
                 uuid="10",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
                 clinic=6,
                 uuid="11",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
                 clinic=6,
                 uuid="12",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
                 clinic=6,
                 uuid="13",
                 variables={"cmd_1": 1}),
             model.Data(
                 date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
                 clinic=6,
                 uuid="14",
                 variables={"cmd_1": 1}),
+ 
+        ]
+
+        self.double_new_year = [
             model.Data(
-                date=datetime(year, 2, 10),
+                date=datetime(year, 1, 3),
+                epi_year=year - 1,
+                epi_week=52,
                 clinic=6,
-                uuid="15",
+                uuid="1",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 10),
+                date=datetime(year, 1, 3),
+                epi_year=year - 1,
+                epi_week=52,
                 clinic=6,
-                uuid="16",
+                uuid="2",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 10),
+                date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=1,
                 clinic=6,
-                uuid="17",
+                uuid="3",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 10),
+                date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=1,
                 clinic=6,
-                uuid="18",
+                uuid="4",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 17),
+                date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=1,
                 clinic=6,
-                uuid="19",
+                uuid="5",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 17),
+                date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=1,
                 clinic=6,
-                uuid="20",
+                uuid="6",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 17),
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
-                uuid="21",
+                uuid="7",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 17),
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
-                uuid="22",
+                uuid="8",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 17),
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
-                uuid="23",
+                uuid="9",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 17),
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
-                uuid="24",
+                uuid="10",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 17),
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
-                uuid="25",
+                uuid="11",
                 variables={"cmd_1": 1}),
             model.Data(
-                date=datetime(year, 2, 17),
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=2,
                 clinic=6,
-                uuid="26",
+                uuid="12",
                 variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=2,
+                clinic=6,
+                uuid="13",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=2,
+                clinic=6,
+                uuid="14",
+                variables={"cmd_1": 1}),
+ 
         ]
         self.session.commit()
 
@@ -324,7 +395,7 @@ class TestAlertTypes(unittest.TestCase):
         self.session.commit()
 
         new_alerts = add_multiple_alerts.threshold("cmd_1",
-                                                   [3, 5],
+                                                   "threshold:3,5",
                                                    datetime(self.year, 1, 3),
                                                    6,
                                                    self.session)
@@ -335,7 +406,7 @@ class TestAlertTypes(unittest.TestCase):
         self.assertEqual(new_alerts[0]["clinic"], 6)
         self.assertEqual(new_alerts[0]["reason"], "cmd_1")
         new_alerts = add_multiple_alerts.threshold("cmd_1",
-                                                   [3, 5],
+                                                   "threshold:3,5",
                                                    datetime(self.year, 1, 11),
                                                    6,
                                                    self.session)
@@ -354,7 +425,8 @@ class TestAlertTypes(unittest.TestCase):
         self.session.commit()
 
         new_alerts = add_multiple_alerts.double_double("cmd_1",
-                                                       datetime(self.year, 1, 3),
+                                                       1,
+                                                       self.year,
                                                        6,
                                                        self.session)
         self.assertEqual(len(new_alerts), 1)
@@ -365,3 +437,44 @@ class TestAlertTypes(unittest.TestCase):
             sorted(["7", "8", "9", "10", "11", "12", "13", "14"]))
         self.assertEqual(new_alerts[0]["clinic"], 6)
         self.assertEqual(new_alerts[0]["reason"], "cmd_1")
+        # sert False
+        to_delete = self.session.query(model.Data).filter(model.Data.uuid == "1").one()
+        self.session.delete(to_delete)
+        self.session.commit()
+
+        # With only one entry for the first week, we should not create an alert
+        new_alerts = add_multiple_alerts.double_double("cmd_1",
+                                                       1,
+                                                       self.year,
+                                                       6,
+                                                       self.session)
+        self.assertEqual(len(new_alerts), 0)
+
+    def test_double_double_corner_cases(self):
+        self.session.query(model.Data).delete()
+        self.session.commit()
+        self.session.bulk_save_objects(self.double_new_year)
+        self.session.commit()
+
+        for week in [52, 1, 2]:
+            year = self.year
+            if week == 52:
+                year = year - 1
+            new_alerts = add_multiple_alerts.double_double("cmd_1",
+                                                           week,
+                                                           year,
+                                                           6,
+                                                           self.session)
+            self.assertEqual(len(new_alerts), 1)
+            
+            self.assertEqual(new_alerts[0]["duration"], 7)
+            self.assertEqual(
+                sorted(new_alerts[0]["uuids"]),
+                sorted(["7", "8", "9", "10", "11", "12", "13", "14"]))
+            self.assertEqual(new_alerts[0]["clinic"], 6)
+            self.assertEqual(new_alerts[0]["reason"], "cmd_1")
+        
+        
+
+if __name__ == "__main__":
+    unittest.main()

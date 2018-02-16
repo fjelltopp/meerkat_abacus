@@ -41,7 +41,7 @@ class ProcessingStep(object):
             step=self.step_name,
             end=self.end,
             start=self.start,
-            duration=self.duration,
+            duration=self.duration.total_seconds(),
             n=n)
         self.session.add(monitoring)
         self.session.commit()
