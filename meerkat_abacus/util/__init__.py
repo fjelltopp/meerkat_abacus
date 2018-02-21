@@ -139,7 +139,7 @@ def get_variables(session):
         session: db-session
 
     Returns:
-        variables(dict): dict of id:Variable
+        dict: dict of id:Variable
     """
     result = session.query(AggregationVariables)
     variables = {}
@@ -462,9 +462,9 @@ def create_topic_list(alert, locations, country_config=config.country_config):
     So for an alert with reason "rea_1", in country with prefix "null", from
     clinic "4" in district "3" in region "2" in country "1", we get a topic
     list that looks like:
-        ['null-rea_1-4', 'null-rea_1-3', 'null-rea_1-2',
-         'null-rea_1-1', 'null-allDis-4', 'null-allDis-3',
-         'null-allDis-2', 'null-allDis-1']
+    ['null-rea_1-4', 'null-rea_1-3', 'null-rea_1-2',
+    'null-rea_1-1', 'null-allDis-4', 'null-allDis-3',
+    'null-allDis-2', 'null-allDis-1']
 
     """
 

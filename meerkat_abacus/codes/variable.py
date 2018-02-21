@@ -152,7 +152,7 @@ class Variable():
             row: a row from a form
 
         Returns:
-            id(int): 0 if false and 1 (or sum) if true
+            int: 0 if false and 1 (or sum) if true
         """
         return self.test_type(row)
 

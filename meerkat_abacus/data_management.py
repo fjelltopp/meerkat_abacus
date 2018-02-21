@@ -110,6 +110,7 @@ def add_fake_data(session, N=500, append=False,
        from_files: whether to add data from the manual test case
                    files defined in country_config
     """
+    
     logging.debug("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
@@ -731,7 +732,7 @@ def create_alert_id(alert, param_config=config):
 def add_new_fake_data(to_add, from_files=False, param_config=config):
     """
     Wrapper function to add new fake data to the existing csv files
-i
+
     Args:
        to_add: number of new records to add
     """
