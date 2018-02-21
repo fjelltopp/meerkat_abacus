@@ -24,9 +24,6 @@ addons:
 services:
  - postgresql
 
-
-before_script:
- - psql -U postgres -c "create extension postgis"
 install:
     - chmod +x ${TRAVIS_BUILD_DIR}/.travis-install.sh
     - . ${TRAVIS_BUILD_DIR}/.travis-install.sh
