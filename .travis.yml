@@ -9,7 +9,7 @@ matrix:
     include:
         - env: TRAVIS_BUILD=docs
         - env: TRAVIS_BUILD=tests
-               MEERKAT_AUTH_SETTINGS="${TRAVIS_BUILD_DIR}/../meerkat_libs/meerkat_libs/auth_client/dev_auth_config.py"
+               MEERKAT_AUTH_SETTINGS="${TRAVIS_BUILD_DIR}/meerkat_libs/meerkat_libs/auth_client/dev_auth_config.py"
                MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
                PERSISTENT_DATABASE_URL='postgresql+psycopg2://postgres:postgres@localhost/persistent_demo_db'
                HERMES_API_ROOT='http://testapiroot'
