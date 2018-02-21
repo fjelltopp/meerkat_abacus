@@ -8,6 +8,7 @@ python:
 matrix:
     include:
         - env: TRAVIS_BUILD=docs
+               COUNTRY_CONFIG_DIR=${TRAVIS_BUILD_DIR}/meerkat_abacus/country_config/
         - env: TRAVIS_BUILD=tests
                MEERKAT_AUTH_SETTINGS="${TRAVIS_BUILD_DIR}/meerkat_libs/meerkat_libs/auth_client/dev_auth_config.py"
                MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
