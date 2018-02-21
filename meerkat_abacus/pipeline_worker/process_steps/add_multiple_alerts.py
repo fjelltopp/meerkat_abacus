@@ -37,6 +37,7 @@ class AddMultipleAlerts(ProcessingStep):
                 continue
 
             new_alerts = []
+            type_name = None
             if alert_type == "threshold":
                 new_alerts = threshold(
                     var_id,
@@ -53,13 +54,13 @@ class AddMultipleAlerts(ProcessingStep):
                                            data["clinic"],
                                            self.session)
                 type_name = "threshold"
-            return_data += self._handle_new_alerts(new_alerts, a, type_name)
+            return_data += self._handle_new_alerts(new_alerts, a, type_name, form)
             if len(return_data) == 0:
                 return_data.append({"form": form,
                                     "data": data})
-            return return_data
+        return return_data
         
-    def _handle_new_alerts(self, new_alerts, a, type_name):
+    def _handle_new_alerts(self, new_alerts, a, type_name, form):
         return_data = []
         if new_alerts:
             for new_alert in new_alerts:
@@ -103,13 +104,16 @@ class AddMultipleAlerts(ProcessingStep):
 
                 for record in data_records_by_uuid.values():
                     dict_record = row_to_dict(record)
-                    return_data.append({"form": a.form,
+                    return_data.append({"form": form,
                                         "data": dict_record})
         return return_data
 
     def _update_other_row(self, row, form_record, representative, form):
         row.variables["sub_alert"] = 1
         row.variables["master_alert"] = representative
+        if "alert" in row.variables:
+            del row.variables["alert"]
+            del row.variables["alert_id"]
         self._add_alert_data(row.variables, form_record, form)
     
     def _add_alert_data(self, variables, form_record, form):

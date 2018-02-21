@@ -84,28 +84,39 @@ class QualityControl(ProcessingStep):
         row: data_row
         """
         config = self.config[form]
-        # if not only_new:
-        #     uuids = set([row[uuid_field] for row in form_data])
-        #     conn.execute(table.__table__.delete().where(
-        #         table.__table__.c.uuid.in_(uuids)))
-        # else:
-        #     uuids = set([row.uuid for row in session.query(table.uuid).all()])
-
-        if config["fraction"]:
-            if random.random() > config["fraction"]:
-                return []
-        if config["only_import_after_date"]:
-            if parse(row["SubmissionDate"]).replace(tzinfo=None) < config["only_import_after_date"]:
-                return []
+        if self._exclude_by_start_date_or_fraction(row, form):
+            return []
+        
         if row[config["uuid_field"]] in config["exclusion_list"]:
             return []
-
-        else:
-            insert_row = row
+        
         # If we have quality checks
+        remove = self._do_quality_control(row, form)
+        if remove:
+            return []
+        if config["deviceids"]:
+            if not should_row_be_added(row, form, config["deviceids"],
+                                       config["start_dates"],
+                                       self.param_config,
+                                       allow_enketo=config["allow_enketo"]):
+                return []
+        flatten_structure(row)
+        return [{"form": form,
+                 "data": row}]
+    
+    def _exclude_by_start_date_or_fraction(self, row, form):
+        if self.config[form]["fraction"]:
+            if random.random() > self.config[form]["fraction"]:
+                return True
+        if self.config[form]["only_import_after_date"]:
+            submission_date = parse(row["SubmissionDate"]).replace(tzinfo=None)
+            if submission_date < self.config[form]["only_import_after_date"]:
+                return True
+        return False
+
+    def _do_quality_control(self, insert_row, form):
         remove = False
-        removed = {}
-        quality_control = config["quality_control"]
+        quality_control = self.config[form]["quality_control"]
         if quality_control:
             for variable in quality_control:
                 try:
@@ -124,25 +135,11 @@ class QualityControl(ProcessingStep):
                                                                None)
                             if column in insert_row:
                                 insert_row[column] = replace_value
-                                if insert_row[column]:
-                                    if column in removed:
-                                        removed[column] += 1
-                                    else:
-                                        removed[column] = 1
                 except Exception as e:
                     logging.exception("Quality Controll error for code %s",variable.variable.id, exc_info=True)
-        if remove:
-            return []
-        if config["deviceids"]:
-            if not should_row_be_added(insert_row, form, config["deviceids"],
-                                       config["start_dates"],
-                                       self.param_config,
-                                       allow_enketo=config["allow_enketo"]):
-                return []
-        flatten_structure(insert_row)
-        return [{"form": form,
-                 "data": insert_row}]
+        return remove
 
+    
 def flatten_structure(row):
     """
     Flattens all lists in row to comma separated strings"
@@ -229,6 +226,8 @@ def __fulfills_condition(filter, row):
 
 def __should_discard_row(row, filter, already_validated_dates, param_config):
     column_with_date_name = filter['date_field_name']
+    if "$" in column_with_date_name:
+        column_with_date_name.replace("$", "1")
     if column_with_date_name in already_validated_dates:
         return False
     already_validated_dates.append(column_with_date_name)

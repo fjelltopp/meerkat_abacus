@@ -1,12 +1,12 @@
 import logging
 from dateutil.parser import parse
 from datetime import datetime
+import copy
 
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus import util
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus.util import data_types
-from meerkat_abacus.pipeline_worker.process_steps.write_to_db import get_uuid
 
 
 class ToCodes(ProcessingStep):
@@ -25,23 +25,22 @@ class ToCodes(ProcessingStep):
             self.variables[type_name] = to_codes.get_variables(session,
                                                                match_on_form=data_type["type"])
         self.session = session
+        
     def run(self, form, data):
         return_rows = []
-        rows = [data]
         data_type = self.data_types[data["type"]]
-        if data_type["multiple_row"]:
-            rows = self._get_multi_rows(data, data_type)
+        rows = self._get_multi_rows(data, data_type)
         for row in rows:
-            # from nose.tools import set_trace; set_trace()
-            multiple_forms = set(row.get("link_data", {}).keys())
-            row[row["original_form"]] = row["raw_data"]
-            for f in multiple_forms:
+            linked_forms = set(row.get("link_data", {}).keys())
+            for f in linked_forms:
                 row[f] = row["link_data"][f]
+
+            row[row["original_form"]] = row["raw_data"]
             variable_data, category_data, location_data, disregard = to_codes.to_code(
                 row, self.variables[data_type["name"]],
                 self.locations, data_type["type"],
                 self.config.country_config["alert_data"],
-                multiple_forms, data_type["location"]
+                linked_forms, data_type["location"]
             )
             if location_data is None:
                 logging.warning("Missing loc data")
@@ -50,67 +49,78 @@ class ToCodes(ProcessingStep):
             epi_year, week, date = self._get_epi_week(row, data_type)
             if epi_year is None:
                 continue
-            
-            variable_data[data_type["var"]] = 1
-            variable_data["data_entry"] = 1
-            submission_date = None
-            if "SubmissionDate" in row[data_type["form"]]:
-                submission_date = parse(
-                    row[data_type["form"]].get("SubmissionDate")).replace(
-                        tzinfo=None)
 
-            links = {}
-            for name in data.get("link_data", {}).keys():
-                link = self.links_by_name[name]
-                links[name] = [x[link["uuid"]] for x in data["link_data"][name]]
+            self._add_additional_variables(variable_data, data_type)
+
             new_data = {
                 "date": date,
                 "epi_week": week,
                 "epi_year": epi_year,
-                "submission_date": submission_date,
+                "submission_date": self._get_submission_date(row, data_type),
                 "type": data_type["type"],
-                "uuid": row[data_type["form"]][data_type["uuid"]],
+                "uuid": row["uuid"],
                 "variables": variable_data,
                 "categories": category_data,
-                "links": links,
+                "links": self._get_link_uuids(data),
                 "type_name": data_type["name"]
             }
             new_data.update(location_data)
-            return_form = "data"
-            if disregard:
-                return_form = "disregardedData"
-            return_rows.append({"form": return_form,
+            return_rows.append({"form": self._get_return_form(disregard),
                                 "data": new_data})
         return return_rows
 
+    def _get_return_form(self, disregard):
+        return_form = "data"
+        if disregard:
+            return_form = "disregardedData"
+        return return_form
+
+    def _get_submission_date(self, row, data_type):
+        submission_date = None
+        if "SubmissionDate" in row[data_type["form"]]:
+            submission_date = parse(
+                row[data_type["form"]].get("SubmissionDate")).replace(
+                    tzinfo=None)
+        return submission_date
+    
+    def _get_link_uuids(self, data):
+        links = {}
+        for name in data.get("link_data", {}).keys():
+            link = self.links_by_name[name]
+            links[name] = [x[link["uuid"]] for x in data["link_data"][name]]
+        return links
+    
+    def _add_additional_variables(self, variable_data, data_type):
+        variable_data[data_type["var"]] = 1
+        variable_data["data_entry"] = 1
+    
     def _get_multi_rows(self, data, data_type):
         """
         Takes a data row and splits it inro multiple rows based on the 
         config in the data_type
         """
-        
+        if not data_type["multiple_row"]:
+            return [data]
         fields = data_type["multiple_row"].split(",")
         i = 1
         data_in_row = True
         sub_rows = []
         while data_in_row:
             data_in_row = False
-            sub_row = copy.deepcopy(row)
+            sub_row = copy.deepcopy(data)
             for f in fields:
                 column_name = f.replace("$", str(i))
                 sub_row_name = f.replace("$", "")
-                value = row[data_type["form"]].get(column_name, None)
+                value = data["raw_data"].get(column_name, None)
                 if value and value != "":
-                    sub_row[data_type["form"]][sub_row_name] = value
+                    sub_row["raw_data"][sub_row_name] = value
                     data_in_row = True
-            sub_row[data_type["form"]][data_type["uuid"]] = sub_row[data_type["form"]][
+            sub_row["raw_data"][data_type["uuid"]] = sub_row["raw_data"][
                 data_type["uuid"]] + ":" + str(i)
             if data_in_row:
                 sub_rows.append(sub_row)
             i += 1
         return sub_rows
-
-
 
     def _get_epi_week(self, row, data_type):
         epi_year, week, date = None, None, None

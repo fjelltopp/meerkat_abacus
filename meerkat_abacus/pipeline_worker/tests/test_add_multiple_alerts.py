@@ -6,7 +6,9 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps import add_multiple_alerts
+from meerkat_abacus.pipeline_worker.process_steps import write_to_db
 from meerkat_abacus.consumer.database_setup import create_db
+
 from meerkat_abacus.config import get_config
 
 class TestAddMultipleAlerts(unittest.TestCase):
@@ -123,6 +125,51 @@ class TestAddMultipleAlerts(unittest.TestCase):
                 self.assertEqual(result["data"]["variables"]["master_alert"],
                                  "c")
 
+        db_writer = write_to_db.WriteToDb(config, self.engine, self.session)
+        db_writer.start_step()
+        for r in results:
+            db_writer.run(r["form"], r["data"])
+        db_writer.end_step(3)
+        
+        additional_data = [
+            {
+                "clinic": 1,
+                "uuid": "d",
+                "type": "case",
+                "date": datetime(2017, 6, 10),
+                "variables": {
+                    "cmd_1": 1
+                }
+            }
+        ]
+        additional_raw_data = [
+            {
+                "uuid": "d",
+                "data": {
+                    "SubmissionDate": "2017-06-10",
+                    "end": "2017-06-10",
+                    "pt1./gender": "male",
+                    "pt1./age": 32
+                }
+            }
+        ]
+        con.execute(table.__table__.insert(), additional_raw_data)
+        con.execute(model.Data.__table__.insert(), additional_data)
+
+        results = add_alerts.run("data", new_data)
+        self.assertEqual(len(results), 4)
+        for result in results:
+            if result["data"]["uuid"] == "d":
+                self.assertIn("alert", result["data"]["variables"])
+                self.assertIn("alert_id", result["data"]["variables"])
+            else:
+                self.assertNotIn("alert", result["data"]["variables"])
+                self.assertNotIn("alert_id", result["data"]["variables"])
+                self.assertEqual(result["data"]["variables"]["sub_alert"], 1)
+                self.assertEqual(result["data"]["variables"]["master_alert"],
+                                 "d")
+
+                
 
 class TestAlertTypes(unittest.TestCase):
     def setUp(self):

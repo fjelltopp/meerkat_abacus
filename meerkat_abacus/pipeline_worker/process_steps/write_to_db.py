@@ -43,7 +43,6 @@ class WriteToDb(ProcessingStep):
         self.data_to_delete = {}
 
         super(WriteToDb, self).end_step(n)
-
         
     def run(self, form, data):
         """
@@ -51,12 +50,12 @@ class WriteToDb(ProcessingStep):
         
         """
         table = self.config["form_to_table"][form]
-
         if form in self.config["raw_data_forms"]:
             insert_data = {"uuid": get_uuid(data, form, self.config),
                            "data": data}
         else:
             insert_data = data
+            
         if form in self.config["delete"]:
             uuid = data["uuid"]
             other_condition = data[self.config["delete"][form]]
@@ -66,6 +65,8 @@ class WriteToDb(ProcessingStep):
             self.data_to_delete[table][other_condition].append(uuid)
             
         if data:
+            if "id" in data:
+                del data["id"]
             self.data_to_write.setdefault(table, [])
             self.data_to_write[table].append(insert_data)
         return [{"form": form,
