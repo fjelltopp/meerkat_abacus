@@ -27,9 +27,12 @@ import importlib.util
 import yaml
 from dateutil.parser import parse
 import logging
-# Application config
+
+
 class Config:
+
     def __init__(self):
+
         self.DEPLOYMENT = os.environ.get("DEPLOYMENT", "unknown")
         current_directory = os.path.dirname(os.path.realpath(__file__))
         self.DATABASE_URL = os.environ.get(

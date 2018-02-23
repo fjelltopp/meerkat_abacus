@@ -1,6 +1,7 @@
 if [ "$TRAVIS_BUILD" = "docs" ]
 then
-    pip install .
+    pip install -r ./docs/requirements.txt
+    pip install --no-deps .
 elif [ "$TRAVIS_BUILD" = "tests" ]
 then
 
