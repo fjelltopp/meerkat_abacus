@@ -110,6 +110,7 @@ def add_fake_data(session, N=500, append=False,
        from_files: whether to add data from the manual test case
                    files defined in country_config
     """
+
     logging.debug("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
@@ -588,7 +589,7 @@ def set_up_database(leave_if_data, drop_db, param_config=config):
             to_condition_column = link["to_condition"].split(":")[0]
             if to_condition_column:
                 engine.execute(f"CREATE index on {to_form} ((data->>'{to_condition_column}'))")
-        
+
         logging.info("Import Locations")
         import_locations(engine, session, param_config=param_config)
         logging.info("Import calculation parameters")
@@ -627,6 +628,7 @@ def add_alerts(session, param_config=config):
 
     Args:
         session: db_session
+        param_config: configuration object
 
 
     """
@@ -731,7 +733,7 @@ def create_alert_id(alert, param_config=config):
 def add_new_fake_data(to_add, from_files=False, param_config=config):
     """
     Wrapper function to add new fake data to the existing csv files
-i
+
     Args:
        to_add: number of new records to add
     """
@@ -827,14 +829,14 @@ def create_links(data_type, input_conditions, table, session, conn,
                     condition = from_form.data[column].astext == compare_text
                     conditions.append(condition)
 
-                
+
                 if restrict_uuids:
                     if link["to_form"] == link["from_form"] and link["to_form"] in restrict_uuids:
                         conditions.append(
                             or_(link_alias.uuid.in_(
                                 restrict_uuids[link["to_form"]]),
                                 from_form.uuid.in_(restrict_uuids[link["to_form"]])))
-                    
+
                     elif link["to_form"] in restrict_uuids and link["from_form"] not in restrict_uuids:
                         conditions.append(
                             link_alias.uuid.in_(
@@ -844,7 +846,7 @@ def create_links(data_type, input_conditions, table, session, conn,
                             from_form.uuid.in_(
                                 restrict_uuids[link["from_form"]]))
 
-                
+
                 # make sure that the link is not referring to itself
                 conditions.append(from_form.uuid != link_alias.uuid)
                 # build query from join and filter conditions

@@ -16,7 +16,7 @@ def get_variables(session, restrict=None, match_on_type=None, match_on_form=None
         session: db-session
 
     Returns:
-        variables(dict): dict of id:Variable
+        dict: dictionary of id:Variable
     """
     if restrict:
         result = session.query(model.AggregationVariables).filter(
