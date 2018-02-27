@@ -124,6 +124,7 @@ def process_buffer(start=True, internal_buffer=None,
         internal_buffer = worker_buffer
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
     try:
+        logging.info("Messages in buffer {}".format(internal_buffer.qsize()))
         process_chunk(internal_buffer, session, engine, param_config,
                       run_overall_processes=run_overall_processes)
     except Exception as e:
@@ -163,7 +164,6 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint,
         self.retry()
     if "Messages" in messages:
         for message in messages["Messages"]:
-            logging.info("Message %s", message)
             receipt_handle = message["ReceiptHandle"]
             logging.debug("Deleting message %s", receipt_handle)
             try:
@@ -171,6 +171,8 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint,
                 form = message_body["formId"]
                 form_data = message_body["data"]
                 uuid = message_body["uuid"]
+                logging.info(message_body)
+                logging.info(uuid)
                 try:
                     worker_buffer.put_nowait(
                         {"form": form,
@@ -184,7 +186,6 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint,
                          "uuid": uuid,
                          "data": form_data}
                     )
-                logging.info("Messages in buffer {}".format(worker_buffer.qsize()))
                 sqs_client.delete_message(QueueUrl=sqs_queue_url,
                                           ReceiptHandle=receipt_handle)
             except Exception as e:
@@ -203,7 +204,6 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False,
     logging.info("Adding fake data")
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
     for form in param_config.country_config["tables"]:
-        logging.info("Generating fake data for form:" + form)
         new_data = create_fake_data.get_new_fake_data(form=form, session=session, N=N,
                                                       param_config=param_config,
                                                       dates_is_now=dates_is_now)
@@ -227,7 +227,6 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False,
                     'aggregate_username': param_config.aggregate_username,
                     'aggregate_password':param_config.aggregate_password
                 }
-                logging.info("Submitting fake data for form {0} to Aggregate".format(form))
                 util.submit_data_to_aggregate(row, form, aggregate_config)
     if interval_next:
         add_fake_data.apply_async(countdown=interval_next,

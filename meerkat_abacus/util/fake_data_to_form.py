@@ -1,19 +1,15 @@
-import pyxform
-
+from pyxform import builder
 from meerkat_abacus.config import config
 
 country_config = config.country_config
 
-from pyxform import builder, xls2json
-from pyxform.utils import has_external_choices, sheet_to_csv
-
-
-
-
 
 for form in country_config["fake_data"].keys():
     json_survey = {
-        'type': 'survey', 'name': form, 'title': form, 'id_string': form, 'sms_keyword': 'sample', 'default_language': 'default', 'children': []
+        'type': 'survey', 'name': form,
+        'title': form, 'id_string': form,
+        'sms_keyword': 'sample',
+        'default_language': 'default', 'children': []
         }
     
     groups = {}
@@ -25,14 +21,15 @@ for form in country_config["fake_data"].keys():
              'label': 'Label'})
     for field, type_info in country_config["fake_data"][form].items():
         ty = "text"
-        if list(type_info.keys())[0] == "integer":
-            ty = "integer"
+        if not isinstance(type_info, list):
+            if list(type_info.keys())[0] == "integer":
+                ty = "integer"
 
         if "./" in field:
             # Create a group
             group_name, field_name = field.split("./")
 
-            if not group_name in groups.keys():
+            if group_name not in groups.keys():
                 json_survey["children"].append(
                     {'control': {'appearance': 'field-list'},
                      'type': 'group',

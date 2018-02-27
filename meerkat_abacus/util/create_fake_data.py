@@ -103,8 +103,6 @@ def create_form(fields, data=None, N=500, odk=True, dates_is_now=False):
         list_of_records(list): list of dicts with data
 
     """
-    print("Creating fields: " + str(fields))
-    print("number of records: " + str(N))
     list_of_records = []
     for i in range(N):
         row = {}

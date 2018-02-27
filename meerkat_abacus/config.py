@@ -125,7 +125,7 @@ class Config:
         # Configure data streaming
         self.stream_data_source = os.environ.get("STREAM_DATA_SOURCE", "AWS_S3")
         if self.stream_data_source == "LOCAL_SQS":
-            self.SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", 'http://172.18.0.1:9324')
+            self.SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", 'http://tunnel:9324')
             self.sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo')
         elif self.stream_data_source == "AWS_SQS":
             self.SQS_ENDPOINT = os.environ.get("SQS_ENDPOINT", "DEFAULT")
@@ -142,7 +142,7 @@ class Config:
         # Configure generating fake data
         self.fake_data = False
         self.internal_fake_data = None
-        self.fake_data_interval = 60*5
+        self.fake_data_interval = 30
         self.aggregate_password = None
         self.aggregate_username = None
         self.aggregate_url = None
@@ -155,7 +155,7 @@ class Config:
             self.internal_fake_data = False
             self.aggregate_password = os.environ.get("AGGREGATE_PASSWORD", "password")
             self.aggregate_username = os.environ.get("AGGREGATE_USERNAME", "test")
-            self.aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")
+            self.aggregate_url = os.environ.get("AGGREGATE_URL", "http://nest_nginx:80")
 
     def __repr__(self):
         return yaml.dump(self)
