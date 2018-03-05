@@ -31,16 +31,19 @@ class ToCodes(ProcessingStep):
         data_type = self.data_types[data["type"]]
         rows = self._get_multi_rows(data, data_type)
         for row in rows:
-            linked_forms = set(row.get("link_data", {}).keys())
-            for f in linked_forms:
-                row[f] = row["link_data"][f]
+            linked_forms = row.get("link_data", {})
+            for key, value in linked_forms.items():
+                row[key] = value
 
             row[row["original_form"]] = row["raw_data"]
             variable_data, category_data, location_data, disregard = to_codes.to_code(
-                row, self.variables[data_type["name"]],
-                self.locations, data_type["type"],
+                row,
+                self.variables[data_type["name"]],
+                self.locations,
+                data_type["type"],
                 self.config.country_config["alert_data"],
-                linked_forms, data_type["location"]
+                set(linked_forms),
+                data_type["location"]
             )
             if location_data is None:
                 logging.warning("Missing loc data")
