@@ -3,6 +3,7 @@ Celery setup and wraper tasks to periodically update the database.
 """
 import requests
 import logging
+import pika
 import traceback
 from celery import task
 from celery.exceptions import SoftTimeLimitExceeded
@@ -138,6 +139,47 @@ def process_buffer(start=True, internal_buffer=None,
     session.close()
     engine.dispose()
 
+@task(bind=True, default_retry_delay=300, max_retries=5)
+def poll_rabbit_queue(self, rabbit_queue_name, rabbit_url,
+                      param_config_yaml=yaml.dump(config)):
+    """ Get's messages from SQS queue"""
+    logging.info("Running Rabbit Poll Queue")
+    param_config = yaml.load(param_config_yaml)
+
+    connection = pika.BlockingConnection(pika.URLParameters(rabbit_url))
+    channel = connection.channel()
+    channel.queue_declare(queue=rabbit_queue_name,
+                          durable=True)
+    
+    channel.basic_consume(rabbit_on_receive_callback,
+                          queue=rabbit_queue_name,
+                          no_ack=False,
+                          arguments={"param_config_yaml": param_config_yaml})
+    channel.start_consuming()
+
+    
+def rabbit_on_receive_callback(channel, method_frame, properties, body, param_config_yaml=None):
+    try:
+        message_body = json.loads(body)
+        form = message_body["formId"]
+        form_data = message_body["data"]
+        uuid = message_body["uuid"]
+        try:
+            worker_buffer.put_nowait(
+                {"form": form,
+                 "uuid": uuid,
+                 "data": form_data}
+            )
+        except Full:
+            process_buffer(start=False, param_config_yaml=param_config_yaml)
+            worker_buffer.put(
+                {"form": form,
+                 "uuid": uuid,
+                 "data": form_data}
+            )
+        channel.basic_ack(delivery_tag=method_frame.delivery_tag)
+    except Exception as e:
+        logging.exception("Error in reading message", exc_info=True)
 
 @task(bind=True, default_retry_delay=300, max_retries=5)
 def poll_queue(self, sqs_queue_name, sqs_endpoint,

@@ -68,7 +68,10 @@ if config.stream_data_source in ["LOCAL_SQS", "AWS_SQS"]:
 elif config.stream_data_source == "AWS_S3":
     tasks.stream_data_from_s3.delay(param_config_yaml=param_config_yaml)
     # Do not need to run process_buffer as this is already run in the stream function
-
+elif config.stream_data_source == "RABBIT_MQ":
+    tasks.poll_rabbit_queue.delay(config.rabbit_queue_name,
+                             config.rabbit_url,
+                             param_config_yaml=param_config_yaml)
 
 # Set up fake data generation
 if config.fake_data:

@@ -133,6 +133,10 @@ class Config:
         elif self.stream_data_source == "AWS_S3":
             self.get_data_from_s3 = 1
             self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL", 3600)
+        elif self.stream_data_source == "RABBIT_MQ":
+            self.rabbit_queue_name = os.environ.get("STREAM_RABBIT_QUEUE_NAME", "nest-queue-demo")
+            self.rabbit_url = os.environ.get("STREAM_RABBIT_URL",
+                                             "amqp://guest:guest@rabbit:5672/%2F")
         elif self.stream_data_source == "NO_STREAMING":
             pass  # Don't set up any streaming.
         else:
@@ -142,7 +146,7 @@ class Config:
         # Configure generating fake data
         self.fake_data = False
         self.internal_fake_data = None
-        self.fake_data_interval = 30
+        self.fake_data_interval = 60
         self.aggregate_password = None
         self.aggregate_username = None
         self.aggregate_url = None
