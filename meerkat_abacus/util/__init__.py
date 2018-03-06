@@ -367,6 +367,24 @@ def get_data_from_rds_persistent_storage(form, param_config=config):
         yield row.__dict__['data']
 
 
+def write_data_to_persistent_db(form, data, param_config=None):
+    uuid_field = "meta/instanceID"
+    engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
+    conn = engine.connect()
+    table = form_tables(param_config=param_config)[form]
+    if "tables_uuid" in param_config.country_config:
+        uuid_field = param_config.country_config["tables_uuid"].get(form, uuid_field)
+    i = 1
+    dicts = []
+    for row in data:
+        dicts.append({"data": row,
+                      "uuid": row[uuid_field]})
+        if i % 10000 == 0:
+            conn.execute(table.__table__.insert(), dicts)
+            dicts = []
+    conn.execute(table.__table__.insert(), dicts)
+
+    
 def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
     """ Subscribes to an sqs_enpoint with the sqs_queue_name"""
     logging.info("Connecting to SQS")

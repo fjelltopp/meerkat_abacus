@@ -96,7 +96,11 @@ class Config:
 
         # Configure data initialisation
         self.initial_data_source = os.environ.get("INITIAL_DATA_SOURCE", "FAKE_DATA")
-        self.PERSISTENT_DATABASE_URL = None
+        self.PERSISTENT_DATABASE_URL = os.environ.get(
+                "PERSISTENT_DATABASE_URL",
+                'postgresql+psycopg2://postgres:postgres@db/persistent_demo_db'
+            )
+        self.persist_raw_data = int(os.environ.get("PERSIST_RAW_DATA", False))
         self.get_data_from_s3 = 0
         self.s3_data_stream_interval = None
         self.initial_data = "FAKE_DATA"
@@ -105,15 +109,8 @@ class Config:
         elif self.initial_data_source == "LOCAL_CSV":
             self.initial_data = "LOCAL_CSV"
         elif self.initial_data_source == "AWS_RDS":
-            self.PERSISTENT_DATABASE_URL = os.environ.get(
-                "PERSISTENT_DATABASE_URL", None
-            )
             self.initial_data = "RDS"
         elif self.initial_data_source == "LOCAL_RDS":
-            self.PERSISTENT_DATABASE_URL = os.environ.get(
-                "PERSISTENT_DATABASE_URL",
-                'postgresql+psycopg2://postgres:postgres@db/persistent_demo_db'
-            )
             self.initial_data = "RDS"
         elif self.initial_data_source == "AWS_S3":
             self.get_data_from_s3 = 1  # int(os.environ.get("GET_DATA_FROM_S3", False))
