@@ -16,7 +16,7 @@ def get_value(field, data):
     
     A field is a dict with a key that gives the method to choose from a value for the dict value.
     I.e.
-      field = {"one": ["A", "B", "C"]}
+    field = {"one": ["A", "B", "C"]}
     We then want to choose either A, B, or C randomly.
 
     The available methos are:

@@ -1,4 +1,3 @@
 include *.csv
-
+recursive-include meerkat_abacus/country_config *
 recursive-include meerkat_abacus/data *
-
