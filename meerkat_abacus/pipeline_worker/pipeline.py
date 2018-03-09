@@ -30,63 +30,36 @@ class Pipeline:
                 pipeline.append(DoNothing(session))
             elif step == "quality_control":
                 pipeline.append(
-                    QualityControl(
-                        session,
-                        param_config
-                    )
+                    QualityControl(param_config, session)
                 )
                     
             elif step == "write_to_db":
                 pipeline.append(
-                    WriteToDb(
-                        param_config,
-                        engine,
-                        session
-                    )
+                    WriteToDb(param_config, session, engine)
                 )
             elif step == "initial_visit_control":
                 pipeline.append(
-                    InitialVisitControl(
-                        param_config,
-                        engine,
-                        session
-                    )
+                    InitialVisitControl(param_config, session, engine)
                 )
             elif step == "to_data_type":
                 pipeline.append(
-                    ToDataType(
-                        param_config,
-                        session
-                    )
+                    ToDataType(param_config, session)
                 )
             elif step == "add_links":
                 pipeline.append(
-                    AddLinks(
-                        param_config,
-                        engine,
-                        session
-                    )
+                    AddLinks(param_config, session, engine)
                 )
             elif step == "to_codes":
                 pipeline.append(
-                    ToCodes(
-                        param_config,
-                        session
-                    )
+                    ToCodes(param_config, session)
                 )
             elif step == "send_alerts":
                 pipeline.append(
-                    SendAlerts(
-                        param_config,
-                        session
-                    )
+                    SendAlerts(param_config, session)
                 )
             elif step == "add_multiple_alerts":
                 pipeline.append(
-                    AddMultipleAlerts(
-                        param_config,
-                        session
-                    )
+                    AddMultipleAlerts(param_config, session)
                 )
             else:
                 raise NotImplementedError("{step} is not implemented")

@@ -7,7 +7,7 @@ from meerkat_abacus import model
 
 class WriteToDb(ProcessingStep):
 
-    def __init__(self, param_config, engine, session):
+    def __init__(self, param_config, session, engine):
         self.step_name = "write_to_db"
         config = {
             "delete": {"data": "type",
