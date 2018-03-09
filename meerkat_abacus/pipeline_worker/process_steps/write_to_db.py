@@ -7,7 +7,8 @@ from meerkat_abacus import model
 
 class WriteToDb(ProcessingStep):
 
-    def __init__(self, param_config, session, engine):
+    def __init__(self, param_config, session):
+        super().__init__()
         self.step_name = "write_to_db"
         config = {
             "delete": {"data": "type",
@@ -26,6 +27,18 @@ class WriteToDb(ProcessingStep):
         self.session = session
         self.data_to_write = {}
         self.data_to_delete = {}
+
+    @property
+    def engine(self):
+        return self.engine
+
+    @engine.setter
+    def engine(self, new_engine):
+        self.engine = new_engine
+        self._update_engine()
+
+    def _update_engine(self):
+        self.config['engine'] = self.engine
 
     def end_step(self, n):
         conn = self.config["engine"].connect()
@@ -72,7 +85,8 @@ class WriteToDb(ProcessingStep):
         return [{"form": form,
                  "data": data}]
 
-    
+
+
 def get_uuid(data, form, config):
     uuid_field = "meta/instanceID"
     if "tables_uuid" in config["country_config"]:
