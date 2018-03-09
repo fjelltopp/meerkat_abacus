@@ -62,7 +62,7 @@ class Pipeline:
                     AddMultipleAlerts(param_config, session)
                 )
             else:
-                raise NotImplementedError("{step} is not implemented")
+                raise NotImplementedError(f"Step '{step}' is not implemented")
         self.session = session
         self.engine = engine
         self.param_config = param_config
