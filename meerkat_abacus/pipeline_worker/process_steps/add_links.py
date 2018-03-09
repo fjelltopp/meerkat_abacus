@@ -8,7 +8,7 @@ from meerkat_abacus import model, util
 
 class AddLinks(ProcessingStep):
 
-    def __init__(self, param_config, engine, session):
+    def __init__(self, param_config, session, engine):
         super().__init__()
         self.step_name = "add_links"
         self.config = param_config

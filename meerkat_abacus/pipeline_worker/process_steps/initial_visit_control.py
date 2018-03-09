@@ -7,7 +7,7 @@ from meerkat_abacus import model, util
 
 class InitialVisitControl(ProcessingStep):
 
-    def __init__(self, param_config, engine, session):
+    def __init__(self, param_config, session, engine):
         self.step_name = "initial_visit_control"
         self.engine = engine
         self.session = session

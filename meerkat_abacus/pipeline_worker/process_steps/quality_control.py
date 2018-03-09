@@ -13,7 +13,7 @@ from meerkat_abacus.codes import to_codes
 
 
 class QualityControl(ProcessingStep):
-    def __init__(self, session, param_config):
+    def __init__(self, param_config, session):
         """ Prepare arguments for quality_control
 
             deviceids: if we should only add rows with a one of the deviceids

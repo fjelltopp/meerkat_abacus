@@ -36,9 +36,7 @@ class TestInitialVisitControl(unittest.TestCase):
             }
         }
 
-        ivc = initial_visit_control.InitialVisitControl(config,
-                                                        self.engine,
-                                                        self.session)
+        ivc = initial_visit_control.InitialVisitControl(config, self.session, self.engine)
         
         existing_data = [{
             "uuid": "a",
