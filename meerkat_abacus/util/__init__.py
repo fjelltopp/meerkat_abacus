@@ -372,16 +372,22 @@ def write_data_to_persistent_db(form, data, param_config=None):
     engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
     conn = engine.connect()
     table = form_tables(param_config=param_config)[form]
+
+    uuids = []
     if "tables_uuid" in param_config.country_config:
         uuid_field = param_config.country_config["tables_uuid"].get(form, uuid_field)
     i = 1
     dicts = []
     for row in data:
+        uuids.append(row[uuid_field])
         dicts.append({"data": row,
                       "uuid": row[uuid_field]})
         if i % 10000 == 0:
+            conn.execute(table.__table__.delete().where(table.uuid.in_(uuids)))
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
+            uuids = []
+    conn.execute(table.__table__.delete().where(table.uuid.in_(uuids)))
     conn.execute(table.__table__.insert(), dicts)
 
     
