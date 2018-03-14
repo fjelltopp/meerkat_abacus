@@ -7,7 +7,17 @@ from geoalchemy2.shape import from_shape
 from shapely.geometry import Polygon
 
 # Data for the tests
-locations = {1: model.Locations(name="Demo", id=1),
+
+
+
+
+class ToCodeTest(unittest.TestCase):
+    """
+    Test the to_code functionality
+    """
+
+    def setUp(self):
+        locations = {1: model.Locations(name="Demo", id=1),
              2: model.Locations(
                  name="Region 1", parent_location=1, id=2),
              3: model.Locations(
@@ -29,67 +39,57 @@ locations = {1: model.Locations(name="Demo", id=1),
                  name="Clinic 2", parent_location=5, id=7),
              8: model.Locations(
                  name="Clinic with no district", parent_location=2, id=8)}
-locations_by_deviceid = {"1": 6, "2": 7, "3": 8}
-zones = []
-regions = [2, 3]
-districts = [4, 5]
-agg_variables = [
-    model.AggregationVariables(
-        id=1, method="not_null", db_column="index", condition="",
+        locations_by_deviceid = {"1": 6, "2": 7, "3": 8}
+        zones = []
+        regions = [2, 3]
+        districts = [4, 5]
+        agg_variables = [
+            model.AggregationVariables(
+                id=1, method="not_null", db_column="index", condition="",
+                category=[],
+                form="form1"),
+            model.AggregationVariables(
+                id=2,
+                method="match",
+                db_column="column1",
+                alert=1,
+                category=[],
+                alert_type="individual",
+                condition="A",
+                form="form1"),
+            model.AggregationVariables(
+                id=3,
         category=[],
-        form="form1"),
-    model.AggregationVariables(
-        id=2,
-        method="match",
-        db_column="column1",
-        alert=1,
-        category=[],
-        alert_type="individual",
-        condition="A",
-        form="form1"),
-    model.AggregationVariables(
-        id=3,
-        category=[],
-        method="sub_match",
-        db_column="column2",
-        condition="B",
-        form="form1"),
-    model.AggregationVariables(
-        id=4,
-        category=[],
-        method="between",
-        calculation="column3",
-        db_column="column3",
-        condition="5,10",
-        disregard=1,
-        form="form1")
-]
-alert_data = {"form1": {"column1": "column1"}}
-
-devices = {"1": [], "2": [], "3": [], "4": [], "5": [],
-           "6": [], "7": [], "8": []}
-all_locations = (locations, locations_by_deviceid, zones, regions, districts, devices)
-
-variables = {"case": {1: {}, 2: {}, 3: {}, 4: {}}}
-variables_forms = {}
-variables_test = {}
-variables_groups = {}
-mul_forms = []
-
-for av in agg_variables:
-    variables["case"][av.id][av.id] = Variable(av)
-    variables_forms[av.id] = "form1"
-    variables_test[av.id] = variables["case"][av.id][av.id].test_type
-    variables_groups[av.id] = [av.id]
-
-
-class ToCodeTest(unittest.TestCase):
-    """
-    Test the to_code functionality
-    """
-
-    def setUp(self):
-        pass
+                method="sub_match",
+                db_column="column2",
+                condition="B",
+                form="form1"),
+            model.AggregationVariables(
+                id=4,
+                category=[],
+                method="between",
+                calculation="column3",
+                db_column="column3",
+                condition="5,10",
+                disregard=1,
+                form="form1")
+        ]
+        self.alert_data = {"form1": {"column1": "column1"}}
+        
+        devices = {"1": [], "2": [], "3": [], "4": [], "5": [],
+                   "6": [], "7": [], "8": []}
+        self.all_locations = (locations, locations_by_deviceid, zones, regions, districts, devices)
+        
+        self.variables = {"case": {1: {}, 2: {}, 3: {}, 4: {}}}
+        self.variables_forms = {}
+        self.variables_test = {}
+        self.variables_groups = {}
+        self.mul_forms = []
+        for av in agg_variables:
+            self.variables["case"][av.id][av.id] = Variable(av)
+            self.variables_forms[av.id] = "form1"
+            self.variables_test[av.id] = self.variables["case"][av.id][av.id].test_type
+            self.variables_groups[av.id] = [av.id]
 
     def tearDown(self):
         pass
@@ -108,8 +108,8 @@ class ToCodeTest(unittest.TestCase):
                 "meta/instanceID": "a"}}
         var, category, ret_location, disregarded = to_code(
             row,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms, "deviceid")
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms, "deviceid")
         self.assertEqual(ret_location["country"], 1)
         self.assertEqual(ret_location["region"], 2)
         self.assertEqual(ret_location["district"], 4)
@@ -119,8 +119,8 @@ class ToCodeTest(unittest.TestCase):
         row["form1"]["deviceid"] = "2"
         var, category, ret_location, disregard = to_code(
             row,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms, "deviceid")
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms, "deviceid")
         self.assertEqual(ret_location["country"], 1)
         self.assertEqual(ret_location["region"], 3)
         self.assertEqual(ret_location["district"], 5)
@@ -129,8 +129,8 @@ class ToCodeTest(unittest.TestCase):
         row["form1"]["deviceid"] = "3"
         var, category, ret_location, disregard = to_code(
             row,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms, "deviceid")
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms, "deviceid")
         self.assertEqual(ret_location["country"], 1)
         self.assertEqual(ret_location["region"], 2)
         self.assertEqual(ret_location["district"], None)
@@ -138,8 +138,8 @@ class ToCodeTest(unittest.TestCase):
         row["form1"]["deviceid"] = "99"
         var, category, ret_location, disregard = to_code(
             row,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms, "deviceid")
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms, "deviceid")
         self.assertEqual(ret_location, None)
 
         # Test gps in district
@@ -155,8 +155,8 @@ class ToCodeTest(unittest.TestCase):
                 "meta/instanceID": "a"}}
         var, category, ret_location, disregard = to_code(
             row,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms,
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms,
             "in_geometry$lat,lng")
         
         self.assertEqual(ret_location["district"], 4)
@@ -174,8 +174,8 @@ class ToCodeTest(unittest.TestCase):
                 "meta/instanceID": "a"}}
         var, category, ret_location, disregard = to_code(
             row,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms,
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms,
             "in_geometry$lat,lng")
         
         self.assertEqual(ret_location["district"], 5)
@@ -193,8 +193,8 @@ class ToCodeTest(unittest.TestCase):
                 "meta/instanceID": "a"}}
         var, category, ret_location, disregard = to_code(
             row,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms,
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms,
             "in_geometry$lat,lng")
         
         self.assertEqual(ret_location, None)
@@ -227,8 +227,8 @@ class ToCodeTest(unittest.TestCase):
                           "meta/instanceID": "c"}}
         var, category, ret_loc, disregard = to_code(
             row1,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms, "deviceid")
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms, "deviceid")
         self.assertEqual(var, {1: 1,
                                2: 1,
                                3: 1,
@@ -240,14 +240,14 @@ class ToCodeTest(unittest.TestCase):
         self.assertEqual(disregard, True)
         var, category, ret_loc, disregard = to_code(
             row2,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms, "deviceid")
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms, "deviceid")
         self.assertEqual(var, {1: 1})
         self.assertEqual(disregard, False)
         var, category, ret_loc, disregard = to_code(
             row3,
-            (variables, variables_forms, variables_test, variables_groups, {}),
-            all_locations, "case", "form1", alert_data, mul_forms, "deviceid")
+            (self.variables, self.variables_forms, self.variables_test, self.variables_groups, {}),
+            self.all_locations, "case", "form1", self.alert_data, self.mul_forms, "deviceid")
         self.assertEqual(var, {1: 1,
                                2: 1,
                                4: 1,
