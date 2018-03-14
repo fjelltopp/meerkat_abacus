@@ -34,7 +34,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 # ones.
 
 
-MOCK_MODULES = [
+autodoc_mock_imports = [
     'meerkat_libs',
     'meerkat_libs.auth_client',
     'meerkat_libs.logger_client',
@@ -46,11 +46,13 @@ MOCK_MODULES = [
     'shapely.wkt',
     'shapely.geometry',
     'psycopg2',
-    'psycopg2.extensions',
-    'geoalchemy2',
-    'geoalchemy2.shape'
+    'psycopg2.extensions'
+    #'geoalchemy2',
+    #'geoalchemy2.shape'
+    #'geoalchemy2.elements'
 ]
 
+MOCK_MODULES = []
 
 class Mock(MagicMock):
     @classmethod
