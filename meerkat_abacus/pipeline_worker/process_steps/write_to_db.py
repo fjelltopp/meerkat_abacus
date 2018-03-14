@@ -13,7 +13,6 @@ class WriteToDb(ProcessingStep):
         config = {
             "delete": {"data": "type",
                        "disregardedData": "type"},
-            "engine": engine,
             "form_to_table": {
                 "data": model.Data,
                 "disregardedData": model.DisregardedData
@@ -30,15 +29,15 @@ class WriteToDb(ProcessingStep):
 
     @property
     def engine(self):
-        return self.engine
+        return self._engine
 
     @engine.setter
     def engine(self, new_engine):
-        self.engine = new_engine
+        self._engine = new_engine
         self._update_engine()
 
     def _update_engine(self):
-        self.config['engine'] = self.engine
+        self.config['engine'] = self._engine
 
     def end_step(self, n):
         conn = self.config["engine"].connect()
