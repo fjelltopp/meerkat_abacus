@@ -64,8 +64,8 @@ class TestQualityControll(unittest.TestCase):
         self.session.commit()
 
         qc = quality_control.QualityControl(
-            self.session,
-            config
+            config,
+            self.session
         )
 
         data = {
