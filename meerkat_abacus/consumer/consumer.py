@@ -40,11 +40,11 @@ logging.info("Starting initial setup")
 
 if config.initial_data_source == "AWS_S3":
     get_data.download_data_from_s3(config)
-    get_function = util.read_csv_filename
+    get_function = util.read_csv_file
 elif config.initial_data_source == "LOCAL_CSV":
-    get_function = util.read_csv_filename
+    get_function = util.read_csv_file
 elif config.initial_data_source == "FAKE_DATA":
-    get_function = util.read_csv_filename
+    get_function = util.read_csv_file
     create_fake_data.create_fake_data(session,
                                       config,
                                       write_to="file")
@@ -62,8 +62,7 @@ database_setup.logg_tables(config.country_config["tables"], engine)
 while True:
     if config.stream_data_source == "AWS_S3":
         get_data.download_data_from_s3(config)
-        get_data.read_stationary_data(util.read_csv_filename,
-                                      session, engine, config)
+        get_data.read_stationary_data(util.read_csv_file, config)
         time.sleep(config.data_stream_interval)
     elif config.stream_data_source == "FAKE_DATA":
         logging.info("Sending fake data")
