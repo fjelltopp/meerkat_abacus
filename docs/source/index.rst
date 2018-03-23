@@ -49,7 +49,9 @@ The best way to understand meerkat abacus is to consider the data flow. The aim 
 9. We determine threshold based alerts. 
 10. The data is ready for use by the API and frontend. 
 
-
+Data flow in abacus
+    
+.. image:: data_flow.png
 
 ---------------
 Variables
@@ -139,6 +141,7 @@ Documentation
 .. toctree::
    :maxdepth: 4
 
+   db
    meerkat_abacus
 
 
