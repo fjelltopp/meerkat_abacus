@@ -72,7 +72,7 @@ elif config.stream_data_source == "RABBIT_MQ":
     tasks.poll_rabbit_queue.delay(config.rabbit_queue_name,
                              config.rabbit_url,
                              param_config_yaml=param_config_yaml)
-
+    tasks.process_buffer.delay(start=True, param_config_yaml=param_config_yaml)
 # Set up fake data generation
 if config.fake_data:
     tasks.add_fake_data.apply_async(countdown=copy.deepcopy(int(config.fake_data_interval)),
