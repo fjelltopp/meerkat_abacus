@@ -73,7 +73,7 @@ class Config:
 
         # Country config
         country_config_file = os.environ.get("COUNTRY_CONFIG", "demo_config.py")
-
+        self.setup_db = int(os.environ.get("ABACUS_SETUP_DB", 0))
         spec = importlib.util.spec_from_file_location(
             "country_config_module",
             self.config_directory + country_config_file

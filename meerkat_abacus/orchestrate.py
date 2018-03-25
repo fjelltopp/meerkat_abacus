@@ -41,7 +41,7 @@ logging.getLogger().setLevel(logging.INFO)
 wait_for_celery_runner()
 
 app.control.purge()
-logging.info("Setting up DB for %s", config.country_config["country_name"])
+
 global engine
 global session
 
@@ -49,16 +49,21 @@ tz = pytz.timezone(config.country_config["timezone"])
 
 param_config_yaml = yaml.dump(config)
 
-tasks.set_up_db.delay(param_config_yaml=param_config_yaml).get()
 
-logging.info("Finished setting up DB")
+if config.setup_db:
+    logging.info("Setting up DB for %s", config.country_config["country_name"])
+    tasks.set_up_db.delay(param_config_yaml=param_config_yaml).get()
 
-# Set up data initialisation
-logging.info("Load data task started")
-initial_data = tasks.initial_data_setup.delay(source=config.initial_data_source, param_config_yaml=param_config_yaml)
+    logging.info("Finished setting up DB")
 
-result = initial_data.get()
-logging.info("Load data task finished")
+    # Set up data initialisation
+    logging.info("Load data task started")
+    initial_data = tasks.initial_data_setup.delay(source=config.initial_data_source, param_config_yaml=param_config_yaml)
+
+    result = initial_data.get()
+    logging.info("Load data task finished")
+else:
+    logging.info("Not setting up DB")
 logging.info("Starting Real time")
 
 # Set up data stream source
