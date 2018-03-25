@@ -76,7 +76,7 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
     for form in tables:
         kwargs = prepare_add_rows_arguments(form, session, param_config)
 
-        if param_config.persist_raw_data:
+        if param_config.persist_raw_data and run_overall_processes:
             util.write_data_to_persistent_db(form, tables[form], param_config=param_config)
         
         new_uuids = data_import.add_rows_to_db(
