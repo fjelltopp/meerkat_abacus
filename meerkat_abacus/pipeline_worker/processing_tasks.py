@@ -29,7 +29,7 @@ def configure_worker():
     pipeline = Pipeline(engine, session, config_)
 
 
-@app.task(bind=True, name="process_data")
+@app.task(bind=True, name="processing_tasks.process_data")
 def process_data(self, data_rows):
     if pipeline is None:
         configure_worker()
@@ -39,6 +39,6 @@ def process_data(self, data_rows):
     logging.info("ENDING task")
 
 
-@app.task
+@app.task(name="processing_tasks.test_up")
 def test_up():
     return True

@@ -27,11 +27,11 @@ session, engine = database_setup.set_up_database(False, True, config)
                        AttributeError, OSError),
                       max_tries=10,
                       max_value=30)
+
 def wait_for_celery_runner():
     test_task = test_up.delay()
     result = test_task.get(timeout=1)
     return result
-
 
 wait_for_celery_runner()
 # Initial Setup
@@ -80,7 +80,7 @@ def real_time_fake():
                                                       param_config=config,
                                                       dates_is_now=True)
             new_data = [{"form": form, "data": d[0]} for d in data]
-        app.send_task('process_data', [new_data])
+        app.send_task('processing_tasks.process_data', [new_data])
     else:
         raise NotImplementedError("Not yet implemented")
     logging.info("Sleeping")
