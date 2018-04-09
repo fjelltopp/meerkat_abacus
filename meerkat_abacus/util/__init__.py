@@ -387,16 +387,12 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
 
     logging.info("Getting SQS url")
     try:
-        queue_url = sqs_client.get_queue_url(
-            QueueName=sqs_queue_name,
-        )['QueueUrl']
+        queue_url = __get_queue_url(sqs_client, sqs_queue_name)
         logging.info("Subscribed to %s.", queue_url)
     except ClientError as e:
         logging.debug("Failed to connect to %s", sqs_queue_name)
         logging.info("Creating queue %s", sqs_queue_name)
-        sqs_client.create_queue(
-            QueueName=sqs_queue_name
-        )
+        sqs_client.create_queue(QueueName=sqs_queue_name)
         queue_url = __get_queue_url(sqs_client, sqs_queue_name)
         logging.info("Subscribed to %s.", queue_url)
     return sqs_client, queue_url
