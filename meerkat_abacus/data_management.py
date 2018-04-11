@@ -276,53 +276,53 @@ def import_clinics(csv_file, session, country_id,
         if district.level == "district":
             districts[district.name] = district.id
 
-    deviceids = []
+    deviceids = set()
     with open(csv_file) as f:
         clinics_csv = csv.DictReader(f)
-        for row in clinics_csv:
-            if row["deviceid"] and row["clinic"].lower() != "not used" and row[
-                "deviceid"] not in deviceids:
+        for clinic in clinics_csv:
+            deviceid_ = clinic["deviceid"]
+            name_ = clinic["clinic"]
+            if deviceid_ and name_.lower() != "not used" and deviceid_ not in deviceids:
 
                 other_cond = True
                 if other_condition:
                     for key in other_condition.keys():
-                        if row.get(key, None) and row[key] != other_condition[key]:
+                        if clinic.get(key, None) and clinic[key] != other_condition[key]:
                             other_cond = False
                             break
                 if not other_cond:
                     continue
-                if "case_report" in row.keys():
-                    if row["case_report"] in ["Yes", "yes"]:
-                        case_report = 1
-                    else:
-                        case_report = 0
+                if clinic.get("case_report") in ["Yes", "yes"]:
+                    case_report = 1
                 else:
                     case_report = 0
 
                 # Prepare a device item
 
-                if "device_tags" in row:
-                    tags = row["device_tags"].split(",")
+                if "device_tags" in clinic:
+                    tags = clinic["device_tags"].split(",")
                 else:
                     tags = []
                 session.add(
                     model.Devices(
-                        device_id=row["deviceid"], tags=tags))
-                deviceids.append(row["deviceid"])
+                        device_id=deviceid_, tags=tags))
+                deviceids.add(deviceid_)
 
                 # If the clinic has a district we use that as
                 # the parent_location, otherwise we use the region
                 parent_location = 1
-                if row["district"].strip():
-                    parent_location = districts[row["district"].strip()]
-                elif row["region"].strip():
-                    parent_location = regions[row["region"].strip()]
+                district_ = clinic["district"]
+                region_ = clinic["region"]
+                if district_.strip():
+                    parent_location = districts[district_.strip()]
+                elif region_.strip():
+                    parent_location = regions[region_.strip()]
 
                 # Add population to the clinic and add it up through
                 # All the other locations
                 population = 0
-                if "population" in row and row["population"]:
-                    population = int(row["population"])
+                if "population" in clinic and clinic["population"]:
+                    population = int(clinic["population"])
                     pop_parent_location = parent_location
                     while pop_parent_location:
                         r = session.query(model.Locations).filter(
@@ -331,50 +331,49 @@ def import_clinics(csv_file, session, country_id,
                         pop_parent_location = r.parent_location
                         session.commit()
 
-                result = session.query(model.Locations).filter(
-                    model.Locations.name == row["clinic"],
-                    model.Locations.parent_location == parent_location,
-                    model.Locations.clinic_type is not None
-                )
-
                 # Construct other information from config
                 other = {}
                 if other_info:
                     for field in other_info:
-                        other[field] = row.get(field, None)
+                        other[field] = clinic.get(field, None)
 
                 # Case type can be a comma seperated list.
-                case_type = row.get("case_type", "")
+                case_type = clinic.get("case_type", "")
                 case_type = list(map(str.strip, case_type.split(',')))
 
                 # If two clinics have the same name and the same
                 # parent_location, we are dealing with two tablets from the
                 # same clinic, so we combine them.
-                if len(result.all()) == 0:
-                    if row["longitude"] and row["latitude"]:
-                        point = "POINT(" + row["longitude"] + " " + row["latitude"] + ")"
+                result = session.query(model.Locations).filter(
+                    model.Locations.name == name_,
+                    model.Locations.parent_location == parent_location,
+                    model.Locations.clinic_type is not None
+                )
+                if result.count() == 0:
+                    if "longitude" in clinic and "latitude" in clinic:
+                        point = "POINT(" + clinic["longitude"] + " " + clinic["latitude"] + ")"
                     else:
                         point = None
-                    if "start_date" in row and row["start_date"]:
-                        start_date = parse(row["start_date"], dayfirst=True)
+                    if "start_date" in clinic and clinic["start_date"]:
+                        start_date = parse(clinic["start_date"], dayfirst=True)
                     else:
                         start_date = country_config["default_start_date"]
 
                     session.add(
                         model.Locations(
-                            name=row["clinic"],
+                            name=name_,
                             parent_location=parent_location,
                             point_location=point,
-                            deviceid=row["deviceid"],
-                            clinic_type=row["clinic_type"].strip(),
+                            deviceid=deviceid_,
+                            clinic_type=clinic["clinic_type"].strip(),
                             case_report=case_report,
                             case_type=case_type,
                             level="clinic",
                             population=population,
                             other=other,
-                            service_provider=row.get("service_provider", None),
+                            service_provider=clinic.get("service_provider", None),
                             start_date=start_date,
-                            country_location_id=row.get(
+                            country_location_id=clinic.get(
                                 "country_location_id",
                                 None
                             )
@@ -382,7 +381,7 @@ def import_clinics(csv_file, session, country_id,
                     )
                 else:
                     location = result.first()
-                    location.deviceid += "," + row["deviceid"]
+                    location.deviceid += "," + deviceid_
                     location.case_type = list(
                         set(location.case_type) | set(case_type)
                     )  # Combine case types with no duplicates
