@@ -57,9 +57,7 @@ class TestAddLinks(unittest.TestCase):
                   return_value=test_links)
     def test_add_to_links(self, get_links_mock):
         config = get_config()
-        al = add_links.AddLinks(config,
-                                self.engine,
-                                self.session)
+        al = add_links.AddLinks(config, self.session)
         existing_data = [{
             "uuid": "a",
             "data": {
@@ -128,9 +126,7 @@ class TestAddLinks(unittest.TestCase):
     def test_add_from_links(self, get_links_mock):
         config = get_config()
         config.country_config["alert_id_length"] = 1
-        al = add_links.AddLinks(config,
-                                self.engine,
-                                self.session)
+        al = add_links.AddLinks(config, self.session)
         existing_data = [{
             "uuid": "a",
             "data": {
@@ -185,9 +181,7 @@ class TestAddLinks(unittest.TestCase):
     def test_self_link_lower_match(self, get_links_mock):
         config = get_config()
         config.country_config["alert_id_length"] = 1
-        al = add_links.AddLinks(config,
-                                self.engine,
-                                self.session)
+        al = add_links.AddLinks(config, self.session)
         existing_data = [{
             "uuid": "a",
             "data": {

@@ -6,7 +6,6 @@ from raven.contrib.celery import register_signal, register_logger_signal
 import celery
 import logging
 import raven
-import meerkat_abacus.pipeline_worker.processing_tasks
 
 from meerkat_abacus.pipeline_worker import celeryconfig
 
@@ -23,6 +22,8 @@ logging.getLogger().setLevel(logging.INFO)
 app = celery.Celery()
 app.config_from_object(celeryconfig)
 app.control.purge()
+
+import meerkat_abacus.pipeline_worker.processing_tasks
 
 
 if __name__ == "__main__":

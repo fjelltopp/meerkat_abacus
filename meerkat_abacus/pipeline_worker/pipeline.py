@@ -24,72 +24,32 @@ class Pipeline:
     def __init__(self, engine, session, param_config):
         pipeline_spec = param_config.country_config["pipeline"]
         pipeline = []
-
-        for step in pipeline_spec:
-            if step == "do_nothing":
-                pipeline.append(DoNothing(session))
-            elif step == "quality_control":
-                pipeline.append(
-                    QualityControl(
-                        session,
-                        param_config
-                    )
-                )
-                    
-            elif step == "write_to_db":
-                pipeline.append(
-                    WriteToDb(
-                        param_config,
-                        engine,
-                        session
-                    )
-                )
-            elif step == "initial_visit_control":
-                pipeline.append(
-                    InitialVisitControl(
-                        param_config,
-                        engine,
-                        session
-                    )
-                )
-            elif step == "to_data_type":
-                pipeline.append(
-                    ToDataType(
-                        param_config,
-                        session
-                    )
-                )
-            elif step == "add_links":
-                pipeline.append(
-                    AddLinks(
-                        param_config,
-                        engine,
-                        session
-                    )
-                )
-            elif step == "to_codes":
-                pipeline.append(
-                    ToCodes(
-                        param_config,
-                        session
-                    )
-                )
-            elif step == "send_alerts":
-                pipeline.append(
-                    SendAlerts(
-                        param_config,
-                        session
-                    )
-                )
-            elif step == "add_multiple_alerts":
-                pipeline.append(
-                    AddMultipleAlerts(
-                        param_config,
-                        session
-                    )
-                )
+        step_args = (param_config, session)
+        for step_name in pipeline_spec:
+            if step_name == "do_nothing":
+                step_ = DoNothing(session)
+            elif step_name == "quality_control":
+                step_ = QualityControl(*step_args)
+            elif step_name == "write_to_db":
+                step_ = WriteToDb(*step_args)
+                step_.engine = engine
+            elif step_name == "initial_visit_control":
+                step_ = InitialVisitControl(*step_args)
+                step_.engine = engine
+            elif step_name == "to_data_type":
+                step_ = ToDataType(*step_args)
+            elif step_name == "add_links":
+                step_ = AddLinks(*step_args)
+                step_.engine = engine
+            elif step_name == "to_codes":
+                step_ = ToCodes(*step_args)
+            elif step_name == "send_alerts":
+                step_ = SendAlerts(*step_args)
+            elif step_name == "add_multiple_alerts":
+                step_ = AddMultipleAlerts(*step_args)
             else:
-                raise NotImplementedError("{step} is not implemented")
+                raise NotImplementedError(f"Step '{step_name}' is not implemented")
+            pipeline.append(step_)
         self.session = session
         self.engine = engine
         self.param_config = param_config

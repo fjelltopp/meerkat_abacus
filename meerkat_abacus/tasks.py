@@ -46,7 +46,7 @@ def stream_data_from_s3(param_config_yaml=yaml.dump(config)):
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
 
     data_import.download_data_from_s3(param_config)
-    get_function = util.read_csv_filename
+    get_function = util.read_csv_file
     data_import.read_stationary_data(get_function, worker_buffer,
                                      process_buffer, session, engine,
                                      param_config=param_config)

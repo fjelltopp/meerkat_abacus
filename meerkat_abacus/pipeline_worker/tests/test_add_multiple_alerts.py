@@ -125,7 +125,8 @@ class TestAddMultipleAlerts(unittest.TestCase):
                 self.assertEqual(result["data"]["variables"]["master_alert"],
                                  "c")
 
-        db_writer = write_to_db.WriteToDb(config, self.engine, self.session)
+        db_writer = write_to_db.WriteToDb(config, self.session)
+        db_writer.engine = self.engine
         db_writer.start_step()
         for r in results:
             db_writer.run(r["form"], r["data"])

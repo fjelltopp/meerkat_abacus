@@ -357,7 +357,7 @@ def get_exclusion_list(session, form):
     return ret
 
 
-def read_csv_filename(filename, param_config=config):
+def read_csv_file(filename, param_config=config):
     """ Read a csv file from the filename"""
     file_path = param_config.data_directory + filename + ".csv"
     for row in read_csv(file_path):
@@ -368,9 +368,8 @@ def get_data_from_rds_persistent_storage(form, param_config=config):
     """ Get data from RDS persistent storage"""
     engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
     logging.info(session)
-    for row in session.query(
-            form_tables(param_config=param_config)[form]
-    ).yield_per(1000).enable_eagerloads(False):
+    form_data = session.query(form_tables(param_config=param_config)[form])
+    for row in form_data.yield_per(1000).enable_eagerloads(False):
         yield row.__dict__['data']
 
 
@@ -388,22 +387,19 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
 
     logging.info("Getting SQS url")
     try:
-        queue_url = sqs_client.get_queue_url(
-            QueueName=sqs_queue_name,
-        )['QueueUrl']
+        queue_url = __get_queue_url(sqs_client, sqs_queue_name)
         logging.info("Subscribed to %s.", queue_url)
     except ClientError as e:
-        print(e)
-        print("sqs_queue_name", sqs_queue_name)
-        #logging.info("Creating Queue")
-        response = sqs_client.create_queue(
-            QueueName=sqs_queue_name
-        )
-        queue_url = sqs_client.get_queue_url(
-            QueueName=sqs_queue_name
-        )['QueueUrl']
+        logging.debug("Failed to connect to %s", sqs_queue_name)
+        logging.info("Creating queue %s", sqs_queue_name)
+        sqs_client.create_queue(QueueName=sqs_queue_name)
+        queue_url = __get_queue_url(sqs_client, sqs_queue_name)
         logging.info("Subscribed to %s.", queue_url)
     return sqs_client, queue_url
+
+
+def __get_queue_url(sqs_client, sqs_queue_name):
+    return sqs_client.get_queue_url(QueueName=sqs_queue_name)['QueueUrl']
 
 
 def groupify(data):

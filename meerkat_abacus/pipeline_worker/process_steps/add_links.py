@@ -8,15 +8,22 @@ from meerkat_abacus import model, util
 
 class AddLinks(ProcessingStep):
 
-    def __init__(self, param_config, engine, session):
+    def __init__(self, param_config, session):
         super().__init__()
         self.step_name = "add_links"
         self.config = param_config
         self.session = session
-        self.engine = engine
         links_file_ = param_config.config_directory \
                       + param_config.country_config["links_file"]
         self.links_by_type, self.links_by_name = util.get_links(links_file_)
+
+    @property
+    def engine(self):
+        return self.engine
+
+    @engine.setter
+    def engine(self, new_engine):
+        self.engine = new_engine
 
     def run(self, form, data):
         """
