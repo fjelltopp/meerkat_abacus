@@ -20,19 +20,21 @@ class TestConsumer(unittest.TestCase):
     def tearDown(self):
         pass
 
+    @mock.patch('meerkat_abacus.consumer.get_data.inspect')
     @mock.patch('meerkat_abacus.consumer.get_data.processing_tasks.process_data.delay')
-    def test_read_data(self, process_data_mock):
+    def test_read_data(self, process_data_mock, inspect_mock):
         """
         Tests that read_stationary_data gets data from
         a get function and sends apropriate process_data.delay calls
 
         """
+        inspect_mock_rv = mock.MagicMock()
+        inspect_mock_rv.reserved = mock.MagicMock(return_value={"celery@abacus": []})
+        inspect_mock.return_value = inspect_mock_rv
         param_config = config.get_config()
         param_config.country_config["tables"] = ["table1", "table2"]
-        
         get_data.read_stationary_data(yield_data_function,
                                       param_config, N_send_to_task=9)
-                                      
         process_data_mock.assert_called()
         self.assertEqual(process_data_mock.call_count, 24)
         # 24 = 2 * 12. We get 11 normal calls and one extra for the last record
