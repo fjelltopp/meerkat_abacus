@@ -282,7 +282,8 @@ def import_clinics(csv_file, session, country_id,
         for clinic in clinics_csv:
             deviceid_ = clinic["deviceid"]
             name_ = clinic["clinic"]
-            if deviceid_ and name_.lower() != "not used" and deviceid_ not in deviceids:
+            district_ = clinic["district"]
+            if deviceid_ and district_ and name_.lower() != "not used" and deviceid_ not in deviceids:
 
                 other_cond = True
                 if other_condition:
@@ -311,7 +312,6 @@ def import_clinics(csv_file, session, country_id,
                 # If the clinic has a district we use that as
                 # the parent_location, otherwise we use the region
                 parent_location = 1
-                district_ = clinic["district"]
                 region_ = clinic["region"]
                 if district_.strip():
                     parent_location = districts[district_.strip()]
@@ -350,7 +350,7 @@ def import_clinics(csv_file, session, country_id,
                     model.Locations.clinic_type is not None
                 )
                 if result.count() == 0:
-                    if "longitude" in clinic and "latitude" in clinic:
+                    if  clinic["longitude"] and clinic["latitude"]:
                         point = "POINT(" + clinic["longitude"] + " " + clinic["latitude"] + ")"
                     else:
                         point = None
