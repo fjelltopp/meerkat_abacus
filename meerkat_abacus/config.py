@@ -31,6 +31,7 @@ import logging
 class Config:
     def __init__(self):
         self.DEPLOYMENT = os.environ.get("DEPLOYMENT", "unknown")
+        self.DEVELOPMENT = bool(os.environ.get("DEVELOPMENT", False))
         current_directory = os.path.dirname(os.path.realpath(__file__))
         self.DATABASE_URL = os.environ.get(
             "MEERKAT_ABACUS_DB_URL",
