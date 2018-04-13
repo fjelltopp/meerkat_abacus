@@ -17,7 +17,9 @@ config = get_config()
 logging.getLogger().setLevel(logging.INFO)
 
 app = Celery()
-# app.purge()
+if config.DEVELOPMENT:
+    # cleans up stale task between restarts
+    app.control.purge()
 app.config_from_object(celeryconfig)
 session, engine = database_setup.set_up_database(False, True, config)
 
