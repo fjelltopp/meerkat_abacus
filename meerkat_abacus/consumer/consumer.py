@@ -9,7 +9,7 @@ from meerkat_abacus.consumer import get_data
 from meerkat_abacus.config import get_config
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
-from meerkat_abacus.pipeline_worker.processing_tasks import process_data, test_up
+from meerkat_abacus.pipeline_worker.processing_tasks import test_up
 import backoff
 
 config = get_config()
@@ -17,9 +17,6 @@ config = get_config()
 logging.getLogger().setLevel(logging.INFO)
 
 app = Celery()
-if config.DEVELOPMENT:
-    # cleans up stale task between restarts
-    app.control.purge()
 app.config_from_object(celeryconfig)
 session, engine = database_setup.set_up_database(False, True, config)
 
