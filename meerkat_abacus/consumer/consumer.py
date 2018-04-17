@@ -19,6 +19,10 @@ logging.getLogger().setLevel(logging.INFO)
 app = Celery()
 # app.purge()
 app.config_from_object(celeryconfig)
+app.conf.task_routes = {
+    "*": {'queue': 'abacus'}
+}
+logging.info(app.conf)
 session, engine = database_setup.set_up_database(False, True, config)
 
 

@@ -12,6 +12,7 @@ from datetime import timedelta, datetime
 from celery.schedules import crontab
 import logging
 import os
+from kombu import Queue
 
 from meerkat_abacus.config import config
 
@@ -34,6 +35,20 @@ CELERYBEAT_SCHEDULE = {}
 CELERYBEAT_SCHEDULE['cleanup_downloads'] = {
     'task': 'meerkat_abacus.tasks.cleanup_downloads',
     'schedule': crontab(minute=16, hour='*')
+}
+
+
+CELERY_QUEUES = (
+    Queue('abacus'),
+)
+
+
+CELERY_DEFAULT_QUEUE = 'abacus'
+CELERY_DEFAULT_EXCHANGE = 'abacus'
+CELERY_DEFAULT_ROUTING_KEY = 'abacus'
+
+CELERY_ROUTES = {
+    "pipeline_worker.*": {'queue': 'abacus'}
 }
 
 
