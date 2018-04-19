@@ -9,7 +9,7 @@ from meerkat_abacus.consumer import get_data
 from meerkat_abacus.config import get_config
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
-from meerkat_abacus.pipeline_worker.processing_tasks import process_data, test_up
+#from meerkat_abacus.pipeline_worker.processing_tasks import process_data, test_up
 import backoff
 
 config = get_config()
@@ -19,10 +19,7 @@ logging.getLogger().setLevel(logging.INFO)
 app = Celery()
 # app.purge()
 app.config_from_object(celeryconfig)
-app.conf.task_routes = {
-    "*": {'queue': 'abacus'}
-}
-logging.info(app.conf)
+app.conf.task_default_queue = 'abacus'
 session, engine = database_setup.set_up_database(False, True, config)
 
 
@@ -32,7 +29,7 @@ session, engine = database_setup.set_up_database(False, True, config)
                       max_tries=10,
                       max_value=30)
 def wait_for_celery_runner():
-    test_task = test_up.delay()
+    test_task = app.send_task('test_up')
     result = test_task.get(timeout=1)
     return result
 

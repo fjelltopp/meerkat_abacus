@@ -39,6 +39,6 @@ def process_data(self, data_rows):
     logging.info("ENDING task")
 
 
-@app.task
+@app.task(name="test_up")
 def test_up():
     return True
