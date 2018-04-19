@@ -13,7 +13,7 @@ def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=
         for i, element in enumerate(get_function(form_name, param_config=param_config)):
             data.append({"form": form_name,
                          "data": dict(element)})
-            if i == N_send_to_task:
+            if i % N_send_to_task == 0:
                 logging.info(f"Processed {i} records")
                 celery_app.send_task("processing_tasks.process_data", [data])
                 data = []
