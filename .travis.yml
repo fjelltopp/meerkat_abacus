@@ -1,9 +1,11 @@
-language: python
-group: deprecated-2017Q2
 dist:
-   - trusty
+ - trusty
+sudo:
+ - required
+language:
+ - python
 python:
-  - '3.6'
+ - '3.6'
 env:
  - MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
    PERSISTENT_DATABASE_URL='postgresql+psycopg2://postgres:postgres@localhost/persistent_demo_db'
@@ -14,17 +16,21 @@ env:
    INITIAL_DATA_SOURCE=FAKE_DATA
    STREAM_DATA_SOURCE=AWS_S3
 
-addons:
-  postgresql: '9.6'
 services:
- - postgresql
-
+  - postgresql
+addons:
+  - postgresql: 9.6
 
 before_script:
- - psql -U postgres -c "create extension postgis"
+ - psql -U postgres -c 'create database meerkat_db'
+ - psql -U postgres -d meerkat_db -c 'create extension postgis'
+
 install:
- - sudo apt-get update
- - sudo apt-get install postgresql-9.6-postgis-2.3
+ - sudo apt-get -qq update
+ - sudo apt-get autoremove postgis*
+ - sudo apt-get autoremove postgresql*
+ - sudo apt-get install -y postgresql-9.6-postgis-2.3
+ - sudo service postgresql restart
  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
  - bash miniconda.sh -b -p $HOME/miniconda
  - export PATH="$HOME/miniconda/bin:$PATH"

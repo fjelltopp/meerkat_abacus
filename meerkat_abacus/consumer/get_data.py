@@ -1,10 +1,8 @@
 import logging
 import boto3
 
-from meerkat_abacus.pipeline_worker import processing_tasks
 
-
-def read_stationary_data(get_function, param_config, N_send_to_task=1000):
+def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=1000):
     """
     Read stationary data using the get_function to determine the source
     """
@@ -15,14 +13,15 @@ def read_stationary_data(get_function, param_config, N_send_to_task=1000):
         for i, element in enumerate(get_function(form_name, param_config=param_config)):
             data.append({"form": form_name,
                          "data": dict(element)})
-            if i % N_send_to_task == 0:
+            if i == N_send_to_task:
                 logging.info(f"Processed {i} records")
-                processing_tasks.process_data.delay(data)
+                celery_app.send_task("processing_tasks.process_data", [data])
                 data = []
         if data:
             logging.info("Cleaning up data buffer.")
-            processing_tasks.process_data.delay(data)
+            celery_app.send_task("processing_tasks.process_data", [data])
         logging.info("Finished processing data.")
+        logging.info(f"Processed {i} records")
 
 def download_data_from_s3(config):
     """

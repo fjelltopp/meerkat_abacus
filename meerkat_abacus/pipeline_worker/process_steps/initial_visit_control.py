@@ -15,11 +15,11 @@ class InitialVisitControl(ProcessingStep):
 
     @property
     def engine(self):
-        return self.engine
+        return self._engine
 
     @engine.setter
     def engine(self, new_engine):
-        self.engine = new_engine
+        self._engine = new_engine
 
     def run(self, form, data):
         """
