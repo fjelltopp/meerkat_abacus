@@ -54,6 +54,7 @@ class Config:
         self.mailing_root = os.environ.get("MAILING_ROOT", "")
         self.device_messaging_api = os.environ.get("DEVICE_MESSAGING_API", "")
         self.auth_root = os.environ.get('MEERKAT_AUTH_ROOT', 'http://nginx/auth')
+        self.api_root = os.environ.get('MEERKAT_API_ROOT', 'http://nginx/api')
         self.send_test_emails = os.environ.get('MEERKAT_TEST_EMAILS', False)
         self.server_auth_username = os.environ.get('SERVER_AUTH_USERNAME', 'root')
         self.server_auth_password = os.environ.get('SERVER_AUTH_PASSWORD', 'password')
