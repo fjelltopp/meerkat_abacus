@@ -162,7 +162,7 @@ def add_rows_to_db(form, form_data, session, engine,
         if to_check:
             for variable in to_check:
                 try:
-                    if not to_check_test[variable](insert_row):
+                    if not to_check_test[variable](insert_row)["applicable"]:
                         if variable.variable.category == ["discard"]:
                             remove = True
                         else:

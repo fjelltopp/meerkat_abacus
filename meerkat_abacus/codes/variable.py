@@ -152,9 +152,17 @@ class Variable():
             row: a row from a form
 
         Returns:
-            int: 0 if false and 1 (or sum) if true
+            {
+            applicable: 1 or 0,
+            value: return value
+            }
         """
-        return self.test_type(row)
+        applicable = self.test_type(row)
+        value = applicable
+        if self.test_types[0] == "calc" and applicable == 0:
+            applicable = 1
+        return {"applicable": applicable,
+                "value": value}
 
     def test_many(self, row):
 

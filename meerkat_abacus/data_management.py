@@ -143,7 +143,7 @@ def add_fake_data(session, N=500, append=False,
 
         generated_data = create_fake_data.create_form(
             country_config["fake_data"][form], data={"deviceids":
-                                                         form_deviceids,
+                                                     form_deviceids,
                                                      "uuids": alert_ids}, N=N)
 
         if "case" in form:
