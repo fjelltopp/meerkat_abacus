@@ -5,7 +5,7 @@ then
 elif [ "$TRAVIS_BUILD" = "tests" ]
 then
 
-    suapt-get update
+    sudo apt-get update
     sudo apt-get install postgresql-9.6-postgis-2.3
     psql -U postgres -c "create extension postgis"
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
