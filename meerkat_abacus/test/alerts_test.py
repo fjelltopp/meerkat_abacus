@@ -16,6 +16,7 @@ class UtilTest(unittest.TestCase):
     def setUp(self):
         manage.create_db(config.DATABASE_URL, drop=True)
         engine = create_engine(config.DATABASE_URL)
+        model.form_tables(config)
         model.Base.metadata.create_all(engine)
         self.engine = create_engine(config.DATABASE_URL)
         self.Session = sessionmaker(bind=self.engine)
@@ -241,3 +242,42 @@ class UtilTest(unittest.TestCase):
             sorted(["7", "8", "9", "10", "11", "12", "13", "14"]))
         self.assertEqual(new_alerts[0]["clinic"], 6)
         self.assertEqual(new_alerts[0]["reason"], "cmd_1")
+
+
+    def test_double_double_id(self):
+        self.session.query(model.Data).delete()
+        self.session.commit()
+        config.country_config["alert_data"] = {"demo_case": {}}
+        self.session.bulk_save_objects(self.double)
+        self.session.commit()
+        self.session.query(model.AggregationVariables).delete()
+        self.session.add(
+            model.AggregationVariables(
+                id="cmd_1",
+                alert=1,
+                alert_type="double",
+                form="demo_case"
+                )
+            )
+        for d in self.double:
+            self.session.add(
+                model.form_tables()["demo_case"](
+                    uuid=d.uuid,
+                    )
+                )
+        self.session.commit()
+        n_alerts = 0
+        manage.add_alerts(self.session, config)
+        for d in self.session.query(model.Data):
+            print(d.variables)
+            if "alert" in d.variables:
+                n_alerts += 1
+        self.assertEqual(n_alerts, 1)
+
+        for i in range(5):
+            manage.add_alerts(self.session, config)
+        n_alerts = 0
+        for d in self.session.query(model.Data):
+            if "alert" in d.variables:
+                n_alerts += 1
+        self.assertEqual(n_alerts, 1)
