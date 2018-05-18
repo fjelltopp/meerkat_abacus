@@ -65,7 +65,7 @@ class UtilTest(unittest.TestCase):
         value = create_fake_data.get_value(
             {"date": "year"}, None)
         self.assertLess(parser.parse(value), datetime.now())
-        self.assertLess(datetime.now() - timedelta(days=22),
+        self.assertLess(datetime.now() - timedelta(days=150),
                         parser.parse(value))
         data = {"deviceids": [1, 2, 3, 4, 5]}
         for i in range(100):
@@ -111,13 +111,13 @@ class UtilTest(unittest.TestCase):
             self.assertIn("SubmissionDate", r.keys())
 
             self.assertLess(parser.parse(r["start"]), datetime.now())
-            self.assertLess(datetime.now() - timedelta(days=22),
+            self.assertLess(datetime.now() - timedelta(days=150),
                             parser.parse(r["start"]))
             self.assertLess(parser.parse(r["end"]), datetime.now())
-            self.assertLess(datetime.now() - timedelta(days=22),
+            self.assertLess(datetime.now() - timedelta(days=150),
                             parser.parse(r["end"]))
             self.assertLess(parser.parse(r["SubmissionDate"]), datetime.now())
-            self.assertLess(datetime.now() - timedelta(days=22),
+            self.assertLess(datetime.now() - timedelta(days=150),
                             parser.parse(r["SubmissionDate"]))
             self.assertIn("meta/instanceID", r.keys())
             self.assertNotIn(r["meta/instanceID"], old_uuids)

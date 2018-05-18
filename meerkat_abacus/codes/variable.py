@@ -159,9 +159,14 @@ class Variable():
         """
         applicable = self.test_type(row)
         value = applicable
-        if self.test_types[0] == "calc" and applicable == 0:
-            applicable = 1
-        return {"applicable": applicable,
+        if self.test_types[0] == "calc":
+
+            if applicable == 0:
+                applicable = 1
+            if applicable == "not_applicable":
+                value = 0
+                applicable = False
+        return {"applicable": bool(applicable),
                 "value": value}
 
     def test_many(self, row):
@@ -294,7 +299,7 @@ class Variable():
 
             # Initialise non-existing variables to 0.
             if c not in old_row:
-                return 0
+                return "not_applicable"
 
             if old_row[c] == '' or old_row[c] is None:
                 row[c] = 0

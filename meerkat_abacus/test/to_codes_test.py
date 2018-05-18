@@ -59,7 +59,7 @@ class ToCodeTest(unittest.TestCase):
                 form="form1"),
             model.AggregationVariables(
                 id=3,
-        category=[],
+                category=[],
                 method="sub_match",
                 db_column="column2",
                 condition="B",
@@ -88,7 +88,7 @@ class ToCodeTest(unittest.TestCase):
         for av in agg_variables:
             self.variables["case"][av.id][av.id] = Variable(av)
             self.variables_forms[av.id] = "form1"
-            self.variables_test[av.id] = self.variables["case"][av.id][av.id].test_type
+            self.variables_test[av.id] = self.variables["case"][av.id][av.id].test
             self.variables_groups[av.id] = [av.id]
 
     def tearDown(self):

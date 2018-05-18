@@ -4,6 +4,17 @@ from meerkat_abacus import model
 from meerkat_abacus.codes.variable import Variable
 
 
+positive = {
+    "applicable": 1,
+    "value": 1
+    }
+
+negative = {
+    "applicable": 0,
+    "value": 0
+    }
+
+
 class VariableTest(unittest.TestCase):
     """
     Tests to check that Variables class gives the correct results on test cases
@@ -26,13 +37,13 @@ class VariableTest(unittest.TestCase):
             db_column="index")
         variable = Variable(agg_variable)
         row = {"index": "hei"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"index": ""}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"index": 0}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"index": None}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
 
     def test_value(self):
         """
@@ -45,13 +56,16 @@ class VariableTest(unittest.TestCase):
             db_column="index")
         variable = Variable(agg_variable)
         row = {"index": "hei"}
-        self.assertEqual(variable.test(row), "hei")
+        self.assertEqual(variable.test(row),
+                         {"applicable": True,
+                          "value": "hei"
+                          })
         row = {"index": ""}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"index": 0}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"index": None}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         
     def test_between(self):
         """
@@ -65,16 +79,16 @@ class VariableTest(unittest.TestCase):
             db_column="A,B")
         variable = Variable(agg_variable)
         row = {"A": "1", "B": "6"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"A": "2", "B": "6"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"A": "2", "B": "400"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"A": "2", "B": "1"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
 
         row = {"A": "2"} # test if column is missing
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         agg_variable = model.AggregationVariables(
             id=4,
             method="between",
@@ -97,11 +111,11 @@ class VariableTest(unittest.TestCase):
             db_column="A")
         variable = Variable(agg_variable)
         row = {"A": "01-Jan-2016"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"A": "01-Jan-2035"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"A": "01-Jan-2010"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         
     def test_calc(self):
         """
@@ -116,11 +130,26 @@ class VariableTest(unittest.TestCase):
         variable = Variable(agg_variable)
 
         row = {"A": "1", "B": "6"}
-        self.assertEqual(variable.test(row), 7)
+        self.assertEqual(variable.test(row), {
+            "applicable": True,
+            "value": 7
+            }
+        )
         row = {"A": "2", "B": "400"}
-        self.assertEqual(variable.test(row), 402)
+        self.assertEqual(variable.test(row), {
+            "applicable": True,
+            "value": 402
+            }
+        )
         row = {"A": "2"}  # test if column is missing
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row),
+                         {"applicable": False,
+                          "value": 0})
+        
+        row = {"A": "2", "B": "-2"}  # test if result is 0
+        self.assertEqual(variable.test(row),
+                         {"applicable": True,
+                          "value": 0})
 
         agg_variable = model.AggregationVariables(
             id=4,
@@ -142,21 +171,21 @@ class VariableTest(unittest.TestCase):
             condition="A")
         variable = Variable(agg_variable)
         row = {"column1": "A"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "B"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"column1": "Aa"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         agg_variable.condition = "A,C"
         variable = Variable(agg_variable)
         row = {"column1": "A"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "C"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "B"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"column1": "Aa"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
 
     def test_sub_match(self):
         agg_variable = model.AggregationVariables(
@@ -166,24 +195,24 @@ class VariableTest(unittest.TestCase):
             condition="A")
         variable = Variable(agg_variable)
         row = {"column1": "A"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "A3"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "B"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
 
         agg_variable.condition = "A,C"
         variable = Variable(agg_variable)
         row = {"column1": "A"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "C"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "A1"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "C3"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "B"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         
     def test_and(self):
         agg_variable = model.AggregationVariables(
@@ -193,11 +222,11 @@ class VariableTest(unittest.TestCase):
             condition="A;B")
         variable = Variable(agg_variable)
         row = {"column1": "A", "column2": "B"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "B", "column2": "A"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"column1": "Aa", "column2": "B"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         agg_variable = model.AggregationVariables(
             id=4,
             method="match and match",
@@ -205,9 +234,9 @@ class VariableTest(unittest.TestCase):
             condition="A,C;B")
         variable = Variable(agg_variable)
         row = {"column1": "A", "column2": "B"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "C", "column2": "B"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
 
         
     def test_or(self):
@@ -218,14 +247,14 @@ class VariableTest(unittest.TestCase):
             condition="A;B")
         variable = Variable(agg_variable)
         row = {"column1": "A", "column2": "B"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "B", "column2": "A"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"column1": "Aa", "column2": "B"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
 
         row = {"column1": "Aa", "column2": "C"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
 
         agg_variable = model.AggregationVariables(
             id=4,
@@ -234,9 +263,9 @@ class VariableTest(unittest.TestCase):
             condition="A,C;B")
         variable = Variable(agg_variable)
         row = {"column1": "A", "column2": "B"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "C", "column2": "D"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
 
     def test_different_test_types(self):
         agg_variable = model.AggregationVariables(
@@ -246,11 +275,11 @@ class VariableTest(unittest.TestCase):
             condition="A;B")
         variable = Variable(agg_variable)
         row = {"column1": "A", "column2": "Bb"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "B", "column2": "A"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"column1": "Aa", "column2": "B"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
 
         agg_variable = model.AggregationVariables(
             id=4,
@@ -260,11 +289,11 @@ class VariableTest(unittest.TestCase):
             condition="A;4,9")
         variable = Variable(agg_variable)
         row = {"column1": "A", "column2": "5"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "A", "column2": "3"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"column1": "Aa", "column2": "5"}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         agg_variable = model.AggregationVariables(
             id=4,
             method="sub_match or not_null",
@@ -272,13 +301,13 @@ class VariableTest(unittest.TestCase):
             condition="A;None")
         variable = Variable(agg_variable)
         row = {"column1": "A", "column2": "5"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "A", "column2": ""}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
         row = {"column1": "B", "column2": ""}
-        self.assertEqual(variable.test(row), 0)
+        self.assertEqual(variable.test(row), negative)
         row = {"column1": "Aa", "column2": "5"}
-        self.assertEqual(variable.test(row), 1)
+        self.assertEqual(variable.test(row), positive)
     def test_no_such_method(self):
         agg_variable = model.AggregationVariables(
             id=4,
