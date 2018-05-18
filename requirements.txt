@@ -1,4 +1,4 @@
-python-dateutil==2.2
+python-dateutil==2.5.0
 pystmark==0.4.4
 psycopg2==2.7.3.2
 SQLAlchemy==1.1.15
