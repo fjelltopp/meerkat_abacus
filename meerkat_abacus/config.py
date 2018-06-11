@@ -58,7 +58,7 @@ class Config:
         self.server_auth_username = os.environ.get('SERVER_AUTH_USERNAME', 'root')
         self.server_auth_password = os.environ.get('SERVER_AUTH_PASSWORD', 'password')
         self.send_test_device_messages = os.environ.get('MEERKAT_TEST_DEVICE_MESSAGES',
-                                                   False)
+                                                        False)
         self.sentry_dns = os.environ.get('SENTRY_DNS', '')
         self.db_dump = os.environ.get('DB_DUMP', '')
         self.db_dump_folder = '/var/www/dumps/'
