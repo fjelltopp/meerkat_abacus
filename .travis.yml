@@ -39,7 +39,6 @@ install:
  - conda update -q conda
  - conda install pandas
  - pip install -r requirements.txt
- - cd ../../
  - git clone --branch development --single-branch https://github.com/meerkat-code/meerkat_libs.git
  - cd meerkat_libs
  - pip install .
