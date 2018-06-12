@@ -1,11 +1,14 @@
 import logging
 import boto3
+import time
+from celery.task.control import inspect
 
 
 def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=1000):
     """
     Read stationary data using the get_function to determine the source
     """
+    celery_inspect = inspect()
 
     for form_name in param_config.country_config["tables"]:
         logging.info(f"Start processing data for form {form_name}")
@@ -15,14 +18,31 @@ def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=
                          "data": dict(element)})
             if i % N_send_to_task == 0:
                 logging.info(f"Processed {i} records")
-                celery_app.send_task("processing_tasks.process_data", [data])
+                send_task(data, celery_app, celery_inspect)
                 data = []
         if data:
+            send_task(data, celery_app, celery_inspect)
             logging.info("Cleaning up data buffer.")
-            celery_app.send_task("processing_tasks.process_data", [data])
         logging.info("Finished processing data.")
         logging.info(f"Processed {i} records")
 
+
+def send_task(data, celery_app, inspect, N=20):
+    """
+    Sends data to process queue if the the are less than N tasks waiting
+
+
+    """
+    inspect_result = inspect.reserved()["celery@abacus"]
+    while len(inspect_result) > N:
+        logging.info("There where {} reserved tasks so waiting 5 seconds".format(
+            len(inspect_result)))
+        time.sleep(5)
+        inspect_result = inspect.reserved()["celery@abacus"]
+    logging.info("Sending data")
+    celery_app.send_task("processing_tasks.process_data", [data])
+
+        
 def download_data_from_s3(config):
     """
     Get csv-files with data from s3 bucket
