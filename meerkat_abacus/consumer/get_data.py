@@ -3,10 +3,8 @@ import boto3
 import time
 from celery.task.control import inspect
 
-from meerkat_abacus.pipeline_worker import processing_tasks
 
-
-def read_stationary_data(get_function, param_config, N_send_to_task=1000):
+def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=1000):
     """
     Read stationary data using the get_function to determine the source
     """
@@ -20,20 +18,21 @@ def read_stationary_data(get_function, param_config, N_send_to_task=1000):
                          "data": dict(element)})
             if i % N_send_to_task == 0:
                 logging.info(f"Processed {i} records")
-                send_task(data, celery_inspect)
+                send_task(data, celery_app, celery_inspect)
                 data = []
         if data:
-            send_task(data, celery_inspect)
+            send_task(data, celery_app, celery_inspect)
             logging.info("Cleaning up data buffer.")
         logging.info("Finished processing data.")
+        logging.info(f"Processed {i} records")
 
-def send_task(data, inspect, N=20):
+
+def send_task(data, celery_app, inspect, N=20):
     """
     Sends data to process queue if the the are less than N tasks waiting
 
 
     """
-
     inspect_result = inspect.reserved()["celery@abacus"]
     logging.info(inspect_result)
     while len(inspect_result) > N:
@@ -42,7 +41,7 @@ def send_task(data, inspect, N=20):
         time.sleep(5)
         inspect_result = inspect.reserved()["celery@abacus"]
     logging.info("Sending data")
-    processing_tasks.process_data.delay(data)
+    celery_app.send_task("processing_tasks.process_data", [data])
 
         
 def download_data_from_s3(config):

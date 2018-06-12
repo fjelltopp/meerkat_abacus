@@ -7,7 +7,6 @@ Unit tests Meerkat Abacus
 from unittest import mock
 import random
 import unittest
-import sys
 from meerkat_abacus.consumer import get_data
 from meerkat_abacus import config
 
@@ -21,8 +20,7 @@ class TestConsumer(unittest.TestCase):
         pass
 
     @mock.patch('meerkat_abacus.consumer.get_data.inspect')
-    @mock.patch('meerkat_abacus.consumer.get_data.processing_tasks.process_data.delay')
-    def test_read_data(self, process_data_mock, inspect_mock):
+    def test_read_data(self, inspect_mock):
         """
         Tests that read_stationary_data gets data from
         a get function and sends apropriate process_data.delay calls
@@ -33,13 +31,15 @@ class TestConsumer(unittest.TestCase):
         inspect_mock.return_value = inspect_mock_rv
         param_config = config.get_config()
         param_config.country_config["tables"] = ["table1", "table2"]
+        celery_app_mock = mock.MagicMock()
         get_data.read_stationary_data(yield_data_function,
-                                      param_config, N_send_to_task=9)
-        process_data_mock.assert_called()
-        self.assertEqual(process_data_mock.call_count, 24)
+                                      param_config, celery_app_mock, N_send_to_task=9)
+                                      
+        celery_app_mock.send_task.assert_called()
+        self.assertEqual(celery_app_mock.send_task.call_count, 24)
         # 24 = 2 * 12. We get 11 normal calls and one extra for the last record
         
-
+           
 def yield_data_function(form, param_config=None, N=100):
     for i in range(N):
         yield {"a": random.random(),

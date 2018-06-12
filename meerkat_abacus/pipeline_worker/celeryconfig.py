@@ -15,6 +15,8 @@ import os
 
 from meerkat_abacus.config import config
 
+DEVELOPMENT = bool(os.environ.get("DEVELOPMENT", False))
+
 BROKER_URL = 'amqp://guest@rabbit//'
 CELERY_RESULT_BACKEND = 'rpc://guest@rabbit//'
 
