@@ -43,7 +43,17 @@ class DownloadDataFiles(Base):
     status = Column(Float)
     success = Column(Integer)
 
+    
+class StepFailiure(Base):
+    __tablename__ = 'step_failures'
 
+    id = Column(Integer, primary_key=True)
+    data = Column(JSONB)
+    form = Column(String)
+    step_name = Column(String)
+    error = Column(String)
+
+    
 class Locations(Base):
     __tablename__ = 'locations'
 
