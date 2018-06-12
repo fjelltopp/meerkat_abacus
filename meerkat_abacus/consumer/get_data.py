@@ -34,7 +34,6 @@ def send_task(data, celery_app, inspect, N=20):
 
     """
     inspect_result = inspect.reserved()["celery@abacus"]
-    logging.info(inspect_result)
     while len(inspect_result) > N:
         logging.info("There where {} reserved tasks so waiting 5 seconds".format(
             len(inspect_result)))
