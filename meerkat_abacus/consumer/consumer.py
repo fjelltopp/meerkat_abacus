@@ -9,7 +9,6 @@ from meerkat_abacus.consumer import get_data
 from meerkat_abacus.config import get_config
 from meerkat_abacus import util
 from meerkat_abacus.util import create_fake_data
-from meerkat_abacus.pipeline_worker.processing_tasks import test_up
 import backoff
 
 config = get_config()
@@ -18,6 +17,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 app = Celery()
 app.config_from_object(celeryconfig)
+app.conf.task_default_queue = 'abacus'
 session, engine = database_setup.set_up_database(False, True, config)
 
 
@@ -26,11 +26,11 @@ session, engine = database_setup.set_up_database(False, True, config)
                        AttributeError, OSError),
                       max_tries=10,
                       max_value=30)
-
 def wait_for_celery_runner():
-    test_task = test_up.delay()
+    test_task = app.send_task('processing_tasks.test_up')
     result = test_task.get(timeout=1)
     return result
+
 
 wait_for_celery_runner()
 # Initial Setup
@@ -56,7 +56,7 @@ elif config.initial_data_source in ["AWS_RDS", "LOCAL_RDS"]:
 else:
     raise AttributeError(f"Invalid source {config.initial_data_source}")
 
-get_data.read_stationary_data(get_function, config)
+get_data.read_stationary_data(get_function, config, app)
 database_setup.logg_tables(config.country_config["tables"], engine)
 
 
