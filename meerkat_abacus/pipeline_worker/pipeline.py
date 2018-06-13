@@ -87,9 +87,13 @@ class Pipeline:
         return data
 
     def handle_exception(self, data, exception, step):
+        """
+        Handles an exeption in the step.run method by writing the data
+        to a log table and logging the exception
+        """
         form_data = data["data"]
         form = data["form"]
-        # logging.exception(f"There was an error in step {step}")
+        logging.exception(f"There was an error in step {step}")
 
         error_str = type(exception).__name__ + ": " + str(exception)
         self.session.add(
