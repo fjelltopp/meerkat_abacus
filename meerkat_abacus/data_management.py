@@ -1150,7 +1150,8 @@ def to_data(data, link_names,
                 logging.warning("Missing loc data")
                 continue
             try:
-                date = parse(row[data_type["form"]][data_type["date"]])
+                date_str = row[data_type["form"]][data_type["date"]]
+                date = parse(date_str)
                 date = datetime(date.year, date.month, date.day)
                 epi_year, week = epi_week_for_date(date, param_config=param_config.country_config)
             except KeyError:
@@ -1158,10 +1159,10 @@ def to_data(data, link_names,
                 continue
             except ValueError:
                 logging.error(f"Failed to convert date to epi week. uuid: {row.get('uuid', 'UNKNOWN')}")
-                logging.debug(f"Faulty row date: {date}.")
+                logging.debug(f"Faulty row date: {date_str}.")
                 continue
             except:
-                logging.error("Invalid Date: %s", row[data_type["form"]].get(data_type["date"]))
+                logging.error("Invalid Date: %s", row[data_type["form"]].get(data_type.get("date", "UNKNOWN")))
                 continue
 
             if "alert" in variable_data:
