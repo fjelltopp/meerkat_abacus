@@ -13,6 +13,7 @@ from meerkat_abacus.codes import to_codes
 from meerkat_abacus.util import data_types
 from meerkat_abacus.util.epi_week import epi_week_for_date
 from meerkat_libs import consul_client as consul
+from meerkat_abacus.util.authenticate import abacus_auth_token
 
 
 def read_stationary_data(get_function, internal_buffer,
@@ -195,7 +196,8 @@ def add_rows_to_db(form, form_data, session, engine,
                               "uuid": insert_row[uuid_field]})
                 consul.send_dhis2_events(uuid=insert_row[uuid_field],
                                          form_id=form,
-                                         raw_row=insert_row)
+                                         raw_row=insert_row,
+                                         auth_token=abacus_auth_token())
                 new_rows.append(insert_row[uuid_field])
             else:
                 logging.debug("Not added")
@@ -204,7 +206,8 @@ def add_rows_to_db(form, form_data, session, engine,
                           "uuid": insert_row[uuid_field]})
             consul.send_dhis2_events(uuid=insert_row[uuid_field],
                                      form_id=form,
-                                     raw_row=insert_row)
+                                     raw_row=insert_row,
+                                     auth_token=abacus_auth_token())
             new_rows.append(insert_row[uuid_field])
         i += 1
         if i % 10000 == 0:
@@ -217,7 +220,7 @@ def add_rows_to_db(form, form_data, session, engine,
     if len(dicts) > 0:
         conn.execute(table.__table__.insert(), dicts)
     conn.close()
-    consul.flush_dhis2_events()
+    consul.flush_dhis2_events(auth_token=abacus_auth_token())
     logging.debug("Number of records %s", i)
     return new_rows
 
