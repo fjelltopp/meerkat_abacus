@@ -15,8 +15,8 @@ matrix:
                MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
                PERSISTENT_DATABASE_URL='postgresql+psycopg2://postgres:postgres@localhost/persistent_demo_db'
                HERMES_API_ROOT='http://testapiroot'
-               DATA_DIRECTORY="${TRAVIS_BUILD_DIR}meerkat_abacus/meerkat_abacus/data/"
-               COUNTRY_CONFIG_DIR="${TRAVIS_BUILD_DIR}/meerkat_abacus/meerkat_abacus/country_config/"
+               DATA_DIRECTORY="${TRAVIS_BUILD_DIR}/meerkat_abacus/data/"
+               COUNTRY_CONFIG_DIR="${TRAVIS_BUILD_DIR}/meerkat_abacus/country_config/"
                FAKE_DATA_GENERATION=INTERNAL
                INITIAL_DATA_SOURCE=FAKE_DATA
                STREAM_DATA_SOURCE=AWS_S3
