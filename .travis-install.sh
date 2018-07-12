@@ -16,11 +16,11 @@ then
     conda update -q conda
     conda install pandas
     pip install -r requirements.txt
-    git clone --branch development --single-branch https://github.com/meerkat-code/meerkat_api.git
+    git clone --branch development --single-branch https://github.com/fjelltopp/meerkat_api.git
     cd meerkat_api/api_background
     pip install .
     cd ../../
-    git clone --branch development --single-branch https://github.com/meerkat-code/meerkat_libs.git
+    git clone --branch development --single-branch https://github.com/fjelltopp/meerkat_libs.git
     cd meerkat_libs
     pip install .
     cd ../
