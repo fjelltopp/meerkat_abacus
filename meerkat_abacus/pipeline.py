@@ -65,7 +65,7 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
     Processing a chunk of data from the internal buffer
 
     """
-    uuids_form_map = {}
+    uuids_form_map = defaultdict(list)
     tables = defaultdict(list)
     while internal_buffer.qsize() > 0:
 
@@ -81,7 +81,6 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
             session,
             engine,
             **kwargs)
-        uuids_form_map.setdefault(form, [])
         uuids_form_map[form] += new_uuids
         if len(new_uuids) > 0:
             forms.append(form)
