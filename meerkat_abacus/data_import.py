@@ -138,8 +138,7 @@ def add_rows_to_db(form, form_data, session, engine,
             for variable in to_check:
                 to_check_test[variable] = variable.test
     removed = {}
-    i = 0
-    for row in form_data:
+    for i, row in enumerate(form_data):
         if fraction:
             if random.random() > fraction:
                 continue
@@ -209,7 +208,6 @@ def add_rows_to_db(form, form_data, session, engine,
                                      raw_row=insert_row,
                                      auth_token=abacus_auth_token())
             new_rows.append(insert_row[uuid_field])
-        i += 1
         if i % 10000 == 0:
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
