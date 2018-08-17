@@ -994,34 +994,33 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
             chunk = res.fetchmany(500)
             if not chunk:
                 break
-            else:
-                for row in chunk:
-                    uuid = row[0]
-                    link_type = row[3]
-                    if uuid in data and link_type:
+            for row in chunk:
+                uuid = row[0]
+                link_type = row[3]
+                if uuid in data and link_type:
+                    data[uuid].setdefault(link_type, [])
+                    data[uuid][link_type].append(row[2])
+                else:
+                    data[uuid] = {}
+                    data[uuid][tables[0].__tablename__] = row[1]
+                    if link_type:
                         data[uuid].setdefault(link_type, [])
                         data[uuid][link_type].append(row[2])
-                    else:
-                        data[uuid] = {}
-                        data[uuid][tables[0].__tablename__] = row[1]
-                        if link_type:
-                            data[uuid].setdefault(link_type, [])
-                            data[uuid][link_type].append(row[2])
 
-                # Send all data apart from the latest UUID to to_data function
-                last_data = data.pop(uuid)
-                if data:
-                    data_dicts, disregarded_data_dicts, new_alerts = to_data(
-                        data, link_names, links_by_name, data_type, locations,
-                        variables, param_config=param_config)
-                    newly_added = data_to_db(
-                        conn2, data_dicts,
-                        disregarded_data_dicts,
-                        data_type["type"]
-                    )
-                    added += newly_added
-                    alerts += new_alerts
-                data = {uuid: last_data}
+            # Send all data apart from the latest UUID to to_data function
+            last_data = data.pop(uuid)
+            if data:
+                data_dicts, disregarded_data_dicts, new_alerts = to_data(
+                    data, link_names, links_by_name, data_type, locations,
+                    variables, param_config=param_config)
+                newly_added = data_to_db(
+                    conn2, data_dicts,
+                    disregarded_data_dicts,
+                    data_type["type"]
+                )
+                added += newly_added
+                alerts += new_alerts
+            data = {uuid: last_data}
             if debug_enabled:
                 logging.debug("Added %s records", added)
         if data:
