@@ -10,6 +10,8 @@ import logging
 import os
 import os.path
 import random
+import sqlalchemy
+
 import subprocess
 import time
 
@@ -1213,6 +1215,40 @@ def send_alerts(alerts, session, param_config=config):
     for alert in alerts:
         alert_id = alert.uuid[-param_config.country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations, param_config)
+
+
+def filter_duplicate_submissions(param_config):
+    country_cfg = param_config.country_config
+    if not country_cfg.get('tables_duplicates_resolution'):
+        return
+    engine, session = util.get_db_engine(param_config.DATABASE_URL)
+    form_tables = model.form_tables(param_config)
+    for form_name, strategy in country_cfg['tables_duplicates_resolution'].items():
+        if strategy == 'newest_only':
+            logging.info("Starting removing duplicates for %s", form_name)
+            register_table = form_tables[form_name]
+            register_table_alias = sqlalchemy.orm.util.AliasedClass(register_table)
+
+            duplicates_results = list(session.query(register_table, register_table_alias).join(register_table_alias,
+                                                                          register_table.data['SubmissionDate'] <
+                                                                          register_table_alias.data['SubmissionDate']).filter(
+                register_table.data['deviceid'] == register_table_alias.data['deviceid']).filter(
+                register_table.data['today'] == register_table_alias.data['today']).values(register_table.uuid)
+            )
+            uuids_to_delete = {x[0] for x in duplicates_results}
+            with open("/tmp/uuids_to_delte.txt", 'a') as f:
+                for uuid in uuids_to_delete:
+                    f.write(uuid)
+                    f.write('\n')
+
+            logging.info("Found %i duplicates", len(uuids_to_delete))
+
+            delete_stm = delete(register_table).where(register_table.uuid.in_(uuids_to_delete))
+            ret = session.execute(delete_stm)
+            session.commit()
+            return ret
+        else:
+            raise ValueError(f"Unable to handle duplicate strategy: {strategy}")
 
 
 def initial_visit_control(param_config=config):

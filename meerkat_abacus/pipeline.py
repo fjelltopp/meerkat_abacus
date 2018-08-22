@@ -87,6 +87,8 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
     corrected = data_management.initial_visit_control(
         param_config=param_config
     )
+    data_management.filter_duplicate_submissions(param_config)
+
     corrected_tables = list(
         param_config.country_config.get('initial_visit_control', {}).keys())
     if corrected_tables:
