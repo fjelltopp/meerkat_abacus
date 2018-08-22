@@ -1228,9 +1228,9 @@ def filter_duplicate_submissions(param_config):
             logging.info("Starting removing duplicates for %s", form_name)
             register_table = form_tables[form_name]
             register_table_alias = sqlalchemy.orm.util.AliasedClass(register_table)
-
             _data = register_table.data
             _data_alias = register_table_alias.data
+
             duplicates_results = session.query(register_table, register_table_alias
             ).join(
                 register_table_alias, _data['SubmissionDate'] < _data_alias['SubmissionDate']
