@@ -1229,20 +1229,19 @@ def filter_duplicate_submissions(param_config):
             register_table = form_tables[form_name]
             register_table_alias = sqlalchemy.orm.util.AliasedClass(register_table)
 
-            duplicates_results = list(session.query(register_table, register_table_alias).join(register_table_alias,
-                                                                          register_table.data['SubmissionDate'] <
-                                                                          register_table_alias.data['SubmissionDate']).filter(
-                register_table.data['deviceid'] == register_table_alias.data['deviceid']).filter(
-                register_table.data['today'] == register_table_alias.data['today']).values(register_table.uuid)
-            )
+            _data = register_table.data
+            _data_alias = register_table_alias.data
+            duplicates_results = session.query(register_table, register_table_alias
+            ).join(
+                register_table_alias, _data['SubmissionDate'] < _data_alias['SubmissionDate']
+            ).filter(
+                _data['deviceid'] == _data_alias['deviceid']
+            ).filter(
+                _data['today'] == _data_alias['today']
+            ).values(register_table.uuid)
+
             uuids_to_delete = {x[0] for x in duplicates_results}
-            with open("/tmp/uuids_to_delte.txt", 'a') as f:
-                for uuid in uuids_to_delete:
-                    f.write(uuid)
-                    f.write('\n')
-
             logging.info("Found %i duplicates", len(uuids_to_delete))
-
             delete_stm = delete(register_table).where(register_table.uuid.in_(uuids_to_delete))
             ret = session.execute(delete_stm)
             session.commit()
