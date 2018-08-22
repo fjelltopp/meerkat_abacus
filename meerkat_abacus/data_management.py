@@ -9,13 +9,11 @@ import json
 import logging
 import os
 import os.path
-import random
 import sqlalchemy
 
 import subprocess
 import time
 
-import boto3
 from datetime import datetime
 from dateutil.parser import parse
 from geoalchemy2.shape import from_shape
@@ -30,7 +28,6 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 
 from meerkat_abacus.util import data_types
-import meerkat_libs as libs
 from meerkat_abacus import alerts as alert_functions
 from meerkat_abacus.config import config
 from meerkat_abacus import model
@@ -38,7 +35,7 @@ from meerkat_abacus import util
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus.util import create_fake_data
 from meerkat_abacus.util.epi_week import epi_week_for_date
-from meerkat_libs import consul_client as consul
+from meerkat_abacus.util.datetime import strptime
 
 country_config = config.country_config
 
@@ -1233,13 +1230,12 @@ def filter_duplicate_submissions(param_config):
 
             duplicates_results = session.query(register_table, register_table_alias
             ).join(
-                register_table_alias, _data['SubmissionDate'] < _data_alias['SubmissionDate']
+                register_table_alias, strptime(_data['SubmissionDate']) > strptime(_data_alias['SubmissionDate'])
             ).filter(
                 _data['deviceid'] == _data_alias['deviceid']
             ).filter(
                 _data['today'] == _data_alias['today']
             ).values(register_table.uuid)
-
             uuids_to_delete = {x[0] for x in duplicates_results}
             logging.info("Found %i duplicates", len(uuids_to_delete))
             delete_stm = delete(register_table).where(register_table.uuid.in_(uuids_to_delete))
