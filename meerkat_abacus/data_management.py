@@ -1227,6 +1227,8 @@ def filter_duplicate_submissions(param_config):
             register_table_alias = sqlalchemy.orm.util.AliasedClass(register_table)
             _data = register_table.data
             _data_alias = register_table_alias.data
+            date_column_name = data_types.data_types_for_form_name(form_name, param_config)[0]['date']
+            location_column_name = data_types.data_types_for_form_name(form_name, param_config)[0]['location']
 
             duplicates_results = session.query(register_table, register_table_alias
             ).join(
@@ -1234,9 +1236,9 @@ def filter_duplicate_submissions(param_config):
             ).filter(
                 register_table.id != register_table_alias.id
             ).filter(
-                func.to_date(_data['visit_date'].astext, PSQL_VISIT_DATE_FORMAT) == func.to_date(_data_alias['visit_date'].astext, PSQL_VISIT_DATE_FORMAT)
+                func.to_date(_data[date_column_name].astext, PSQL_VISIT_DATE_FORMAT) == func.to_date(_data_alias[date_column_name].astext, PSQL_VISIT_DATE_FORMAT)
             ).filter(
-                _data['deviceid'].astext == _data_alias['deviceid'].astext
+                _data[location_column_name].astext == _data_alias[location_column_name].astext
             ).values(register_table.uuid)
             uuids_to_delete = {x[0] for x in duplicates_results}
             if not uuids_to_delete:
