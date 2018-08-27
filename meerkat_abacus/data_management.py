@@ -35,7 +35,7 @@ from meerkat_abacus import util
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus.util import create_fake_data
 from meerkat_abacus.util.epi_week import epi_week_for_date
-from meerkat_abacus.util.datetime import PSQL_SUBMISSION_DATE_FORMAT, PSQL_VISIT_DATE_FORMAT
+from meerkat_abacus.util.datetime_helper import PSQL_SUBMISSION_DATE_FORMAT, PSQL_VISIT_DATE_FORMAT
 
 country_config = config.country_config
 
