@@ -1232,6 +1232,8 @@ def filter_duplicate_submissions(param_config):
             ).join(
                 register_table_alias, func.to_date(_data['SubmissionDate'].astext, PSQL_SUBMISSION_DATE_FORMAT) <= func.to_date(_data_alias['SubmissionDate'].astext, PSQL_SUBMISSION_DATE_FORMAT)
             ).filter(
+                register_table.id != register_table_alias.id
+            ).filter(
                 func.to_date(_data['visit_date'].astext, PSQL_VISIT_DATE_FORMAT) == func.to_date(_data_alias['visit_date'].astext, PSQL_VISIT_DATE_FORMAT)
             ).filter(
                 _data['deviceid'].astext == _data_alias['deviceid'].astext
