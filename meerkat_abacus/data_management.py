@@ -35,7 +35,7 @@ from meerkat_abacus import util
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus.util import create_fake_data
 from meerkat_abacus.util.epi_week import epi_week_for_date
-from meerkat_abacus.util.datetime import PSQL_SUBMISSION_DATE_FORMAT
+from meerkat_abacus.util.datetime import PSQL_SUBMISSION_DATE_FORMAT, PSQL_VISIT_DATE_FORMAT
 
 country_config = config.country_config
 
@@ -1230,11 +1230,11 @@ def filter_duplicate_submissions(param_config):
 
             duplicates_results = session.query(register_table, register_table_alias
             ).join(
-                register_table_alias, func.to_date(_data['SubmissionDate'].astext, PSQL_SUBMISSION_DATE_FORMAT) < func.to_date(_data_alias['SubmissionDate'].astext, PSQL_SUBMISSION_DATE_FORMAT)
+                register_table_alias, func.to_date(_data['SubmissionDate'].astext, PSQL_SUBMISSION_DATE_FORMAT) <= func.to_date(_data_alias['SubmissionDate'].astext, PSQL_SUBMISSION_DATE_FORMAT)
             ).filter(
-                _data['deviceid'] == _data_alias['deviceid']
+                func.to_date(_data['visit_date'].astext, PSQL_VISIT_DATE_FORMAT) == func.to_date(_data_alias['visit_date'].astext, PSQL_VISIT_DATE_FORMAT)
             ).filter(
-                _data['today'] == _data_alias['today']
+                _data['deviceid'].astext == _data_alias['deviceid'].astext
             ).values(register_table.uuid)
             uuids_to_delete = {x[0] for x in duplicates_results}
             if not uuids_to_delete:
