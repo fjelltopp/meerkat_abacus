@@ -1230,16 +1230,8 @@ def filter_duplicate_submissions(param_config):
             date_column_name = data_types.data_types_for_form_name(form_name, param_config)[0]['date']
             location_column_name = data_types.data_types_for_form_name(form_name, param_config)[0]['location']
 
-            duplicates_results = session.query(register_table, register_table_alias
-            ).join(
-                register_table_alias, func.to_date(_data['SubmissionDate'].astext, PSQL_SUBMISSION_DATE_FORMAT) <= func.to_date(_data_alias['SubmissionDate'].astext, PSQL_SUBMISSION_DATE_FORMAT)
-            ).filter(
-                register_table.id != register_table_alias.id
-            ).filter(
-                func.to_date(_data[date_column_name].astext, PSQL_VISIT_DATE_FORMAT) == func.to_date(_data_alias[date_column_name].astext, PSQL_VISIT_DATE_FORMAT)
-            ).filter(
-                _data[location_column_name].astext == _data_alias[location_column_name].astext
-            ).values(register_table.uuid)
+            duplicates_query = f"WITH cte AS ( SELECT data->>'KEY' AS key, rank() OVER ( PARTITION BY data->>'{location_column_name}', (data->>'{date_column_name}')::timestamp ORDER BY (data->>'SubmissionDate')::timestamp desc) AS rnk FROM {form_name} ) SELECT key FROM cte WHERE rnk > 1;"
+            duplicates_results = engine.execute(duplicates_query)
             uuids_to_delete = {x[0] for x in duplicates_results}
             if not uuids_to_delete:
                 logging.info("Found no duplicates")
