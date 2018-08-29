@@ -65,7 +65,7 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
     Processing a chunk of data from the internal buffer
 
     """
-    uuids_form_map = {}
+    uuids_form_map = defaultdict(list)
     tables = defaultdict(list)
     while internal_buffer.qsize() > 0:
 
@@ -81,13 +81,14 @@ def process_chunk(internal_buffer, session, engine, param_config=config,
             session,
             engine,
             **kwargs)
-        uuids_form_map.setdefault(form, [])
         uuids_form_map[form] += new_uuids
         if len(new_uuids) > 0:
             forms.append(form)
     corrected = data_management.initial_visit_control(
         param_config=param_config
     )
+    data_management.filter_duplicate_submissions(param_config)
+
     corrected_tables = list(
         param_config.country_config.get('initial_visit_control', {}).keys())
     if corrected_tables:
