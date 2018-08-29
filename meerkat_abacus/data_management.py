@@ -1223,10 +1223,6 @@ def filter_duplicate_submissions(param_config):
     for form_name, strategy in country_cfg['tables_duplicates_resolution'].items():
         if strategy == 'newest_only':
             logging.info("Starting removing duplicates for %s", form_name)
-            register_table = form_tables[form_name]
-            register_table_alias = sqlalchemy.orm.util.AliasedClass(register_table)
-            _data = register_table.data
-            _data_alias = register_table_alias.data
             date_column_name = data_types.data_types_for_form_name(form_name, param_config)[0]['date']
             location_column_name = data_types.data_types_for_form_name(form_name, param_config)[0]['location']
 
@@ -1238,6 +1234,7 @@ def filter_duplicate_submissions(param_config):
                 return
 
             logging.info("Found %i duplicates", len(uuids_to_delete))
+            register_table = form_tables[form_name]
             delete_stm = delete(register_table).where(register_table.uuid.in_(uuids_to_delete))
             ret = session.execute(delete_stm)
             session.commit()
