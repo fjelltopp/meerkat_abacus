@@ -38,15 +38,13 @@ s3 = boto3.resource('s3')
 def get_last_read_row_marker(export_codename):
     try:
         s3.meta.client.download_file('meerkat-consul-db-markers', export_codename, DB_MARKER_FILEPATH)
-    except botocore.exceptions.ClientError:
-        print("No db marker found at S3")
-    if os.path.isfile(DB_MARKER_FILEPATH):
         with open(DB_MARKER_FILEPATH) as f:
             marker = json.load(f)
         for form_name in tables:
             if not form_name in marker:
                 marker[form_name] = 0
-    else:
+    except botocore.exceptions.ClientError:
+        print("No db marker found at S3")
         marker = {form_name: 0 for form_name in tables}
     return marker
 
