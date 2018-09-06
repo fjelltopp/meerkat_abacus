@@ -29,7 +29,7 @@ def __create_table(case_form_name):
 
 tables ={
     "new_som_register": __create_table("new_som_register"),
-    "new_som_case": __create_table("new_som_case")
+    # "new_som_case": __create_table("new_som_case")
 }
 
 s3 = boto3.resource('s3')
@@ -82,6 +82,7 @@ def work(argv):
     marker = get_last_read_row_marker(marker_aws_filename)
     for form_name, table in tables.items():
         __export_form(form_name, marker, marker_aws_filename, session, table)
+    consul_client.flush_dhis2_events(abacus_auth_token())
 
 
 if __name__ == '__main__':
