@@ -29,7 +29,7 @@ def __create_table(case_form_name):
 
 tables ={
     "new_som_register": __create_table("new_som_register"),
-    # "new_som_case": __create_table("new_som_case")
+    "new_som_case": __create_table("new_som_case")
 }
 
 s3 = boto3.resource('s3')
