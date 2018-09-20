@@ -3,7 +3,9 @@ Main pipeline for abacus
 
 """
 import logging
+import sys
 
+from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps.quality_control import QualityControl
 from meerkat_abacus.pipeline_worker.process_steps.write_to_db import WriteToDb
 from meerkat_abacus.pipeline_worker.process_steps.add_links import AddLinks
@@ -73,16 +75,36 @@ class Pipeline:
             for d in data:
                 data_field = d["data"]
                 form = d["form"]
-                new_data += step.run(form, data_field)
+                try:
+                    new_data += step.run(form, data_field)
+                except Exception as exception:
+                    self.handle_exception(d, exception, step)
+                    n = n - 1
             step.end_step(n)
+            data = new_data
             if not new_data:
                 break
-            data = new_data
-
         return data
 
+    def handle_exception(self, data, exception, step):
+        """
+        Handles an exeption in the step.run method by writing the data
+        to a log table and logging the exception
+        """
+        form_data = data["data"]
+        form = data["form"]
+        logging.exception(f"There was an error in step {step}")
 
-
+        error_str = type(exception).__name__ + ": " + str(exception)
+        self.session.add(
+            model.StepFailiure(
+                data=form_data,
+                form=form,
+                step_name=str(step),
+                error=error_str
+                )
+            )
+        self.session.commit()
 
 
 

@@ -1,15 +1,17 @@
 import logging
 import celery
 from celery import Celery
+from celery.task.control import inspect
 import time
+import backoff
 
 from meerkat_abacus.consumer import celeryconfig
 from meerkat_abacus.consumer import database_setup
 from meerkat_abacus.consumer import get_data
 from meerkat_abacus.config import get_config
-from meerkat_abacus import util
+from meerkat_abacus import util, model
 from meerkat_abacus.util import create_fake_data
-import backoff
+
 
 config = get_config()
 
@@ -18,6 +20,7 @@ logging.getLogger().setLevel(logging.INFO)
 app = Celery()
 app.config_from_object(celeryconfig)
 app.conf.task_default_queue = 'abacus'
+start_time = time.time()
 session, engine = database_setup.set_up_database(False, True, config)
 
 
@@ -57,8 +60,27 @@ else:
     raise AttributeError(f"Invalid source {config.initial_data_source}")
 
 get_data.read_stationary_data(get_function, config, app)
+
+
 database_setup.logg_tables(config.country_config["tables"], engine)
 
+# Wait for initial setup to finish
+
+celery_inspect = inspect()
+inspect_result = celery_inspect.reserved()["celery@abacus"]
+while len(inspect_result) > 0:
+    time.sleep(20)
+    inspect_result = celery_inspect.reserved()["celery@abacus"]
+setup_time = round(time.time() - start_time)
+    
+logging.info(f"Finished setup in {setup_time} seconds")
+
+failures = session.query(model.StepFailiure).all()
+
+if failures:
+    N_failures = len(failures)
+    logging.error(f"There were{N_failures} records that failed in the pipeline, see the step_failures database table for more information")
+    
 
 # Real time
 
@@ -90,6 +112,8 @@ def main():
     def run():
         pass
 
+
+    
     if config.stream_data_source == "AWS_S3":
         run = real_time_s3
     elif config.stream_data_source == "FAKE_DATA":
