@@ -32,9 +32,10 @@ class TestConsumer(unittest.TestCase):
         param_config = config.get_config()
         param_config.country_config["tables"] = ["table1", "table2"]
         celery_app_mock = mock.MagicMock()
-        get_data.read_stationary_data(yield_data_function,
-                                      param_config, celery_app_mock, N_send_to_task=9)
-                                      
+        numbers = get_data.read_stationary_data(yield_data_function,
+                                                param_config, celery_app_mock, N_send_to_task=9)
+        self.assertEqual(numbers["table1"], 99)
+        self.assertEqual(numbers["table2"], 99)
         celery_app_mock.send_task.assert_called()
         self.assertEqual(celery_app_mock.send_task.call_count, 24)
         # 24 = 2 * 12. We get 11 normal calls and one extra for the last record

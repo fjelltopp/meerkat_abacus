@@ -94,7 +94,7 @@ class Pipeline:
         form_data = data["data"]
         form = data["form"]
         logging.exception(f"There was an error in step {step}")
-
+        self.session.rollback()
         error_str = type(exception).__name__ + ": " + str(exception)
         self.session.add(
             model.StepFailiure(

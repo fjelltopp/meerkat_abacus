@@ -59,7 +59,7 @@ elif config.initial_data_source in ["AWS_RDS", "LOCAL_RDS"]:
 else:
     raise AttributeError(f"Invalid source {config.initial_data_source}")
 
-get_data.read_stationary_data(get_function, config, app)
+number_by_form = get_data.read_stationary_data(get_function, config, app)
 
 
 database_setup.logg_tables(config.country_config["tables"], engine)
@@ -81,49 +81,21 @@ if failures:
     N_failures = len(failures)
     logging.error(f"There were{N_failures} records that failed in the pipeline, see the step_failures database table for more information")
     
-
-# Real time
-
-def real_time_s3():
-    get_data.download_data_from_s3(config)
-    get_data.read_stationary_data(util.read_csv_file, config)
-    time.sleep(config.data_stream_interval)
-
-
-def real_time_fake():
-    logging.info("Sending fake data")
-    if config.fake_data_generation == "INTERNAL":
-        new_data = []
-        for form in config.country_config["tables"]:
-            data = create_fake_data.get_new_fake_data(form=form,
-                                                      session=session,
-                                                      N=10,
-                                                      param_config=config,
-                                                      dates_is_now=True)
-            new_data = [{"form": form, "data": d[0]} for d in data]
-        app.send_task('processing_tasks.process_data', [new_data])
-    else:
-        raise NotImplementedError("Not yet implemented")
-    logging.info("Sleeping")
-    time.sleep(config.fake_data_interval)
-
-
-def main():
-    def run():
-        pass
-
-
+   
+if config.stream_data_source == "AWS_S3":
+    run = get_data.real_time_s3
+elif config.stream_data_source == "FAKE_DATA":
+    run = get_data.real_time_fake
+elif config.stream_data_source == "AWS_SQS":
+    run = get_data.real_time_fake
+else:
+    RuntimeError("Unsupported data source.")
     
-    if config.stream_data_source == "AWS_S3":
-        run = real_time_s3
-    elif config.stream_data_source == "FAKE_DATA":
-        run = real_time_fake
-    else:
-        RuntimeError("Unsupported data source.")
-
-    while True:
-        run()
+while True:
+    try:
+        number_by_form = run(app, config, session, number_by_form)
+    except:
+        logging.exception("Error in real time", exc_info=True)
 
 
-if __name__ == '__main__':
-    main()
+

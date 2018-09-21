@@ -112,7 +112,7 @@ class AddLinks(ProcessingStep):
             methods = link["method"].split(";")
             for from_column, to_column, method in zip(from_columns, to_columns, methods):
                 try:
-                    expected = data["raw_data"][from_column]
+                    expected = str(data["raw_data"][from_column])
                     to_column_text = to_form.data[to_column].astext
                 except Exception:
                     logging.error(f'ERROR: {data["raw_data"]}')

@@ -21,9 +21,11 @@ from meerkat_abacus.pipeline_worker import celeryconfig
 logging.getLogger().setLevel(logging.INFO)
 app = celery.Celery()
 app.config_from_object(celeryconfig)
+logging.info(celeryconfig.DEVELOPMENT)
 if celeryconfig.DEVELOPMENT:
     # cleans up stale task between restarts
-    app.control.purge()
+    pass
+app.control.purge()
 
 import meerkat_abacus.pipeline_worker.processing_tasks
 
