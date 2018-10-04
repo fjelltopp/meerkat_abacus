@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 
 import boto3
@@ -7,6 +6,7 @@ import botocore
 from time import sleep
 
 from meerkat_libs import consul_client
+from meerkat_abacus.config import config
 
 from model import Base
 from util import get_db_engine
@@ -27,10 +27,13 @@ def __create_table(case_form_name):
     })
 
 
-tables ={
-    "new_som_register": __create_table("new_som_register"),
-    "new_som_case": __create_table("new_som_case")
-}
+country_config = config.country_config
+try:
+    forms_to_export = country_config["consul_export_config"]["forms"]["dhis2"]
+except KeyError:
+    raise Exception("Could not read dhis2 export config for consul in the country config.")
+
+tables = {form_name: __create_table(form_name) for form_name in forms_to_export}
 
 s3 = boto3.resource('s3')
 
