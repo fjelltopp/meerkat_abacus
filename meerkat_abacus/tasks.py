@@ -24,6 +24,7 @@ from meerkat_abacus import data_import
 from meerkat_abacus import util
 from meerkat_abacus.pipeline import process_chunk
 from meerkat_abacus.util import create_fake_data
+from meerkat_abacus.consul_export import celery_trigger
 
 
 sqs_client = None
@@ -391,3 +392,8 @@ def send_device_messages(message, content, distribution,
         }
         libs.hermes('/error', 'PUT', data)
 
+@task
+def consul_export(param_config_yaml=yaml.dump(config)):
+    logging.info("Running consul export in tasks.py")
+    param_config = yaml.load(param_config_yaml)
+    celery_trigger(param_config)
