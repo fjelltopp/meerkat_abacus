@@ -40,7 +40,7 @@ CELERYBEAT_SCHEDULE['cleanup_downloads'] = {
 if config.consul_enabled:
     CELERYBEAT_SCHEDULE['consul'] = {
         'task': 'meerkat_abacus.tasks.consul_export',
-        'schedule': 90.0,
+        'schedule': 24*3600, #daily
         'args': (yaml.dump(config), )
     }
 
