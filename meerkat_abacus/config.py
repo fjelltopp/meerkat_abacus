@@ -34,6 +34,7 @@ class Config:
     def __init__(self):
 
         self.DEPLOYMENT = os.environ.get("DEPLOYMENT", "unknown")
+        self.PRODUCTION = os.environ.get("PRODUCTION", False)
         current_directory = os.path.dirname(os.path.realpath(__file__))
         self.DATABASE_URL = os.environ.get(
             "MEERKAT_ABACUS_DB_URL",
@@ -75,6 +76,7 @@ class Config:
                 self.only_import_after_date)
         )
 
+        self.consul_enabled = os.environ.get("CONSUL_ENABLED", False)
         # Country config
         country_config_file = os.environ.get("COUNTRY_CONFIG", "demo_config.py")
 
