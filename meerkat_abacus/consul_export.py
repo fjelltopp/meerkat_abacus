@@ -93,8 +93,6 @@ def __export_form(form_name, marker, marker_aws_filename, session, table):
             update_last_read_row_marker(marker, marker_aws_filename=marker_aws_filename)
             logger.info(f"{form_name}: send {i} records.")
             sleep(10)
-            # if i % 50 == 0:
-            #     break
 
     update_last_read_row_marker(marker, marker_aws_filename=marker_aws_filename)
 
