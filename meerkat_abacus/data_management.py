@@ -9,11 +9,11 @@ import json
 import logging
 import os
 import os.path
-import random
+import sqlalchemy
+
 import subprocess
 import time
 
-import boto3
 from datetime import datetime
 from dateutil.parser import parse
 from geoalchemy2.shape import from_shape
@@ -28,7 +28,6 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 
 from meerkat_abacus.util import data_types
-import meerkat_libs as libs
 from meerkat_abacus import alerts as alert_functions
 from meerkat_abacus.config import config
 from meerkat_abacus import model
@@ -36,7 +35,7 @@ from meerkat_abacus import util
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus.util import create_fake_data
 from meerkat_abacus.util.epi_week import epi_week_for_date
-from meerkat_libs import consul_client as consul
+from meerkat_abacus.util.datetime_helper import PSQL_SUBMISSION_DATE_FORMAT, PSQL_VISIT_DATE_FORMAT
 
 country_config = config.country_config
 
@@ -994,34 +993,33 @@ def new_data_to_codes(engine=None, debug_enabled=True, restrict_uuids=None,
             chunk = res.fetchmany(500)
             if not chunk:
                 break
-            else:
-                for row in chunk:
-                    uuid = row[0]
-                    link_type = row[3]
-                    if uuid in data and link_type:
+            for row in chunk:
+                uuid = row[0]
+                link_type = row[3]
+                if uuid in data and link_type:
+                    data[uuid].setdefault(link_type, [])
+                    data[uuid][link_type].append(row[2])
+                else:
+                    data[uuid] = {}
+                    data[uuid][tables[0].__tablename__] = row[1]
+                    if link_type:
                         data[uuid].setdefault(link_type, [])
                         data[uuid][link_type].append(row[2])
-                    else:
-                        data[uuid] = {}
-                        data[uuid][tables[0].__tablename__] = row[1]
-                        if link_type:
-                            data[uuid].setdefault(link_type, [])
-                            data[uuid][link_type].append(row[2])
 
-                # Send all data apart from the latest UUID to to_data function
-                last_data = data.pop(uuid)
-                if data:
-                    data_dicts, disregarded_data_dicts, new_alerts = to_data(
-                        data, link_names, links_by_name, data_type, locations,
-                        variables, param_config=param_config)
-                    newly_added = data_to_db(
-                        conn2, data_dicts,
-                        disregarded_data_dicts,
-                        data_type["type"]
-                    )
-                    added += newly_added
-                    alerts += new_alerts
-                data = {uuid: last_data}
+            # Send all data apart from the latest UUID to to_data function
+            last_data = data.pop(uuid)
+            if data:
+                data_dicts, disregarded_data_dicts, new_alerts = to_data(
+                    data, link_names, links_by_name, data_type, locations,
+                    variables, param_config=param_config)
+                newly_added = data_to_db(
+                    conn2, data_dicts,
+                    disregarded_data_dicts,
+                    data_type["type"]
+                )
+                added += newly_added
+                alerts += new_alerts
+            data = {uuid: last_data}
             if debug_enabled:
                 logging.debug("Added %s records", added)
         if data:
@@ -1150,7 +1148,8 @@ def to_data(data, link_names,
                 logging.warning("Missing loc data")
                 continue
             try:
-                date = parse(row[data_type["form"]][data_type["date"]])
+                date_str = row[data_type["form"]][data_type["date"]]
+                date = parse(date_str)
                 date = datetime(date.year, date.month, date.day)
                 epi_year, week = epi_week_for_date(date, param_config=param_config.country_config)
             except KeyError:
@@ -1158,10 +1157,10 @@ def to_data(data, link_names,
                 continue
             except ValueError:
                 logging.error(f"Failed to convert date to epi week. uuid: {row.get('uuid', 'UNKNOWN')}")
-                logging.debug(f"Faulty row date: {date}.")
+                logging.debug(f"Faulty row date: {date_str}.")
                 continue
             except:
-                logging.error("Invalid Date: %s", row[data_type["form"]].get(data_type["date"]))
+                logging.error("Invalid Date: %s", row[data_type["form"]].get(data_type.get("date", "UNKNOWN")))
                 continue
 
             if "alert" in variable_data:
@@ -1213,6 +1212,35 @@ def send_alerts(alerts, session, param_config=config):
     for alert in alerts:
         alert_id = alert.uuid[-param_config.country_config["alert_id_length"]:]
         util.send_alert(alert_id, alert, variables, locations, param_config)
+
+
+def filter_duplicate_submissions(param_config):
+    country_cfg = param_config.country_config
+    if not country_cfg.get('tables_duplicates_resolution'):
+        return
+    engine, session = util.get_db_engine(param_config.DATABASE_URL)
+    form_tables = model.form_tables(param_config)
+    for form_name, strategy in country_cfg['tables_duplicates_resolution'].items():
+        if strategy == 'newest_only':
+            logging.info("Starting removing duplicates for %s", form_name)
+            date_column_name = data_types.data_types_for_form_name(form_name, param_config)[0]['date']
+            location_column_name = data_types.data_types_for_form_name(form_name, param_config)[0]['location']
+
+            duplicates_query = f"WITH cte AS ( SELECT data->>'KEY' AS key, rank() OVER ( PARTITION BY data->>'{location_column_name}', (data->>'{date_column_name}')::timestamp ORDER BY (data->>'SubmissionDate')::timestamp desc) AS rnk FROM {form_name} ) SELECT key FROM cte WHERE rnk > 1;"
+            duplicates_results = engine.execute(duplicates_query)
+            uuids_to_delete = {x[0] for x in duplicates_results}
+            if not uuids_to_delete:
+                logging.info("Found no duplicates")
+                return
+
+            logging.info("Found %i duplicates", len(uuids_to_delete))
+            register_table = form_tables[form_name]
+            delete_stm = delete(register_table).where(register_table.uuid.in_(uuids_to_delete))
+            ret = session.execute(delete_stm)
+            session.commit()
+            return ret
+        else:
+            raise ValueError(f"Unable to handle duplicate strategy: {strategy}")
 
 
 def initial_visit_control(param_config=config):
