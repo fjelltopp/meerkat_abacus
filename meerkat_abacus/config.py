@@ -76,7 +76,7 @@ class Config:
                 self.only_import_after_date)
         )
 
-        self.consul_enabled = os.environ.get("CONSUL_ENABLED", False)
+        self.consul_enabled = os.environ.get("CONSUL_ENABLED", "False") == "True"
         # Country config
         country_config_file = os.environ.get("COUNTRY_CONFIG", "demo_config.py")
 
