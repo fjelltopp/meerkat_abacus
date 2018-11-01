@@ -8,7 +8,7 @@ from meerkat_abacus.util import create_fake_data
 from meerkat_abacus import util
 
 
-def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=5000,
+def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=15000,
                          previous_number_by_form={}):
     """
     Read stationary data using the get_function to determine the source
@@ -39,8 +39,12 @@ def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=
 
 
 def get_N_tasks(inspect, name):
-    registered = len(inspect.registered()[name])
-    reserved = len(inspect.reserved()[name])
+    try: 
+        registered = len(inspect.registered()[name])
+        reserved = len(inspect.reserved()[name])
+    except:
+        registered = 0
+        reserved = 0
     logging.info(f"registered {registered}, reserved {reserved}")
     return reserved + registered
 
@@ -53,7 +57,7 @@ def send_task(data, celery_app, inspect, N=15):
     """
     while get_N_tasks(inspect, "celery@abacus") > N:
         logging.info("There were too many reserved tasks so waiting 5 seconds")
-        time.sleep(5)
+        time.sleep(60)
 
     logging.info("Sending data")
     celery_app.send_task("processing_tasks.process_data", [data])

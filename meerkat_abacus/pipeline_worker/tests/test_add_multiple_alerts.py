@@ -111,11 +111,15 @@ class TestAddMultipleAlerts(unittest.TestCase):
                     "cmd_1": 1
                 }
             }
-        
-        results = add_alerts.run("data", new_data)
+        add_alerts.start_step()
+        results = []
+        for d in existing_data:
+            results += add_alerts.run("data", d)
+        add_alerts.end_step(3)
         self.assertEqual(len(results), 3)
+        self.assertEqual(len(add_alerts.found_uuids), 3)
         for result in results:
-            if result["data"]["uuid"] == "c":
+            if result["data"]["uuid"] == "a":
                 self.assertIn("alert", result["data"]["variables"])
                 self.assertIn("alert_id", result["data"]["variables"])
             else:
@@ -123,7 +127,7 @@ class TestAddMultipleAlerts(unittest.TestCase):
                 self.assertNotIn("alert_id", result["data"]["variables"])
                 self.assertEqual(result["data"]["variables"]["sub_alert"], 1)
                 self.assertEqual(result["data"]["variables"]["master_alert"],
-                                 "c")
+                                 "a")
 
         db_writer = write_to_db.WriteToDb(config, self.session)
         db_writer.engine = self.engine
@@ -157,10 +161,11 @@ class TestAddMultipleAlerts(unittest.TestCase):
         con.execute(table.__table__.insert(), additional_raw_data)
         con.execute(model.Data.__table__.insert(), additional_data)
 
+        add_alerts.start_step()
         results = add_alerts.run("data", new_data)
         self.assertEqual(len(results), 4)
         for result in results:
-            if result["data"]["uuid"] == "d":
+            if result["data"]["uuid"] == "a":
                 self.assertIn("alert", result["data"]["variables"])
                 self.assertIn("alert_id", result["data"]["variables"])
             else:
@@ -168,7 +173,7 @@ class TestAddMultipleAlerts(unittest.TestCase):
                 self.assertNotIn("alert_id", result["data"]["variables"])
                 self.assertEqual(result["data"]["variables"]["sub_alert"], 1)
                 self.assertEqual(result["data"]["variables"]["master_alert"],
-                                 "d")
+                                 "a")
 
                 
 
@@ -327,7 +332,107 @@ class TestAlertTypes(unittest.TestCase):
                 variables={"cmd_1": 1}),
  
         ]
-
+        self.double_wrong_clinic = [
+            model.Data(
+                date=datetime(year, 1, 3),
+                epi_year=year,
+                epi_week=1,
+                clinic=6,
+                uuid="1",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 3),
+                epi_year=year,
+                epi_week=1,
+                clinic=7,
+                uuid="2",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=2,
+                clinic=6,
+                uuid="3",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=2,
+                clinic=6,
+                uuid="4",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=2,
+                clinic=6,
+                uuid="5",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 10),
+                epi_year=year,
+                epi_week=2,
+                clinic=6,
+                uuid="6",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
+                clinic=6,
+                uuid="7",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
+                clinic=6,
+                uuid="8",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
+                clinic=6,
+                uuid="9",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
+                clinic=6,
+                uuid="10",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
+                clinic=6,
+                uuid="11",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
+                clinic=6,
+                uuid="12",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
+                clinic=6,
+                uuid="13",
+                variables={"cmd_1": 1}),
+            model.Data(
+                date=datetime(year, 1, 17),
+                epi_year=year,
+                epi_week=3,
+                clinic=6,
+                uuid="14",
+                variables={"cmd_1": 1}),
+ 
+        ]
         self.double_new_year = [
             model.Data(
                 date=datetime(year, 1, 3),
@@ -447,6 +552,7 @@ class TestAlertTypes(unittest.TestCase):
                                                    datetime(self.year, 1, 3),
                                                    6,
                                                    self.session)
+
         self.assertEqual(len(new_alerts), 1)
 
         self.assertEqual(new_alerts[0]["duration"], 1)
@@ -466,7 +572,19 @@ class TestAlertTypes(unittest.TestCase):
         self.assertEqual(new_alerts[0]["reason"], "cmd_1")
 
     def test_double_double(self):
+        self.session.query(model.Data).delete()
+        self.session.commit()
+        self.session.bulk_save_objects(self.double_wrong_clinic)
+        self.session.commit()
 
+        new_alerts = add_multiple_alerts.double_double("cmd_1",
+                                                       1,
+                                                       self.year,
+                                                       6,
+                                                       self.engine)
+        self.assertEqual(len(new_alerts), 0)
+
+        
         self.session.query(model.Data).delete()
         self.session.commit()
         self.session.bulk_save_objects(self.double)
@@ -476,7 +594,7 @@ class TestAlertTypes(unittest.TestCase):
                                                        1,
                                                        self.year,
                                                        6,
-                                                       self.session)
+                                                       self.engine)
         self.assertEqual(len(new_alerts), 1)
 
         self.assertEqual(new_alerts[0]["duration"], 7)
@@ -495,7 +613,7 @@ class TestAlertTypes(unittest.TestCase):
                                                        1,
                                                        self.year,
                                                        6,
-                                                       self.session)
+                                                       self.engine)
         self.assertEqual(len(new_alerts), 0)
 
     def test_double_double_corner_cases(self):
@@ -512,7 +630,7 @@ class TestAlertTypes(unittest.TestCase):
                                                            week,
                                                            year,
                                                            6,
-                                                           self.session)
+                                                           self.engine)
             self.assertEqual(len(new_alerts), 1)
             
             self.assertEqual(new_alerts[0]["duration"], 7)

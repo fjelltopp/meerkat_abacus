@@ -38,7 +38,6 @@ class WriteToDb(ProcessingStep):
 
     def _update_engine(self):
         self.config['engine'] = self._engine
-
     def end_step(self, n):
         conn = self.config["engine"].connect()
         for table in self.data_to_delete.keys():

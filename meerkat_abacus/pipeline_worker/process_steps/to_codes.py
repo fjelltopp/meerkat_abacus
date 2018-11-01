@@ -25,6 +25,9 @@ class ToCodes(ProcessingStep):
             self.variables[type_name] = to_codes.get_variables(session,
                                                                match_on_form=data_type["type"])
         self.session = session
+        self.alert_id_length = self.config.country_config["alert_id_length"]
+
+
         
     def run(self, form, data):
         return_rows = []
@@ -54,7 +57,7 @@ class ToCodes(ProcessingStep):
                 continue
 
             self._add_additional_variables(variable_data, data_type)
-
+            self._set_alert_id(variable_data, row["uuid"])
             new_data = {
                 "date": date,
                 "epi_week": week,
@@ -72,6 +75,13 @@ class ToCodes(ProcessingStep):
                                 "data": new_data})
         return return_rows
 
+    def _set_alert_id(self, uuid, variables_data):
+        """
+        Adds an alert id
+        """
+        if "alert" in variables_data and "alert_id" not in variables_data:
+            variables_data["alert_id"] = uuid[-self.alert_id_length:]
+        
     def _get_return_form(self, disregard):
         return_form = "data"
         if disregard:

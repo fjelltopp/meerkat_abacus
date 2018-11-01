@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 import pandas as pd
 from sqlalchemy import func, or_, and_
+from sqlalchemy.sql import text
 
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus.util.epi_week import epi_year_start_date
@@ -21,6 +22,19 @@ class AddMultipleAlerts(ProcessingStep):
         self.config = param_config
         self.session = session
     
+    @property
+    def engine(self):
+        return self._engine
+
+    @engine.setter
+    def engine(self, new_engine):
+        self._engine = new_engine
+
+    def start_step(self):
+        super(AddMultipleAlerts, self).start_step()
+        self.found_uuids = set([])
+
+        
     def run(self, form, data):
         """
         Checks data to see if it contributes to a multiple alert.
@@ -28,36 +42,38 @@ class AddMultipleAlerts(ProcessingStep):
         
         """
         return_data = []
-        for a in self.alerts:
-            var_id = a.id
-            if not a.alert_type:
-                continue
-            alert_type = a.alert_type.split(":")[0]
-            if var_id not in data["variables"]:
-                continue
+        if data["uuid"] not in self.found_uuids:
+            for a in self.alerts:
+                var_id = a.id
+                if not a.alert_type:
+                    continue
+                alert_type = a.alert_type.split(":")[0]
+                if var_id not in data["variables"]:
+                    continue
 
-            new_alerts = []
-            type_name = None
-            if alert_type == "threshold":
-                new_alerts = threshold(
-                    var_id,
-                    a.alert_type,
-                    data["date"],
-                    data["clinic"],
-                    self.session
-                )
-                type_name = "threshold"
-            elif alert_type == "double":
-                new_alerts = double_double(a.id,
-                                           data["epi_week"],
-                                           data["epi_year"],
-                                           data["clinic"],
-                                           self.session)
-                type_name = "threshold"
-            return_data += self._handle_new_alerts(new_alerts, a, type_name, form)
-            if len(return_data) == 0:
-                return_data.append({"form": form,
-                                    "data": data})
+                new_alerts = []
+                type_name = None
+                if alert_type == "threshold":
+                    new_alerts = threshold(
+                        var_id,
+                        a.alert_type,
+                        data["date"],
+                        data["clinic"],
+                        self.session
+                    )
+                    type_name = "threshold"
+                elif alert_type == "double":
+                    new_alerts = double_double(a.id,
+                                               data["epi_week"],
+                                               data["epi_year"],
+                                               data["clinic"],
+                                               self.engine)
+                    type_name = "threshold"
+                
+                return_data += self._handle_new_alerts(new_alerts, a, type_name, form)
+        # if len(return_data) == 0:
+        #    return_data.append({"form": form,
+        #                        "data": data})
         return return_data
         
     def _handle_new_alerts(self, new_alerts, a, type_name, form):
@@ -65,8 +81,11 @@ class AddMultipleAlerts(ProcessingStep):
         if new_alerts:
             for new_alert in new_alerts:
                 # Choose a representative record for the alert
-                others = new_alert["uuids"][1:]
-                representative = new_alert["uuids"][0]
+                uuids = sorted(new_alert["uuids"])
+                
+
+                others = uuids[1:]
+                representative = uuids[0]
                 
                 form_table = model.form_tables(param_config=self.config)[a.form]
                 records = self.session.query(
@@ -92,7 +111,7 @@ class AddMultipleAlerts(ProcessingStep):
                 new_variables["alert_id"] = data_records_by_uuid[
                     representative].uuid[
                         -self.config.country_config["alert_id_length"]:]
-
+                
                 self._add_alert_data(new_variables, form_records_by_uuid[representative],
                                      a.form)
                 # Update all the non-representative rows
@@ -104,8 +123,10 @@ class AddMultipleAlerts(ProcessingStep):
 
                 for record in data_records_by_uuid.values():
                     dict_record = row_to_dict(record)
-                    return_data.append({"form": form,
-                                        "data": dict_record})
+                    if dict_record["uuid"] not in self.found_uuids:
+                        return_data.append({"form": form,
+                                            "data": dict_record})
+                self.found_uuids = self.found_uuids | set(uuids)
         return return_data
 
     def _update_other_row(self, row, form_record, representative, form):
@@ -113,6 +134,7 @@ class AddMultipleAlerts(ProcessingStep):
         row.variables["master_alert"] = representative
         if "alert" in row.variables:
             del row.variables["alert"]
+        if "alert_id" in row.variables:
             del row.variables["alert_id"]
         self._add_alert_data(row.variables, form_record, form)
     
@@ -231,7 +253,7 @@ def threshold(var_id, alert_type, date, clinic, session):
     return alerts
 
 
-def double_double(var_id, week, year, clinic, session):
+def double_double(var_id, week, year, clinic, engine):
     """
     Calculate threshold alerts based on a double doubling of cases.
 
@@ -251,29 +273,39 @@ def double_double(var_id, week, year, clinic, session):
 
     lower_limit = week - 2
     upper_limit = week + 2
-    conditions = [model.Data.variables.has_key(var_id),
-                  model.Data.clinic == clinic]
 
+    base_sql = "SELECT epi_week, count(*), string_agg(uuid, ',') from data where clinic = :clinic and variables ? :var_id and (week_where_clause) group by epi_week"  
+    variables = {
+        "clinic": clinic,
+        "var_id": var_id
+    }
     if lower_limit >= 1 and upper_limit <= 52:
-        conditions += [model.Data.epi_week >= lower_limit,
-                       model.Data.epi_week <= upper_limit,
-                       model.Data.epi_year == year]
+        week_where_clause = "epi_week >= :lower_limit and epi_week <= :upper_limit and epi_year = :epi_year"
+        variables["lower_limit"] = lower_limit
+        variables["upper_limit"] = upper_limit
+        variables["epi_year"] = year
+        
     elif upper_limit <= 52:
         lower_limit = 52 + lower_limit
-        conditions += [or_(and_(model.Data.epi_week >= lower_limit,
-                               model.Data.epi_year == year - 1), 
-                          and_(model.Data.epi_week <= upper_limit,
-                               model.Data.epi_year == year))]
+        week_where_clause = "(epi_week >= :lower_limit and epi_year = :epi_year_1) or (epi_week <= :upper_limit and epi_year = :epi_year_2)"
+        variables["lower_limit"] = lower_limit
+        variables["upper_limit"] = upper_limit
+        variables["epi_year_1"] = year - 1
+        variables["epi_year_2"] = year
+        
     else:
         upper_limit = upper_limit - 52
-        conditions += [or_(and_(model.Data.epi_week >= lower_limit,
-                               model.Data.epi_year == year),
-                           and_(model.Data.epi_week <= upper_limit,
-                               model.Data.epi_year == year + 1))]
-    data = session.query(model.Data.epi_week,
-                         func.count(model.Data.variables[var_id]).label(var_id),
-                         func.string_agg(model.Data.uuid, ",")).filter(
-                          *conditions).group_by(model.Data.epi_week).all()
+        week_where_clause = "(epi_week >= :lower_limit and epi_year = :epi_year_1) or (epi_week <= :upper_limit and epi_year = :epi_year_2)"
+        variables["lower_limit"] = lower_limit
+        variables["upper_limit"] = upper_limit
+        variables["epi_year_1"] = year
+        variables["epi_year_2"] = year + 1
+
+    query = base_sql.replace("week_where_clause", week_where_clause)
+
+    connection = engine.connect()
+    data = connection.execute(text(query), **variables).fetchall()
+    connection.close()
     counts = {}
     uuids = {}
     s = 0
@@ -302,7 +334,7 @@ def double_double(var_id, week, year, clinic, session):
                 "uuids": uuids[week + 2].split(","),
                 "type": "threshold"
             })
-    if counts.get(week - 1 , 0) > 1:
+    if counts.get(week - 1, 0) > 1:
         if (counts.get(week, 0) >= 2 * counts.get(week - 1, 0) and
             counts.get(week + 1, 0) >= 2 * counts.get(week, 0)):
 
@@ -313,7 +345,7 @@ def double_double(var_id, week, year, clinic, session):
                 "uuids": uuids[week + 1].split(","),
                 "type": "threshold"
             })
-    if counts.get(week - 2 , 0) > 1:
+    if counts.get(week - 2, 0) > 1:
         if (counts.get(week - 1, 0) >= 2 * counts.get(week - 2, 0) and
             counts.get(week, 0) >= 2 * counts.get(week - 1, 0)):
             alerts.append({

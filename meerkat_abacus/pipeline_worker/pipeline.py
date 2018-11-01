@@ -3,6 +3,7 @@ Main pipeline for abacus
 
 """
 import logging
+import datetime
 import sys
 
 from meerkat_abacus import model
@@ -49,6 +50,7 @@ class Pipeline:
                 step_ = SendAlerts(*step_args)
             elif step_name == "add_multiple_alerts":
                 step_ = AddMultipleAlerts(*step_args)
+                step_.engine = engine
             else:
                 raise NotImplementedError(f"Step '{step_name}' is not implemented")
             pipeline.append(step_)
@@ -93,12 +95,12 @@ class Pipeline:
         """
         form_data = data["data"]
         form = data["form"]
-        logging.exception(f"There was an error in step {step}")
+        logging.exception(f"There was an error in step {step}", exc_info=True)
         self.session.rollback()
         error_str = type(exception).__name__ + ": " + str(exception)
         self.session.add(
             model.StepFailiure(
-                data=form_data,
+                data=fix_json(form_data),
                 form=form,
                 step_name=str(step),
                 error=error_str
@@ -106,6 +108,11 @@ class Pipeline:
             )
         self.session.commit()
 
+
+def fix_json(row):
+    for key, value in row.items():
+        if isinstance(value, datetime.datetime):
+            row[key] = value.isoformat()
 
 
 #### ALERT CODE
