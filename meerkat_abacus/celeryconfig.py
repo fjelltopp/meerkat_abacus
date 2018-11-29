@@ -37,6 +37,13 @@ CELERYBEAT_SCHEDULE['cleanup_downloads'] = {
     'schedule': crontab(minute=16, hour='*')
 }
 
+if config.consul_enabled:
+    CELERYBEAT_SCHEDULE['consul'] = {
+        'task': 'meerkat_abacus.tasks.consul_export',
+        'schedule': crontab(minute=7, hour=2), #daily
+        'args': (yaml.dump(config), )
+    }
+
 
 # Each report will need it's own sending schedule.
 # Add them from the country config to the celery schedule here.

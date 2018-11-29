@@ -12,7 +12,6 @@ from meerkat_abacus.config import config
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus.util import data_types
 from meerkat_abacus.util.epi_week import epi_week_for_date
-from meerkat_libs import consul_client as consul
 
 
 def read_stationary_data(get_function, internal_buffer,
@@ -137,8 +136,7 @@ def add_rows_to_db(form, form_data, session, engine,
             for variable in to_check:
                 to_check_test[variable] = variable.test
     removed = {}
-    i = 0
-    for row in form_data:
+    for i, row in enumerate(form_data):
         if fraction:
             if random.random() > fraction:
                 continue
@@ -193,20 +191,13 @@ def add_rows_to_db(form, form_data, session, engine,
                                    start_dates, allow_enketo=allow_enketo):
                 dicts.append({"data": insert_row,
                               "uuid": insert_row[uuid_field]})
-                consul.send_dhis2_events(uuid=insert_row[uuid_field],
-                                         form_id=form,
-                                         raw_row=insert_row)
                 new_rows.append(insert_row[uuid_field])
             else:
                 logging.debug("Not added")
         else:
             dicts.append({"data": insert_row,
                           "uuid": insert_row[uuid_field]})
-            consul.send_dhis2_events(uuid=insert_row[uuid_field],
-                                     form_id=form,
-                                     raw_row=insert_row)
             new_rows.append(insert_row[uuid_field])
-        i += 1
         if i % 10000 == 0:
             conn.execute(table.__table__.insert(), dicts)
             dicts = []
@@ -217,7 +208,6 @@ def add_rows_to_db(form, form_data, session, engine,
     if len(dicts) > 0:
         conn.execute(table.__table__.insert(), dicts)
     conn.close()
-    consul.flush_dhis2_events()
     logging.debug("Number of records %s", i)
     return new_rows
 
