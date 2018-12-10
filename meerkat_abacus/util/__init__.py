@@ -377,7 +377,6 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
     else:
         sqs_client = boto3.client('sqs', region_name=region_name,
                                   endpoint_url=sqs_endpoint)
-    #sts_client = boto3.client('sts', region_name=region_name)
 
     logging.info("Getting SQS url")
     try:
@@ -553,17 +552,31 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         html_template = get_env(param_config).get_template('alerts/{}/html'.format(template))
         html_message = html_template.render(data=data)
 
+        # Select the correct communication medium using country configs
+        medium_settings = dict(param_config.country_config.get(
+            'alert_mediums',
+            {}
+        ))
+        medium = medium_settings.pop('DEFAULT', ['email', 'sms'])
+        for alert_code, alert_mediums in medium_settings.items():
+            if alert_code in alert.variables["alert_reason"]:
+                medium = alert_mediums
+                break
+
         # Structure and send the hermes request
         data = {
             "from": param_config.country_config['messaging_sender'],
-            "topics": create_topic_list(alert, locations,
-                                        country_config=param_config.country_config),
+            "topics": create_topic_list(
+                alert,
+                locations,
+                country_config=param_config.country_config
+            ),
             "id": alert_id,
             "message": text_message,
             "sms-message": sms_message,
             "html-message": html_message,
             "subject": "Public Health Surveillance Alerts: #" + alert_id,
-            "medium": ['email', 'sms']
+            "medium": medium
         }
         logging.info("CREATED ALERT {}".format(data['message']))
         if not param_config.country_config["messaging_silent"]:
