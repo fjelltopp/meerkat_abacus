@@ -185,17 +185,20 @@ class UtilTest(unittest.TestCase):
     @mock.patch('meerkat_libs.authenticate')
     def test_send_alert(self, mock_authenticate, mock_requests):
         mock_authenticate.return_value = 'meerkatjwt'
-        alert = model.Data(**{"region": 2,
-                              "clinic": 3,
-                              "district": 4,
-                              "uuid": "uuid:1",
-                              "variables": {"alert_reason": "1",
-                                            "alert_id": "abcdef",
-                                            "alert_gender": "male",
-                                            "alert_age": "32",
-                                            "alert_submitted": "2018-01-22T07:52:31.978613"},
-                              "id": "abcdef",
-                              "date": datetime.now()
+        alert = model.Data(**{
+            "region": 2,
+            "clinic": 3,
+            "district": 4,
+            "uuid": "uuid:1",
+            "variables": {
+                "alert_reason": "1",
+                "alert_id": "abcdef",
+                "alert_gender": "male",
+                "alert_age": "32",
+                "alert_submitted": "2018-01-22T07:52:31.978613"
+            },
+            "id": "abcdef",
+            "date": datetime.now()
         })
         var_mock = mock.Mock()
         var_mock.configure_mock(name='Rabies', alert_message='case')
@@ -268,6 +271,25 @@ class UtilTest(unittest.TestCase):
         alert.date = datetime.now() - timedelta(days=8)
         util.send_alert("abcdef", alert, variables, locations)
         self.assertFalse(mock_requests.request.called)
+
+        # Test the configuration of alert mediums.
+        mock_requests.reset_mock()
+        alert.date = datetime.now()
+        util.country_config["alert_mediums"] = {
+            "1": ['email']
+        }
+        util.send_alert("abcdef", alert, variables, locations)
+        call_args = mock_requests.request.call_args
+        self.assertNotIn("sms", call_args[1]["json"]["medium"])
+
+        # Test the cofiguration of a default alert medium
+        mock_requests.reset_mock()
+        util.country_config["alert_mediums"] = {
+            "DEFAULT": ['sms']
+        }
+        util.send_alert("abcdef", alert, variables, locations)
+        call_args = mock_requests.request.call_args
+        self.assertNotIn("email", call_args[1]["json"]["medium"])
 
     def test_create_topic_list(self):
         #Create the mock arguments that include all necessary data to complete the function.
