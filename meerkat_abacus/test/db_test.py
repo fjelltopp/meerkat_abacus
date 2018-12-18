@@ -70,8 +70,10 @@ class DbTest(unittest.TestCase):
             if r.name == "Clinic 1":
                 if r.parent_location == 6:
                     self.assertEqual(r.deviceid, "1,6")
+                    self.assertTrue(r.case_report)
                 else:
                     self.assertEqual(r.deviceid, "7")
+
             if r.name == "Clinic 2":
                 self.assertEqual(r.start_date, datetime(2016, 2, 2))
             elif r.level == "clinic":

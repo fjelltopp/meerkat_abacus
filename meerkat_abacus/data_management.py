@@ -142,7 +142,7 @@ def add_fake_data(session, N=500, append=False,
 
         generated_data = create_fake_data.create_form(
             country_config["fake_data"][form], data={"deviceids":
-                                                         form_deviceids,
+                                                     form_deviceids,
                                                      "uuids": alert_ids}, N=N)
 
         if "case" in form:
@@ -279,8 +279,9 @@ def import_clinics(csv_file, session, country_id,
     with open(csv_file) as f:
         clinics_csv = csv.DictReader(f)
         for row in clinics_csv:
-            if row["deviceid"] and row["clinic"].lower() != "not used" and row[
-                "deviceid"] not in deviceids:
+            if (row["deviceid"] and
+               row["clinic"].lower() != "not used" and
+               row["deviceid"] not in deviceids):
 
                 other_cond = True
                 if other_condition:
@@ -290,6 +291,7 @@ def import_clinics(csv_file, session, country_id,
                             break
                 if not other_cond:
                     continue
+
                 if "case_report" in row.keys():
                     if row["case_report"] in ["Yes", "yes"]:
                         case_report = 1
@@ -382,9 +384,13 @@ def import_clinics(csv_file, session, country_id,
                 else:
                     location = result.first()
                     location.deviceid += "," + row["deviceid"]
+                     # Combine case types with no duplicates
                     location.case_type = list(
                         set(location.case_type) | set(case_type)
-                    )  # Combine case types with no duplicates
+                    )
+                    # Clinic submits cases if any of it's tablets submits cases
+                    if row["case_report"] or location.case_report:
+                        location.case_report = 1
     session.commit()
 
 
