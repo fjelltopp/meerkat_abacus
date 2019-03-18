@@ -92,7 +92,7 @@ def real_time_s3(app, config, session, number_by_form):
     return number_by_form
     
 
-def real_time_fake(app, config, session):
+def real_time_fake(app, config, session, number_by_form):
     """ Creates new fake data and adds it to the system"""
     logging.info("Sending fake data")
     new_data = []

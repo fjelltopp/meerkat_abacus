@@ -33,17 +33,17 @@ class ProcessingStep(object):
 
     def start_step(self):
         self.start = datetime.datetime.now()
-        self.profiler = cProfile.Profile()
-        self.profiler.enable()
+        # self.profiler = cProfile.Profile()
+        # self.profiler.enable()
 
     def end_step(self, n):
         self.end = datetime.datetime.now()
         self._write_monitoring_data(n)
-        self.profiler.disable()
+        # self.profiler.disable()
         s = io.StringIO()
         sortby = 'cumulative'
-        ps = pstats.Stats(self.profiler, stream=s).sort_stats(sortby)
-        ps.print_stats(30)
+        # ps = pstats.Stats(self.profiler, stream=s).sort_stats(sortby)
+        # ps.print_stats(30)
         logging.info(s.getvalue())
         
     def _write_monitoring_data(self, n=None):
