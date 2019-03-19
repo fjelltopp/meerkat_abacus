@@ -20,7 +20,7 @@ def configure_worker():
     # db_uri = conf['db_uri']
     global engine
     logging.info("Worker setup")
-    engine = create_engine(config_.DATABASE_URL, pool_pre_ping=True)
+    engine = create_engine(config_.DATABASE_URL)#, pool_pre_ping=True)
 
     global session
     session = scoped_session(sessionmaker(autocommit=False,
