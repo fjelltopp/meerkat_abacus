@@ -86,18 +86,17 @@ if failures:
     logging.error(f"There were{N_failures} records that failed in the pipeline, see the step_failures database table for more information")
     
    
-if config.stream_data_source == "AWS_S3":
-    run = get_data.real_time_s3
-elif config.stream_data_source == "FAKE_DATA":
-    run = get_data.real_time_fake
-elif config.stream_data_source == "AWS_SQS":
-    run = get_data.real_time_fake
-else:
-    RuntimeError("Unsupported data source.")
-    
+run_dict = {
+    "AWS_S3": get_data.real_time_s3,
+    "FAKE_DATA": get_data.real_time_fake,
+    "AWS_SQS": get_data.real_time_fake
+}
+sds = config.stream_data_source
 while True:
     try:
-        number_by_form = run(app, config, session, number_by_form)
+        number_by_form = run_dict[sds](app, config, session, number_by_form)
+    except KeyError:
+        RuntimeError("Unsupported data source.")
     except:
         logging.exception("Error in real time", exc_info=True)
 
