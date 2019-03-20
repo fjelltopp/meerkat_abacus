@@ -89,7 +89,7 @@ if failures:
 run_dict = {
     "AWS_S3": get_data.real_time_s3,
     "FAKE_DATA": get_data.real_time_fake,
-    "AWS_SQS": get_data.real_time_fake
+    "AWS_SQS": get_data.real_time_sqs
 }
 sds = config.stream_data_source
 while True:

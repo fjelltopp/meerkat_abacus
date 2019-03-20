@@ -82,7 +82,7 @@ def download_data_from_s3(config):
         
 # Real time
 
-def real_time_s3(app, config, session, number_by_form):
+def real_time_s3(app, config, session, number_by_form={}):
     """ Downloads data from S3 and adds new data from the CSV files"""
     logging.info("Starting read from S3")
     download_data_from_s3(config)
@@ -92,7 +92,7 @@ def real_time_s3(app, config, session, number_by_form):
     return number_by_form
     
 
-def real_time_fake(app, config, session, number_by_form):
+def real_time_fake(app, config, session, *args):
     """ Creates new fake data and adds it to the system"""
     logging.info("Sending fake data")
     new_data = []
