@@ -67,12 +67,16 @@ database_setup.logg_tables(config.country_config["tables"], engine)
 # Wait for initial setup to finish
 
 celery_inspect = inspect()
-inspect_result = celery_inspect.reserved()["celery@abacus"]
-while len(inspect_result) > 0:
+for i in range(15):
+    celery_queues = celery_inspect.reserved()
+    inspect_result = celery_queues.get("celery@abacus", [])
+    if len(inspect_result) > 0:
+        break
     time.sleep(20)
-    inspect_result = celery_inspect.reserved()["celery@abacus"]
+else:
+    setup_time = round(time.time() - start_time)
+    logging.error(f"Failed to wait for message queue after {setup_time} seconds.")
 setup_time = round(time.time() - start_time)
-    
 logging.info(f"Finished setup in {setup_time} seconds")
 
 failures = session.query(model.StepFailiure).all()
