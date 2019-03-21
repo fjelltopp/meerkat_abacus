@@ -4,7 +4,6 @@ Various utility functions for meerkat abacus
 
 import csv
 import itertools
-import logging
 import boto3
 from xmljson import badgerfish as bf
 from lxml.html import Element, tostring
@@ -23,6 +22,7 @@ from meerkat_abacus.config import config
 import meerkat_libs as libs
 from meerkat_abacus.model import Locations, AggregationVariables, Devices
 
+logger = config.logger
 country_config = config.country_config
 
 # Alert messages are rendered with Jinja2, setup the Jinja2 env
@@ -367,7 +367,7 @@ def read_csv_file(filename, param_config=config):
 def get_data_from_rds_persistent_storage(form, param_config=config):
     """ Get data from RDS persistent storage"""
     engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
-    logging.info(session)
+    logger.info(session)
     form_data = session.query(form_tables(param_config=param_config)[form])
     for row in form_data.yield_per(1000).enable_eagerloads(False):
         yield row.__dict__['data']
@@ -375,7 +375,7 @@ def get_data_from_rds_persistent_storage(form, param_config=config):
 
 def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
     """ Subscribes to an sqs_enpoint with the sqs_queue_name"""
-    logging.info("Connecting to SQS")
+    logger.info("Connecting to SQS")
     region_name = "eu-west-1"
 
     if sqs_endpoint == 'DEFAULT':
@@ -385,16 +385,16 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
                                   endpoint_url=sqs_endpoint)
     #sts_client = boto3.client('sts', region_name=region_name)
 
-    logging.info("Getting SQS url")
+    logger.info("Getting SQS url")
     try:
         queue_url = __get_queue_url(sqs_client, sqs_queue_name)
-        logging.info("Subscribed to %s.", queue_url)
+        logger.info("Subscribed to %s.", queue_url)
     except ClientError as e:
-        logging.debug("Failed to connect to %s", sqs_queue_name)
-        logging.info("Creating queue %s", sqs_queue_name)
+        logger.debug("Failed to connect to %s", sqs_queue_name)
+        logger.info("Creating queue %s", sqs_queue_name)
         sqs_client.create_queue(QueueName=sqs_queue_name)
         queue_url = __get_queue_url(sqs_client, sqs_queue_name)
-        logging.info("Subscribed to %s.", queue_url)
+        logger.info("Subscribed to %s.", queue_url)
     return sqs_client, queue_url
 
 
@@ -435,7 +435,7 @@ def submit_data_to_aggregate(data, form_id, aggregate_config):
                       files={
                         "xml_submission_file":  ("tmp.xml", tostring(result), "text/xml")
                       })
-    logging.info("Aggregate submission status code: " + str(r.status_code))
+    logger.info("Aggregate submission status code: " + str(r.status_code))
     return r.status_code
 
 
@@ -487,7 +487,7 @@ def create_topic_list(alert, locations, country_config=config.country_config):
     for comb in combinations:
         topics.append(str(comb[0]) + "-" + str(comb[1]) + "-" + str(comb[2]))
 
-    logging.debug("Sending alert to topic list: {}".format(topics))
+    logger.debug("Sending alert to topic list: {}".format(topics))
 
     return topics
 
@@ -565,7 +565,7 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
             "subject": "Public Health Surveillance Alerts: #" + alert_id,
             "medium": ['email', 'sms']
         }
-        logging.info("CREATED ALERT {}".format(data['message']))
+        logger.info("CREATED ALERT {}".format(data['message']))
 
         if not param_config.country_config["messaging_silent"]:
             libs.hermes('/publish', 'PUT', data,

@@ -10,11 +10,11 @@ given by the config.interval value.
 """
 from datetime import timedelta, datetime
 from celery.schedules import crontab
-import logging
 import os
 from kombu import Queue
 
 from meerkat_abacus.config import config
+logger = config.logger
 
 BROKER_URL = 'amqp://guest@rabbit//'
 CELERY_RESULT_BACKEND = 'rpc://guest@rabbit//'

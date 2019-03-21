@@ -10,10 +10,10 @@ given by the config.interval value.
 """
 from datetime import timedelta, datetime
 from celery.schedules import crontab
-import logging
 import os
 
 from meerkat_abacus.config import config
+logger = config.logger
 
 DEVELOPMENT = bool(os.environ.get("DEVELOPMENT", False))
 

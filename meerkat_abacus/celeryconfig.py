@@ -10,11 +10,11 @@ given by the config.interval value.
 """
 from datetime import timedelta, datetime
 from celery.schedules import crontab
-import logging
 import os
 import yaml
 
 from meerkat_abacus.config import config
+logger = config.logger
 
 BROKER_URL = 'amqp://guest@rabbit//'
 CELERY_RESULT_BACKEND = 'rpc://guest@rabbit//'
@@ -169,5 +169,5 @@ if config.device_messaging_api:
         }
 
 
-logging.warning("Celery is set up with the following beat schedule:\n" +
+logger.warning("Celery is set up with the following beat schedule:\n" +
                 str([ (key, value["schedule"]) for key, value in CELERYBEAT_SCHEDULE.items()]))

@@ -4,10 +4,10 @@ Main Celery App file
 """
 from raven.contrib.celery import register_signal, register_logger_signal
 import celery
-import logging
 import raven
 
 from meerkat_abacus.pipeline_worker import celeryconfig
+from meerkat_abacus.config import config
 
 # class Celery(celery.Celery):
 #     def on_configure(self):
@@ -18,10 +18,11 @@ from meerkat_abacus.pipeline_worker import celeryconfig
 #             # hook into the Celery error handler
 #             register_signal(client)
 
-logging.getLogger().setLevel(logging.INFO)
+logger = config.logger
+
 app = celery.Celery()
 app.config_from_object(celeryconfig)
-logging.info(celeryconfig.DEVELOPMENT)
+logger.info(celeryconfig.DEVELOPMENT)
 if celeryconfig.DEVELOPMENT:
     # cleans up stale task between restarts
     pass

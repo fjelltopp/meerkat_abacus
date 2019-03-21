@@ -1,4 +1,3 @@
-import logging
 import time
 import csv
 import json
@@ -17,6 +16,8 @@ from meerkat_abacus.config import config
 from meerkat_abacus import model
 from meerkat_abacus import util
 
+logger = config.logger
+
 
 def create_db(url, drop=False):
     """
@@ -34,16 +35,16 @@ def create_db(url, drop=False):
     while counter < 5:
         try:
             if drop and database_exists(url):
-                logging.debug('Dropping database.')
+                logger.debug('Dropping database.')
                 drop_database(url)
             if not database_exists(url):
-                logging.debug('Creating database.')
+                logger.debug('Creating database.')
                 create_database(url)
                 break
 
         except exc.OperationalError:
-            logging.exception('There was an error connecting to the db.', exc_info=True)
-            logging.error('Trying again in 5 seconds...')
+            logger.exception('There was an error connecting to the db.', exc_info=True)
+            logger.error('Trying again in 5 seconds...')
             time.sleep(5)
             counter = counter + 1
 
@@ -242,7 +243,7 @@ def import_geojson(geo_json, session):
                     new_polys.append(new_poly)
                 shapely_shapes = MultiPolygon(new_polys)
             else:
-                logging.info("shapely_shapes.geom_type : %s", shapely_shapes.geom_type)
+                logger.info("shapely_shapes.geom_type : %s", shapely_shapes.geom_type)
             name = g["properties"]["Name"]
             location = session.query(model.Locations).filter(
                 model.Locations.name == name,
@@ -343,7 +344,7 @@ def import_parameters(engine, session, param_config):
     parameter_files = param_config.country_config.get("calculation_parameters", [])
 
     for file in parameter_files:
-        logging.debug("Importing parameter file %s", file)
+        logger.debug("Importing parameter file %s", file)
         file_name = os.path.splitext(file)[0]
         file_extension = os.path.splitext(file)[-1]
         if file_extension == '.json':
@@ -365,7 +366,7 @@ def import_parameters(engine, session, param_config):
 
 def import_dump(dump_file):
     path = config.db_dump_folder + dump_file
-    logging.info("Loading DB dump: {}".format(path))
+    logger.info("Loading DB dump: {}".format(path))
     with open(path, 'r') as f:
         command = ['psql', '-U', 'postgres', '-h', 'db', 'meerkat_db']
         proc = subprocess.Popen(command, stdin=f)
@@ -376,11 +377,11 @@ def set_up_persistent_database(param_config):
     """
     Sets up the test persistent db if it doesn't exist yet.
     """
-    logging.info("Create Persistent DB")
+    logger.info("Create Persistent DB")
     if not database_exists(param_config.PERSISTENT_DATABASE_URL):
         create_db(param_config.PERSISTENT_DATABASE_URL, drop=False)
         engine = create_engine(param_config.PERSISTENT_DATABASE_URL)
-        logging.info("Creating persistent database tables")
+        logger.info("Creating persistent database tables")
         model.form_tables(param_config=param_config)
         model.Base.metadata.create_all(engine)
         engine.dispose()
@@ -404,7 +405,7 @@ def set_up_database(leave_if_data, drop_db, param_config):
             if len(session.query(model.Data).all()) > 0:
                 set_up = False
     if set_up:
-        logging.info("Create DB")
+        logger.info("Create DB")
         create_db(param_config.DATABASE_URL, drop=drop_db)
         if param_config.db_dump:
             import_dump(param_config.db_dump)
@@ -412,7 +413,7 @@ def set_up_database(leave_if_data, drop_db, param_config):
         engine = create_engine(param_config.DATABASE_URL)
         Session = sessionmaker(bind=engine)
         session = Session()
-        logging.info("Populating DB")
+        logger.info("Populating DB")
         model.form_tables(param_config)
         model.Base.metadata.create_all(engine)
 
@@ -427,11 +428,11 @@ def set_up_database(leave_if_data, drop_db, param_config):
             from_form = link["from_form"]
             from_condition_column = link.get("from_condition", "").split(":")[0]
             add_index(from_form, from_condition_column, indexes_already_created, engine)
-        logging.info("Import Locations")
+        logger.info("Import Locations")
         import_locations(engine, session, param_config)
-        logging.info("Import calculation parameters")
+        logger.info("Import calculation parameters")
         import_parameters(engine, session, param_config)
-        logging.info("Import Variables")
+        logger.info("Import Variables")
         import_variables(session, param_config)
         for alert in session.query(model.AggregationVariables).filter(
                 model.AggregationVariables.alert == 1).all():

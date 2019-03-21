@@ -1,4 +1,3 @@
-import logging
 import boto3
 import time
 import json
@@ -6,6 +5,10 @@ from celery.task.control import inspect
 
 from meerkat_abacus.util import create_fake_data
 from meerkat_abacus import util
+from meerkat_abacus.config import get_config
+
+config = get_config()
+logger = config.logger
 
 
 def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=15000,
@@ -19,7 +22,7 @@ def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=
     for form_name in param_config.country_config["tables"]:
 
         start = previous_number_by_form.get(form_name, 0)
-        logging.info(f"Start processing data for form {form_name}")
+        logger.info(f"Start processing data for form {form_name}")
         data = []
         for i, element in enumerate(get_function(form_name, param_config=param_config)):
             if i < start:
@@ -27,13 +30,13 @@ def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=
             data.append({"form": form_name,
                          "data": dict(element)})
             if i % N_send_to_task == 0:
-                logging.info(f"Processed {i} records")
+                logger.info(f"Processed {i} records")
                 send_task(data, celery_app, celery_inspect)
                 data = []
         if data:
             send_task(data, celery_app, celery_inspect)
-        logging.info("Finished processing data.")
-        logging.info(f"Processed {i} records")
+        logger.info("Finished processing data.")
+        logger.info(f"Processed {i} records")
         number_by_form[form_name] = i
     return number_by_form
 
@@ -45,7 +48,7 @@ def get_N_tasks(inspect, name):
     except:
         registered = 0
         reserved = 0
-    logging.info(f"registered {registered}, reserved {reserved}")
+    logger.info(f"registered {registered}, reserved {reserved}")
     return reserved + registered
 
 
@@ -56,10 +59,10 @@ def send_task(data, celery_app, inspect, N=15):
 
     """
     while get_N_tasks(inspect, "celery@abacus") > N:
-        logging.info("There were too many reserved tasks so waiting 5 seconds")
+        logger.info("There were too many reserved tasks so waiting 5 seconds")
         time.sleep(60)
 
-    logging.info("Sending data")
+    logger.info("Sending data")
     celery_app.send_task("processing_tasks.process_data", [data])
 
         
@@ -84,17 +87,17 @@ def download_data_from_s3(config):
 
 def real_time_s3(app, config, session, number_by_form={}):
     """ Downloads data from S3 and adds new data from the CSV files"""
-    logging.info("Starting read from S3")
+    logger.info("Starting read from S3")
     download_data_from_s3(config)
     read_stationary_data(util.read_csv_file, config, previous_number_by_form=number_by_form)
-    logging.info("Finishing read from S3")
+    logger.info("Finishing read from S3")
     time.sleep(config.data_stream_interval)
     return number_by_form
     
 
 def real_time_fake(app, config, session, *args):
     """ Creates new fake data and adds it to the system"""
-    logging.info("Sending fake data")
+    logger.info("Sending fake data")
     new_data = []
     for form in config.country_config["tables"]:
         data = create_fake_data.get_new_fake_data(form=form,
@@ -118,7 +121,7 @@ def real_time_fake(app, config, session, *args):
             real_time_sqs(app, config)
     else:
         raise NotImplementedError("Not yet implemented")
-    logging.info("Sleeping")
+    logger.info("Sleeping")
     time.sleep(config.fake_data_interval)
 
 
@@ -132,27 +135,27 @@ def real_time_sqs(app, config, *args):
     global sqs_queue_url
     if sqs_client is None:
         try:
-            logging.info(f"Subscribing to SQS endpoint: {config.SQS_ENDPOINT}.")
-            logging.info(f"Subscribing to SQS queue: {config.sqs_queue.lower()}.")
+            logger.info(f"Subscribing to SQS endpoint: {config.SQS_ENDPOINT}.")
+            logger.info(f"Subscribing to SQS queue: {config.sqs_queue.lower()}.")
             sqs_client, sqs_queue_url = util.subscribe_to_sqs(config.SQS_ENDPOINT,
                                                               config.sqs_queue.lower())
         except Exception as e:
-            logging.exception("Error in reading message", exc_info=True)
+            logger.exception("Error in reading message", exc_info=True)
             return
     try:
-        logging.info("Getting messages from queue " + str(sqs_queue_url))
+        logger.info("Getting messages from queue " + str(sqs_queue_url))
         messages = sqs_client.receive_message(QueueUrl=sqs_queue_url,
                                               WaitTimeSeconds=19,
                                               MaxNumberOfMessages=10)
     except Exception as e:
-        logging.error(str(e) + ", retrying...")
+        logger.error(str(e) + ", retrying...")
         return
     if "Messages" in messages:
         messages_to_send = []
         for message in messages["Messages"]:
-            logging.info("Message %s", message)
+            logger.info("Message %s", message)
             receipt_handle = message["ReceiptHandle"]
-            logging.debug("Deleting message %s", receipt_handle)
+            logger.debug("Deleting message %s", receipt_handle)
 
             try:
                 message_body = json.loads(message["Body"])
@@ -162,5 +165,5 @@ def real_time_sqs(app, config, *args):
                 sqs_client.delete_message(QueueUrl=sqs_queue_url,
                                           ReceiptHandle=receipt_handle)
             except Exception as e:
-                logging.exception("Error in reading message", exc_info=True)
+                logger.exception("Error in reading message", exc_info=True)
         app.send_task("processing_tasks.process_data", [messages_to_send])

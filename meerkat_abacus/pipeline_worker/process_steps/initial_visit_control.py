@@ -1,9 +1,11 @@
-import logging
 from dateutil.parser import parse
 from sqlalchemy import and_
 from sqlalchemy.exc import OperationalError
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus import model, util
+from meerkat_abacus.config import config
+
+logger = config.logger
 
 class InitialVisitControl(ProcessingStep):
 
@@ -75,7 +77,7 @@ class InitialVisitControl(ProcessingStep):
                                    reverse=False)
                 for row in combined_data[1:]:
                     row[visit_type_key] = return_visit_value
-                    #logging.info("Updated data with uuid {}".format(
+                    #logger.info("Updated data with uuid {}".format(
                     #    row["meta/instanceID"]))  # TODO: refactor this properly
                 return [{"form": form,
                          "data": row} for row in combined_data]
@@ -129,7 +131,7 @@ class InitialVisitControl(ProcessingStep):
         try:
             results = result_query.all()
         except:
-            logging.info("Rolled back session")
+            logger.info("Rolled back session")
             session.rollback()
             results = result_query.all()
         return results

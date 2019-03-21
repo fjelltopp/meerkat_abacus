@@ -1,4 +1,3 @@
-import logging
 import cProfile
 
 
@@ -10,6 +9,7 @@ from meerkat_abacus import config
 from meerkat_abacus.pipeline_worker.celery_app import app
 
 config_ = config.get_config()
+logger = config_.logger
 
 
 pipeline = None
@@ -19,14 +19,14 @@ def configure_worker():
     # load the application configuration
     # db_uri = conf['db_uri']
     global engine
-    logging.info("Worker setup")
+    logger.info("Worker setup")
     engine = create_engine(config_.DATABASE_URL)#, pool_pre_ping=True)
 
     global session
     session = scoped_session(sessionmaker(autocommit=False,
                                           autoflush=False,
                                           bind=engine))
-    logging.info(session)
+    logger.info(session)
     global pipeline
     pipeline = Pipeline(engine, session, config_)
 
@@ -35,10 +35,10 @@ def configure_worker():
 def process_data(self, data_rows):
     if pipeline is None:
         configure_worker()
-    logging.info("STARTING task")
+    logger.info("STARTING task")
     engine.dispose()
     pipeline.process_chunk(data_rows)
-    logging.info("ENDING task")
+    logger.info("ENDING task")
 
 
 @app.task(name="processing_tasks.test_up")

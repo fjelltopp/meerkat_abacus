@@ -2,7 +2,6 @@
 Celery setup and wraper tasks to periodically update the database.
 """
 import requests
-import logging
 import traceback
 from celery import task, Task
 import time
@@ -24,6 +23,7 @@ from meerkat_abacus import util
 #from meerkat_abacus.pipeline import Pipeline
 from meerkat_abacus.util import create_fake_data
 
+logger = config.logger
 
 sqs_client = None
 sqs_queue_url = None
@@ -39,7 +39,7 @@ worker_buffer = Queue(maxsize=INTERNAL_BUFFER_SIZE)
 @task
 def stream_data_from_s3(param_config_yaml=yaml.dump(config)):
     param_config = yaml.load(param_config_yaml)
-    logging.info("Getting new data from S3")
+    logger.info("Getting new data from S3")
     while not worker_buffer.empty():  # Make sure that the buffer is empty
         worker_buffer.get()
 
@@ -79,7 +79,7 @@ def process_buffer(start=True, internal_buffer=None,
             element = internal_buffer.get()
             pipeline.process_chunk([element])
     except Exception as e:
-        logging.exception("Error in process buffer", exc_info=True)
+        logger.exception("Error in process buffer", exc_info=True)
     if start:
         process_buffer.apply_async(countdown=30,
                                    kwargs={
@@ -94,7 +94,7 @@ def process_buffer(start=True, internal_buffer=None,
 def poll_queue(self, sqs_queue_name, sqs_endpoint,
                start=True, param_config_yaml=yaml.dump(config)):
     """ Get's messages from SQS queue"""
-    logging.info("Running Poll Queue")
+    logger.info("Running Poll Queue")
     param_config = yaml.load(param_config_yaml)
 
     global sqs_client
@@ -104,20 +104,20 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint,
             sqs_client, sqs_queue_url = util.subscribe_to_sqs(param_config.SQS_ENDPOINT,
                                                               param_config.sqs_queue.lower())
         except Exception as e:
-            logging.error(str(e))
+            logger.error(str(e))
             self.retry()
     try:
-        logging.info("Getting messages from queue " + str(sqs_queue_url))
+        logger.info("Getting messages from queue " + str(sqs_queue_url))
         messages = sqs_client.receive_message(QueueUrl=sqs_queue_url,
                                               WaitTimeSeconds=19)
     except Exception as e:
-        logging.error(str(e) + ", retrying...")
+        logger.error(str(e) + ", retrying...")
         self.retry()
     if "Messages" in messages:
         for message in messages["Messages"]:
-            logging.info("Message %s", message)
+            logger.info("Message %s", message)
             receipt_handle = message["ReceiptHandle"]
-            logging.debug("Deleting message %s", receipt_handle)
+            logger.debug("Deleting message %s", receipt_handle)
             try:
                 message_body = json.loads(message["Body"])
                 form = message_body["formId"]
@@ -136,11 +136,11 @@ def poll_queue(self, sqs_queue_name, sqs_endpoint,
                          "uuid": uuid,
                          "data": form_data}
                     )
-                logging.info("Messages in buffer {}".format(worker_buffer.qsize()))
+                logger.info("Messages in buffer {}".format(worker_buffer.qsize()))
                 sqs_client.delete_message(QueueUrl=sqs_queue_url,
                                           ReceiptHandle=receipt_handle)
             except Exception as e:
-                logging.exception("Error in reading message", exc_info=True)
+                logger.exception("Error in reading message", exc_info=True)
                                     
     if start:
         poll_queue.delay(sqs_queue_name=sqs_queue_name, sqs_endpoint=sqs_endpoint,
@@ -152,10 +152,10 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False,
                   internal_fake_data=True,
                   param_config_yaml=yaml.dump(config)):
     param_config = yaml.load(param_config_yaml)
-    logging.info("Adding fake data")
+    logger.info("Adding fake data")
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
     for form in param_config.country_config["tables"]:
-        logging.info("Generating fake data for form:" + form)
+        logger.info("Generating fake data for form:" + form)
         new_data = create_fake_data.get_new_fake_data(form=form, session=session, N=N,
                                                       param_config=param_config,
                                                       dates_is_now=dates_is_now)
@@ -179,7 +179,7 @@ def add_fake_data(N=10, interval_next=None, dates_is_now=False,
                     'aggregate_username': param_config.aggregate_username,
                     'aggregate_password':param_config.aggregate_password
                 }
-                logging.info("Submitting fake data for form {0} to Aggregate".format(form))
+                logger.info("Submitting fake data for form {0} to Aggregate".format(form))
                 util.submit_data_to_aggregate(row, form, aggregate_config)
     if interval_next:
         add_fake_data.apply_async(countdown=interval_next,
@@ -213,12 +213,12 @@ def send_report_email(report, language, location, param_config_yaml=yaml.dump(co
     param_config = yaml.load(param_config_yaml)
     # If the mailing root isn't set, don't send the email.
     if not param_config.mailing_root:
-        logging.info("Mailing root not set. Email %s not sent.".format(report))
+        logger.info("Mailing root not set. Email %s not sent.".format(report))
         return
 
     # Important to log so we can debug if something goes wrong in deployment.
     pre = "EMAIL " + str(report) + ":  "
-    logging.warning("%sTrying to send report email.", pre)
+    logger.warning("%sTrying to send report email.", pre)
 
     try:
         # Authenticate the email sending
@@ -226,9 +226,9 @@ def send_report_email(report, language, location, param_config_yaml=yaml.dump(co
         data = {'username': 'report-emails', 'password': param_config.mailing_key}
         headers = {'content-type': 'application/json'}
 
-        logging.warning("%sSending authentication request to %s with headers: %s", pre, str(url), str(headers) )
+        logger.warning("%sSending authentication request to %s with headers: %s", pre, str(url), str(headers) )
         r = requests.request('POST', url, json=data, headers=headers)
-        logging.warning("%sReceived authentication response: %s", pre,  str(r))
+        logger.warning("%sReceived authentication response: %s", pre,  str(r))
 
         # We need authentication to work, so raise an exception if it doesn't.
         if r.status_code != 200:
@@ -247,12 +247,12 @@ def send_report_email(report, language, location, param_config_yaml=yaml.dump(co
         url = url.replace('/en/', '/' + language + '/')
 
         # Log the full request so we can debug later if necessary.
-        logging.warning("%sSending report email for location: %s with language: %s using url: %s and headers: %s",
+        logger.warning("%sSending report email for location: %s with language: %s using url: %s and headers: %s",
                      pre, str(location), str(language), str(url), str(headers))
 
         # Make the request and handle the response.
         r = requests.post(url, json=data, headers=headers)
-        logging.info("%sReceived email request reponse: %s", pre, str(r))
+        logger.info("%sReceived email request reponse: %s", pre, str(r))
 
         # If the response is not a 200 OK, raise an Exception so that we can
         # handle it properly.
@@ -262,10 +262,10 @@ def send_report_email(report, language, location, param_config_yaml=yaml.dump(co
                 str(r.status_code)
                 )
 
-        logging.info("%sSuccessfully sent %s email.", pre, str(report))
+        logger.info("%sSuccessfully sent %s email.", pre, str(report))
 
     except Exception:
-        logging.exception("%sReport email request failed.", pre, exc_info=True)
+        logger.exception("%sReport email request failed.", pre, exc_info=True)
 
         # Notify the developers that there has been a problem.
         data = {
@@ -297,12 +297,12 @@ def send_device_messages(message, content, distribution,
     param_config = yaml.load(param_config_yaml)
     # If the device message root isn't set, don't send the device messages.
     if not param_config.device_messaging_api:
-        logging.info("Device messaging root not set. Message %s not sent.", message)
+        logger.info("Device messaging root not set. Message %s not sent.", message)
         return
 
     # Important to log so we can debug if something goes wrong in deployment.
     pre = "DEVICE MESSAGE " + str(message) + ":  "
-    logging.info("%sTrying to send device messages.", pre)
+    logger.info("%sTrying to send device messages.", pre)
 
     try:
         # Assemble params.
@@ -310,17 +310,17 @@ def send_device_messages(message, content, distribution,
 
         for target in distribution:
             # Log the full request so we can debug later if necessary.
-            logging.info("%sSending device message: %s with content: '%s' to %s",
+            logger.info("%sSending device message: %s with content: '%s' to %s",
                          pre, str(message), str(content), str(target))
 
             data = {'destination': str(target), 'message': str(content)}
 
             # Make the request and handle the response.
             r = libs.hermes(url='/gcm',method='PUT',data=data)
-            logging.info("%sReceived device messaging response: %s", pre, str(r))
+            logger.info("%sReceived device messaging response: %s", pre, str(r))
 
     except Exception:
-        logging.exception("%sDevice message request failed.", pre, exc_info=True)
+        logger.exception("%sDevice message request failed.", pre, exc_info=True)
 
         # Notify the developers that there has been a problem.
         data = {

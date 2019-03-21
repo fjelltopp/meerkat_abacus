@@ -6,7 +6,6 @@ import copy
 import csv
 import inspect
 import json
-import logging
 import os
 import os.path
 import random
@@ -38,6 +37,7 @@ from meerkat_abacus.util import create_fake_data
 from meerkat_abacus.util.epi_week import epi_week_for_date
 from meerkat_libs import consul_client as consul
 
+logger = config.logger
 country_config = config.country_config
 
 
@@ -55,7 +55,7 @@ def export_data(session):
             for r in session.query(obj):
                 columns = dict((col, getattr(r, col))
                                for col in r.__table__.columns.keys())
-                logging.debug(name + "(**" + str(columns) + "),")
+                logger.debug(name + "(**" + str(columns) + "),")
 
 
 
@@ -147,7 +147,7 @@ def add_alerts(session, newely_inserted_data, param_config=config):
                 continue
             if not a.alert_type or a.alert_type not in ["threshold", "double"]:
                 continue
-            logging.info(newly_inserted)
+            logger.info(newly_inserted)
             day = newly_inserted["date"]
             
             clinic = newly_inserted["clinic"]

@@ -2,7 +2,6 @@
 Main functionality for importing data into abacus
 """
 
-import logging
 from dateutil.parser import parse
 import random
 from meerkat_abacus import util
@@ -10,6 +9,9 @@ from meerkat_abacus.util import data_types
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus.util.epi_week import epi_week_for_date
 from meerkat_abacus.codes import to_codes
+from meerkat_abacus.config import config
+
+logger = config.logger
 
 
 class QualityControl(ProcessingStep):
@@ -136,7 +138,7 @@ class QualityControl(ProcessingStep):
                             if column in insert_row:
                                 insert_row[column] = replace_value
                 except Exception as e:
-                    logging.exception("Quality Controll error for code %s",variable.variable.id, exc_info=True)
+                    logger.exception("Quality Controll error for code %s",variable.variable.id, exc_info=True)
         return remove
 
     
@@ -233,14 +235,14 @@ def __should_discard_row(row, filter, already_validated_dates, param_config):
     already_validated_dates.append(column_with_date_name)
     string_date = row[column_with_date_name]
     if not string_date:
-        logging.debug(f"Empty value of date column for row with device_id: {row.get('deviceid')}" +
+        logger.debug(f"Empty value of date column for row with device_id: {row.get('deviceid')}" +
                         f" and submission date: {row.get('SubmissionDate')}")
         return True
     try:
         date_to_check = parse(string_date).replace(tzinfo=None)
         epi_week_for_date(date_to_check, param_config=param_config.country_config)
     except ValueError:
-        logging.debug(f"Failed to process date column for row with device_id: {row.get('deviceid')}" +
+        logger.debug(f"Failed to process date column for row with device_id: {row.get('deviceid')}" +
                         f" and submission date: {row.get('SubmissionDate')}")
         return True
     return False

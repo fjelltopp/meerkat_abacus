@@ -2,7 +2,6 @@
 Main pipeline for abacus
 
 """
-import logging
 import datetime
 import sys
 
@@ -16,6 +15,9 @@ from meerkat_abacus.pipeline_worker.process_steps.add_multiple_alerts import Add
 from meerkat_abacus.pipeline_worker.process_steps.to_data_type import ToDataType
 from meerkat_abacus.pipeline_worker.process_steps.initial_visit_control import InitialVisitControl
 from meerkat_abacus.pipeline_worker.process_steps import DoNothing
+from meerkat_abacus.config import config
+
+logger = config.logger
 
 
 class Pipeline:
@@ -95,7 +97,7 @@ class Pipeline:
         """
         form_data = data["data"]
         form = data["form"]
-        logging.exception(f"There was an error in step {step}", exc_info=True)
+        logger.exception(f"There was an error in step {step}", exc_info=True)
         self.session.rollback()
         error_str = type(exception).__name__ + ": " + str(exception)
         self.session.add(
@@ -188,7 +190,7 @@ def fix_json(row):
 #         try:
 #             table = model.form_tables(param_config=param_config)[form]
 #         except KeyError:
-#             logging.exception("Error in process buffer", exc_info=True)
+#             logger.exception("Error in process buffer", exc_info=True)
 #             continue
         
 #         write_to_db(engine, insert_data, table=table)
@@ -225,13 +227,13 @@ def fix_json(row):
 
         
 #     end = time.time() - start #after_insert - after_qc - start
-#     logging.info(end)
+#     logger.info(end)
 #     qc_m = statistics.mean(qc)
 #     initial_visit_m = statistics.mean(initial_visit)
 #     first_db_write_m = statistics.mean(first_db_write)
 #     to_data_m = statistics.mean(to_data)
 #     second_db_write_m = statistics.mean(second_db_write)
-#     logging.info(f"{qc_m}, {initial_visit_m}, {first_db_write_m}, {to_data_m}, {second_db_write_m}")
+#     logger.info(f"{qc_m}, {initial_visit_m}, {first_db_write_m}, {to_data_m}, {second_db_write_m}")
 #     import sys
 #     sys.exit()
 # import statistics

@@ -30,6 +30,18 @@ import logging
 # Application config
 class Config:
     def __init__(self):
+        # Logging
+        logger_name = os.environ.get("LOGGER_NAME", "meerkat_abacus")
+        logging_level = os.environ.get("LOGGING_LEVEL", "ERROR")
+        logging_format = os.environ.get("LOGGING_FORMAT",  '%(asctime)s - %(name)-15s - %(levelname)-7s - %(module)s:%(filename)s:%(lineno)d - %(message)s')
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(logging_format)
+        handler.setFormatter(formatter)
+        level = logging.getLevelName(logging_level)
+        self.logger = logging.getLogger(logger_name)
+        self.logger.setLevel(level)
+        self.logger.addHandler(handler)
+
         self.DEPLOYMENT = os.environ.get("DEPLOYMENT", "unknown")
         self.DEVELOPMENT = bool(os.environ.get("DEVELOPMENT", False))
         current_directory = os.path.dirname(os.path.realpath(__file__))
@@ -69,7 +81,7 @@ class Config:
             self.only_import_after_date = parse(only_import_after_date)
         else:
             self.only_import_after_date = None
-        logging.info(
+        self.logger.info(
             "Only importing data after {}".format(
                 self.only_import_after_date)
         )
@@ -143,7 +155,6 @@ class Config:
         else:
             msg = f"STREAM_DATA_SOURCE={self.stream_data_source} unsupported."
             raise ValueError(msg)
-
         # Configure generating fake data
         self.fake_data = False
         self.internal_fake_data = None
@@ -170,6 +181,7 @@ class Config:
         return yaml.dump(self)
 
 config = Config()
+config.logger.debug("Config initialised.")
 
 def get_config():
     return config

@@ -5,9 +5,11 @@ Functionality to create fake data
 import random
 import datetime
 import uuid
-import logging
 from meerkat_abacus import util
 from meerkat_abacus import model
+from meerkat_abacus.config import config
+
+logger = config.logger
 
 random.seed(1)
 
@@ -104,8 +106,8 @@ def create_form(fields, data=None, N=500, odk=True, dates_is_now=False):
         list_of_records(list): list of dicts with data
 
     """
-    print("Creating fields: " + str(fields))
-    print("number of records: " + str(N))
+    logger.debug("Creating fields: " + str(fields))
+    logger.debug("number of records: " + str(N))
     list_of_records = []
     for i in range(N):
         row = {}
@@ -170,11 +172,11 @@ def create_form(fields, data=None, N=500, odk=True, dates_is_now=False):
 
 
 def get_new_fake_data(form, session, N, param_config=None, dates_is_now=False):
-    logging.debug("fake data")
+    logger.debug("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
 
     # Make sure the case report form is handled before the alert form
-    logging.debug("Processing form: %s", form)
+    logger.debug("Processing form: %s", form)
     if form not in param_config.country_config["fake_data"]:
         return []
     if "deviceids" in param_config.country_config["fake_data"][form]:
@@ -221,14 +223,14 @@ def create_fake_data(session, config, N=500, append=False,
        from_files: whether to add data from the manual test case
                    files defined in country_config
     """
-    logging.debug("fake data")
+    logger.debug("fake data")
     deviceids = util.get_deviceids(session, case_report=True)
     alert_ids = []
     country_config = config.country_config
     forms = country_config["tables"]
     # Make sure the case report form is handled before the alert form
     for form in forms:
-        logging.debug("Processing form: %s", form)
+        logger.debug("Processing form: %s", form)
         file_name = config.data_directory + form + ".csv"
         current_form = []
         if form not in country_config["fake_data"]:
@@ -247,7 +249,7 @@ def create_fake_data(session, config, N=500, append=False,
             current_directory = os.path.dirname(os.path.realpath(__file__))
             for fake_data_file in country_config.get("manual_test_data", {})[form]:
                 manual_test_data[fake_data_file] = []
-                logging.debug("Adding test data from file: %s.csv", fake_data_file)
+                logger.debug("Adding test data from file: %s.csv", fake_data_file)
                 manual_test_data[fake_data_file] = util.read_csv(current_directory + '/test/test_data/test_cases/' + \
                                                                  fake_data_file + ".csv")
 

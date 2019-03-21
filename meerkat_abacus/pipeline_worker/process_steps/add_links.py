@@ -1,9 +1,11 @@
-import logging
 from sqlalchemy import func
 from dateutil.parser import parse
 
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus import model, util
+from meerkat_abacus.config import config
+
+logger = config.logger
 
 
 class AddLinks(ProcessingStep):
@@ -84,7 +86,7 @@ class AddLinks(ProcessingStep):
         try:
             link_query = self.session.query(*columns).filter(*conditions).all()
         except Exception:
-            logging.exception("Failed to execute query. Retrying after rollback.")
+            logger.exception("Failed to execute query. Retrying after rollback.")
             self.session.rollback()
             link_query = self.session.query(*columns).filter(*conditions).all()
 
@@ -115,7 +117,7 @@ class AddLinks(ProcessingStep):
                     expected = str(data["raw_data"][from_column])
                     to_column_text = to_form.data[to_column].astext
                 except Exception:
-                    logging.error(f'ERROR: {data["raw_data"]}')
+                    logger.error(f'ERROR: {data["raw_data"]}')
                     continue
                 if method == "match":
                     conditions.append(to_column_text == expected)
@@ -136,7 +138,7 @@ class AddLinks(ProcessingStep):
             try:
                 link_query = self.session.query(*columns).filter(*conditions).all()
             except Exception:
-                logging.exception("Failed to execute query. Retrying after rollback.")
+                logger.exception("Failed to execute query. Retrying after rollback.")
                 self.session.rollback()
                 link_query = self.session.query(*columns).filter(*conditions).all()
 

@@ -2,14 +2,14 @@ import unittest
 from unittest.mock import patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import logging
 
 from datetime import datetime
-from meerkat_abacus.config import get_config
+from meerkat_abacus.config import config
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps import add_links
 from meerkat_abacus.consumer.database_setup import create_db
-config = get_config()
+
+logger = config.logger
 
 
 class TestAddLinks(unittest.TestCase):
@@ -144,7 +144,7 @@ class TestAddLinks(unittest.TestCase):
                                   "intro./visit": "new"}
                      }
         results = al.run("data", test_data)
-        logging.info(results)
+        logger.info(results)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["data"]["raw_data"],
                          test_data["raw_data"])
@@ -218,7 +218,7 @@ class TestAddLinks(unittest.TestCase):
                      }
         }
         results = al.run("data", test_data)
-        logging.info(results)
+        logger.info(results)
         self.assertEqual(len(results), 1)
         self.assertEqual(len(results[0]["data"]["link_data"]["return_visit"]),
                          2)

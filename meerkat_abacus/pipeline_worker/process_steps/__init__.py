@@ -1,9 +1,11 @@
 from abc import abstractmethod
 import cProfile, pstats, io
-import logging
 
 import datetime
 from meerkat_abacus import model
+from meerkat_abacus.config import config
+
+logger = config.logger
 
 
 class ProcessingStep(object):
@@ -44,7 +46,7 @@ class ProcessingStep(object):
         sortby = 'cumulative'
         # ps = pstats.Stats(self.profiler, stream=s).sort_stats(sortby)
         # ps.print_stats(30)
-        logging.info(s.getvalue())
+        logger.info(s.getvalue())
         
     def _write_monitoring_data(self, n=None):
         monitoring = model.StepMonitoring(

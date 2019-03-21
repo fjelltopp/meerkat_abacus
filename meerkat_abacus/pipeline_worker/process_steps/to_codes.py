@@ -1,4 +1,3 @@
-import logging
 from dateutil.parser import parse
 from datetime import datetime
 import copy
@@ -7,6 +6,9 @@ from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus import util
 from meerkat_abacus.codes import to_codes
 from meerkat_abacus.util import data_types
+from meerkat_abacus.config import config
+
+logger = config.logger
 
 
 class ToCodes(ProcessingStep):
@@ -49,7 +51,7 @@ class ToCodes(ProcessingStep):
                 data_type["location"]
             )
             if location_data is None:
-                logging.warning("Missing loc data")
+                logger.warning("Missing loc data")
                 continue
             row["uuid"] = row[data_type["form"]][data_type["uuid"]]
             epi_year, week, date = self._get_epi_week(row, data_type)
@@ -143,10 +145,10 @@ class ToCodes(ProcessingStep):
             epi_year, week = util.epi_week.epi_week_for_date(date,
                                                              param_config=self.config.country_config)
         except KeyError:
-            logging.error("Missing Date field %s", data_type["date"])
+            logger.error("Missing Date field %s", data_type["date"])
         except ValueError:
-            logging.error(f"Failed to convert date to epi week. uuid: {row.get('uuid', 'UNKNOWN')}")
-            logging.debug(f"Faulty row date: {date}.")
+            logger.error(f"Failed to convert date to epi week. uuid: {row.get('uuid', 'UNKNOWN')}")
+            logger.debug(f"Faulty row date: {date}.")
         except:
-            logging.exception("Invalid Date: %s", row[data_type["form"]].get(data_type["date"]))
+            logger.exception("Invalid Date: %s", row[data_type["form"]].get(data_type["date"]))
         return epi_year, week, date
