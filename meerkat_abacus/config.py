@@ -41,6 +41,7 @@ class Config:
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(level)
         self.logger.addHandler(handler)
+        self.logger.propagate = 0
 
         self.DEPLOYMENT = os.environ.get("DEPLOYMENT", "unknown")
         self.DEVELOPMENT = bool(os.environ.get("DEVELOPMENT", False))
