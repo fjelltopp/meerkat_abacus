@@ -132,6 +132,8 @@ def real_time_sqs(app, config, *args):
     global sqs_queue_url
     if sqs_client is None:
         try:
+            logging.info(f"Subscribing to SQS endpoint: {config.SQS_ENDPOINT}.")
+            logging.info(f"Subscribing to SQS queue: {config.sqs_queue.lower()}.")
             sqs_client, sqs_queue_url = util.subscribe_to_sqs(config.SQS_ENDPOINT,
                                                               config.sqs_queue.lower())
         except Exception as e:

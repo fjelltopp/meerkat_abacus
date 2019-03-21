@@ -72,6 +72,7 @@ for i in range(15):
     inspect_result = celery_queues.get("celery@abacus", [])
     if len(inspect_result) > 0:
         break
+    logging.info(f"Avaiable celery queues: {inspect_result}")
     time.sleep(20)
 else:
     setup_time = round(time.time() - start_time)
