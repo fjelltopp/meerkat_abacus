@@ -88,11 +88,12 @@ run_dict = {
     "AWS_SQS": get_data.real_time_sqs
 }
 sds = config.stream_data_source
+logger.info(f"Starting real time for {sds} config.")
 while True:
     try:
         number_by_form = run_dict[sds](app, config, session, number_by_form)
     except KeyError:
-        RuntimeError("Unsupported data source.")
+        raise RuntimeError(f"Unsupported data source {sds}.")
     except:
         logger.exception("Error in real time", exc_info=True)
 
