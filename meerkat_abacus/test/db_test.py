@@ -5,7 +5,6 @@ from sqlalchemy_utils import database_exists, drop_database
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-import importlib.util
 from shapely.geometry import Polygon
 from unittest.mock import patch
 
@@ -15,11 +14,6 @@ from meerkat_abacus import model, util, tasks, data_import
 from meerkat_abacus.config import config, Config
 from geoalchemy2.shape import to_shape
 import yaml
-spec = importlib.util.spec_from_file_location(
-    "country_test",
-    config.config_directory + config.country_config["country_tests"])
-country_test = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(country_test)
 
 
 class DbTest(unittest.TestCase):
@@ -76,8 +70,10 @@ class DbTest(unittest.TestCase):
             if r.name == "Clinic 1":
                 if r.parent_location == 6:
                     self.assertEqual(r.deviceid, "1,6")
+                    self.assertTrue(r.case_report)
                 else:
                     self.assertEqual(r.deviceid, "7")
+
             if r.name == "Clinic 2":
                 self.assertEqual(r.start_date, datetime(2016, 2, 2))
             elif r.level == "clinic":
@@ -114,7 +110,7 @@ class DbTest(unittest.TestCase):
         "epi_week": "international",
         "links_file": "demo_links.csv"
     }
-    
+
     @patch.object(manage.data_types, "DATA_TYPES_DICT", new=None)
     def test_multiple_rows_in_a_row(self):
 
@@ -140,7 +136,7 @@ class DbTest(unittest.TestCase):
         self.session.query(model.form_tables()["demo_case"]).delete()
         self.session.query(model.Data).delete()
         self.session.commit()
-        
+
         case = model.form_tables()["demo_case"](
             uuid="hei",
             data=data_row
@@ -201,7 +197,7 @@ class DbTest(unittest.TestCase):
         form_data = []
         for d in util.read_csv(self.current_directory + "/test_data/" + "demo_case.csv"):
             form_data.append(d)
-        
+
         data_import.add_rows_to_db(
             "demo_case",
             form_data,
@@ -239,12 +235,12 @@ class DbTest(unittest.TestCase):
         session = self.session
         # Locations
         results = session.query(model.Locations)
-        country_test.test_locations(results)
 
         if config.fake_data:
             for table in model.form_tables():
                 results = session.query(model.form_tables()[table])
                 self.assertEqual(len(results.all()), 500)
+
         # Import variables
         agg_var = session.query(model.AggregationVariables).filter(
             model.AggregationVariables.id == "tot_1").first()
@@ -263,7 +259,7 @@ class DbTest(unittest.TestCase):
             session.query(t).filter(t.data["intro./visit"].astext == "new")
                 .all())
         self.assertEqual(n_cases + n_disregarded_cases, n_expected_cases)
-        
+
         agg_var_female = "gen_2"
         results = session.query(model.Data).filter(model.Data.type == "case")
         results2 = session.query(model.DisregardedData).filter(model.DisregardedData.type == "case")

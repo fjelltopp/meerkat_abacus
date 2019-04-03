@@ -16,7 +16,7 @@ def get_variables(session, restrict=None, match_on_type=None, match_on_form=None
         session: db-session
 
     Returns:
-        variables(dict): dict of id:Variable
+        dict: dictionary of id:Variable
     """
     if restrict:
         result = session.query(model.AggregationVariables).filter(
@@ -56,7 +56,7 @@ def get_variables(session, restrict=None, match_on_type=None, match_on_form=None
                 variables[row.type][group][row.id_pk] = Variable(row)
                 variable_forms[row.id_pk] = row.form
                 variable_tests[row.id_pk] = variables[row.type][
-                    group][row.id_pk].test_type
+                    group][row.id_pk].test
         else:
             variables_group.setdefault(group, [])
             variables_group[group].append(row.id_pk)
@@ -65,7 +65,7 @@ def get_variables(session, restrict=None, match_on_type=None, match_on_form=None
             variables[row.type][group][row.id_pk] = Variable(row)
             variable_forms[row.id_pk] = row.form
             variable_tests[row.id_pk] = variables[row.type][
-                group][row.id_pk].test_type
+                group][row.id_pk].test
 
 
     return (variables, variable_forms, variable_tests,
@@ -221,20 +221,22 @@ def to_code(row, variables, locations, data_type,  alert_data,
                     if method in ["last", "first"]:
                         data = datum[multiple_method[method]]
                         test_outcome = variables[data_type][group][
-                            v].test_type(data)
+                            v].test(data)
                     elif method == "count":
-                        test_outcome = len(datum)
+                        test_outcome = {"applicable": 1,
+                                        "value": len(datum)}
                     elif method == "any":
-                        test_outcome = 0
+                        test_outcome = {"applicable": 0,
+                                        "value": 0}
                         for d in datum:
                             test_outcome = variables[data_type][group][
-                                v].test_type(d)
+                                v].test(d)
                             if test_outcome:
                                 break
                     elif method == "all":
                         test_outcome = 1
                         for d in datum:
-                            t_o = variables[data_type][group][v].test_type(d)
+                            t_o = variables[data_type][group][v].test(d)
                             if not t_o:
                                 test_outcome = 0
                                 break
@@ -245,11 +247,12 @@ def to_code(row, variables, locations, data_type,  alert_data,
                 #if not test_outcome:
                 #    test_outcome = variable_tests[v_backup](datum)
 
-                if test_outcome:
-                    if test_outcome == 1:
+                if test_outcome["applicable"]:
+                    
+                    if test_outcome["value"] == 1:
                         # This is done to allocate an integer into the
                         # test_outcome instead of a boolean value
-                        test_outcome = 1
+                        test_outcome["value"] = 1
 
                     # fetch the string key for the current variable
                     variable_string_key = variables[data_type][group][v].variable.id
@@ -259,7 +262,7 @@ def to_code(row, variables, locations, data_type,  alert_data,
                         # This is the initial state
                         if intragroup_priority == 0:
                             variable_json[variables[data_type][
-                                group][v].variable.id] = test_outcome  # insert new value
+                                group][v].variable.id] = test_outcome["value"]  # insert new value
                             intragroup_priority = int(variables[data_type][
                                 group][v].calculation_priority)  # store current intragroup priority
                             current_group_variable = variables[data_type][
@@ -269,7 +272,7 @@ def to_code(row, variables, locations, data_type,  alert_data,
                         elif intragroup_priority > int(variables[data_type][group][v].calculation_priority): 
                             del variable_json[current_group_variable]  # remove existing group value of lower priority order
                             variable_json[variables[data_type][
-                                group][v].variable.id] = test_outcome  # insert new value
+                                group][v].variable.id] = test_outcome["value"]  # insert new value
                             intragroup_priority = int(variables[data_type][
                                 group][v].calculation_priority)  # store current intragroup priority
                             current_group_variable = variables[data_type][
@@ -279,7 +282,7 @@ def to_code(row, variables, locations, data_type,  alert_data,
                     else:
                         #allocate the test outcome to the json object using the variable string id as key
                         variable_json[variables[data_type][
-                            group][v].variable.id] = test_outcome
+                            group][v].variable.id] = test_outcome["value"]
 
                     for cat in variables[data_type][
                             group][v].variable.category:

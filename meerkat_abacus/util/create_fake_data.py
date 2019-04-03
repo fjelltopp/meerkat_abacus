@@ -19,7 +19,7 @@ def get_value(field, data):
     
     A field is a dict with a key that gives the method to choose from a value for the dict value.
     I.e.
-      field = {"one": ["A", "B", "C"]}
+    field = {"one": ["A", "B", "C"]}
     We then want to choose either A, B, or C randomly.
 
     The available methos are:
@@ -56,7 +56,7 @@ def get_value(field, data):
         value = random.uniform(upper, lower)
     elif field_type == "date":
         now = datetime.datetime.now()
-        start_offset = 21
+        start_offset = 150
         if argument == "age":
             start_offset = 365*80
         start = now - datetime.timedelta(days=start_offset)
@@ -148,7 +148,7 @@ def create_form(fields, data=None, N=500, odk=True, dates_is_now=False):
                 end = now
                 submission_date = now
             else:
-                start = now - datetime.timedelta(days=21)
+                start = now - datetime.timedelta(days=150)
                 total_days = (now - start).days
                 start = start + datetime.timedelta(
                     days=random.uniform(0, total_days))

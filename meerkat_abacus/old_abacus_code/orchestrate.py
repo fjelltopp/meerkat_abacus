@@ -46,7 +46,7 @@ logger.info("Setting up DB for %s", config.country_config["country_name"])
 global engine
 global session
 
-tz = pytz.timezone(config.timezone)
+tz = pytz.timezone(config.country_config["timezone"])
 
 param_config_yaml = yaml.dump(config)
 
@@ -65,9 +65,10 @@ logger.info("Starting Real time")
 # Set up data stream source
 if config.stream_data_source in ["LOCAL_SQS", "AWS_SQS"]:
     tasks.poll_queue.delay(config.sqs_queue, config.SQS_ENDPOINT, start=True, param_config_yaml=param_config_yaml)
+    tasks.process_buffer.delay(start=True, param_config_yaml=param_config_yaml)
 elif config.stream_data_source == "AWS_S3":
     tasks.stream_data_from_s3.delay(param_config_yaml=param_config_yaml)
-tasks.process_buffer.delay(start=True, param_config_yaml=param_config_yaml)
+    # Do not need to run process_buffer as this is already run in the stream function
 
 
 # Set up fake data generation

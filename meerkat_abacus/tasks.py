@@ -4,6 +4,7 @@ Celery setup and wraper tasks to periodically update the database.
 import requests
 import traceback
 from celery import task, Task
+from celery.exceptions import SoftTimeLimitExceeded
 import time
 import json
 import os
@@ -20,8 +21,8 @@ from meerkat_abacus.config import config
 import meerkat_libs as libs
 from meerkat_abacus import data_import
 from meerkat_abacus import util
-#from meerkat_abacus.pipeline import Pipeline
 from meerkat_abacus.util import create_fake_data
+from meerkat_abacus.consul_export import celery_trigger
 
 logger = config.logger
 
@@ -62,7 +63,7 @@ def stream_data_from_s3(param_config_yaml=yaml.dump(config)):
 
 
 
-    
+
 @task
 def process_buffer(start=True, internal_buffer=None,
                    param_config_yaml=yaml.dump(config),
@@ -73,7 +74,7 @@ def process_buffer(start=True, internal_buffer=None,
         internal_buffer = worker_buffer
     engine, session = util.get_db_engine(param_config.DATABASE_URL)
     pipeline = Pipeline(engine, session, param_config)
-    
+
     try:
         while internal_buffer.qsize() > 0:
             element = internal_buffer.get()

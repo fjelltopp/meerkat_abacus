@@ -12,15 +12,14 @@ from requests.auth import HTTPDigestAuth
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from botocore.exceptions import ClientError
-
 from datetime import datetime, timedelta
+import pytz
 from dateutil.parser import parse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from meerkat_abacus.model import Locations, AggregationVariables, Devices, form_tables
 from meerkat_abacus.config import config
 import meerkat_libs as libs
-from meerkat_abacus.model import Locations, AggregationVariables, Devices
 
 logger = config.logger
 country_config = config.country_config
@@ -39,9 +38,6 @@ def get_env(param_config=config):
             autoescape=select_autoescape(['html'])
         )
         return env
-
-
-
 
 
 def is_child(parent, child, locations):
@@ -77,7 +73,6 @@ def get_db_engine(db_url=config.DATABASE_URL):
     engine = create_engine(db_url)
     Session = sessionmaker(bind=engine)
     session = Session()
-
     return engine, session
 
 
@@ -145,7 +140,7 @@ def get_variables(session):
         session: db-session
 
     Returns:
-        variables(dict): dict of id:Variable
+        dict: dict of id:Variable
     """
     result = session.query(AggregationVariables)
     variables = {}
@@ -337,7 +332,7 @@ def write_to_db(data, form, db_url, param_config=config):
         conn.close()
 
 
-        
+
 def get_exclusion_list(session, form):
     """
     Get exclusion list for a form
@@ -383,7 +378,6 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
     else:
         sqs_client = boto3.client('sqs', region_name=region_name,
                                   endpoint_url=sqs_endpoint)
-    #sts_client = boto3.client('sts', region_name=region_name)
 
     logger.info("Getting SQS url")
     try:
@@ -427,7 +421,7 @@ def submit_data_to_aggregate(data, form_id, aggregate_config):
     grouped_json["@id"] = form_id
     result = bf.etree(grouped_json, root=Element(form_id))
     aggregate_user = aggregate_config.get('aggregate_username', None)
-    
+
     aggregate_password = aggregate_config.get('aggregate_password', None)
     auth = HTTPDigestAuth(aggregate_user, aggregate_password)
     aggregate_url = aggregate_config.get('aggregate_url', None)
@@ -465,9 +459,9 @@ def create_topic_list(alert, locations, country_config=config.country_config):
     So for an alert with reason "rea_1", in country with prefix "null", from
     clinic "4" in district "3" in region "2" in country "1", we get a topic
     list that looks like:
-        ['null-rea_1-4', 'null-rea_1-3', 'null-rea_1-2',
-         'null-rea_1-1', 'null-allDis-4', 'null-allDis-3',
-         'null-allDis-2', 'null-allDis-1']
+    ['null-rea_1-4', 'null-rea_1-3', 'null-rea_1-2',
+    'null-rea_1-1', 'null-allDis-4', 'null-allDis-3',
+    'null-allDis-2', 'null-allDis-1']
 
     """
 
@@ -517,10 +511,13 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         if alert["district"]:
             district = locations[alert["district"]].name
 
-        # To display date-times
+        # To display date-times as a local date string.
         def tostr(date):
             try:
-                return parse(date).strftime("%H:%M %d %b %Y")
+                local_timezone = pytz.timezone(param_config.country_config["timezone"])
+                utc_date = parse(date).replace(tzinfo=pytz.utc)
+                local_date = utc_date.astimezone(local_timezone)
+                return local_date.strftime("%H:%M %d %b %Y")
             except AttributeError:
                 return "Not available"  # Catch if date not a date type
 
@@ -553,21 +550,33 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         html_template = get_env(param_config).get_template('alerts/{}/html'.format(template))
         html_message = html_template.render(data=data)
 
+        # Select the correct communication medium using country configs
+        medium_settings = dict(param_config.country_config.get(
+            'alert_mediums',
+            {}
+        ))
+        medium = medium_settings.pop('DEFAULT', ['email', 'sms'])
+        for alert_code, alert_mediums in medium_settings.items():
+            if alert_code in alert["variables"]["alert_reason"]:
+                medium = alert_mediums
+                break
+
         # Structure and send the hermes request
         data = {
             "from": param_config.country_config['messaging_sender'],
-            "topics": create_topic_list(alert, locations,
-                                        country_config=config.country_config),
+            "topics": create_topic_list(
+                alert,
+                locations,
+                country_config=param_config.country_config
+            ),
             "id": alert_id,
             "message": text_message,
             "sms-message": sms_message,
             "html-message": html_message,
             "subject": "Public Health Surveillance Alerts: #" + alert_id,
-            "medium": ['email', 'sms']
+            "medium": medium
         }
         logger.info("CREATED ALERT {}".format(data['message']))
 
         if not param_config.country_config["messaging_silent"]:
-            libs.hermes('/publish', 'PUT', data,
-                        config=param_config)
-
+            libs.hermes('/publish', 'PUT', data, config=param_config)

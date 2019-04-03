@@ -88,7 +88,7 @@ def threshold(var_id, limits, day, clinic, session, hospital_limits=None):
         if len(cases) == 0:
             continue
         clinic_type = cases["clinic_type"].iloc[0]
-        uuids = list(cases.sort_values(["date"])["uuid"])
+        uuids = list(cases.sort_values(["date", "uuid"])["uuid"])
 
         add = False
         if hospital_limits and clinic_type == "Hospital":
@@ -161,7 +161,7 @@ def double_double(var_id, , clinic, session):
                     "date"] >= start_date) & (data["date"] < start_date +
                                               timedelta(days=7))]
 
-                uuids = list(cases.sort_values(["date"])["uuid"])
+                uuids = list(cases.sort_values(["date", "uuid"])["uuid"])
                 if len(uuids) > 0:
                     alerts.append({
                         "clinic": clinic,

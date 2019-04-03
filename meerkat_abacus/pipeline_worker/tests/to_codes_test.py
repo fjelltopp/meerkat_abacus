@@ -1,4 +1,3 @@
-
 import unittest
 
 from meerkat_abacus import model
@@ -8,7 +7,13 @@ from geoalchemy2.shape import from_shape
 from shapely.geometry import Polygon
 
 # Data for the tests
-locations = {1: model.Locations(name="Demo", id=1),
+class ToCodeTest(unittest.TestCase):
+    """
+    Test the to_code functionality
+    """
+
+    def setUp(self):
+        locations = {1: model.Locations(name="Demo", id=1),
              2: model.Locations(
                  name="Region 1", parent_location=1, id=2),
              3: model.Locations(
@@ -30,67 +35,57 @@ locations = {1: model.Locations(name="Demo", id=1),
                  name="Clinic 2", parent_location=5, id=7),
              8: model.Locations(
                  name="Clinic with no district", parent_location=2, id=8)}
-locations_by_deviceid = {"1": 6, "2": 7, "3": 8}
-zones = []
-regions = [2, 3]
-districts = [4, 5]
-agg_variables = [
-    model.AggregationVariables(
-        id=1, method="not_null", db_column="index", condition="",
-        category=[],
-        form="form1"),
-    model.AggregationVariables(
-        id=2,
-        method="match",
-        db_column="column1",
-        alert=1,
-        category=[],
-        alert_type="individual",
-        condition="A",
-        form="form1"),
-    model.AggregationVariables(
-        id=3,
-        category=[],
-        method="sub_match",
-        db_column="column2",
-        condition="B",
-        form="form1"),
-    model.AggregationVariables(
-        id=4,
-        category=[],
-        method="between",
-        calculation="column3",
-        db_column="column3",
-        condition="5,10",
-        disregard=1,
-        form="form1")
-]
-alert_data = {"form1": {"column1": "column1"}}
+        locations_by_deviceid = {"1": 6, "2": 7, "3": 8}
+        zones = []
+        regions = [2, 3]
+        districts = [4, 5]
+        agg_variables = [
+            model.AggregationVariables(
+                id=1, method="not_null", db_column="index", condition="",
+                category=[],
+                form="form1"),
+            model.AggregationVariables(
+                id=2,
+                method="match",
+                db_column="column1",
+                alert=1,
+                category=[],
+                alert_type="individual",
+                condition="A",
+                form="form1"),
+            model.AggregationVariables(
+                id=3,
+                category=[],
+                method="sub_match",
+                db_column="column2",
+                condition="B",
+                form="form1"),
+            model.AggregationVariables(
+                id=4,
+                category=[],
+                method="between",
+                calculation="column3",
+                db_column="column3",
+                condition="5,10",
+                disregard=1,
+                form="form1")
+        ]
+        self.alert_data = {"form1": {"column1": "column1"}}
 
-devices = {"1": [], "2": [], "3": [], "4": [], "5": [],
-           "6": [], "7": [], "8": []}
-all_locations = (locations, locations_by_deviceid, zones, regions, districts, devices)
+        devices = {"1": [], "2": [], "3": [], "4": [], "5": [],
+                   "6": [], "7": [], "8": []}
+        self.all_locations = (locations, locations_by_deviceid, zones, regions, districts, devices)
 
-variables = {"case": {1: {}, 2: {}, 3: {}, 4: {}}}
-variables_forms = {}
-variables_test = {}
-variables_groups = {}
-mul_forms = []
-
-for av in agg_variables:
-    variables["case"][av.id][av.id] = Variable(av)
-    variables_forms[av.id] = "form1"
-    variables_test[av.id] = variables["case"][av.id][av.id].test_type
-    variables_groups[av.id] = [av.id]
-
-
-class ToCodeTest(unittest.TestCase):
-    """
-    Test the to_code functionality
-    """
-
-    def setUp(self):
-        pass
+        self.variables = {"case": {1: {}, 2: {}, 3: {}, 4: {}}}
+        self.variables_forms = {}
+        self.variables_test = {}
+        self.variables_groups = {}
+        self.mul_forms = []
+        for av in agg_variables:
+            self.variables["case"][av.id][av.id] = Variable(av)
+            self.variables_forms[av.id] = "form1"
+            self.variables_test[av.id] = self.variables["case"][av.id][av.id].test
+            self.variables_groups[av.id] = [av.id]
 
     def tearDown(self):
         pass

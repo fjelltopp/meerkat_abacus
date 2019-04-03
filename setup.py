@@ -13,6 +13,8 @@ install_reqs = parse_requirements("requirements.txt", session=uuid.uuid1())
 # e.g. ['django==1.5.1', 'mezzanine==1.4.6']
 reqs = [str(ir.req) for ir in install_reqs]
 
+print(find_packages())
+
 setup(
     name='Meerkat Abacus',
     version='0.0.1',

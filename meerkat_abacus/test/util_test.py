@@ -65,7 +65,7 @@ class UtilTest(unittest.TestCase):
         value = create_fake_data.get_value(
             {"date": "year"}, None)
         self.assertLess(parser.parse(value), datetime.now())
-        self.assertLess(datetime.now() - timedelta(days=22),
+        self.assertLess(datetime.now() - timedelta(days=150),
                         parser.parse(value))
         data = {"deviceids": [1, 2, 3, 4, 5]}
         for i in range(100):
@@ -111,13 +111,13 @@ class UtilTest(unittest.TestCase):
             self.assertIn("SubmissionDate", r.keys())
 
             self.assertLess(parser.parse(r["start"]), datetime.now())
-            self.assertLess(datetime.now() - timedelta(days=22),
+            self.assertLess(datetime.now() - timedelta(days=150),
                             parser.parse(r["start"]))
             self.assertLess(parser.parse(r["end"]), datetime.now())
-            self.assertLess(datetime.now() - timedelta(days=22),
+            self.assertLess(datetime.now() - timedelta(days=150),
                             parser.parse(r["end"]))
             self.assertLess(parser.parse(r["SubmissionDate"]), datetime.now())
-            self.assertLess(datetime.now() - timedelta(days=22),
+            self.assertLess(datetime.now() - timedelta(days=150),
                             parser.parse(r["SubmissionDate"]))
             self.assertIn("meta/instanceID", r.keys())
             self.assertNotIn(r["meta/instanceID"], old_uuids)
@@ -185,16 +185,20 @@ class UtilTest(unittest.TestCase):
     @mock.patch('meerkat_libs.authenticate')
     def test_send_alert(self, mock_authenticate, mock_requests):
         mock_authenticate.return_value = 'meerkatjwt'
-        alert = model.Data(**{"region": 2,
-                              "clinic": 3,
-                              "district": 4,
-                              "uuid": "uuid:1",
-                              "variables": {"alert_reason": "1",
-                                            "alert_id": "abcdef",
-                                            "alert_gender": "male",
-                                            "alert_age": "32"},
-                              "id": "abcdef",
-                              "date": datetime.now()
+        alert = model.Data(**{
+            "region": 2,
+            "clinic": 3,
+            "district": 4,
+            "uuid": "uuid:1",
+            "variables": {
+                "alert_reason": "1",
+                "alert_id": "abcdef",
+                "alert_gender": "male",
+                "alert_age": "32",
+                "alert_submitted": "2018-01-22T07:52:31.978613"
+            },
+            "id": "abcdef",
+            "date": datetime.now()
         })
         var_mock = mock.Mock()
         var_mock.configure_mock(name='Rabies', alert_message='case')
@@ -216,18 +220,24 @@ class UtilTest(unittest.TestCase):
         }
 
         util.country_config["messaging_silent"] = False
+        util.country_config["timezone"] = "Asia/Amman"
         util.send_alert("abcdef", alert, variables, locations)
         self.assertTrue(mock_authenticate.called)
         self.assertTrue(mock_requests.request.called)
         call_args = mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "PUT")
         self.assertEqual(call_args[0][1], config.hermes_api_root + "/publish")
+
         # 160 characters in a single sms
         self.assertTrue(len(call_args[1]["json"]["sms-message"]) < 160)
+        # Correct alert reason specified in message
         self.assertIn("Rabies", call_args[1]["json"]["html-message"])
         self.assertIn("Rabies", call_args[1]["json"]["sms-message"])
         self.assertIn("Rabies", call_args[1]["json"]["message"])
-
+        # Correct LOCAL submission time string in the message
+        self.assertIn("09:52 22 Jan 2018", call_args[1]["json"]["html-message"])
+        self.assertIn("09:52 22 Jan 2018", call_args[1]["json"]["message"])
+        # Correct message topics specified
         prefix = util.country_config["messaging_topic_prefix"]
         self.assertIn(prefix + "-1-allDis", call_args[1]["json"]["topics"])
         self.assertIn(prefix + "-2-allDis", call_args[1]["json"]["topics"])
@@ -261,6 +271,25 @@ class UtilTest(unittest.TestCase):
         alert.date = datetime.now() - timedelta(days=8)
         util.send_alert("abcdef", alert, variables, locations)
         self.assertFalse(mock_requests.request.called)
+
+        # Test the configuration of alert mediums.
+        mock_requests.reset_mock()
+        alert.date = datetime.now()
+        util.country_config["alert_mediums"] = {
+            "1": ['email']
+        }
+        util.send_alert("abcdef", alert, variables, locations)
+        call_args = mock_requests.request.call_args
+        self.assertNotIn("sms", call_args[1]["json"]["medium"])
+
+        # Test the cofiguration of a default alert medium
+        mock_requests.reset_mock()
+        util.country_config["alert_mediums"] = {
+            "DEFAULT": ['sms']
+        }
+        util.send_alert("abcdef", alert, variables, locations)
+        call_args = mock_requests.request.call_args
+        self.assertNotIn("email", call_args[1]["json"]["medium"])
 
     def test_create_topic_list(self):
         #Create the mock arguments that include all necessary data to complete the function.

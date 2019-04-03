@@ -1,49 +1,37 @@
+language: python
+group: deprecated-2017Q2
 dist:
- - trusty
-sudo:
- - required
-language:
- - python
+   - trusty
 python:
- - '3.6'
-env:
- - MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
-   PERSISTENT_DATABASE_URL='postgresql+psycopg2://postgres:postgres@localhost/persistent_demo_db'
-   HERMES_API_ROOT='http://testapiroot'
-   DATA_DIRECTORY='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/data/'
-   COUNTRY_CONFIG_DIR='/home/travis/build/meerkat-code/meerkat_abacus/meerkat_abacus/country_config/'
-   FAKE_DATA_GENERATION=INTERNAL
-   INITIAL_DATA_SOURCE=FAKE_DATA
-   STREAM_DATA_SOURCE=AWS_S3
+  - '3.6'
+sudo: required
 
-services:
-  - postgresql
+matrix:
+    include:
+        - env: TRAVIS_BUILD=docs
+               COUNTRY_CONFIG_DIR=${TRAVIS_BUILD_DIR}/meerkat_abacus/country_config/
+        - env: TRAVIS_BUILD=tests
+               MEERKAT_AUTH_SETTINGS="${TRAVIS_BUILD_DIR}/meerkat_libs/meerkat_libs/auth_client/dev_auth_config.py"
+               MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
+               PERSISTENT_DATABASE_URL='postgresql+psycopg2://postgres:postgres@localhost/persistent_demo_db'
+               HERMES_API_ROOT='http://testapiroot'
+               DATA_DIRECTORY="${TRAVIS_BUILD_DIR}/meerkat_abacus/data/"
+               COUNTRY_CONFIG_DIR="${TRAVIS_BUILD_DIR}/meerkat_abacus/country_config/"
+               FAKE_DATA_GENERATION=INTERNAL
+               INITIAL_DATA_SOURCE=FAKE_DATA
+               STREAM_DATA_SOURCE=AWS_S3
+
 addons:
-  - postgresql: 9.6
-
-before_script:
- - psql -U postgres -c 'create database meerkat_db'
- - psql -U postgres -d meerkat_db -c 'create extension postgis'
+  postgresql: '9.6'
+services:
+ - postgresql
 
 install:
- - sudo apt-get -qq update
- - sudo apt-get autoremove postgis*
- - sudo apt-get autoremove postgresql*
- - sudo apt-get install -y postgresql-9.6-postgis-2.3
- - sudo service postgresql restart
- - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
- - bash miniconda.sh -b -p $HOME/miniconda
- - export PATH="$HOME/miniconda/bin:$PATH"
- - hash -r
- - conda config --set always_yes yes --set changeps1 no
- - conda update -q conda
- - conda install pandas
- - pip install -r requirements.txt
- - git clone --branch development --single-branch https://github.com/meerkat-code/meerkat_libs.git
- - cd meerkat_libs
- - pip install .
- - cd ../
-script: nosetests -v meerkat_abacus.consumer.tests && nosetests -v meerkat_abacus.pipeline_worker.tests
+    - chmod +x ${TRAVIS_BUILD_DIR}/.travis-install.sh
+    - . ${TRAVIS_BUILD_DIR}/.travis-install.sh
+script:
+   - if [ "${TRAVIS_BUILD}" = "tests" ]; then nosetests -v --logging-level=WARNING; fi
+   - if [ "${TRAVIS_BUILD}" = "docs" ]; then sphinx-build -aW -b html -d docs/build/doctrees docs/source docs/build/html; fi
 notifications:
   slack:
     secure: M3cDy+WfJMohLYeNGricQZdHdTfoRqLRFhxTrQdnW5PRshrtK7bTLIvENxypSQesjTjSeMRPpfepO86EUn3NZoak/FQD4nNhHI2LKwjNco//6WuEOgtiSpb1MNESz8CZHItZqidi/PRRSRCWP7xcfACNwZy4MvnoURt4sUHdbgHa+/Cw1VhYxPDD+7I2u9ouRwcSgyHcFlvYXIztFughGizrUsYMsQjKMo4R54P/UsyyAaHCrHklJUjGTzu1NgdeOhG/3QSMVhVVc+8qMHmJwBSM3+YzguLO8oo97hx6Ow362jym0Bk6QJBBXUSpWvmqngZnj/N0XhbGsDmf2w3rQOMj2PIiDO0gR91l/p3uhH0TJW0fo174WmWoK5Ri2SS8lmwHP8F7db6npwtMPRLOHu+djQDW0UYLFH3598I+c/3MigZ5t2NDar9l223cSY9gmOaCGpSiVPolYirrWxxvmBXV9nmiaTtvt5ykCLFQI1KHH1JRJDi/FlST40F16bB8GhGzfKSxl8Ar9mPvSjg5QNTOsKDgG9ZGKVsuhzJcVi0/lyvEKIU3Qx3mVMBuw4iuBWMx4UdqX3BA3rLJlRy1S9yL1iLKGX7esJJ9V/COSHWljsg4eSV1Ynkrs35mFPH6zN4AQ+1XmQy8G++/i5gEJU3HT0W+nLTBfMBmUc/hWs0=

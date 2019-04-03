@@ -27,8 +27,10 @@ import importlib.util
 import yaml
 from dateutil.parser import parse
 import logging
-# Application config
+
+
 class Config:
+
     def __init__(self):
         # Logging
         logger_name = os.environ.get("LOGGER_NAME", "meerkat_abacus")
@@ -45,6 +47,7 @@ class Config:
 
         self.DEPLOYMENT = os.environ.get("DEPLOYMENT", "unknown")
         self.DEVELOPMENT = bool(os.environ.get("DEVELOPMENT", False))
+        self.PRODUCTION = os.environ.get("PRODUCTION", False)
         current_directory = os.path.dirname(os.path.realpath(__file__))
         self.DATABASE_URL = os.environ.get(
             "MEERKAT_ABACUS_DB_URL",
@@ -54,7 +57,6 @@ class Config:
                                         current_directory + "/data/")
         self.config_directory = os.environ.get("COUNTRY_CONFIG_DIR",
                                           current_directory + "/country_config/")
-        self.timezone = os.environ.get('TIMEZONE', 'Europe/Dublin')
 
         self.start_celery = os.environ.get("START_CELERY", False)
 
@@ -71,7 +73,7 @@ class Config:
         self.server_auth_username = os.environ.get('SERVER_AUTH_USERNAME', 'root')
         self.server_auth_password = os.environ.get('SERVER_AUTH_PASSWORD', 'password')
         self.send_test_device_messages = os.environ.get('MEERKAT_TEST_DEVICE_MESSAGES',
-                                                        False)
+                                                   False)
         self.sentry_dns = os.environ.get('SENTRY_DNS', '')
         self.db_dump = os.environ.get('DB_DUMP', '')
         self.db_dump_folder = '/var/www/dumps/'
@@ -87,6 +89,7 @@ class Config:
                 self.only_import_after_date)
         )
 
+        self.consul_enabled = os.environ.get("CONSUL_ENABLED", "False") == "True"
         # Country config
         country_config_file = os.environ.get("COUNTRY_CONFIG", "demo_config.py")
 
@@ -105,6 +108,9 @@ class Config:
         if self.hermes_dev:
             self.country_config["messaging_silent"] = True
 
+        if not self.country_config.get("timezone"):
+            self.country_config["timezone"] = "Europe/Dublin"
+
         self.s3_bucket = country_config_module.s3_bucket
 
         # Configure data initialisation
@@ -116,9 +122,7 @@ class Config:
         if self.initial_data_source == "FAKE_DATA":
             self.initial_data = "FAKE_DATA"
         elif self.initial_data_source == "AWS_RDS":
-            self.PERSISTENT_DATABASE_URL = os.environ.get(
-                "PERSISTENT_DATABASE_URL", None
-            )
+            self.PERSISTENT_DATABASE_URL = os.environ.get("PERSISTENT_DATABASE_URL")
             self.initial_data = "RDS"
         elif self.initial_data_source == "LOCAL_RDS":
             self.PERSISTENT_DATABASE_URL = os.environ.get(
@@ -154,6 +158,7 @@ class Config:
         else:
             msg = f"STREAM_DATA_SOURCE={self.stream_data_source} unsupported."
             raise ValueError(msg)
+
         # Configure generating fake data
         self.fake_data = False
         self.internal_fake_data = None
