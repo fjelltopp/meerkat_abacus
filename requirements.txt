@@ -17,4 +17,5 @@ lxml==3.8.0
 xmljson==0.1.9
 backoff==1.4.3
 Jinja2==2.9
+pandas==0.24.2
 # pygrowup==0.8.2

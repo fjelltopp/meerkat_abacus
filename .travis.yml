@@ -30,7 +30,7 @@ install:
     - chmod +x ${TRAVIS_BUILD_DIR}/.travis-install.sh
     - . ${TRAVIS_BUILD_DIR}/.travis-install.sh
 script:
-   - if [ "${TRAVIS_BUILD}" = "tests" ]; then nosetests -v --logging-level=WARNING; fi
+   - if [ "${TRAVIS_BUILD}" = "tests" ]; then nosetests -v meerkat_abacus.consumer.tests --logging-level=WARNING && nosetests -v meerkat_abacus.pipeline_worker.tests --logging-level=WARNING; fi
    - if [ "${TRAVIS_BUILD}" = "docs" ]; then sphinx-build -aW -b html -d docs/build/doctrees docs/source docs/build/html; fi
 notifications:
   slack:
