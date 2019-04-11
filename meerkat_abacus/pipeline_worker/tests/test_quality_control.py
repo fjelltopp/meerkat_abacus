@@ -126,10 +126,10 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
     @patch.object(quality_control.data_types, 'data_types_for_form_name', return_value=test_data_types_list)
     def test_bypass_and_logs_incorrect_date(self, mock):
         test_row = {"deviceid": "fake_me", "date_column": '31 Feb 2011'}
-        with self.assertLogs(level='DEBUG') as logs:
+        with self.assertLogs(logger=config.logger, level='DEBUG') as logs:
             quality_control._validate_date_to_epi_week_convertion("test_form", test_row,
                                                                   self.config)
-            self.assertTrue(len(logs))
+            self.assertTrue(len(logs.output))
             self.assertIn("Failed to process date column for row with device_id: fake_me", logs.output[0])
 
     multiple_data_types_single_date = [
@@ -163,10 +163,10 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
         test_row = {"deviceid": "fake_me", "date_column": "03-05-2014"}
 
         self.config.country_config["epi_week"] = self.test_epi_config[0]
-        with self.assertLogs(level='DEBUG') as logs:
+        with self.assertLogs(logger=config.logger, level='DEBUG') as logs:
             quality_control._validate_date_to_epi_week_convertion("test_form", test_row,
                                                               param_config=self.config)
-            self.assertTrue(len(logs))
+            self.assertTrue(len(logs.output))
             print(logs)
             self.assertIn("Failed to process date column for row with device_id: fake_me", logs.output[0])
 

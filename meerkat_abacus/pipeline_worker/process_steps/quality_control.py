@@ -122,7 +122,7 @@ class QualityControl(ProcessingStep):
         if quality_control:
             for variable in quality_control:
                 try:
-                    if not quality_control[variable](insert_row):
+                    if not quality_control[variable](insert_row)['value']:
                         if variable.variable.category == ["discard"]:
                             remove = True
                         else:
