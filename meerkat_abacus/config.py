@@ -162,7 +162,7 @@ class Config:
         # Configure generating fake data
         self.fake_data = False
         self.internal_fake_data = None
-        self.fake_data_interval = 60
+        self.fake_data_interval = 60 * 5
         self.aggregate_password = None
         self.aggregate_username = None
         self.aggregate_url = None
