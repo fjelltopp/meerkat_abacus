@@ -5,11 +5,9 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy import create_engine
 from meerkat_abacus.pipeline_worker.pipeline import Pipeline
 
-from meerkat_abacus import config
+from meerkat_abacus.config import config as config_
 from meerkat_abacus.pipeline_worker.celery_app import app
-
-config_ = config.get_config()
-logger = config_.logger
+from meerkat_abacus import logger
 
 
 pipeline = None

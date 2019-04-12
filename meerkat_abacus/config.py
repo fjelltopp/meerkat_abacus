@@ -179,6 +179,3 @@ class Config:
         return yaml.dump(self)
 
 config = Config()
-
-def get_config():
-    return config

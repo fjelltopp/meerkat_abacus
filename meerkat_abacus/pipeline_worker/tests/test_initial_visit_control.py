@@ -4,11 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from datetime import datetime
-from meerkat_abacus.config import get_config
+from meerkat_abacus.config import config
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps import initial_visit_control
 from meerkat_abacus.consumer.database_setup import create_db
-config = get_config()
 
 
 class TestInitialVisitControl(unittest.TestCase):
@@ -24,7 +23,6 @@ class TestInitialVisitControl(unittest.TestCase):
         self.session = Session()
 
     def test_initial_visit_control(self):
-        config = get_config()
         config.country_config["initial_visit_control"] = {
             "demo_case": {
                 "identifier_key_list": ["patientid", "icd_code"],

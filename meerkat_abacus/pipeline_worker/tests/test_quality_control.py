@@ -5,11 +5,10 @@ from sqlalchemy.orm import sessionmaker
 
 from datetime import datetime
 import meerkat_abacus
-from meerkat_abacus.config import get_config
+from meerkat_abacus.config import config
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps import quality_control
 from meerkat_abacus.consumer.database_setup import create_db
-config = get_config()
 
 
 # TODO: Test deviceid and exclusion list
@@ -25,7 +24,6 @@ class TestQualityControll(unittest.TestCase):
         self.session = Session()
 
     def test_quality_control(self):
-        config = get_config()
         variables = [
             model.AggregationVariables(
                 id="qul_1",
@@ -109,7 +107,6 @@ class TestQualityControll(unittest.TestCase):
 
 class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
     test_data_types_list = [{"date": "date_column"}]
-    config = get_config()
     @patch.object(quality_control.data_types, 'data_types_for_form_name', return_value=test_data_types_list)
     def test_validates_proper_date(self, mock):
         test_row = {"date_column": "2017-01-01"}
