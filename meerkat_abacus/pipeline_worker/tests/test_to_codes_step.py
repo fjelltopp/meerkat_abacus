@@ -6,7 +6,7 @@ from datetime import datetime
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps import to_codes
 from meerkat_abacus.consumer.database_setup import create_db
-from meerkat_abacus.config import get_config
+from meerkat_abacus.config import config
 from geoalchemy2.shape import from_shape
 from shapely.geometry import MultiPolygon
 
@@ -14,7 +14,6 @@ from shapely.geometry import MultiPolygon
 class TestToCode(unittest.TestCase):
 
     def setUp(self):
-        config = get_config()
         create_db(config.DATABASE_URL, drop=True)
         engine = create_engine(config.DATABASE_URL)
         model.form_tables(config)
@@ -24,7 +23,6 @@ class TestToCode(unittest.TestCase):
         self.session = Session()
 
     def test_to_code(self):
-        config = get_config()
         variables = [
             model.AggregationVariables(
                 id="var_1", method="not_null", db_column="index", condition="",

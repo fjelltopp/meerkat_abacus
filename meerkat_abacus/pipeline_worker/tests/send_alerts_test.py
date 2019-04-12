@@ -7,12 +7,11 @@ from datetime import datetime
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps.send_alerts import SendAlerts
 from meerkat_abacus.consumer.database_setup import create_db
-from meerkat_abacus.config import get_config
+from meerkat_abacus.config import config
 
 class TestSendAlerts(unittest.TestCase):
 
     def setUp(self):
-        config = get_config()
         create_db(config.DATABASE_URL, drop=True)
         engine = create_engine(config.DATABASE_URL)
         model.form_tables(config)
@@ -23,7 +22,6 @@ class TestSendAlerts(unittest.TestCase):
 
     @mock.patch('meerkat_abacus.pipeline_worker.process_steps.send_alerts.util.send_alert')
     def test_send_alert(self, send_alert_mock):
-        config = get_config()
         send = SendAlerts(config, self.session)
 
         data = {"uuid": "abcdefghijk",

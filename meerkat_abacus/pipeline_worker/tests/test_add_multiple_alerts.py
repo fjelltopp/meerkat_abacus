@@ -9,12 +9,11 @@ from meerkat_abacus.pipeline_worker.process_steps import add_multiple_alerts
 from meerkat_abacus.pipeline_worker.process_steps import write_to_db
 from meerkat_abacus.consumer.database_setup import create_db
 
-from meerkat_abacus.config import get_config
+from meerkat_abacus.config import config
 
 class TestAddMultipleAlerts(unittest.TestCase):
 
     def setUp(self):
-        config = get_config()
         create_db(config.DATABASE_URL, drop=True)
         engine = create_engine(config.DATABASE_URL)
         model.form_tables(config)
@@ -24,7 +23,6 @@ class TestAddMultipleAlerts(unittest.TestCase):
         self.session = Session()
 
     def test_app_multiple_alerts(self):
-        config = get_config()
 
         existing_raw_data = [
             {
@@ -179,7 +177,6 @@ class TestAddMultipleAlerts(unittest.TestCase):
 
 class TestAlertTypes(unittest.TestCase):
     def setUp(self):
-        config = get_config()
         create_db(config.DATABASE_URL, drop=True)
         engine = create_engine(config.DATABASE_URL)
         model.form_tables(config)

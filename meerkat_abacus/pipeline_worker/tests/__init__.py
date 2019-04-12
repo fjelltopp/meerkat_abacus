@@ -11,17 +11,16 @@ from sqlalchemy.orm import sessionmaker
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.pipeline import Pipeline
 from meerkat_abacus.consumer.database_setup import create_db
-from meerkat_abacus.config import get_config
-config = get_config()
+from meerkat_abacus.config import config as param_config
 
 class TestPipeline(unittest.TestCase):
 
     def setUp(self):
-        create_db(config.DATABASE_URL, drop=True)
-        engine = create_engine(config.DATABASE_URL)
-        model.form_tables(config)
+        create_db(param_config.DATABASE_URL, drop=True)
+        engine = create_engine(param_config.DATABASE_URL)
+        model.form_tables(param_config)
         model.Base.metadata.create_all(engine)
-        self.engine = create_engine(config.DATABASE_URL)
+        self.engine = create_engine(param_config.DATABASE_URL)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
@@ -29,7 +28,6 @@ class TestPipeline(unittest.TestCase):
         pass
 
     def test_setup(self):
-        param_config = get_config()
         param_config.country_config["pipeline"] = ["quality_control",
                                                    "write_to_db",
                                                    "quality_control"]
@@ -40,7 +38,6 @@ class TestPipeline(unittest.TestCase):
                          len(pipeline.pipeline))
 
     def test_process_chunk(self):
-        param_config = get_config()
         param_config.country_config["pipeline"] = ["do_nothing",
                                                    "do_nothing",
                                                    "do_nothing"]
@@ -62,7 +59,6 @@ class TestPipeline(unittest.TestCase):
     def test_error_handling(self, do_nothing_mock):
         do_nothing_mock.return_value = mock.MagicMock(
             **{"run.side_effect": KeyError("Test Error")})
-        param_config = get_config()
         param_config.country_config["pipeline"] = ["do_nothing"]
         pipeline = Pipeline(self.engine, self.session, param_config)
 
