@@ -3,9 +3,8 @@ from sqlalchemy import and_
 from sqlalchemy.exc import OperationalError
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus import model, util
-from meerkat_abacus.config import config
+from meerkat_abacus import logger
 
-logger = config.logger
 
 class InitialVisitControl(ProcessingStep):
 

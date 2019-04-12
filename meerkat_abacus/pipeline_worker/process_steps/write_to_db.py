@@ -1,7 +1,4 @@
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
-from meerkat_abacus.config import config
-
-logger = config.logger
 from meerkat_abacus import model
 
 

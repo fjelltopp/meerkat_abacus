@@ -3,9 +3,7 @@ from dateutil.parser import parse
 
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus import model, util
-from meerkat_abacus.config import config
-
-logger = config.logger
+from meerkat_abacus import logger
 
 
 class AddLinks(ProcessingStep):

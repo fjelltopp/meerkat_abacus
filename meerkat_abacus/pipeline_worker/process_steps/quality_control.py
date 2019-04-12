@@ -4,14 +4,11 @@ Main functionality for importing data into abacus
 
 from dateutil.parser import parse
 import random
-from meerkat_abacus import util
+from meerkat_abacus import util, logger
 from meerkat_abacus.util import data_types
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus.util.epi_week import epi_week_for_date
 from meerkat_abacus.codes import to_codes
-from meerkat_abacus.config import config
-
-logger = config.logger
 
 
 class QualityControl(ProcessingStep):

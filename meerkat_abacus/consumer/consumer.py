@@ -8,10 +8,8 @@ from meerkat_abacus.consumer import celeryconfig
 from meerkat_abacus.consumer import database_setup
 from meerkat_abacus.consumer import get_data
 from meerkat_abacus.config import config
-from meerkat_abacus import util, model
+from meerkat_abacus import util, model, logger
 from meerkat_abacus.util import create_fake_data
-
-logger = config.logger
 
 app = Celery()
 app.config_from_object(celeryconfig)

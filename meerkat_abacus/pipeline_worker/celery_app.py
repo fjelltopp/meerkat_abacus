@@ -7,7 +7,7 @@ import celery
 import raven
 
 from meerkat_abacus.pipeline_worker import celeryconfig
-from meerkat_abacus.config import config
+from meerkat_abacus import logger
 
 # class Celery(celery.Celery):
 #     def on_configure(self):
@@ -18,7 +18,6 @@ from meerkat_abacus.config import config
 #             # hook into the Celery error handler
 #             register_signal(client)
 
-logger = config.logger
 
 app = celery.Celery()
 app.config_from_object(celeryconfig)

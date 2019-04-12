@@ -3,9 +3,7 @@ import cProfile, pstats, io
 
 import datetime
 from meerkat_abacus import model
-from meerkat_abacus.config import config
-
-logger = config.logger
+from meerkat_abacus import logger
 
 
 class ProcessingStep(object):

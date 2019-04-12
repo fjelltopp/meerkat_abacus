@@ -19,9 +19,9 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from meerkat_abacus.model import Locations, AggregationVariables, Devices, form_tables
 from meerkat_abacus.config import config
+from meerkat_abacus import logger
 import meerkat_libs as libs
 
-logger = config.logger
 country_config = config.country_config
 
 # Alert messages are rendered with Jinja2, setup the Jinja2 env

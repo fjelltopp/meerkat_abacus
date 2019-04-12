@@ -11,12 +11,10 @@ from sqlalchemy import exc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
 
-from meerkat_abacus.util import data_types
 from meerkat_abacus.config import config
 from meerkat_abacus import model
 from meerkat_abacus import util
-
-logger = config.logger
+from meerkat_abacus import logger
 
 
 def create_db(url, drop=False):

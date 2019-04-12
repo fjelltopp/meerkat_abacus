@@ -4,12 +4,10 @@ import json
 from celery.task.control import inspect
 
 from meerkat_abacus.util import create_fake_data
-from meerkat_abacus import util
+from meerkat_abacus import util, logger
 from meerkat_abacus.config import get_config
 
 config = get_config()
-logger = config.logger
-
 
 def read_stationary_data(get_function, param_config, celery_app, N_send_to_task=15000,
                          previous_number_by_form={}):

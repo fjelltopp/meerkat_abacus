@@ -3,7 +3,6 @@ Main pipeline for abacus
 
 """
 import datetime
-import sys
 
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps.quality_control import QualityControl
@@ -15,9 +14,8 @@ from meerkat_abacus.pipeline_worker.process_steps.add_multiple_alerts import Add
 from meerkat_abacus.pipeline_worker.process_steps.to_data_type import ToDataType
 from meerkat_abacus.pipeline_worker.process_steps.initial_visit_control import InitialVisitControl
 from meerkat_abacus.pipeline_worker.process_steps import DoNothing
-from meerkat_abacus.config import config
+from meerkat_abacus import logger
 
-logger = config.logger
 
 
 class Pipeline:

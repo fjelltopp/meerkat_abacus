@@ -24,6 +24,8 @@ START_CELERY: if we want to star the celery hourly tasks
 """
 import os
 import importlib.util
+from unittest.mock import MagicMock
+
 import yaml
 from dateutil.parser import parse
 import logging
@@ -33,18 +35,9 @@ class Config:
 
     def __init__(self):
         # Logging
-        logger_name = os.environ.get("LOGGER_NAME", "meerkat_abacus")
-        logging_level = os.environ.get("LOGGING_LEVEL", "ERROR")
-        logging_format = os.environ.get("LOGGING_FORMAT",  '%(asctime)s - %(name)-15s - %(levelname)-7s - %(module)s:%(filename)s:%(lineno)d - %(message)s')
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(logging_format)
-        handler.setFormatter(formatter)
-        level = logging.getLevelName(logging_level)
-        self.logger = logging.getLogger(logger_name)
-        self.logger.setLevel(level)
-        self.logger.addHandler(handler)
-        self.logger.propagate = 0
-
+        self.LOGGER_NAME = os.environ.get("LOGGER_NAME", "meerkat_abacus")
+        self.LOGGING_LEVEL = os.environ.get("LOGGING_LEVEL", "ERROR")
+        self.LOGGING_FORMAT = os.environ.get("LOGGING_FORMAT",  '%(asctime)s - %(name)-15s - %(levelname)-7s - %(module)s:%(filename)s:%(lineno)d - %(message)s')
         self.DEPLOYMENT = os.environ.get("DEPLOYMENT", "unknown")
         self.DEVELOPMENT = bool(os.environ.get("DEVELOPMENT", False))
         self.PRODUCTION = os.environ.get("PRODUCTION", False)
@@ -84,10 +77,11 @@ class Config:
             self.only_import_after_date = parse(only_import_after_date)
         else:
             self.only_import_after_date = None
-        self.logger.info(
-            "Only importing data after {}".format(
-                self.only_import_after_date)
-        )
+        # TODO: log it in a different place
+        # self.logger.info(
+        #     "Only importing data after {}".format(
+        #         self.only_import_after_date)
+        # )
 
         self.consul_enabled = os.environ.get("CONSUL_ENABLED", "False") == "True"
         # Country config
@@ -185,7 +179,6 @@ class Config:
         return yaml.dump(self)
 
 config = Config()
-config.logger.debug("Config initialised.")
 
 def get_config():
     return config

@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from datetime import datetime
+import meerkat_abacus
 from meerkat_abacus.config import get_config
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps import quality_control
@@ -126,7 +127,7 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
     @patch.object(quality_control.data_types, 'data_types_for_form_name', return_value=test_data_types_list)
     def test_bypass_and_logs_incorrect_date(self, mock):
         test_row = {"deviceid": "fake_me", "date_column": '31 Feb 2011'}
-        with self.assertLogs(logger=config.logger, level='DEBUG') as logs:
+        with self.assertLogs(logger=meerkat_abacus.logger, level='DEBUG') as logs:
             quality_control._validate_date_to_epi_week_convertion("test_form", test_row,
                                                                   self.config)
             self.assertTrue(len(logs.output))
@@ -163,7 +164,7 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
         test_row = {"deviceid": "fake_me", "date_column": "03-05-2014"}
 
         self.config.country_config["epi_week"] = self.test_epi_config[0]
-        with self.assertLogs(logger=config.logger, level='DEBUG') as logs:
+        with self.assertLogs(logger=meerkat_abacus.logger, level='DEBUG') as logs:
             quality_control._validate_date_to_epi_week_convertion("test_form", test_row,
                                                               param_config=self.config)
             self.assertTrue(len(logs.output))

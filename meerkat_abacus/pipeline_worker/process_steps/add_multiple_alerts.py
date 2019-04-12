@@ -7,9 +7,6 @@ from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
 from meerkat_abacus.util.epi_week import epi_year_start_date
 from meerkat_abacus import model
 from meerkat_abacus import util
-from meerkat_abacus.config import config
-
-logger = config.logger
 
 
 class AddMultipleAlerts(ProcessingStep):

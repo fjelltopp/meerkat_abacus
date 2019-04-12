@@ -7,9 +7,8 @@ import datetime
 import uuid
 from meerkat_abacus import util
 from meerkat_abacus import model
-from meerkat_abacus.config import config
+from meerkat_abacus import logger
 
-logger = config.logger
 
 random.seed(1)
 

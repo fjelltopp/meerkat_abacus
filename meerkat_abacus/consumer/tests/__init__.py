@@ -8,7 +8,7 @@ from unittest import mock
 import random
 import unittest
 from meerkat_abacus.consumer import get_data
-from meerkat_abacus import config
+from meerkat_abacus.config import config as param_config
 
 
 class TestConsumer(unittest.TestCase):
@@ -29,7 +29,6 @@ class TestConsumer(unittest.TestCase):
         inspect_mock_rv = mock.MagicMock()
         inspect_mock_rv.reserved = mock.MagicMock(return_value={"celery@abacus": []})
         inspect_mock.return_value = inspect_mock_rv
-        param_config = config.get_config()
         param_config.country_config["tables"] = ["table1", "table2"]
         celery_app_mock = mock.MagicMock()
         numbers = get_data.read_stationary_data(yield_data_function,
