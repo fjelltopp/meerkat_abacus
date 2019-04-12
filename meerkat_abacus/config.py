@@ -24,6 +24,8 @@ START_CELERY: if we want to star the celery hourly tasks
 """
 import os
 import importlib.util
+from unittest.mock import MagicMock
+
 import yaml
 from dateutil.parser import parse
 import logging
@@ -32,8 +34,12 @@ import logging
 class Config:
 
     def __init__(self):
-
+        # Logging
+        self.LOGGER_NAME = os.environ.get("LOGGER_NAME", "meerkat_abacus")
+        self.LOGGING_LEVEL = os.environ.get("LOGGING_LEVEL", "ERROR")
+        self.LOGGING_FORMAT = os.environ.get("LOGGING_FORMAT",  '%(asctime)s - %(name)-15s - %(levelname)-7s - %(module)s:%(filename)s:%(lineno)d - %(message)s')
         self.DEPLOYMENT = os.environ.get("DEPLOYMENT", "unknown")
+        self.DEVELOPMENT = bool(os.environ.get("DEVELOPMENT", False))
         self.PRODUCTION = os.environ.get("PRODUCTION", False)
         current_directory = os.path.dirname(os.path.realpath(__file__))
         self.DATABASE_URL = os.environ.get(
@@ -71,10 +77,11 @@ class Config:
             self.only_import_after_date = parse(only_import_after_date)
         else:
             self.only_import_after_date = None
-        logging.info(
-            "Only importing data after {}".format(
-                self.only_import_after_date)
-        )
+        # TODO: log it in a different place
+        # self.logger.info(
+        #     "Only importing data after {}".format(
+        #         self.only_import_after_date)
+        # )
 
         self.consul_enabled = os.environ.get("CONSUL_ENABLED", "False") == "True"
         # Country config
@@ -108,12 +115,8 @@ class Config:
         self.initial_data = "FAKE_DATA"
         if self.initial_data_source == "FAKE_DATA":
             self.initial_data = "FAKE_DATA"
-        elif self.initial_data_source == "LOCAL_CSV":
-            self.initial_data = "LOCAL_CSV"
         elif self.initial_data_source == "AWS_RDS":
-            self.PERSISTENT_DATABASE_URL = os.environ.get(
-                "PERSISTENT_DATABASE_URL", None
-            )
+            self.PERSISTENT_DATABASE_URL = os.environ.get("PERSISTENT_DATABASE_URL")
             self.initial_data = "RDS"
         elif self.initial_data_source == "LOCAL_RDS":
             self.PERSISTENT_DATABASE_URL = os.environ.get(
@@ -124,6 +127,9 @@ class Config:
         elif self.initial_data_source == "AWS_S3":
             self.get_data_from_s3 = 1  # int(os.environ.get("GET_DATA_FROM_S3", False))
             self.initial_data = "S3"
+        elif self.initial_data_source == "LOCAL_CSV":
+            self.get_data_from_s3 = 0  # int(os.environ.get("GET_DATA_FROM_S3", False))
+            self.initial_data = "LOCAL_CSV"
         else:
             msg = f"INITIAL_DATA_SOURCE={self.initial_data_source} unsupported."
             raise ValueError(msg)
@@ -139,6 +145,8 @@ class Config:
         elif self.stream_data_source == "AWS_S3":
             self.get_data_from_s3 = 1
             self.s3_data_stream_interval = os.environ.get("S3_DATA_STREAM_INTERVAL", 3600)
+        elif self.stream_data_source == "FAKE_DATA":
+            self.fake_data_generation = "INTERNAL"
         elif self.stream_data_source == "NO_STREAMING":
             pass  # Don't set up any streaming.
         else:
@@ -148,7 +156,7 @@ class Config:
         # Configure generating fake data
         self.fake_data = False
         self.internal_fake_data = None
-        self.fake_data_interval = 60*5
+        self.fake_data_interval = 60 * 5
         self.aggregate_password = None
         self.aggregate_username = None
         self.aggregate_url = None
@@ -162,8 +170,15 @@ class Config:
             self.aggregate_password = os.environ.get("AGGREGATE_PASSWORD", "password")
             self.aggregate_username = os.environ.get("AGGREGATE_USERNAME", "test")
             self.aggregate_url = os.environ.get("AGGREGATE_URL", "http://172.18.0.1:81")
-
+        elif self.fake_data_generation == "SEND_TO_SQS":
+            self.fake_data_sqs_queue = os.environ.get("SQS_QUEUE", 'nest-queue-demo')
+            self.fake_data_sqs_endpoint = os.environ.get("SQS_ENDPOINT", 'http://172.18.0.1:9324')
+            self.SQS_ENDPOINT = self.fake_data_sqs_endpoint
+            self.sqs_queue = self.fake_data_sqs_queue
     def __repr__(self):
         return yaml.dump(self)
 
 config = Config()
+
+def get_config():
+    return config

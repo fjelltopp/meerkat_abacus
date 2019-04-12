@@ -16,8 +16,8 @@ existing_form_tables = {}
 
 country_config = config.country_config
 
-def form_tables(param_config=config):
 
+def form_tables(param_config):
     for table in param_config.country_config["tables"]:
         if table in existing_form_tables:
             continue
@@ -43,7 +43,17 @@ class DownloadDataFiles(Base):
     status = Column(Float)
     success = Column(Integer)
 
+    
+class StepFailiure(Base):
+    __tablename__ = 'step_failures'
 
+    id = Column(Integer, primary_key=True)
+    data = Column(JSONB)
+    form = Column(String)
+    step_name = Column(String)
+    error = Column(String)
+
+    
 class Locations(Base):
     __tablename__ = 'locations'
 
@@ -72,6 +82,16 @@ class Devices(Base):
     __tablename__ = 'devices'
     device_id = Column(String, primary_key=True)
     tags = Column(JSONB)
+
+    
+class StepMonitoring(Base):
+    __tablename__ = 'step_monitoring'
+    id = Column(Integer, primary_key=True)
+    step = Column(String)
+    n = Column(Integer)
+    start = Column(DateTime)
+    end = Column(DateTime)
+    duration = Column(Float)
 
 
 class Data(Base):

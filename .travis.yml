@@ -8,8 +8,8 @@ sudo: required
 
 matrix:
     include:
-        - env: TRAVIS_BUILD=docs
-               COUNTRY_CONFIG_DIR=${TRAVIS_BUILD_DIR}/meerkat_abacus/country_config/
+#        - env: TRAVIS_BUILD=docs
+#               COUNTRY_CONFIG_DIR=${TRAVIS_BUILD_DIR}/meerkat_abacus/country_config/
         - env: TRAVIS_BUILD=tests
                MEERKAT_AUTH_SETTINGS="${TRAVIS_BUILD_DIR}/meerkat_libs/meerkat_libs/auth_client/dev_auth_config.py"
                MEERKAT_ABACUS_DB_URL='postgresql+psycopg2://postgres:postgres@localhost/meerkat_db'
@@ -30,8 +30,8 @@ install:
     - chmod +x ${TRAVIS_BUILD_DIR}/.travis-install.sh
     - . ${TRAVIS_BUILD_DIR}/.travis-install.sh
 script:
-   - if [ "${TRAVIS_BUILD}" = "tests" ]; then nosetests -v --logging-level=WARNING; fi
-   - if [ "${TRAVIS_BUILD}" = "docs" ]; then sphinx-build -aW -b html -d docs/build/doctrees docs/source docs/build/html; fi
+   - if [ "${TRAVIS_BUILD}" = "tests" ]; then nosetests -v meerkat_abacus.consumer.tests --logging-level=WARNING && nosetests -v meerkat_abacus.pipeline_worker.tests --logging-level=WARNING; fi
+#   - if [ "${TRAVIS_BUILD}" = "docs" ]; then sphinx-build -aW -b html -d docs/build/doctrees docs/source docs/build/html; fi
 notifications:
   slack:
     secure: M3cDy+WfJMohLYeNGricQZdHdTfoRqLRFhxTrQdnW5PRshrtK7bTLIvENxypSQesjTjSeMRPpfepO86EUn3NZoak/FQD4nNhHI2LKwjNco//6WuEOgtiSpb1MNESz8CZHItZqidi/PRRSRCWP7xcfACNwZy4MvnoURt4sUHdbgHa+/Cw1VhYxPDD+7I2u9ouRwcSgyHcFlvYXIztFughGizrUsYMsQjKMo4R54P/UsyyAaHCrHklJUjGTzu1NgdeOhG/3QSMVhVVc+8qMHmJwBSM3+YzguLO8oo97hx6Ow362jym0Bk6QJBBXUSpWvmqngZnj/N0XhbGsDmf2w3rQOMj2PIiDO0gR91l/p3uhH0TJW0fo174WmWoK5Ri2SS8lmwHP8F7db6npwtMPRLOHu+djQDW0UYLFH3598I+c/3MigZ5t2NDar9l223cSY9gmOaCGpSiVPolYirrWxxvmBXV9nmiaTtvt5ykCLFQI1KHH1JRJDi/FlST40F16bB8GhGzfKSxl8Ar9mPvSjg5QNTOsKDgG9ZGKVsuhzJcVi0/lyvEKIU3Qx3mVMBuw4iuBWMx4UdqX3BA3rLJlRy1S9yL1iLKGX7esJJ9V/COSHWljsg4eSV1Ynkrs35mFPH6zN4AQ+1XmQy8G++/i5gEJU3HT0W+nLTBfMBmUc/hWs0=

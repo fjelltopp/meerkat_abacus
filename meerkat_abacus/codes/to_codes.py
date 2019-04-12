@@ -74,7 +74,8 @@ def get_variables(session, restrict=None, match_on_type=None, match_on_form=None
 
 multiple_method = {"last": -1, "first": 0}
 
-def to_code(row, variables, locations, data_type, location_form, alert_data,
+
+def to_code(row, variables, locations, data_type,  alert_data,
             mul_forms, location):
     """
     Takes a row and transforms it into a data row
@@ -100,8 +101,8 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
         new_record(model.Data): Data record
         alert(model.Alerts): Alert record if created
     """
+    main_form = row["original_form"]
     locations, locations_by_deviceid, zones, regions, districts, devices = locations
-
     if "deviceid" in location:
         column = "deviceid"
         prefix = ""
@@ -111,14 +112,14 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
             if len(splitted) == 3:
                 prefix = location.split(":")[2]
         
-        clinic_id = locations_by_deviceid.get(prefix + row[location_form][column],
+        clinic_id = locations_by_deviceid.get(prefix + row[main_form][column],
                                               None)
         if not clinic_id:
             return (None, None, None, None)
         clinic_gps = None
         if locations[clinic_id].point_location is not None:
             clinic_gps = locations[clinic_id].point_location.desc
-        deviceid = row[location_form].get("deviceid")
+        deviceid = row[main_form].get("deviceid")
         ret_location = {
             "clinic": clinic_id,
             "clinic_type": locations[clinic_id].clinic_type,
@@ -143,18 +144,18 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
             ret_location["district"] = None
             ret_location["region"] = None
             ret_location["zone"] = None
-        row[location_form]["clinic_type"] = locations[clinic_id].clinic_type
-        row[location_form]["service_provider"] = locations[clinic_id].service_provider
+        row[main_form]["clinic_type"] = locations[clinic_id].clinic_type
+        row[main_form]["service_provider"] = locations[clinic_id].service_provider
         if locations[clinic_id].other:
             for key in locations[clinic_id].other.keys():
-                row[location_form][key] = locations[clinic_id].other[key]
+                row[main_form][key] = locations[clinic_id].other[key]
             
         
     elif "in_geometry" in location:
         fields = location.split("$")[1].split(",")
         try:
-            point = Point(float(row[location_form][fields[0]]),
-                          float(row[location_form][fields[1]]))
+            point = Point(float(row[main_form][fields[0]]),
+                          float(row[main_form][fields[1]]))
             found = False
             for loc in locations.values():
                 if loc.level == "district":
@@ -175,7 +176,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                 print("Not Found")
                 return (None, None, None, None)
         except ValueError:
-            print("Value Errot in point in polygon location")
+            print("Value Error in point in polygon location")
             return (None, None, None, None)
     else:
         return (None, None, None, None)
@@ -183,15 +184,15 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
     variable_json = {}
     categories = {}
     for column in match_variables:
-        row_value = row[location_form].get(column, None)
+        row_value = row[main_form].get(column, None)
         if row_value not in ("", None):
             codes, cats = match_variables[column].get(row_value, [{}, {}])
             variable_json.update(codes)
             categories.update(cats)
     if "alert" in variable_json:
-        for data_var in alert_data[location_form].keys():
+        for data_var in alert_data[main_form].keys():
             variable_json["alert_" + data_var] = row[
-                location_form][alert_data[location_form][data_var]]
+                location_form][alert_data[main_form][data_var]]
     disregard = False
     for group in variables.get(data_type, {}).keys():
 
@@ -214,6 +215,7 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
             datum = row.get(form, None)
             if datum:
                 if form in mul_forms:
+
                     method = variables[data_type][group][
                         v].variable.multiple_link
                     if method in ["last", "first"]:
@@ -294,9 +296,9 @@ def to_code(row, variables, locations, data_type, location_form, alert_data,
                             variable_json["alert_type"] = "individual"
                             variable_json["alert_reason"] = variables[
                                 data_type][group][v].variable.id
-                            for data_var in alert_data[location_form].keys():
+                            for data_var in alert_data[row["original_form"]].keys():
                                 variable_json["alert_" + data_var] = row[
-                                    location_form][alert_data[location_form][data_var]]
+                                    main_form].get(alert_data[row["original_form"]][data_var])
                     if variables[data_type][group][v].variable.disregard:
                         disregard = True
 

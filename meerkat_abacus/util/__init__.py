@@ -4,21 +4,22 @@ Various utility functions for meerkat abacus
 
 import csv
 import itertools
-import logging
 import boto3
 from xmljson import badgerfish as bf
 from lxml.html import Element, tostring
 import requests
 from requests.auth import HTTPDigestAuth
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from botocore.exceptions import ClientError
 from datetime import datetime, timedelta
 import pytz
 from dateutil.parser import parse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 from meerkat_abacus.model import Locations, AggregationVariables, Devices, form_tables
 from meerkat_abacus.config import config
+from meerkat_abacus import logger
 import meerkat_libs as libs
 
 country_config = config.country_config
@@ -351,7 +352,7 @@ def get_exclusion_list(session, form):
     return ret
 
 
-def read_csv_filename(filename, param_config=config):
+def read_csv_file(filename, param_config=config):
     """ Read a csv file from the filename"""
     file_path = param_config.data_directory + filename + ".csv"
     for row in read_csv(file_path):
@@ -361,15 +362,15 @@ def read_csv_filename(filename, param_config=config):
 def get_data_from_rds_persistent_storage(form, param_config=config):
     """ Get data from RDS persistent storage"""
     engine, session = get_db_engine(param_config.PERSISTENT_DATABASE_URL)
-    for row in session.query(
-            form_tables(param_config=param_config)[form]
-    ).yield_per(1000).enable_eagerloads(False):
+    logger.info(session)
+    form_data = session.query(form_tables(param_config=param_config)[form])
+    for row in form_data.yield_per(1000).enable_eagerloads(False):
         yield row.__dict__['data']
 
 
 def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
     """ Subscribes to an sqs_enpoint with the sqs_queue_name"""
-    logging.info("Connecting to SQS")
+    logger.info("Connecting to SQS")
     region_name = "eu-west-1"
 
     if sqs_endpoint == 'DEFAULT':
@@ -378,24 +379,21 @@ def subscribe_to_sqs(sqs_endpoint, sqs_queue_name):
         sqs_client = boto3.client('sqs', region_name=region_name,
                                   endpoint_url=sqs_endpoint)
 
-    logging.info("Getting SQS url")
+    logger.info("Getting SQS url")
     try:
-        queue_url = sqs_client.get_queue_url(
-            QueueName=sqs_queue_name,
-        )['QueueUrl']
-        logging.info("Subscribed to %s.", queue_url)
+        queue_url = __get_queue_url(sqs_client, sqs_queue_name)
+        logger.info("Subscribed to %s.", queue_url)
     except ClientError as e:
-        print(e)
-        print("sqs_queue_name", sqs_queue_name)
-        #logging.info("Creating Queue")
-        response = sqs_client.create_queue(
-            QueueName=sqs_queue_name
-        )
-        queue_url = sqs_client.get_queue_url(
-            QueueName=sqs_queue_name
-        )['QueueUrl']
-        logging.info("Subscribed to %s.", queue_url)
+        logger.debug("Failed to connect to %s", sqs_queue_name)
+        logger.info("Creating queue %s", sqs_queue_name)
+        sqs_client.create_queue(QueueName=sqs_queue_name)
+        queue_url = __get_queue_url(sqs_client, sqs_queue_name)
+        logger.info("Subscribed to %s.", queue_url)
     return sqs_client, queue_url
+
+
+def __get_queue_url(sqs_client, sqs_queue_name):
+    return sqs_client.get_queue_url(QueueName=sqs_queue_name)['QueueUrl']
 
 
 def groupify(data):
@@ -431,7 +429,7 @@ def submit_data_to_aggregate(data, form_id, aggregate_config):
                       files={
                         "xml_submission_file":  ("tmp.xml", tostring(result), "text/xml")
                       })
-    logging.info("Aggregate submission status code: " + str(r.status_code))
+    logger.info("Aggregate submission status code: " + str(r.status_code))
     return r.status_code
 
 
@@ -468,13 +466,13 @@ def create_topic_list(alert, locations, country_config=config.country_config):
     """
 
     prefix = [country_config["messaging_topic_prefix"]]
-    reason = [alert.variables["alert_reason"], 'allDis']
-    locs = [alert.clinic, alert.region, 1]
+    reason = [alert["variables"]["alert_reason"], 'allDis']
+    locs = [alert["clinic"], alert["region"], 1]
 
     # The district isn't stored in the alert model, so calulate it as the
     # parent of the clinic.
-    district = locations[alert.clinic].parent_location
-    if (district != alert.region):
+    district = locations[alert["clinic"]].parent_location
+    if (district != alert["region"]):
         locs.append(district)
 
     combinations = itertools.product(prefix, locs, reason)
@@ -483,7 +481,7 @@ def create_topic_list(alert, locations, country_config=config.country_config):
     for comb in combinations:
         topics.append(str(comb[0]) + "-" + str(comb[1]) + "-" + str(comb[2]))
 
-    logging.debug("Sending alert to topic list: {}".format(topics))
+    logger.debug("Sending alert to topic list: {}".format(topics))
 
     return topics
 
@@ -507,11 +505,11 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         variables: dict with variables
         locations: dict with locations
     """
-    if alert.date > datetime.now() - timedelta(days=7):
+    if alert["date"] > datetime.now() - timedelta(days=7):
         # List the possible strings that construct an alert sms message
         district = ""
-        if alert.district:
-            district = locations[alert.district].name
+        if alert["district"]:
+            district = locations[alert["district"]].name
 
         # To display date-times as a local date string.
         def tostr(date):
@@ -525,20 +523,20 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
 
         # Assemble the data to be shown in the messsage
         data = {
-            "date": alert.date.strftime("%d %b %Y"),
-            "received": tostr(alert.variables.get('alert_received')),
-            "submitted": tostr(alert.variables.get('alert_submitted')),
-            "clinic": locations[alert.clinic].name,
+            "date": alert["date"].strftime("%d %b %Y"),
+            "received": tostr(alert["variables"].get('alert_received')),
+            "submitted": tostr(alert["variables"].get('alert_submitted')),
+            "clinic": locations[alert["clinic"]].name,
             "district": district,
-            "region": locations[alert.region].name,
-            "uuid": alert.uuid,
+            "region": locations[alert["region"]].name,
+            "uuid": alert["uuid"],
             "alert_id": alert_id,
-            "reason": variables[alert.variables["alert_reason"]].name
+            "reason": variables[alert["variables"]["alert_reason"]].name
         }
-        data = {**alert.variables, **data}
+        data = {**alert["variables"], **data}
 
         # Get the message template to use
-        template = variables[alert.variables['alert_reason']].alert_message
+        template = variables[alert["variables"]['alert_reason']].alert_message
         if not template:
             template = "case"  # default to case message template
 
@@ -559,7 +557,7 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
         ))
         medium = medium_settings.pop('DEFAULT', ['email', 'sms'])
         for alert_code, alert_mediums in medium_settings.items():
-            if alert_code in alert.variables["alert_reason"]:
+            if alert_code in alert["variables"]["alert_reason"]:
                 medium = alert_mediums
                 break
 
@@ -578,6 +576,7 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
             "subject": "Public Health Surveillance Alerts: #" + alert_id,
             "medium": medium
         }
-        logging.info("CREATED ALERT {}".format(data['message']))
+        logger.info("CREATED ALERT {}".format(data['message']))
+
         if not param_config.country_config["messaging_silent"]:
             libs.hermes('/publish', 'PUT', data, config=param_config)
