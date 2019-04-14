@@ -3,7 +3,7 @@ from unittest.mock import patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from meerkat_abacus.config import config, get_config
+from meerkat_abacus.config import config
 from meerkat_abacus import model
 from meerkat_abacus.pipeline_worker.process_steps import add_links
 from meerkat_abacus.consumer.database_setup import create_db

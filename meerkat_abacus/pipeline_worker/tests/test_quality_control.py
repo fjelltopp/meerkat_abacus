@@ -112,21 +112,21 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
         test_row = {"date_column": "2017-01-01"}
         self.assertTrue(quality_control._validate_date_to_epi_week_convertion("test_form",
                                                                               test_row,
-                                                                              self.config))
+                                                                              config))
 
     @patch.object(quality_control.data_types, 'data_types_for_form_name', return_value=test_data_types_list)
     def test_bypass_for_missing_date(self, mock):
         test_row = {"date_column": ''}
         self.assertFalse(quality_control._validate_date_to_epi_week_convertion("test_form",
                                                                                test_row,
-                                                                               self.config))
+                                                                               config))
 
     @patch.object(quality_control.data_types, 'data_types_for_form_name', return_value=test_data_types_list)
     def test_bypass_and_logs_incorrect_date(self, mock):
         test_row = {"deviceid": "fake_me", "date_column": '31 Feb 2011'}
         with self.assertLogs(logger=meerkat_abacus.logger, level='DEBUG') as logs:
             quality_control._validate_date_to_epi_week_convertion("test_form", test_row,
-                                                                  self.config)
+                                                                  config)
             self.assertTrue(len(logs.output))
             self.assertIn("Failed to process date column for row with device_id: fake_me", logs.output[0])
 
@@ -149,9 +149,9 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
         }
         with patch.object(quality_control, 'epi_week_for_date') as mock:
             quality_control._validate_date_to_epi_week_convertion("test_form", test_row,
-                                                              param_config=self.config)
+                                                              param_config=config)
             mock.assert_called_once()
-            mock.assert_called_with(datetime(2015, 6, 14), param_config=self.config.country_config)
+            mock.assert_called_with(datetime(2015, 6, 14), param_config=config.country_config)
 
     test_epi_config = ({2015: datetime(2015, 3, 5)},)
 
@@ -160,10 +160,10 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
     def test_bypass_if_date_out_of_custom_epi_config(self, data_types_mock):
         test_row = {"deviceid": "fake_me", "date_column": "03-05-2014"}
 
-        self.config.country_config["epi_week"] = self.test_epi_config[0]
+        config.country_config["epi_week"] = self.test_epi_config[0]
         with self.assertLogs(logger=meerkat_abacus.logger, level='DEBUG') as logs:
             quality_control._validate_date_to_epi_week_convertion("test_form", test_row,
-                                                              param_config=self.config)
+                                                              param_config=config)
             self.assertTrue(len(logs.output))
             print(logs)
             self.assertIn("Failed to process date column for row with device_id: fake_me", logs.output[0])
@@ -189,10 +189,10 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
             "condition2": "valid",
             "second_date": "June 14, 2015"
         }
-        self.config.country_config["epi_week"] = self.test_epi_config[0]
+        config.country_config["epi_week"] = self.test_epi_config[0]
         self.assertTrue(quality_control._validate_date_to_epi_week_convertion("test_form",
                                                                           test_row,
-                                                                          param_config=self.config))
+                                                                          param_config=config))
 
     @patch.object(quality_control.data_types, 'data_types_for_form_name', return_value=test_multiple_data_types)
     def test_multiple_data_types_fails_if_single_date_invalid(self, mock):
@@ -202,10 +202,10 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
             "condition2": "valid",
             "second_date": "June 14, 2014"
         }
-        self.config.country_config["epi_week"] = self.test_epi_config[0]
+        config.country_config["epi_week"] = self.test_epi_config[0]
         self.assertFalse(quality_control._validate_date_to_epi_week_convertion("test_form",
                                                                            test_row,
-                                                                           param_config=self.config))
+                                                                           param_config=config))
 
     data_types_mixed_condition = [
         {
@@ -228,7 +228,7 @@ class ValidateDateToEpiWeekConversionTest(unittest.TestCase):
             "second_date": "June 14, 2015"
         }
         self.assertTrue(quality_control._validate_date_to_epi_week_convertion("test_form", test_row,
-                                                                              self.config))
+                                                                              config))
 
 
 if __name__ == "__main__":
