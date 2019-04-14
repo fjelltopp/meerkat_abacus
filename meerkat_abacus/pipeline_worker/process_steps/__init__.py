@@ -44,7 +44,7 @@ class ProcessingStep(object):
         sortby = 'cumulative'
         # ps = pstats.Stats(self.profiler, stream=s).sort_stats(sortby)
         # ps.print_stats(30)
-        logger.info(s.getvalue())
+        # logger.info(s.getvalue())
         
     def _write_monitoring_data(self, n=None):
         monitoring = model.StepMonitoring(
