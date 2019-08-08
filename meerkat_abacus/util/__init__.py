@@ -27,6 +27,9 @@ country_config = config.country_config
 
 # Alert messages are rendered with Jinja2, setup the Jinja2 env
 env = None
+language = country_config.get("language", 'en')
+translation_dir = country_config.get("translation_dir", None)
+translator = libs.get_translator(translation_dir, language)
 
 
 def get_env(param_config=config):
@@ -39,9 +42,6 @@ def get_env(param_config=config):
             extensions=['jinja2.ext.i18n', 'jinja2.ext.autoescape'],
             autoescape=select_autoescape(['html'])
         )
-        language = country_config.get("language", 'en')
-        translation_dir = country_config.get("translation_dir", None)
-        translator = libs.get_translator(translation_dir, language)
         env.install_gettext_translations(translator)
         return env
 
@@ -579,7 +579,7 @@ def send_alert(alert_id, alert, variables, locations, param_config=config):
             "message": text_message,
             "sms-message": sms_message,
             "html-message": html_message,
-            "subject": "Public Health Surveillance Alerts: #" + alert_id,
+            "subject": f"{translator.gettext('Public Health Surveillance Alerts')}: #{alert_id}",
             "medium": medium
         }
         logger.info("CREATED ALERT {}".format(data['message']))
