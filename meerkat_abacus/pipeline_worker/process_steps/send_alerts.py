@@ -1,7 +1,9 @@
+import datetime as datetime
+
 from meerkat_abacus.pipeline_worker.process_steps import ProcessingStep
-from meerkat_abacus import model
+from meerkat_abacus import model, config
 from meerkat_abacus import util
-from meerkat_abacus import logger
+from util import get_db_engine
 
 
 class SendAlerts(ProcessingStep):
@@ -32,3 +34,17 @@ class SendAlerts(ProcessingStep):
         return [{"form": form,
                 "data": data}]
 
+if __name__ == '__main__':
+    engine, session = get_db_engine()
+    data = {"uuid": "abcdefghijk",
+            "date": datetime.datetime.now(),
+            "district": 1,
+            "clinic": 1,
+            "region": 1,
+            "variables": {"alert": 1,
+                          "alert_reason":'alert_cmd_25',
+                          "alert_type": "individual"}
+            }
+    send = SendAlerts(config, session)
+    result = send.run("data", data)
+    pass
