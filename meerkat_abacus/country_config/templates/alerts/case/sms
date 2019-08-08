@@ -1,9 +1,9 @@
-<<country>> Public Health Surveillance Alert:
+{{_('<<country>>')}} {{_('Public Health Surveillance Alert')}}:
 
-Alert: {{data.get("reason", "Not available")}}
-Date: {{data.get("date", "Not available")}}
-Clinic: {{data.get("clinic", "Not available")}}
-Region: {{data.get("region", "Not available")}}
-Gender: {{data.get("alert_gender", "Not available")}}
-Age: {{data.get("alert_age", "Not available")}}
-Alert ID: {{data.get("alert_id", "Not available")}}
+{{_('Alert')}}: {{_(data.get("reason", "Not available"))}}
+{{_('Date')}}: {{_(data.get("date", "Not available"))}}
+{{_('Clinic')}}: {{_(data.get("clinic", "Not available"))}}
+{{_('District')}}: {{_(data.get("district", "Not available"))}}
+{{_('Gender')}}: {{_(data.get("alert_gender", "Not available"))}}
+{{_('Age')}}: {{_(data.get("alert_age", "Not available"))}}
+{{_('Alert ID')}}: {{_(data.get("alert_id", "Not available"))}}

@@ -1,15 +1,15 @@
-Alert: {{data.get("reason", "Not available")}}
-Date: {{data.get("date", "Not available")}}
-Clinic: {{data.get("clinic", "Not available")}}
-Region: {{data.get("region", "Not available")}}
+{{_('Alert')}}: {{_(data.get("reason", "Not available"))}}
+{{_('Date')}}: {{_(data.get("date", "Not available"))}}
+{{_('Clinic')}}: {{_(data.get("clinic", "Not available"))}}
+{{_('District')}}: {{_(data.get("district", "Not available"))}}
 
-Patient ID: {{data.get("uuid", "Not available")}}
-Gender: {{data.get("alert_gender", "Not available")}}
-Age: {{data.get("alert_age", "Not available")}}
+{{_('Patient ')}}ID: {{_(data.get("uuid", "Not available"))}}
+{{_('Gender')}}: {{_(data.get("alert_gender", "Not available"))}}
+{{_('Age')}}: {{_(data.get("alert_age", "Not available"))}}
 
-Received: {{data.get("received", "Not available")}}
-Submitted: {{data.get("submitted", "Not available")}}
-Alert ID: {{data.get("alert_id", "Not available")}}
+{{_('Received')}}: {{_(data.get("received", "Not available"))}}
+{{_('Submitted')}}: {{_(data.get("submitted", "Not available"))}}
+{{_('Alert ID')}}: {{_(data.get("alert_id", "Not available"))}}
 
-To unsubscribe from <<country>> public health surveillance notifications please copy and paste the following URL into your browser's address bar:
+{{_('To unsubscribe from %(country)s public health surveillance notifications please copy and paste the following URL into your browser\'s address bar:')|format(country=_('<<country>>'))}}
 https://hermes.aws.emro.info/unsubscribe/<<id>>
