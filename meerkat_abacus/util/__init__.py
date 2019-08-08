@@ -3,6 +3,7 @@ Various utility functions for meerkat abacus
 """
 
 import csv
+
 import itertools
 import boto3
 from xmljson import badgerfish as bf
@@ -35,8 +36,13 @@ def get_env(param_config=config):
     else:
         env = Environment(
             loader=FileSystemLoader(param_config.config_directory + 'templates/'),
+            extensions=['jinja2.ext.i18n', 'jinja2.ext.autoescape'],
             autoescape=select_autoescape(['html'])
         )
+        language = country_config.get("language", 'en')
+        translation_dir = country_config.get("translation_dir", None)
+        translator = libs.get_translator(translation_dir, language)
+        env.install_gettext_translations(translator)
         return env
 
 
