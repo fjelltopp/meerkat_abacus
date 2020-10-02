@@ -59,7 +59,7 @@ sphinxcontrib-websupport==1.1.0
 SQLAlchemy==1.1.6
 SQLAlchemy-Utils==0.33.3
 texttable==1.4.0
-urllib3==1.23
+urllib3==1.25.9
 vine==1.1.4
 Werkzeug==0.14.1
 XlsxWriter==0.9.6
