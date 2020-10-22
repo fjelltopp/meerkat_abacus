@@ -146,15 +146,18 @@ class Variable():
 
     def test(self, row):
         """
-        Tests if current variable is true for row
+        Tests the condition defined in codes file for this variable.
 
         Args:
-            row: a row from a form
+            row: a form row under test
 
         Returns:
+            value - the return value of the test
+            applicable -
             {
-            applicable: 1 or 0,
-            value: return value
+            applicable: if true and value is 0. This mean that 0 is a proper
+                value and also indicates a passed test result. Return bool.
+            value: the returned value of the test
             }
         """
         applicable = self.test_type(row)
@@ -162,7 +165,7 @@ class Variable():
         if self.test_types[0] == "calc":
 
             if applicable == 0:
-                applicable = 1
+                applicable = True
             if applicable == "not_applicable":
                 value = 0
                 applicable = False

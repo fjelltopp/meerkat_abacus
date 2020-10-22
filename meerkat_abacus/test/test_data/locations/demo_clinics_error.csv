@@ -1,2 +1,0 @@
-who_code,deviceid,sim_id,clinic,clinic_type,case_report,district,region,longitude,latitude,realdata_startdate,moh_code
-1,1,1,Clinic 1,Primary,Yes,No Such District,Region 1,0.1,0.1,,
