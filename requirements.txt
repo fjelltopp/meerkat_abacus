@@ -16,7 +16,7 @@ raven==6.10.0
 lxml==4.5.2
 xmljson==0.2.1
 backoff==1.10.0
-Jinja2==2.11.2
+Jinja2==2.11.3
 pandas==1.1.2
 uWSGI==2.0.19.1
 
